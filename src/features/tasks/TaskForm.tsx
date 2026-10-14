@@ -42,12 +42,12 @@ function toDraft(task: Task | undefined, defaults: Partial<Task> | undefined): D
 
 function validate(d: Draft): Record<string, string> {
   const errors: Record<string, string> = {};
-  if (!d.title.trim()) errors.title = 'Give the task a title.';
-  if (d.endTime && !d.startTime) errors.time = 'Set a start time too.';
+  if (!d.title.trim()) errors.title = 'Вкажіть назву задачі.';
+  if (d.endTime && !d.startTime) errors.time = 'Вкажіть також час початку.';
   if (d.startTime && d.endTime && timeToMinutes(d.endTime) <= timeToMinutes(d.startTime))
-    errors.time = 'End time must be after start time.';
-  if ((d.startTime || d.recurrence) && !d.dueDate && !d.startDate) errors.dueDate = 'Pick a date for a scheduled or repeating task.';
-  if (d.startDate && d.dueDate && d.startDate > d.dueDate) errors.startDate = 'Start date must be on or before the due date.';
+    errors.time = 'Час завершення має бути пізніше за початок.';
+  if ((d.startTime || d.recurrence) && !d.dueDate && !d.startDate) errors.dueDate = 'Оберіть дату для запланованої чи повторюваної задачі.';
+  if (d.startDate && d.dueDate && d.startDate > d.dueDate) errors.startDate = 'Дата початку не може бути пізніше за термін.';
   return errors;
 }
 
@@ -77,7 +77,7 @@ export default function TaskFormDialog({
   const visible = showErrors ? errors : {};
 
   const requestClose = async () => {
-    if (!dirty || (await confirm({ title: 'Discard changes?', description: 'Your edits to this task will be lost.', confirmLabel: 'Discard', danger: true })))
+    if (!dirty || (await confirm({ title: 'Скасувати зміни?', description: 'Ваші зміни в задачі буде втрачено.', confirmLabel: 'Скасувати зміни', danger: true })))
       onClose();
   };
 
@@ -108,27 +108,27 @@ export default function TaskFormDialog({
       completedAt: draft.status === 'completed' ? (draft.completedAt ?? new Date().toISOString()) : undefined,
     };
     if (task) {
-      void submit(() => actions.tasks.update(task.id, clean), 'Task updated');
+      void submit(() => actions.tasks.update(task.id, clean), 'Задачу оновлено');
     } else {
-      void submit(() => actions.tasks.create(clean).write, 'Task created');
+      void submit(() => actions.tasks.create(clean).write, 'Задачу створено');
     }
   };
 
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
       <DialogContent
-        title={task ? 'Edit task' : 'New task'}
+        title={task ? 'Редагувати задачу' : 'Нова задача'}
         size="lg"
         preventDismiss={dirty}
         onDismissBlocked={() => void requestClose()}
       >
         <form onSubmit={onSubmit} noValidate className="space-y-4">
-          <Field label="Title" error={visible.title}>
+          <Field label="Назва" error={visible.title}>
             {(p) => (
               <Input
                 {...p}
                 autoFocus
-                placeholder="What needs to be done?"
+                placeholder="Що потрібно зробити?"
                 value={draft.title}
                 maxLength={300}
                 onChange={(e) => patch({ title: e.target.value })}
@@ -136,12 +136,12 @@ export default function TaskFormDialog({
             )}
           </Field>
 
-          <Field label="Description">
+          <Field label="Опис">
             {(p) => (
               <Textarea
                 {...p}
                 rows={2}
-                placeholder="Add details"
+                placeholder="Додайте деталі"
                 value={draft.description ?? ''}
                 onChange={(e) => patch({ description: e.target.value })}
               />
@@ -149,24 +149,24 @@ export default function TaskFormDialog({
           </Field>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Due date" error={visible.dueDate} className="col-span-2 sm:col-span-2">
+            <Field label="Термін" error={visible.dueDate} className="col-span-2 sm:col-span-2">
               {(p) => (
                 <div className="flex gap-2">
                   <Input {...p} type="date" value={draft.dueDate ?? ''} onChange={(e) => patch({ dueDate: e.target.value || undefined })} />
                   {draft.dueDate !== today && (
                     <Button variant="outline" size="md" className="px-3" onClick={() => patch({ dueDate: today })}>
-                      Today
+                      Сьогодні
                     </Button>
                   )}
                 </div>
               )}
             </Field>
-            <Field label="Start" error={visible.time}>
+            <Field label="Початок" error={visible.time}>
               {(p) => (
                 <Input {...p} type="time" value={draft.startTime ?? ''} onChange={(e) => patch({ startTime: e.target.value || undefined })} />
               )}
             </Field>
-            <Field label="End">
+            <Field label="Кінець">
               {(p) => (
                 <Input {...p} type="time" value={draft.endTime ?? ''} onChange={(e) => patch({ endTime: e.target.value || undefined })} />
               )}
@@ -174,7 +174,7 @@ export default function TaskFormDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Priority">
+            <Field label="Пріоритет">
               {(p) => (
                 <Select {...p} value={draft.priority} onChange={(e) => patch({ priority: e.target.value as Task['priority'] })}>
                   {PRIORITIES.map((pr) => (
@@ -185,7 +185,7 @@ export default function TaskFormDialog({
                 </Select>
               )}
             </Field>
-            <Field label="Status">
+            <Field label="Статус">
               {(p) => (
                 <Select {...p} value={draft.status} onChange={(e) => patch({ status: e.target.value as Task['status'] })}>
                   {TASK_STATUSES.map((s) => (
@@ -196,10 +196,10 @@ export default function TaskFormDialog({
                 </Select>
               )}
             </Field>
-            <Field label="Category">
+            <Field label="Категорія">
               {(p) => (
                 <Select {...p} value={draft.categoryId ?? ''} onChange={(e) => patch({ categoryId: e.target.value || undefined })}>
-                  <option value="">None</option>
+                  <option value="">Немає</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -208,10 +208,10 @@ export default function TaskFormDialog({
                 </Select>
               )}
             </Field>
-            <Field label="Project">
+            <Field label="Проєкт">
               {(p) => (
                 <Select {...p} value={draft.projectId ?? ''} onChange={(e) => patch({ projectId: e.target.value || undefined })}>
-                  <option value="">None</option>
+                  <option value="">Немає</option>
                   {projects
                     .filter((pr) => pr.status !== 'archived' || pr.id === draft.projectId)
                     .map((pr) => (
@@ -225,7 +225,7 @@ export default function TaskFormDialog({
           </div>
 
           <div>
-            <Label>Subtasks</Label>
+            <Label>Підзадачі</Label>
             {draft.subtasks.length > 0 && (
               <ul className="mb-2 space-y-1">
                 {draft.subtasks.map((s, i) => (
@@ -235,7 +235,7 @@ export default function TaskFormDialog({
                       type="checkbox"
                       className="h-4 w-4 accent-[rgb(var(--accent))]"
                       checked={s.done}
-                      aria-label={`Done: ${s.title}`}
+                      aria-label={`Виконано: ${s.title}`}
                       onChange={() =>
                         patch({ subtasks: draft.subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)) })
                       }
@@ -243,14 +243,14 @@ export default function TaskFormDialog({
                     <input
                       className="min-w-0 flex-1 bg-transparent py-1 text-sm outline-none"
                       value={s.title}
-                      aria-label={`Subtask ${i + 1}`}
+                      aria-label={`Підзадача ${i + 1}`}
                       onChange={(e) =>
                         patch({ subtasks: draft.subtasks.map((x) => (x.id === s.id ? { ...x, title: e.target.value } : x)) })
                       }
                     />
                     <button
                       type="button"
-                      aria-label="Remove subtask"
+                      aria-label="Видалити підзадачу"
                       className="rounded p-1 text-subtle hover:bg-surface-2 hover:text-danger"
                       onClick={() => patch({ subtasks: draft.subtasks.filter((x) => x.id !== s.id) })}
                     >
@@ -262,9 +262,9 @@ export default function TaskFormDialog({
             )}
             <div className="flex gap-2">
               <Input
-                placeholder="Add a subtask"
+                placeholder="Додати підзадачу"
                 value={newSubtask}
-                aria-label="New subtask"
+                aria-label="Нова підзадача"
                 onChange={(e) => setNewSubtask(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
@@ -273,7 +273,7 @@ export default function TaskFormDialog({
                   }
                 }}
               />
-              <Button variant="outline" size="icon" aria-label="Add subtask" onClick={addSubtask}>
+              <Button variant="outline" size="icon" aria-label="Додати підзадачу" onClick={addSubtask}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -281,12 +281,12 @@ export default function TaskFormDialog({
 
           {!showMore ? (
             <Button variant="link" size="sm" onClick={() => setShowMore(true)}>
-              More options (repeat, start date, tags, notes)
+              Більше параметрів (повторення, дата початку, теги, нотатки)
             </Button>
           ) : (
             <div className="space-y-4 border-t border-line pt-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Repeat">
+                <Field label="Повторення">
                   {(p) => (
                     <RecurrenceEditor
                       id={p.id}
@@ -297,16 +297,16 @@ export default function TaskFormDialog({
                   )}
                 </Field>
                 <div className="space-y-3">
-                  <Field label="Start date" error={visible.startDate} hint="When you plan to begin working on it.">
+                  <Field label="Дата початку" error={visible.startDate} hint="Коли плануєте почати роботу.">
                     {(p) => (
                       <Input {...p} type="date" value={draft.startDate ?? ''} onChange={(e) => patch({ startDate: e.target.value || undefined })} />
                     )}
                   </Field>
                   {goals.length > 0 && (
-                    <Field label="Goal">
+                    <Field label="Ціль">
                       {(p) => (
                         <Select {...p} value={draft.goalId ?? ''} onChange={(e) => patch({ goalId: e.target.value || undefined })}>
-                          <option value="">None</option>
+                          <option value="">Немає</option>
                           {goals.map((g) => (
                             <option key={g.id} value={g.id}>
                               {g.title}
@@ -318,12 +318,12 @@ export default function TaskFormDialog({
                   )}
                 </div>
               </div>
-              <Field label="Tags" hint="Separate with commas.">
-                {(p) => <Input {...p} placeholder="e.g. errands, deep-work" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />}
+              <Field label="Теги" hint="Через кому.">
+                {(p) => <Input {...p} placeholder="напр. справи, фокус" value={tagsText} onChange={(e) => setTagsText(e.target.value)} />}
               </Field>
-              <Field label="Notes">
+              <Field label="Нотатки">
                 {(p) => (
-                  <Textarea {...p} rows={3} placeholder="Notes, links, context…" value={draft.notes ?? ''} onChange={(e) => patch({ notes: e.target.value })} />
+                  <Textarea {...p} rows={3} placeholder="Нотатки, посилання, контекст…" value={draft.notes ?? ''} onChange={(e) => patch({ notes: e.target.value })} />
                 )}
               </Field>
             </div>
@@ -337,10 +337,10 @@ export default function TaskFormDialog({
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
+              Скасувати
             </Button>
             <Button type="submit" variant="dark" loading={saving}>
-              {task ? 'Save changes' : 'Create task'}
+              {task ? 'Зберегти зміни' : 'Створити задачу'}
             </Button>
           </DialogFooter>
         </form>

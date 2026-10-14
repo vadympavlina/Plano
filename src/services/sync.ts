@@ -59,10 +59,10 @@ export function describeError(error: unknown): string {
   const code = e?.code ?? '';
   const msg = e?.message ?? String(error);
   if (code.includes('PERMISSION_DENIED') || /permission[_ ]denied/i.test(msg)) {
-    return 'Permission denied by the database rules.';
+    return 'Доступ заборонено правилами бази даних.';
   }
-  if (/network|offline|unavailable/i.test(msg)) return 'Network error. Check your connection.';
-  return msg || 'Unknown error';
+  if (/network|offline|unavailable/i.test(msg)) return 'Помилка мережі. Перевірте з’єднання.';
+  return msg || 'Невідома помилка';
 }
 
 /**

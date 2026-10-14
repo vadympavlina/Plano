@@ -64,16 +64,16 @@ function LayoutInner() {
           <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] text-xs text-ink sm:px-8">
             <Info className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span>
-              <strong className="font-semibold">Local preview.</strong> Data is stored only in this browser and is not synced. Configure Firebase to use Plano across devices.
+              <strong className="font-semibold">Локальний перегляд.</strong> Дані зберігаються лише в цьому браузері й не синхронізуються. Налаштуйте Firebase, щоб користуватися Plano на всіх пристроях.
             </span>
           </div>
         )}
         <AppHeader />
         <main className="min-w-0 flex-1 pb-[calc(84px+env(safe-area-inset-bottom))] pl-safe pr-safe lg:pb-10">
           {error && !ready ? (
-            <ErrorState title="Could not load your data" message={error} onRetry={() => window.location.reload()} />
+            <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
           ) : !ready ? (
-            <LoadingState label="Loading your data…" className="py-32" />
+            <LoadingState label="Завантажуємо ваші дані…" className="py-32" />
           ) : (
             <ErrorBoundary resetKey={pathname}>
               <Outlet />

@@ -24,11 +24,11 @@ import {
 } from './logic';
 
 const FILTERS: { value: TaskFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'today', label: 'Today' },
-  { value: 'upcoming', label: 'Upcoming' },
-  { value: 'overdue', label: 'Overdue' },
-  { value: 'completed', label: 'Completed' },
+  { value: 'all', label: 'Усі' },
+  { value: 'today', label: 'Сьогодні' },
+  { value: 'upcoming', label: 'Майбутні' },
+  { value: 'overdue', label: 'Прострочені' },
+  { value: 'completed', label: 'Виконані' },
 ];
 
 const PREFS_KEY = 'plano:tasks-view';
@@ -79,13 +79,13 @@ export default function TasksPage() {
 
   const groupInfo = (key: string) => {
     if (key === 'all') return { name: '', color: undefined };
-    if (key === 'none') return { name: prefs.group === 'category' ? 'No category' : 'No project', color: '#9AA2B2' };
+    if (key === 'none') return { name: prefs.group === 'category' ? 'Без категорії' : 'Без проєкту', color: '#9AA2B2' };
     if (prefs.group === 'category') {
       const c = categoryById(key);
-      return { name: c?.name ?? 'Unknown category', color: colorOf(c?.color) };
+      return { name: c?.name ?? 'Невідома категорія', color: colorOf(c?.color) };
     }
     const p = projectById(key);
-    return { name: p?.name ?? 'Unknown project', color: colorOf(p?.color) };
+    return { name: p?.name ?? 'Невідомий проєкт', color: colorOf(p?.color) };
   };
 
   const defaultsForFilter = () => (filter === 'today' ? { dueDate: today } : {});
@@ -93,11 +93,11 @@ export default function TasksPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Tasks"
-        subtitle={`${counts.all} open · ${counts.today} today${counts.overdue ? ` · ${counts.overdue} overdue` : ''}`}
+        title="Задачі"
+        subtitle={`Відкритих: ${counts.all} · на сьогодні: ${counts.today}${counts.overdue ? ` · прострочених: ${counts.overdue}` : ''}`}
         actions={
           <Button variant="dark" onClick={() => openTaskForm({ defaults: defaultsForFilter() })}>
-            <Plus className="h-4 w-4" /> Add task
+            <Plus className="h-4 w-4" /> Додати задачу
           </Button>
         }
       />
@@ -106,7 +106,7 @@ export default function TasksPage() {
         <div className="space-y-3 border-b border-line p-3 sm:p-4">
           <div className="no-scrollbar -mx-1 overflow-x-auto px-1">
             <Segmented
-              ariaLabel="Filter tasks"
+              ariaLabel="Фільтр задач"
               value={filter}
               onChange={(v) => setParams(v === 'all' ? {} : { filter: v }, { replace: true })}
               options={FILTERS.map((f) => ({ ...f, count: counts[f.value] }))}
@@ -118,14 +118,14 @@ export default function TasksPage() {
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search tasks"
-                aria-label="Search tasks"
+                placeholder="Пошук задач"
+                aria-label="Пошук задач"
                 className="h-9 pl-9"
               />
               {query && (
                 <button
                   type="button"
-                  aria-label="Clear search"
+                  aria-label="Очистити пошук"
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-subtle hover:text-ink"
                   onClick={() => setQuery('')}
                 >
@@ -133,26 +133,26 @@ export default function TasksPage() {
                 </button>
               )}
             </div>
-            <Select aria-label="Category" className="h-9 w-auto text-[13px]" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-              <option value="">All categories</option>
+            <Select aria-label="Категорія" className="h-9 w-auto text-[13px]" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <option value="">Усі категорії</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
               ))}
-              <option value="none">No category</option>
+              <option value="none">Без категорії</option>
             </Select>
-            <Select aria-label="Sort by" className="h-9 w-auto text-[13px]" value={prefs.sort} onChange={(e) => updatePrefs({ sort: e.target.value as TaskSort })}>
-              <option value="due">Sort: Due date</option>
-              <option value="priority">Sort: Priority</option>
-              <option value="created">Sort: Newest</option>
-              <option value="title">Sort: Title</option>
+            <Select aria-label="Сортування" className="h-9 w-auto text-[13px]" value={prefs.sort} onChange={(e) => updatePrefs({ sort: e.target.value as TaskSort })}>
+              <option value="due">За терміном</option>
+              <option value="priority">За пріоритетом</option>
+              <option value="created">Спершу нові</option>
+              <option value="title">За назвою</option>
             </Select>
             {filter !== 'completed' && (
-              <Select aria-label="Group by" className="h-9 w-auto text-[13px]" value={prefs.group} onChange={(e) => updatePrefs({ group: e.target.value as TaskGrouping })}>
-                <option value="category">Group: Category</option>
-                <option value="project">Group: Project</option>
-                <option value="none">No grouping</option>
+              <Select aria-label="Групування" className="h-9 w-auto text-[13px]" value={prefs.group} onChange={(e) => updatePrefs({ group: e.target.value as TaskGrouping })}>
+                <option value="category">Групувати: категорії</option>
+                <option value="project">Групувати: проєкти</option>
+                <option value="none">Без групування</option>
               </Select>
             )}
           </div>
@@ -164,22 +164,22 @@ export default function TasksPage() {
               icon={<CheckSquare />}
               title={
                 query || categoryFilter
-                  ? 'No matching tasks'
+                  ? 'Нічого не знайдено'
                   : filter === 'completed'
-                    ? 'No completed tasks yet'
+                    ? 'Виконаних задач поки немає'
                     : filter === 'overdue'
-                      ? 'Nothing overdue'
+                      ? 'Нічого не прострочено'
                       : filter === 'today'
-                        ? 'Nothing planned for today'
-                        : 'No tasks here'
+                        ? 'На сьогодні нічого не заплановано'
+                        : 'Тут поки немає задач'
               }
-              description={query ? 'Try a different search.' : filter === 'overdue' ? 'You are all caught up.' : undefined}
+              description={query ? 'Спробуйте інший запит.' : filter === 'overdue' ? 'Усе під контролем.' : undefined}
               action={
                 !query &&
                 filter !== 'completed' &&
                 filter !== 'overdue' && (
                   <Button variant="outline" size="sm" onClick={() => openTaskForm({ defaults: defaultsForFilter() })}>
-                    <Plus className="h-3.5 w-3.5" /> Add task
+                    <Plus className="h-3.5 w-3.5" /> Додати задачу
                   </Button>
                 )
               }

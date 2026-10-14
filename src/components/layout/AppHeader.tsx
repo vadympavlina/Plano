@@ -33,20 +33,20 @@ export function AppHeader() {
             type="button"
             onClick={openSearch}
             className="hidden h-10 w-[280px] items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm text-subtle transition-colors hover:border-subtle/50 md:flex"
-            aria-label="Search"
+            aria-label="Пошук"
           >
             <Search className="h-4 w-4" />
-            <span className="flex-1 text-left">Search anything…</span>
+            <span className="flex-1 text-left">Пошук…</span>
             <Kbd>{isMac ? '⌘' : 'Ctrl'} K</Kbd>
           </button>
-          <Button variant="ghost" size="icon" className="md:hidden" aria-label="Search" onClick={openSearch}>
+          <Button variant="ghost" size="icon" className="md:hidden" aria-label="Пошук" onClick={openSearch}>
             <Search className="h-5 w-5" />
           </Button>
           <div className="hidden lg:block">
             <CreateMenu
               trigger={
-                <Button variant="dark" size="md" aria-label="Create new">
-                  <Plus className="h-4 w-4" /> New
+                <Button variant="dark" size="md" aria-label="Створити">
+                  <Plus className="h-4 w-4" /> Створити
                 </Button>
               }
             />
@@ -54,7 +54,7 @@ export function AppHeader() {
           <div className="lg:hidden">
             <UserMenu
               trigger={
-                <button type="button" aria-label="Account menu" className="relative rounded-full">
+                <button type="button" aria-label="Меню акаунта" className="relative rounded-full">
                   <Avatar name={profile.name} src={profile.avatarUrl} />
                 </button>
               }

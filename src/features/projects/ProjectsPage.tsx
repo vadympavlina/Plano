@@ -34,22 +34,22 @@ export default function ProjectsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Projects"
-        subtitle="Bigger areas of work, with progress from their tasks."
+        title="Проєкти"
+        subtitle="Великі напрями роботи з прогресом за їхніми задачами."
         actions={
           <Button variant="dark" onClick={() => setCreating(true)}>
-            <Plus className="h-4 w-4" /> New project
+            <Plus className="h-4 w-4" /> Новий проєкт
           </Button>
         }
       />
       <div className="no-scrollbar mb-4 overflow-x-auto">
         <Segmented
-          ariaLabel="Filter projects"
+          ariaLabel="Фільтр проєктів"
           value={filter}
           onChange={setFilter}
           options={(['active', 'on_hold', 'completed', 'archived', 'all'] as Filter[]).map((v) => ({
             value: v,
-            label: v === 'all' ? 'All' : PROJECT_STATUS_LABEL[v],
+            label: v === 'all' ? 'Усі' : PROJECT_STATUS_LABEL[v],
             count: counts[v] ?? 0,
           }))}
         />
@@ -58,11 +58,11 @@ export default function ProjectsPage() {
         <div className="card">
           <EmptyState
             icon={<FolderKanban />}
-            title={projects.length ? 'No projects with this status' : 'No projects yet'}
-            description="Projects group related tasks, notes and goals — like Work, Health or a side project."
+            title={projects.length ? 'Немає проєктів із цим статусом' : 'Проєктів поки немає'}
+            description="Проєкти об’єднують пов’язані задачі, нотатки й цілі — наприклад, Робота, Здоров’я чи власний проєкт."
             action={
               <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
-                <Plus className="h-3.5 w-3.5" /> Create project
+                <Plus className="h-3.5 w-3.5" /> Створити проєкт
               </Button>
             }
           />
@@ -80,27 +80,27 @@ export default function ProjectsPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-[15px] font-semibold tracking-tight">{p.name}</h3>
-                    <p className="mt-0.5 line-clamp-2 text-[13px] text-muted">{p.description || 'No description'}</p>
+                    <p className="mt-0.5 line-clamp-2 text-[13px] text-muted">{p.description || 'Без опису'}</p>
                   </div>
                   {p.status !== 'active' && <Badge>{PROJECT_STATUS_LABEL[p.status]}</Badge>}
                 </div>
                 <div className="mt-5">
                   <div className="mb-1.5 flex justify-between text-xs text-muted">
                     <span>
-                      {prog.done}/{prog.total} tasks
+                      {prog.done}/{prog.total} задач
                     </span>
                     <span className="font-medium tabular-nums text-ink">{prog.percent}%</span>
                   </div>
-                  <Progress value={prog.percent} color={color} label={`${p.name} progress`} />
+                  <Progress value={prog.percent} color={color} label={`Прогрес: ${p.name}`} />
                 </div>
                 <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
                   {prog.nextDeadline && (
                     <span className="inline-flex items-center gap-1">
-                      <CalendarClock className="h-3.5 w-3.5" /> Next: {relativeDayLabel(prog.nextDeadline, today)}
+                      <CalendarClock className="h-3.5 w-3.5" /> Далі: {relativeDayLabel(prog.nextDeadline, today)}
                     </span>
                   )}
-                  {prog.overdue > 0 && <span className="text-danger">{prog.overdue} overdue</span>}
-                  {p.targetDate && <span>Target {formatDateKey(p.targetDate, 'MMM d, yyyy')}</span>}
+                  {prog.overdue > 0 && <span className="text-danger">прострочено: {prog.overdue}</span>}
+                  {p.targetDate && <span>Мета до {formatDateKey(p.targetDate, 'd MMM yyyy')}</span>}
                 </div>
               </Link>
             );

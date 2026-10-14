@@ -7,20 +7,20 @@ export function useSyncSummary() {
   const sync = useSyncState();
   const { backendKind, error } = useData();
   if (backendKind === 'local')
-    return { tone: 'muted', icon: HardDrive, label: 'Saved in this browser', detail: 'Preview mode — not synced' } as const;
-  if (error) return { tone: 'danger', icon: AlertCircle, label: 'Sync error', detail: error } as const;
+    return { tone: 'muted', icon: HardDrive, label: 'Збережено локально', detail: 'Режим перегляду — дані лише в цьому браузері, без синхронізації' } as const;
+  if (error) return { tone: 'danger', icon: AlertCircle, label: 'Помилка синхронізації', detail: error } as const;
   if (!sync.connected)
     return {
       tone: 'warning',
       icon: CloudOff,
-      label: sync.pending ? `Offline · ${sync.pending} pending` : 'Offline',
+      label: sync.pending ? `Офлайн · ${sync.pending} в черзі` : 'Офлайн',
       detail: sync.pending
-        ? 'Changes are kept in memory and will be sent when the connection returns. Keep the app open.'
-        : 'Reconnecting… Data shown may be out of date.',
+        ? 'Зміни збережено в пам’яті й буде надіслано, коли з’явиться мережа. Не закривайте застосунок.'
+        : 'Перепідключення… Дані можуть бути неактуальні.',
     } as const;
-  if (sync.pending) return { tone: 'muted', icon: Loader2, label: 'Saving…', detail: `${sync.pending} change(s) in progress` } as const;
-  if (sync.lastError) return { tone: 'danger', icon: AlertCircle, label: 'Last save failed', detail: sync.lastError } as const;
-  return { tone: 'success', icon: Check, label: 'All changes synced', detail: 'Connected to Firebase' } as const;
+  if (sync.pending) return { tone: 'muted', icon: Loader2, label: 'Збереження…', detail: `Змін у процесі: ${sync.pending}` } as const;
+  if (sync.lastError) return { tone: 'danger', icon: AlertCircle, label: 'Останнє збереження не вдалося', detail: sync.lastError } as const;
+  return { tone: 'success', icon: Check, label: 'Усе синхронізовано', detail: 'Підключено до Firebase' } as const;
 }
 
 export function SyncIndicator({ variant = 'sidebar', collapsed }: { variant?: 'sidebar' | 'header'; collapsed?: boolean }) {

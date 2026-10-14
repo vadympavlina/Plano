@@ -18,7 +18,7 @@ export function createFirebaseBackend(): Backend {
     remove: (path) => remove(ref(db, path)),
     newId() {
       const key = push(child(ref(db), 'ids')).key;
-      if (!key) throw new Error('Could not generate id');
+      if (!key) throw new Error('Не вдалося згенерувати id');
       return key;
     },
     onConnectionChange(cb) {

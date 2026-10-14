@@ -24,7 +24,7 @@ let auth: Auth | null = null;
 let db: Database | null = null;
 
 function ensureApp(): FirebaseApp {
-  if (!isFirebaseConfigured) throw new Error('Firebase is not configured. See README → Firebase setup.');
+  if (!isFirebaseConfigured) throw new Error('Firebase не налаштовано. Див. README → Налаштування Firebase.');
   if (!app) app = initializeApp(options);
   return app;
 }

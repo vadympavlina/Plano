@@ -25,11 +25,11 @@ export function useFormDialog<T>(initial: T, onClose: () => void) {
       setSubmitError(null);
       try {
         const result = await settleWrite(write());
-        if (result === 'queued') toast.info('Saved on this device', { description: 'It will sync when you are back online.' });
+        if (result === 'queued') toast.info('Збережено на цьому пристрої', { description: 'Синхронізується, щойно з’явиться мережа.' });
         else if (successMessage) toast.success(successMessage);
         onClose();
       } catch (e) {
-        setSubmitError((e as Error).message || 'Could not save. Please try again.');
+        setSubmitError((e as Error).message || 'Не вдалося зберегти. Спробуйте ще раз.');
       } finally {
         inFlight.current = false;
         setSaving(false);

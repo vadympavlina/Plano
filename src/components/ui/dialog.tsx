@@ -65,13 +65,13 @@ export function DialogContent({
             {description ? (
               <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description>
             ) : (
-              <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Dialog'}</DialogPrimitive.Description>
+              <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Діалог'}</DialogPrimitive.Description>
             )}
           </div>
           {headerActions}
           <DialogPrimitive.Close
             className="-mr-1 rounded-lg p-1.5 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
-            aria-label="Close"
+            aria-label="Закрити"
           >
             <X className="h-4 w-4" />
           </DialogPrimitive.Close>
@@ -121,13 +121,13 @@ export function SheetContent({
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line md:hidden" aria-hidden />
         <div className="flex items-center gap-1 px-4 pb-1 pt-3 md:pt-4">
           <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">Details</DialogPrimitive.Description>
+          <DialogPrimitive.Description className="sr-only">Деталі</DialogPrimitive.Description>
           <DialogPrimitive.Close
             className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-            aria-label="Close"
+            aria-label="Закрити"
           >
             <X className="h-4 w-4" />
-            <span>Close</span>
+            <span>Закрити</span>
           </DialogPrimitive.Close>
           <div className="ml-auto flex items-center gap-1">{headerActions}</div>
         </div>

@@ -16,7 +16,7 @@ import { useToday } from '@/hooks/useNow';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 import { settleWrite } from '@/services/sync';
 import { colorOf } from '@/lib/utils/colors';
-import { diffDaysKey, formatDateKey } from '@/lib/date';
+import { diffDaysKey, formatDateKey, plural } from '@/lib/date';
 import type { Goal } from '@/types';
 import { GOAL_STATUS_LABEL, PACE_LABEL, goalPace, goalPercent } from './logic';
 import { GoalForm } from './GoalForm';
@@ -37,7 +37,7 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
     setBusy(true);
     try {
       await settleWrite(actions.goals.logProgress(goal, num, note.trim()));
-      toast.success(num >= goal.targetValue ? 'Goal reached 🎉' : 'Progress saved');
+      toast.success(num >= goal.targetValue ? 'Ціль досягнуто 🎉' : 'Прогрес збережено');
       onClose();
     } catch {
       setBusy(false);
@@ -46,21 +46,21 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title="Update progress" description={goal.title} size="sm">
+      <DialogContent title="Оновити прогрес" description={goal.title} size="sm">
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="flex items-end gap-2">
-            <Field label={`Current value${goal.unit ? ` (${goal.unit})` : ''}`} error={invalid ? 'Enter 0 or more.' : undefined} className="flex-1">
+            <Field label={`Поточне значення${goal.unit ? ` (${goal.unit})` : ''}`} error={invalid ? 'Введіть 0 або більше.' : undefined} className="flex-1">
               {(p) => <Input {...p} type="number" min={0} step="any" autoFocus value={value} onChange={(e) => setValue(e.target.value)} />}
             </Field>
             <Button variant="outline" onClick={() => setValue(String((Number(value) || 0) + 1))}>+1</Button>
           </div>
-          <p className="text-xs text-muted">Target: {goal.targetValue} {goal.unit}</p>
-          <Field label="Note (optional)">
-            {(p) => <Input {...p} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What changed?" />}
+          <p className="text-xs text-muted">Мета: {goal.targetValue} {goal.unit}</p>
+          <Field label="Нотатка (необов’язково)">
+            {(p) => <Input {...p} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Що змінилося?" />}
           </Field>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" variant="dark" loading={busy} disabled={invalid}>Save</Button>
+            <Button variant="outline" onClick={onClose}>Скасувати</Button>
+            <Button type="submit" variant="dark" loading={busy} disabled={invalid}>Зберегти</Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -81,8 +81,8 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
   const daysLeft = goal.targetDate ? diffDaysKey(goal.targetDate, today) : null;
 
   const remove = async () => {
-    const ok = await confirm({ title: 'Delete goal?', description: `“${goal.title}” and its progress history will be deleted.`, confirmLabel: 'Delete', danger: true });
-    if (ok) await actions.goals.remove(goal.id).then(() => toast.success('Goal deleted'), () => undefined);
+    const ok = await confirm({ title: 'Видалити ціль?', description: `«${goal.title}» та історію прогресу буде видалено.`, confirmLabel: 'Видалити', danger: true });
+    if (ok) await actions.goals.remove(goal.id).then(() => toast.success('Ціль видалено'), () => undefined);
   };
 
   return (
@@ -97,13 +97,13 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
           {goal.description && <p className="mt-1 line-clamp-2 text-[13px] text-muted">{goal.description}</p>}
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-lg p-1.5 text-subtle hover:bg-surface-2 hover:text-ink" aria-label={`Actions for ${goal.title}`}>
+          <DropdownMenuTrigger className="rounded-lg p-1.5 text-subtle hover:bg-surface-2 hover:text-ink" aria-label={`Дії для «${goal.title}»`}>
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem icon={<Pencil />} onSelect={onEdit}>Edit</DropdownMenuItem>
+            <DropdownMenuItem icon={<Pencil />} onSelect={onEdit}>Редагувати</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem icon={<Trash2 />} danger onSelect={() => void remove()}>Delete</DropdownMenuItem>
+            <DropdownMenuItem icon={<Trash2 />} danger onSelect={() => void remove()}>Видалити</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -120,7 +120,7 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
           <span className="inline-flex items-center gap-1">
             <CalendarClock className="h-3.5 w-3.5" />
             {formatDateKey(goal.targetDate, settings.dateFormat)}
-            {daysLeft != null && daysLeft >= 0 && ` · ${daysLeft} days left`}
+            {daysLeft != null && daysLeft >= 0 && ` · залишилось ${daysLeft} ${plural(daysLeft, ['день', 'дні', 'днів'])}`}
           </span>
         )}
         {goal.projectIds.map((id) => projectById(id)).filter(Boolean).map((p) => <span key={p!.id}>{p!.name}</span>)}
@@ -128,12 +128,12 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
       <div className="mt-auto flex items-center gap-2 pt-4">
         {goal.status === 'active' && (
           <Button size="sm" variant="dark" onClick={onProgress}>
-            <TrendingUp className="h-3.5 w-3.5" /> Update progress
+            <TrendingUp className="h-3.5 w-3.5" /> Оновити прогрес
           </Button>
         )}
         {goal.history.length > 0 && (
           <Button size="sm" variant="ghost" onClick={() => setShowHistory((s) => !s)} aria-expanded={showHistory}>
-            History ({goal.history.length})
+            Історія ({goal.history.length})
           </Button>
         )}
       </div>
@@ -141,7 +141,7 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
         <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto border-t border-line pt-3 text-xs scrollbar-thin">
           {[...goal.history].reverse().map((h) => (
             <li key={h.id} className="flex justify-between gap-3">
-              <span className="text-muted">{new Date(h.date).toLocaleDateString()}{h.note ? ` · ${h.note}` : ''}</span>
+              <span className="text-muted">{new Date(h.date).toLocaleDateString('uk-UA')}{h.note ? ` · ${h.note}` : ''}</span>
               <span className="font-medium tabular-nums">{h.value} {goal.unit}</span>
             </li>
           ))}
@@ -165,11 +165,11 @@ export default function GoalsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Goals"
-        subtitle="Long-term outcomes with measurable progress."
+        title="Цілі"
+        subtitle="Довгострокові результати з вимірюваним прогресом."
         actions={
           <Button variant="dark" onClick={() => setEditing('new')}>
-            <Plus className="h-4 w-4" /> New goal
+            <Plus className="h-4 w-4" /> Нова ціль
           </Button>
         }
       />
@@ -178,20 +178,20 @@ export default function GoalsPage() {
         value={filter}
         onChange={setFilter}
         options={[
-          { value: 'active', label: 'Active', count: goals.filter((g) => g.status === 'active').length },
-          { value: 'completed', label: 'Completed', count: goals.filter((g) => g.status === 'completed').length },
-          { value: 'other', label: 'Paused', count: goals.filter((g) => g.status === 'paused' || g.status === 'abandoned').length },
+          { value: 'active', label: 'Активні', count: goals.filter((g) => g.status === 'active').length },
+          { value: 'completed', label: 'Досягнуті', count: goals.filter((g) => g.status === 'completed').length },
+          { value: 'other', label: 'На паузі', count: goals.filter((g) => g.status === 'paused' || g.status === 'abandoned').length },
         ]}
       />
       {list.length === 0 ? (
         <div className="card">
           <EmptyState
             icon={<Target />}
-            title={goals.length ? 'No goals here' : 'No goals yet'}
-            description="For example: Read 12 books this year, finish a personal project, or improve a skill."
+            title={goals.length ? 'Тут цілей немає' : 'Цілей поки немає'}
+            description="Наприклад: прочитати 12 книжок цього року, завершити власний проєкт або прокачати навичку."
             action={
               <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
-                <Plus className="h-3.5 w-3.5" /> Create goal
+                <Plus className="h-3.5 w-3.5" /> Створити ціль
               </Button>
             }
           />

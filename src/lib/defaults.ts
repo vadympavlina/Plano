@@ -4,16 +4,16 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'light',
   weekStartsOn: 1,
   timeFormat: '24h',
-  dateFormat: 'MMM d, yyyy',
+  dateFormat: 'd MMM yyyy',
   defaultCalendarView: 'week',
   showHabitStreakOnDashboard: true,
 };
 
 const STARTER: [string, string, ColorKey][] = [
-  ['cat_work', 'Work', 'blue'],
-  ['cat_personal', 'Personal', 'purple'],
-  ['cat_health', 'Health', 'green'],
-  ['cat_study', 'Study', 'orange'],
+  ['cat_work', 'Робота', 'blue'],
+  ['cat_personal', 'Особисте', 'purple'],
+  ['cat_health', 'Здоров’я', 'green'],
+  ['cat_study', 'Навчання', 'orange'],
 ];
 
 /** Starter categories, written once on first sign-in. Fixed ids keep it idempotent. */

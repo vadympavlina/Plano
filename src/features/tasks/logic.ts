@@ -9,17 +9,17 @@ export type TaskGrouping = 'category' | 'project' | 'none';
 export const PRIORITY_RANK: Record<Priority, number> = { urgent: 0, high: 1, medium: 2, low: 3 };
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
-  low: 'Low',
-  medium: 'Medium',
-  high: 'High',
-  urgent: 'Urgent',
+  low: 'Низький',
+  medium: 'Середній',
+  high: 'Високий',
+  urgent: 'Терміновий',
 };
 
 export const STATUS_LABEL: Record<TaskStatus, string> = {
-  todo: 'To do',
-  in_progress: 'In progress',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
+  todo: 'До виконання',
+  in_progress: 'У процесі',
+  completed: 'Виконано',
+  cancelled: 'Скасовано',
 };
 
 export function isOpen(task: Task): boolean {

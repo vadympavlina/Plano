@@ -42,7 +42,7 @@ export function MobileNav() {
   return (
     <>
       <nav
-        aria-label="Main navigation"
+        aria-label="Головна навігація"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-safe backdrop-blur-md lg:hidden"
       >
         <div className="mx-auto flex h-[60px] max-w-lg items-stretch px-2">
@@ -54,7 +54,7 @@ export function MobileNav() {
               trigger={
                 <button
                   type="button"
-                  aria-label="Create new"
+                  aria-label="Створити"
                   className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-surface shadow-pop transition-transform active:scale-95"
                 >
                   <Plus className="h-6 w-6" />
@@ -70,7 +70,7 @@ export function MobileNav() {
             aria-haspopup="dialog"
           >
             <MoreHorizontal className="h-[22px] w-[22px]" />
-            More
+            Більше
           </button>
         </div>
       </nav>
@@ -79,8 +79,8 @@ export function MobileNav() {
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#0b0f17]/40 data-[state=open]:animate-fade-in" />
           <DialogPrimitive.Content className="fixed inset-x-0 bottom-0 z-50 rounded-t-[22px] border-t border-line bg-surface pb-safe shadow-pop data-[state=open]:animate-slide-up">
-            <DialogPrimitive.Title className="sr-only">More</DialogPrimitive.Title>
-            <DialogPrimitive.Description className="sr-only">More sections</DialogPrimitive.Description>
+            <DialogPrimitive.Title className="sr-only">Більше</DialogPrimitive.Title>
+            <DialogPrimitive.Description className="sr-only">Інші розділи</DialogPrimitive.Description>
             <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line" />
             <div className="grid grid-cols-3 gap-2 p-4">
               {MORE.map(({ to, label, icon: Icon }) => (
@@ -112,7 +112,7 @@ export function MobileNav() {
                 className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-surface-2"
               >
                 <LogOut className="h-4 w-4" />
-                {profile.mode === 'preview' ? 'Exit preview' : 'Sign out'}
+                {profile.mode === 'preview' ? 'Вийти з перегляду' : 'Вийти'}
               </button>
             </div>
           </DialogPrimitive.Content>

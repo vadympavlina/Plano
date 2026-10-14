@@ -78,9 +78,9 @@ export function totalCompletions(habit: Habit, logs: HabitLogs): number {
 
 export function describeSchedule(schedule: number[]): string {
   const s = [...schedule].sort();
-  if (s.length === 7) return 'Every day';
-  if (s.length === 5 && [1, 2, 3, 4, 5].every((d) => s.includes(d))) return 'Weekdays';
-  if (s.length === 2 && s.includes(0) && s.includes(6)) return 'Weekends';
-  const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  if (s.length === 7) return 'Щодня';
+  if (s.length === 5 && [1, 2, 3, 4, 5].every((d) => s.includes(d))) return 'Будні';
+  if (s.length === 2 && s.includes(0) && s.includes(6)) return 'Вихідні';
+  const names = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   return [...s].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => names[d]).join(', ');
 }

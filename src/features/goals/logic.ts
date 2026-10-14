@@ -2,10 +2,10 @@ import { diffDaysKey } from '@/lib/date';
 import type { DateKey, Goal, GoalStatus } from '@/types';
 
 export const GOAL_STATUS_LABEL: Record<GoalStatus, string> = {
-  active: 'Active',
-  completed: 'Completed',
-  paused: 'Paused',
-  abandoned: 'Abandoned',
+  active: 'Активна',
+  completed: 'Досягнута',
+  paused: 'На паузі',
+  abandoned: 'Відкладена',
 };
 
 export function goalPercent(goal: Goal): number {
@@ -31,10 +31,10 @@ export function goalPace(goal: Goal, today: DateKey): Pace {
 }
 
 export const PACE_LABEL: Record<Pace, string> = {
-  done: 'Reached',
-  ahead: 'Ahead',
-  on_track: 'On track',
-  behind: 'Behind',
-  overdue: 'Past due',
-  no_deadline: 'No deadline',
+  done: 'Досягнуто',
+  ahead: 'Випереджаєте',
+  on_track: 'За планом',
+  behind: 'Відстаєте',
+  overdue: 'Термін минув',
+  no_deadline: 'Без дедлайну',
 };

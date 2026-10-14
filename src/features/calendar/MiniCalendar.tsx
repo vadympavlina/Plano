@@ -28,18 +28,18 @@ export function MiniCalendar({
   }
   const month = `${cursor}-01`;
   const days = useMemo(() => monthGrid(month, weekStartsOn), [month, weekStartsOn]);
-  const labels = weekdayLabels(weekStartsOn, 'narrow');
+  const labels = weekdayLabels(weekStartsOn);
   const shift = (n: number) => setCursor(toDateKey(addMonths(fromDateKey(month), n)).slice(0, 7));
 
   return (
     <div className="select-none">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-semibold">{formatDateKey(month, 'MMMM yyyy')}</p>
+        <p className="text-sm font-semibold">{formatDateKey(month, 'LLLL yyyy')}</p>
         <div className="flex">
-          <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Previous month" onClick={() => shift(-1)}>
+          <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Попередній місяць" onClick={() => shift(-1)}>
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Next month" onClick={() => shift(1)}>
+          <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Наступний місяць" onClick={() => shift(1)}>
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -51,7 +51,7 @@ export function MiniCalendar({
           </span>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-y-0.5 text-center" role="grid" aria-label={formatDateKey(month, 'MMMM yyyy')}>
+      <div className="grid grid-cols-7 gap-y-0.5 text-center" role="grid" aria-label={formatDateKey(month, 'LLLL yyyy')}>
         {days.map((d) => {
           const inMonth = d.startsWith(cursor);
           const isSel = d === selected;
@@ -63,7 +63,7 @@ export function MiniCalendar({
               type="button"
               role="gridcell"
               aria-selected={isSel}
-              aria-label={formatDateKey(d, 'EEEE, MMMM d')}
+              aria-label={formatDateKey(d, 'EEEE, d MMMM')}
               onClick={() => onSelect(d)}
               className={cn(
                 'relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums transition-colors',

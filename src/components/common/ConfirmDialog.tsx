@@ -60,7 +60,7 @@ export function ConfirmDialogHost() {
           {current.typeToConfirm && (
             <div className="mt-2">
               <label className="mb-1.5 block text-[13px] text-muted">
-                Type <span className="font-semibold text-ink">{current.typeToConfirm}</span> to confirm
+                Введіть <span className="font-semibold text-ink">{current.typeToConfirm}</span> для підтвердження
               </label>
               <Input value={typed} onChange={(e) => setTyped(e.target.value)} autoFocus autoComplete="off" />
             </div>
@@ -73,7 +73,7 @@ export function ConfirmDialogHost() {
                 close(false);
               }}
             >
-              {current.cancelLabel ?? 'Cancel'}
+              {current.cancelLabel ?? 'Скасувати'}
             </Button>
             <Button
               variant={current.danger ? 'danger' : 'dark'}
@@ -84,7 +84,7 @@ export function ConfirmDialogHost() {
                 close(true);
               }}
             >
-              {current.confirmLabel ?? 'Confirm'}
+              {current.confirmLabel ?? 'Підтвердити'}
             </Button>
           </DialogFooter>
         </DialogContent>

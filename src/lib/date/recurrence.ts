@@ -1,6 +1,6 @@
 import { addMonths, addYears, differenceInCalendarDays, startOfWeek } from 'date-fns';
 import type { DateKey, RecurrenceRule } from '@/types';
-import { addDaysKey, fromDateKey, toDateKey } from './index';
+import { addDaysKey, formatDateKey, fromDateKey, plural, toDateKey } from './index';
 
 const MAX_LOOKAHEAD_DAYS = 366 * 5;
 
@@ -76,32 +76,32 @@ export function nextOccurrence(rule: RecurrenceRule, startKey: DateKey, afterKey
   return null;
 }
 
-const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_NAMES = ['нд', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 
 export function describeRecurrence(rule: RecurrenceRule | undefined): string {
-  if (!rule) return 'Does not repeat';
+  if (!rule) return 'Не повторюється';
   const n = Math.max(1, rule.interval);
   let text: string;
   switch (rule.freq) {
     case 'daily':
-      text = n === 1 ? 'Every day' : `Every ${n} days`;
+      text = n === 1 ? 'Щодня' : `Кожні ${n} ${plural(n, ['день', 'дні', 'днів'])}`;
       break;
     case 'weekly': {
       const days = rule.byWeekday && rule.byWeekday.length > 0 ? rule.byWeekday : null;
-      const base = n === 1 ? 'Weekly' : `Every ${n} weeks`;
+      const base = n === 1 ? 'Щотижня' : `Кожні ${n} ${plural(n, ['тиждень', 'тижні', 'тижнів'])}`;
       if (days && days.length === 5 && [1, 2, 3, 4, 5].every((d) => days.includes(d))) {
-        text = n === 1 ? 'Every weekday' : `${base} on weekdays`;
+        text = n === 1 ? 'Щобудня' : `${base} у будні`;
       } else if (days) {
-        text = `${base} on ${[...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => WEEKDAY_NAMES[d]).join(', ')}`;
+        text = `${base}: ${[...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => WEEKDAY_NAMES[d]).join(', ')}`;
       } else text = base;
       break;
     }
     case 'monthly':
-      text = n === 1 ? 'Monthly' : `Every ${n} months`;
+      text = n === 1 ? 'Щомісяця' : `Кожні ${n} ${plural(n, ['місяць', 'місяці', 'місяців'])}`;
       break;
     case 'yearly':
-      text = n === 1 ? 'Yearly' : `Every ${n} years`;
+      text = n === 1 ? 'Щороку' : `Кожні ${n} ${plural(n, ['рік', 'роки', 'років'])}`;
       break;
   }
-  return rule.until ? `${text} until ${rule.until}` : text;
+  return rule.until ? `${text} до ${formatDateKey(rule.until, 'd MMM yyyy')}` : text;
 }

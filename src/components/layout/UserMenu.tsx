@@ -13,9 +13,9 @@ export function useSignOut() {
     const pending = getSyncState().pending;
     if (pending > 0) {
       const ok = await confirm({
-        title: 'Some changes are not synced yet',
-        description: `${pending} change(s) have not reached the server. Signing out now will lose them.`,
-        confirmLabel: 'Sign out anyway',
+        title: 'Частину змін ще не синхронізовано',
+        description: `Змін, що ще не дійшли до сервера: ${pending}. Якщо вийти зараз, їх буде втрачено.`,
+        confirmLabel: 'Все одно вийти',
         danger: true,
       });
       if (!ok) return;
@@ -33,19 +33,19 @@ export function UserMenu({ trigger, side = 'bottom' }: { trigger: ReactNode; sid
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent side={side} align="end" className="w-60">
         <DropdownMenuLabel className="pb-2">
-          <span className="block truncate text-sm font-semibold text-ink">{profile.name || 'Your profile'}</span>
-          <span className="block truncate font-normal">{profile.email ?? (profile.mode === 'preview' ? 'Local preview' : '')}</span>
+          <span className="block truncate text-sm font-semibold text-ink">{profile.name || 'Ваш профіль'}</span>
+          <span className="block truncate font-normal">{profile.email ?? (profile.mode === 'preview' ? 'Локальний перегляд' : '')}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem icon={<UserRound />} onSelect={() => navigate('/settings/profile')}>
-          Profile
+          Профіль
         </DropdownMenuItem>
         <DropdownMenuItem icon={<Settings />} onSelect={() => navigate('/settings')}>
-          Settings
+          Налаштування
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem icon={<LogOut />} onSelect={() => void signOut()}>
-          {profile.mode === 'preview' ? 'Exit preview' : 'Sign out'}
+          {profile.mode === 'preview' ? 'Вийти з перегляду' : 'Вийти'}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

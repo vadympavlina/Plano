@@ -60,16 +60,16 @@ export function describeAuthError(error: unknown): string {
     case 'auth/wrong-password':
     case 'auth/user-not-found':
     case 'auth/invalid-email':
-      return 'Email or password is incorrect.';
+      return 'Неправильна пошта або пароль.';
     case 'auth/too-many-requests':
-      return 'Too many attempts. Please wait a moment and try again.';
+      return 'Забагато спроб. Зачекайте трохи й спробуйте знову.';
     case 'auth/network-request-failed':
-      return 'Network error. Check your connection.';
+      return 'Помилка мережі. Перевірте з’єднання.';
     case 'auth/unauthorized-domain':
-      return 'This domain is not authorised in Firebase Authentication settings.';
+      return 'Цей домен не додано в Authorized domains у Firebase Authentication.';
     case 'auth/operation-not-allowed':
-      return 'This sign-in method is not enabled in Firebase.';
+      return 'Вхід за поштою й паролем не ввімкнено у Firebase.';
     default:
-      return (error as Error)?.message || 'Sign-in failed.';
+      return (error as Error)?.message || 'Не вдалося увійти.';
   }
 }

@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   addDaysKey,
   diffDaysKey,
+  formatDateKey,
   formatTime,
+  plural,
+  weekdayLabels,
   fromDateKey,
   greetingFor,
   isDateKey,
@@ -77,17 +80,26 @@ describe('times', () => {
 
 describe('labels', () => {
   it('relative day labels', () => {
-    expect(relativeDayLabel('2025-04-24', '2025-04-24')).toBe('Today');
-    expect(relativeDayLabel('2025-04-25', '2025-04-24')).toBe('Tomorrow');
-    expect(relativeDayLabel('2025-04-23', '2025-04-24')).toBe('Yesterday');
-    expect(relativeDayLabel('2025-04-27', '2025-04-24')).toBe('Sunday');
-    expect(relativeDayLabel('2025-05-10', '2025-04-24')).toBe('May 10');
+    expect(relativeDayLabel('2025-04-24', '2025-04-24')).toBe('Сьогодні');
+    expect(relativeDayLabel('2025-04-25', '2025-04-24')).toBe('Завтра');
+    expect(relativeDayLabel('2025-04-23', '2025-04-24')).toBe('Вчора');
+    expect(relativeDayLabel('2025-04-27', '2025-04-24')).toBe('Неділя');
+    expect(relativeDayLabel('2025-05-10', '2025-04-24')).toBe('10 трав.');
   });
 
   it('greets by local time of day', () => {
-    expect(greetingFor(new Date(2025, 0, 1, 8))).toBe('Good morning');
-    expect(greetingFor(new Date(2025, 0, 1, 14))).toBe('Good afternoon');
-    expect(greetingFor(new Date(2025, 0, 1, 20))).toBe('Good evening');
-    expect(greetingFor(new Date(2025, 0, 1, 2))).toBe('Good night');
+    expect(greetingFor(new Date(2025, 0, 1, 8))).toBe('Доброго ранку');
+    expect(greetingFor(new Date(2025, 0, 1, 14))).toBe('Доброго дня');
+    expect(greetingFor(new Date(2025, 0, 1, 20))).toBe('Доброго вечора');
+    expect(greetingFor(new Date(2025, 0, 1, 2))).toBe('Доброї ночі');
+  });
+
+  it('formats Ukrainian dates and plurals', () => {
+    expect(formatDateKey('2026-10-14', 'EEEE, d MMMM yyyy')).toBe('Середа, 14 жовтня 2026');
+    expect(formatDateKey('2026-10-14', 'LLLL yyyy')).toBe('Жовтень 2026');
+    expect(weekdayLabels(1)).toEqual(['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд']);
+    expect([1, 2, 5, 11, 21, 22, 25].map((n) => plural(n, ['день', 'дні', 'днів']))).toEqual([
+      'день', 'дні', 'днів', 'днів', 'день', 'дні', 'днів',
+    ]);
   });
 });

@@ -83,7 +83,7 @@ function ToastView({ t }: { t: ToastItem }) {
           {t.action.label}
         </button>
       )}
-      <button type="button" aria-label="Dismiss" className="shrink-0 rounded-md p-1 text-subtle hover:bg-surface-2 hover:text-ink" onClick={() => dismissToast(t.id)}>
+      <button type="button" aria-label="Закрити" className="shrink-0 rounded-md p-1 text-subtle hover:bg-surface-2 hover:text-ink" onClick={() => dismissToast(t.id)}>
         <X className="h-3.5 w-3.5" />
       </button>
     </div>

@@ -30,15 +30,15 @@ export const PRIORITY_COLOR: Record<Task['priority'], string> = {
 
 export async function deleteTaskWithConfirm(task: Task, remove: (id: string) => Promise<void>) {
   const ok = await confirm({
-    title: 'Delete task?',
-    description: `“${task.title}” will be permanently deleted.`,
-    confirmLabel: 'Delete',
+    title: 'Видалити задачу?',
+    description: `«${task.title}» буде видалено назавжди.`,
+    confirmLabel: 'Видалити',
     danger: true,
   });
   if (!ok) return false;
   try {
     await remove(task.id);
-    toast.success('Task deleted');
+    toast.success('Задачу видалено');
     return true;
   } catch {
     return false;
@@ -70,14 +70,14 @@ export const TaskItem = memo(function TaskItem({ task, showDate = true, showCate
   const toggle = (checked: boolean) => {
     void actions.tasks.setDone(task, checked).then(
       () => {
-        if (checked && task.recurrence) toast.success('Done — next one scheduled');
+        if (checked && task.recurrence) toast.success('Готово — наступну заплановано');
       },
       () => undefined,
     );
   };
 
   const move = (d: string | undefined, label: string) =>
-    void actions.tasks.reschedule(task, d).then(() => toast.success(`Moved to ${label}`), () => undefined);
+    void actions.tasks.reschedule(task, d).then(() => toast.success(`Перенесено: ${label}`), () => undefined);
 
   return (
     <div
@@ -87,14 +87,14 @@ export const TaskItem = memo(function TaskItem({ task, showDate = true, showCate
       )}
     >
       <div className="pt-[1px]">
-        <CheckCircle checked={done} onChange={toggle} label={`Mark “${task.title}” as ${done ? 'not done' : 'done'}`} disabled={cancelled} />
+        <CheckCircle checked={done} onChange={toggle} label={`Позначити «${task.title}» як ${done ? 'невиконану' : 'виконану'}`} disabled={cancelled} />
       </div>
       <button type="button" onClick={() => openTask(task.id)} className="min-w-0 flex-1 text-left">
         <div className="flex items-center gap-2">
           <span className={cn('truncate text-[13.5px] font-medium text-ink', (done || cancelled) && 'text-subtle line-through')}>
             {task.title}
           </span>
-          {task.recurrence && <Repeat className="h-3 w-3 shrink-0 text-subtle" aria-label="Repeats" />}
+          {task.recurrence && <Repeat className="h-3 w-3 shrink-0 text-subtle" aria-label="Повторюється" />}
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
           {showDate && date && (
@@ -109,14 +109,14 @@ export const TaskItem = memo(function TaskItem({ task, showDate = true, showCate
               {subDone}/{task.subtasks.length}
             </span>
           )}
-          {task.notes && <StickyNote className="h-3 w-3" aria-label="Has notes" />}
+          {task.notes && <StickyNote className="h-3 w-3" aria-label="Має нотатки" />}
           {showProject && project && (
             <span className="inline-flex items-center gap-1">
               <Dot color={colorOf(project.color)} className="h-1.5 w-1.5" />
               {project.name}
             </span>
           )}
-          {cancelled && <span>Cancelled</span>}
+          {cancelled && <span>Скасовано</span>}
         </div>
       </button>
       <div className="flex shrink-0 items-center gap-1.5 pt-[1px]">
@@ -131,42 +131,42 @@ export const TaskItem = memo(function TaskItem({ task, showDate = true, showCate
         <DropdownMenu>
           <DropdownMenuTrigger
             className="rounded-lg p-1 text-subtle opacity-100 transition-opacity hover:bg-line/60 hover:text-ink lg:opacity-0 lg:group-hover:opacity-100 lg:data-[state=open]:opacity-100"
-            aria-label={`Actions for ${task.title}`}
+            aria-label={`Дії для «${task.title}»`}
           >
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem icon={<Pencil />} onSelect={() => openTaskForm({ task })}>
-              Edit
+              Редагувати
             </DropdownMenuItem>
             <DropdownMenuItem
               icon={<Copy />}
               onSelect={() => {
                 const { id: _i, createdAt: _c, updatedAt: _u, completedAt: _d, seriesId: _s, seriesStart: _ss, ...rest } = task;
-                openTaskForm({ defaults: { ...rest, title: `${task.title} (copy)`, status: 'todo' } });
+                openTaskForm({ defaults: { ...rest, title: `${task.title} (копія)`, status: 'todo' } });
               }}
             >
-              Duplicate
+              Дублювати
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel>Move to</DropdownMenuLabel>
-            <DropdownMenuItem icon={<CalendarDays />} onSelect={() => move(today, 'today')}>
-              Today
+            <DropdownMenuLabel>Перенести на</DropdownMenuLabel>
+            <DropdownMenuItem icon={<CalendarDays />} onSelect={() => move(today, 'сьогодні')}>
+              Сьогодні
             </DropdownMenuItem>
-            <DropdownMenuItem icon={<CalendarClock />} onSelect={() => move(addDaysKey(today, 1), 'tomorrow')}>
-              Tomorrow
+            <DropdownMenuItem icon={<CalendarClock />} onSelect={() => move(addDaysKey(today, 1), 'завтра')}>
+              Завтра
             </DropdownMenuItem>
-            <DropdownMenuItem icon={<CalendarClock />} onSelect={() => move(addDaysKey(today, 7), 'next week')}>
-              Next week
+            <DropdownMenuItem icon={<CalendarClock />} onSelect={() => move(addDaysKey(today, 7), 'наступний тиждень')}>
+              Наступний тиждень
             </DropdownMenuItem>
             {date && (
-              <DropdownMenuItem icon={<CalendarClock />} onSelect={() => move(undefined, 'someday')}>
-                No date
+              <DropdownMenuItem icon={<CalendarClock />} onSelect={() => move(undefined, 'без дати')}>
+                Без дати
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem icon={<Trash2 />} danger onSelect={() => void deleteTaskWithConfirm(task, actions.tasks.remove)}>
-              Delete
+              Видалити
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

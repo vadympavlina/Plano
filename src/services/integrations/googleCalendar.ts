@@ -11,14 +11,14 @@ import type { CalendarIntegrationProvider } from './types';
  *
  * Every method throws so nothing can pretend to be connected.
  */
-const notImplemented = () => Promise.reject(new Error('Google Calendar integration is not available yet.'));
+const notImplemented = () => Promise.reject(new Error('Інтеграція з Google Calendar поки недоступна.'));
 
 export const googleCalendarProvider: CalendarIntegrationProvider = {
   id: 'google_calendar',
   name: 'Google Calendar',
   availability: () => ({
     available: false,
-    reason: 'Requires a server component for OAuth and sync (planned). See docs/google-calendar.md.',
+    reason: 'Потрібен серверний компонент для OAuth і синхронізації (заплановано).',
   }),
   connect: notImplemented,
   disconnect: notImplemented,

@@ -14,10 +14,10 @@ import { NoteEditor } from './NoteEditor';
 function timeAgo(iso: string) {
   const d = new Date(iso);
   const diff = (Date.now() - d.getTime()) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  if (diff < 60) return 'щойно';
+  if (diff < 3600) return `${Math.floor(diff / 60)} хв тому`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} год тому`;
+  return d.toLocaleDateString('uk-UA', { month: 'short', day: 'numeric' });
 }
 
 export default function NotesPage() {
@@ -41,14 +41,14 @@ export default function NotesPage() {
       <Card className={cn('flex w-full flex-col overflow-hidden lg:w-[340px] lg:shrink-0', noteId && 'hidden lg:flex')}>
         <div className="space-y-3 border-b border-line p-3">
           <div className="flex items-center justify-between">
-            <h2 className="pl-1 text-[17px] font-semibold tracking-tight">Notes</h2>
+            <h2 className="pl-1 text-[17px] font-semibold tracking-tight">Нотатки</h2>
             <Button size="sm" variant="dark" onClick={() => createNote()}>
-              <Plus className="h-3.5 w-3.5" /> New
+              <Plus className="h-3.5 w-3.5" /> Нова
             </Button>
           </div>
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
-            <Input className="h-9 pl-9" placeholder="Search notes" aria-label="Search notes" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <Input className="h-9 pl-9" placeholder="Пошук нотаток" aria-label="Пошук нотаток" value={query} onChange={(e) => setQuery(e.target.value)} />
           </div>
           {allTags.length > 0 && (
             <div className="no-scrollbar flex gap-1.5 overflow-x-auto">
@@ -60,7 +60,7 @@ export default function NotesPage() {
                   aria-pressed={tag === t}
                   className={cn('shrink-0 rounded-md px-2 py-1 text-xs font-medium', tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink')}
                 >
-                  {t ? `#${t}` : 'All'}
+                  {t ? `#${t}` : 'Усі'}
                 </button>
               ))}
             </div>
@@ -71,8 +71,8 @@ export default function NotesPage() {
             <EmptyState
               compact
               icon={<NotebookPen />}
-              title={notes.length ? 'No matching notes' : 'No notes yet'}
-              description={notes.length ? undefined : 'Capture ideas, meeting notes and plans.'}
+              title={notes.length ? 'Нічого не знайдено' : 'Нотаток поки немає'}
+              description={notes.length ? undefined : 'Записуйте ідеї, нотатки зустрічей і плани.'}
             />
           ) : (
             list.map((n) => {
@@ -84,10 +84,10 @@ export default function NotesPage() {
                   className={cn('block rounded-xl px-3 py-2.5 transition-colors', n.id === noteId ? 'bg-surface-2' : 'hover:bg-surface-2/70')}
                 >
                   <div className="flex items-center gap-1.5">
-                    {n.isPinned && <Pin className="h-3 w-3 shrink-0 text-primary" aria-label="Pinned" />}
-                    <p className="truncate text-[13.5px] font-medium">{n.title || 'Untitled note'}</p>
+                    {n.isPinned && <Pin className="h-3 w-3 shrink-0 text-primary" aria-label="Закріплено" />}
+                    <p className="truncate text-[13.5px] font-medium">{n.title || 'Без назви'}</p>
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">{markdownExcerpt(n.content, 120) || 'Empty note'}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-muted">{markdownExcerpt(n.content, 120) || 'Порожня нотатка'}</p>
                   <p className="mt-1 text-[11px] text-subtle">
                     {timeAgo(n.updatedAt)}
                     {project && ` · ${project.name}`}
@@ -103,14 +103,14 @@ export default function NotesPage() {
         {current ? (
           <NoteEditor key={current.id} note={current} />
         ) : noteId ? (
-          <EmptyState icon={<NotebookPen />} title="Note not found" description="It may have been deleted." action={<Link to="/notes"><Button variant="outline" size="sm">Back to notes</Button></Link>} />
+          <EmptyState icon={<NotebookPen />} title="Нотатку не знайдено" description="Можливо, її видалили." action={<Link to="/notes"><Button variant="outline" size="sm">До нотаток</Button></Link>} />
         ) : (
           <EmptyState
             icon={<NotebookPen />}
-            title="Select a note"
-            description="Or start a new one. Notes save automatically as you type."
+            title="Оберіть нотатку"
+            description="Або створіть нову. Нотатки зберігаються автоматично під час набору."
             className="h-full"
-            action={<Button variant="outline" size="sm" onClick={() => createNote()}><Plus className="h-3.5 w-3.5" /> New note</Button>}
+            action={<Button variant="outline" size="sm" onClick={() => createNote()}><Plus className="h-3.5 w-3.5" /> Нова нотатка</Button>}
           />
         )}
       </Card>

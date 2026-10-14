@@ -98,7 +98,7 @@ export function DataProvider({ backend, uid, children }: { backend: Backend; uid
         },
         (err) => {
           console.error(`Plano: failed to load ${key}`, err);
-          setError(err.message || 'Could not load data');
+          setError(err.message || 'Не вдалося завантажити дані');
         },
       ),
     );
@@ -119,7 +119,7 @@ export function DataProvider({ backend, uid, children }: { backend: Backend; uid
     if (rawNull.current.settings && rawNull.current.categories) {
       const now = nowIso();
       void repos
-        .batch('Set up Plano', { settings: DEFAULT_SETTINGS, categories: starterCategories(now) })
+        .batch('Початкове налаштування Plano', { settings: DEFAULT_SETTINGS, categories: starterCategories(now) })
         .catch(() => undefined);
     }
   }, [ready, repos]);

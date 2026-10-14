@@ -38,7 +38,7 @@ const keyed = <T extends z.ZodTypeAny>(schema: T) =>
   z.record(z.string(), schema).superRefine((rec, ctx) => {
     for (const [key, value] of Object.entries(rec)) {
       if ((value as { id?: string })?.id !== key) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Record key "${key}" does not match its id`, path: [key] });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Ключ запису «${key}» не збігається з його id`, path: [key] });
       }
     }
   });
@@ -64,6 +64,28 @@ const importSchema = z.object({
     .strict(),
 });
 
+/** Ukrainian messages for import validation errors. */
+const ukErrorMap: z.ZodErrorMap = (issue, ctx) => {
+  switch (issue.code) {
+    case z.ZodIssueCode.invalid_type:
+      return { message: issue.received === 'undefined' ? 'Обов’язкове поле відсутнє' : `Неправильний тип: очікується ${issue.expected}` };
+    case z.ZodIssueCode.invalid_enum_value:
+      return { message: `Недопустиме значення (дозволено: ${issue.options.join(', ')})` };
+    case z.ZodIssueCode.invalid_literal:
+      return { message: 'Це не файл експорту Plano' };
+    case z.ZodIssueCode.unrecognized_keys:
+      return { message: `Невідомі поля: ${issue.keys.join(', ')}` };
+    case z.ZodIssueCode.too_small:
+      return { message: 'Значення закоротке або замале' };
+    case z.ZodIssueCode.too_big:
+      return { message: 'Значення задовге або завелике' };
+    case z.ZodIssueCode.invalid_string:
+      return { message: 'Неправильний формат рядка' };
+    default:
+      return { message: ctx.defaultError };
+  }
+};
+
 export type ImportResult =
   | { ok: true; file: ExportFile; summary: Record<string, number> }
   | { ok: false; errors: string[] };
@@ -71,18 +93,18 @@ export type ImportResult =
 const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
 
 export function validateImport(text: string): ImportResult {
-  if (text.length > MAX_IMPORT_BYTES) return { ok: false, errors: ['File is too large (max 20 MB).'] };
+  if (text.length > MAX_IMPORT_BYTES) return { ok: false, errors: ['Файл завеликий (максимум 20 МБ).'] };
   let json: unknown;
   try {
     json = JSON.parse(text);
   } catch {
-    return { ok: false, errors: ['The file is not valid JSON.'] };
+    return { ok: false, errors: ['Файл не є коректним JSON.'] };
   }
-  const parsed = importSchema.safeParse(json);
+  const parsed = importSchema.safeParse(json, { errorMap: ukErrorMap });
   if (!parsed.success) {
     return {
       ok: false,
-      errors: parsed.error.issues.slice(0, 8).map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`),
+      errors: parsed.error.issues.slice(0, 8).map((i) => `${i.path.join('.') || '(корінь)'}: ${i.message}`),
     };
   }
   const data = parsed.data.data as unknown as UserData;

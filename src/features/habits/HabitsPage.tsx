@@ -13,7 +13,7 @@ import { useData } from '@/app/providers/DataProvider';
 import { useActions } from '@/hooks/useActions';
 import { useToday } from '@/hooks/useNow';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
-import { addDaysKey, eachDateKey, formatDateKey, weekRange } from '@/lib/date';
+import { addDaysKey, eachDateKey, formatDateKey, plural, weekRange } from '@/lib/date';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
@@ -53,8 +53,8 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
   };
 
   const remove = async () => {
-    const ok = await confirm({ title: 'Delete habit?', description: `“${habit.name}” and its whole history will be deleted.`, confirmLabel: 'Delete', danger: true });
-    if (ok) await actions.habits.remove(habit.id).then(() => toast.success('Habit deleted'), () => undefined);
+    const ok = await confirm({ title: 'Видалити звичку?', description: `«${habit.name}» і вся її історія буде видалено.`, confirmLabel: 'Видалити', danger: true });
+    if (ok) await actions.habits.remove(habit.id).then(() => toast.success('Звичку видалено'), () => undefined);
   };
 
   return (
@@ -67,24 +67,24 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
           <h3 className="truncate text-[15px] font-semibold">{habit.name}</h3>
           <p className="text-xs text-muted">
             {describeSchedule(habit.schedule)}
-            {habit.goalType === 'count' && ` · ${habit.target} ${habit.unit ?? ''} a day`}
+            {habit.goalType === 'count' && ` · ${habit.target} ${habit.unit ?? ''} на день`}
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-lg bg-warning/10 px-2 py-1 text-xs font-semibold text-warning" title="Current streak">
+        <div className="flex items-center gap-1 rounded-lg bg-warning/10 px-2 py-1 text-xs font-semibold text-warning" title="Поточна серія">
           <Flame className="h-3.5 w-3.5" />
           {streak}
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger className="rounded-lg p-1.5 text-subtle hover:bg-surface-2 hover:text-ink" aria-label={`Actions for ${habit.name}`}>
+          <DropdownMenuTrigger className="rounded-lg p-1.5 text-subtle hover:bg-surface-2 hover:text-ink" aria-label={`Дії для «${habit.name}»`}>
             <MoreHorizontal className="h-4 w-4" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem icon={<Pencil />} onSelect={onEdit}>Edit</DropdownMenuItem>
+            <DropdownMenuItem icon={<Pencil />} onSelect={onEdit}>Редагувати</DropdownMenuItem>
             <DropdownMenuItem icon={habit.archived ? <ArchiveRestore /> : <Archive />} onSelect={() => void actions.habits.update(habit.id, { archived: !habit.archived }).catch(() => undefined)}>
-              {habit.archived ? 'Restore' : 'Archive'}
+              {habit.archived ? 'Відновити' : 'В архів'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem icon={<Trash2 />} danger onSelect={() => void remove()}>Delete</DropdownMenuItem>
+            <DropdownMenuItem icon={<Trash2 />} danger onSelect={() => void remove()}>Видалити</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -103,14 +103,14 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
               disabled={future}
               onClick={() => toggleDay(d)}
               aria-pressed={done}
-              aria-label={`${formatDateKey(d, 'EEEE')}: ${done ? 'done' : scheduled ? 'not done' : 'not scheduled'}`}
+              aria-label={`${formatDateKey(d, 'EEEE')}: ${done ? 'виконано' : scheduled ? 'не виконано' : 'не заплановано'}`}
               className={cn(
                 'flex flex-col items-center gap-1 rounded-xl py-2 text-[11px] transition-colors disabled:cursor-default',
                 d === today && 'ring-1 ring-line',
                 !done && 'hover:bg-surface-2',
               )}
             >
-              <span className={cn('font-medium', d === today ? 'text-ink' : 'text-subtle')}>{formatDateKey(d, 'EEEEE')}</span>
+              <span className={cn('font-medium', d === today ? 'text-ink' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
               <span
                 className={cn(
                   'flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums',
@@ -129,15 +129,15 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
 
       {habit.goalType === 'count' && isScheduled(habit, today) && (
         <div className="mt-3 flex items-center justify-between rounded-xl bg-surface-2 px-3 py-2">
-          <span className="text-xs text-muted">Today</span>
+          <span className="text-xs text-muted">Сьогодні</span>
           <div className="flex items-center gap-2">
-            <Button size="icon-sm" variant="outline" className="h-7 w-7" aria-label="Decrease" onClick={() => setValue(today, todayValue - 1)} disabled={todayValue <= 0}>
+            <Button size="icon-sm" variant="outline" className="h-7 w-7" aria-label="Зменшити" onClick={() => setValue(today, todayValue - 1)} disabled={todayValue <= 0}>
               <Minus className="h-3.5 w-3.5" />
             </Button>
             <span className="min-w-[56px] text-center text-sm font-semibold tabular-nums">
               {todayValue} / {habit.target}
             </span>
-            <Button size="icon-sm" variant="outline" className="h-7 w-7" aria-label="Increase" onClick={() => setValue(today, todayValue + 1)}>
+            <Button size="icon-sm" variant="outline" className="h-7 w-7" aria-label="Збільшити" onClick={() => setValue(today, todayValue + 1)}>
               <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -146,15 +146,15 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
 
       {/* History heatmap */}
       <div className="mt-4">
-        <p className="mb-1.5 text-[11px] font-medium text-subtle">Last 12 weeks</p>
-        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" role="img" aria-label="Completion history">
+        <p className="mb-1.5 text-[11px] font-medium text-subtle">Останні 12 тижнів</p>
+        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" role="img" aria-label="Історія виконання">
           {history.map((d) => {
             const done = isDone(habit, logs, d);
             const scheduled = isScheduled(habit, d);
             return (
               <span
                 key={d}
-                title={`${formatDateKey(d, 'MMM d')}: ${done ? 'done' : scheduled ? (d > today ? 'upcoming' : 'missed') : 'not scheduled'}`}
+                title={`${formatDateKey(d, 'd MMM')}: ${done ? 'виконано' : scheduled ? (d > today ? 'попереду' : 'пропущено') : 'не заплановано'}`}
                 className="aspect-square w-full rounded-[3px]"
                 style={{ backgroundColor: done ? color : d > today ? 'transparent' : scheduled ? tint(color, 0.12) : 'rgb(var(--line) / 0.5)' }}
               />
@@ -165,10 +165,10 @@ function HabitCard({ habit, onEdit }: { habit: Habit; onEdit: () => void }) {
 
       <div className="mt-4 grid grid-cols-4 gap-2 border-t border-line pt-4 text-center">
         {[
-          ['Week', `${weekStats.rate}%`],
-          ['Month', `${monthStats.rate}%`],
-          ['Best', `${best}`],
-          ['Total', `${total}`],
+          ['Тиждень', `${weekStats.rate}%`],
+          ['Місяць', `${monthStats.rate}%`],
+          ['Рекорд', `${best}`],
+          ['Усього', `${total}`],
         ].map(([l, v]) => (
           <div key={l}>
             <p className="text-sm font-semibold tabular-nums">{v}</p>
@@ -197,11 +197,11 @@ export default function HabitsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Habits"
-        subtitle={active.length ? `${doneToday} of ${dueToday.length} done today · best current streak ${bestStreak} ${bestStreak === 1 ? 'day' : 'days'}` : 'Build routines one day at a time.'}
+        title="Звички"
+        subtitle={active.length ? `Сьогодні виконано ${doneToday} з ${dueToday.length} · найкраща серія ${bestStreak} ${plural(bestStreak, ['день', 'дні', 'днів'])}` : 'Формуйте звички день за днем.'}
         actions={
           <Button variant="dark" onClick={() => setEditing('new')}>
-            <Plus className="h-4 w-4" /> New habit
+            <Plus className="h-4 w-4" /> Нова звичка
           </Button>
         }
       />
@@ -211,8 +211,8 @@ export default function HabitsPage() {
           value={filter}
           onChange={setFilter}
           options={[
-            { value: 'active', label: 'Active', count: active.length },
-            { value: 'archived', label: 'Archived', count: habits.length - active.length },
+            { value: 'active', label: 'Активні', count: active.length },
+            { value: 'archived', label: 'Архів', count: habits.length - active.length },
           ]}
         />
       )}
@@ -220,12 +220,12 @@ export default function HabitsPage() {
         <div className="card">
           <EmptyState
             icon={<Heart />}
-            title={filter === 'archived' ? 'No archived habits' : 'No habits yet'}
-            description="Track things like Gym, Read, Drink water or Walk. Days that are not scheduled never break a streak."
+            title={filter === 'archived' ? 'В архіві порожньо' : 'Звичок поки немає'}
+            description="Відстежуйте спортзал, читання, воду чи прогулянки. Незаплановані дні ніколи не переривають серію."
             action={
               filter === 'active' && (
                 <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
-                  <Plus className="h-3.5 w-3.5" /> Create habit
+                  <Plus className="h-3.5 w-3.5" /> Створити звичку
                 </Button>
               )
             }
@@ -240,7 +240,7 @@ export default function HabitsPage() {
       )}
       {bestStreak >= 7 && (
         <p className="mt-6 flex items-center justify-center gap-2 text-sm text-muted">
-          <Trophy className="h-4 w-4 text-warning" /> {bestStreak}-day streak — great consistency.
+          <Trophy className="h-4 w-4 text-warning" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])} — чудова послідовність.
         </p>
       )}
       {editing && <HabitForm habit={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}

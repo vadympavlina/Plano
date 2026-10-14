@@ -44,8 +44,8 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
   if (!task) {
     return (
       <Dialog open onOpenChange={(o) => !o && onClose()}>
-        <SheetContent title="Task">
-          <EmptyState title="Task not found" description="It may have been deleted." />
+        <SheetContent title="Задача">
+          <EmptyState title="Задачу не знайдено" description="Можливо, її видалили." />
         </SheetContent>
       </Dialog>
     );
@@ -76,7 +76,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Edit task"
+              aria-label="Редагувати задачу"
               onClick={() => {
                 onClose();
                 openTaskForm({ task });
@@ -87,7 +87,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="Delete task"
+              aria-label="Видалити задачу"
               onClick={async () => {
                 if (await deleteTaskWithConfirm(task, actions.tasks.remove)) onClose();
               }}
@@ -101,7 +101,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
           <div className="pt-1">
             <CheckCircle
               checked={done}
-              label={done ? 'Mark as not done' : 'Mark as done'}
+              label={done ? 'Позначити як невиконану' : 'Позначити як виконану'}
               onChange={(c) => void actions.tasks.setDone(task, c).catch(() => undefined)}
             />
           </div>
@@ -109,7 +109,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             <h2 className={cn('text-xl font-semibold leading-snug tracking-tight', done && 'text-subtle line-through')}>{task.title}</h2>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {category && <Badge color={colorOf(category.color)}>{category.name}</Badge>}
-              {isOverdue(task, today) && <Badge color="#E5484D">Overdue</Badge>}
+              {isOverdue(task, today) && <Badge color="#E5484D">Прострочено</Badge>}
               {task.tags.map((t) => (
                 <Badge key={t}>#{t}</Badge>
               ))}
@@ -120,10 +120,10 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
         {task.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-muted">{task.description}</p>}
 
         <div className="mt-5 space-y-0.5 border-y border-line py-3">
-          <Row icon={<CalendarDays />} label="Due">
+          <Row icon={<CalendarDays />} label="Термін">
             <Input
               type="date"
-              aria-label="Due date"
+              aria-label="Термін"
               className="h-8 w-auto border-transparent bg-transparent px-1.5 hover:border-line"
               value={task.dueDate ?? ''}
               onChange={(e) => update({ dueDate: e.target.value || undefined })}
@@ -135,25 +135,25 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             )}
           </Row>
           {task.startDate && (
-            <Row icon={<CalendarDays />} label="Start">
+            <Row icon={<CalendarDays />} label="Початок">
               {formatDateKey(task.startDate, settings.dateFormat)}
             </Row>
           )}
           {task.startTime && (
-            <Row icon={<Clock />} label="Time">
+            <Row icon={<Clock />} label="Час">
               <span className="tabular-nums">{formatTimeRange(task.startTime, task.endTime, settings.timeFormat)}</span>
             </Row>
           )}
           {task.recurrence && (
-            <Row icon={<Repeat />} label="Repeats">
+            <Row icon={<Repeat />} label="Повтор">
               {describeRecurrence(task.recurrence)}
             </Row>
           )}
-          <Row icon={<Flag />} label="Priority">
+          <Row icon={<Flag />} label="Пріоритет">
             <div className="flex items-center gap-2">
               <Dot color={PRIORITY_COLOR[task.priority]} />
               <Select
-                aria-label="Priority"
+                aria-label="Пріоритет"
                 className="h-8 w-auto border-transparent bg-transparent pl-1.5 hover:border-line"
                 value={task.priority}
                 onChange={(e) => update({ priority: e.target.value as Task['priority'] })}
@@ -166,9 +166,9 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
               </Select>
             </div>
           </Row>
-          <Row icon={<CircleDot />} label="Status">
+          <Row icon={<CircleDot />} label="Статус">
             <Select
-              aria-label="Status"
+              aria-label="Статус"
               className="h-8 w-auto border-transparent bg-transparent pl-1.5 hover:border-line"
               value={task.status}
               onChange={(e) => void actions.tasks.setStatus(task, e.target.value as Task['status']).catch(() => undefined)}
@@ -180,14 +180,14 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
               ))}
             </Select>
           </Row>
-          <Row icon={<Tag />} label="Category">
+          <Row icon={<Tag />} label="Категорія">
             <Select
-              aria-label="Category"
+              aria-label="Категорія"
               className="h-8 w-auto border-transparent bg-transparent pl-1.5 hover:border-line"
               value={task.categoryId ?? ''}
               onChange={(e) => update({ categoryId: e.target.value || undefined })}
             >
-              <option value="">None</option>
+              <option value="">Немає</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -195,14 +195,14 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
               ))}
             </Select>
           </Row>
-          <Row icon={<FolderKanban />} label="Project">
+          <Row icon={<FolderKanban />} label="Проєкт">
             <Select
-              aria-label="Project"
+              aria-label="Проєкт"
               className="h-8 w-auto max-w-full border-transparent bg-transparent pl-1.5 hover:border-line"
               value={task.projectId ?? ''}
               onChange={(e) => update({ projectId: e.target.value || undefined })}
             >
-              <option value="">None</option>
+              <option value="">Немає</option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -212,7 +212,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             {project && <Dot color={colorOf(project.color)} className="ml-1" />}
           </Row>
           {goal && (
-            <Row icon={<Target />} label="Goal">
+            <Row icon={<Target />} label="Ціль">
               {goal.title}
             </Row>
           )}
@@ -220,7 +220,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
 
         <section className="mt-5">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Subtasks</h3>
+            <h3 className="text-sm font-semibold">Підзадачі</h3>
             {task.subtasks.length > 0 && (
               <span className="text-xs tabular-nums text-muted">
                 {subDone}/{task.subtasks.length}
@@ -228,7 +228,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             )}
           </div>
           {task.subtasks.length > 0 && (
-            <Progress value={(subDone / task.subtasks.length) * 100} className="mb-2" label="Subtask progress" />
+            <Progress value={(subDone / task.subtasks.length) * 100} className="mb-2" label="Прогрес підзадач" />
           )}
           <ul className="space-y-0.5">
             {task.subtasks.map((s) => (
@@ -236,7 +236,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
                 <CheckCircle
                   size="sm"
                   checked={s.done}
-                  label={`Subtask ${s.title}`}
+                  label={`Підзадача ${s.title}`}
                   onChange={() => void actions.tasks.toggleSubtask(task, s.id).catch(() => undefined)}
                 />
                 <span className={cn('text-sm', s.done && 'text-subtle line-through')}>{s.title}</span>
@@ -251,8 +251,8 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             }}
           >
             <Input
-              placeholder="+ Add subtask"
-              aria-label="New subtask"
+              placeholder="+ Додати підзадачу"
+              aria-label="Нова підзадача"
               className="h-9 border-dashed"
               value={newSubtask}
               onChange={(e) => setNewSubtask(e.target.value)}
@@ -263,7 +263,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
 
         {task.notes && (
           <section className="mt-5">
-            <h3 className="mb-2 text-sm font-semibold">Notes</h3>
+            <h3 className="mb-2 text-sm font-semibold">Нотатки</h3>
             <p className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">{task.notes}</p>
           </section>
         )}
@@ -274,27 +274,27 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             className="flex-1"
             onClick={() =>
               void actions.tasks.setDone(task, !done).then(
-                () => toast.success(done ? 'Task reopened' : 'Task completed'),
+                () => toast.success(done ? 'Задачу повернуто в роботу' : 'Задачу виконано'),
                 () => undefined,
               )
             }
           >
-            {done ? 'Mark as not completed' : 'Mark as completed'}
+            {done ? 'Повернути в роботу' : 'Позначити виконаною'}
           </Button>
           {!done && task.dueDate !== addDaysKey(today, 1) && (
             <Button
               variant="outline"
               onClick={() =>
-                void actions.tasks.reschedule(task, addDaysKey(today, 1)).then(() => toast.success('Moved to tomorrow'), () => undefined)
+                void actions.tasks.reschedule(task, addDaysKey(today, 1)).then(() => toast.success('Перенесено на завтра'), () => undefined)
               }
             >
-              Tomorrow
+              На завтра
             </Button>
           )}
         </div>
         <p className="mt-4 text-[11px] text-subtle">
-          Created {new Date(task.createdAt).toLocaleString()}
-          {task.completedAt && ` · Completed ${new Date(task.completedAt).toLocaleString()}`}
+          Створено {new Date(task.createdAt).toLocaleString('uk-UA')}
+          {task.completedAt && ` · Виконано ${new Date(task.completedAt).toLocaleString('uk-UA')}`}
         </p>
       </SheetContent>
     </Dialog>

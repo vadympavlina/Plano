@@ -13,13 +13,13 @@ export function PwaUpdater() {
       if (cancelled) return;
       const update = registerSW({
         onNeedRefresh() {
-          toast.info('A new version of Plano is available', {
+          toast.info('Доступна нова версія Plano', {
             duration: 0,
-            action: { label: 'Update', onClick: () => void update(true) },
+            action: { label: 'Оновити', onClick: () => void update(true) },
           });
         },
         onOfflineReady() {
-          toast.success('Plano is ready to open offline');
+          toast.success('Plano можна відкривати без інтернету');
         },
         onRegisteredSW(_url, registration) {
           // Check for updates when the app returns to the foreground (e.g. iOS standalone).

@@ -49,19 +49,19 @@ function collectionRepo<T extends Entity>(backend: Backend, base: string, name: 
       const id = data.id ?? backend.newId();
       const ts = nowIso();
       const record = stripUndefined({ ...data, id, createdAt: ts, updatedAt: ts });
-      const write = trackWrite(`Create ${label}`, () => backend.set(`${path}/${id}`, record));
+      const write = trackWrite(`Створення ${label}`, () => backend.set(`${path}/${id}`, record));
       return { id, write };
     },
     update(id, patch) {
-      return trackWrite(`Update ${label}`, () =>
+      return trackWrite(`Оновлення ${label}`, () =>
         backend.update(`${path}/${id}`, toPatch({ ...patch, updatedAt: nowIso() })),
       );
     },
     remove(id) {
-      return trackWrite(`Delete ${label}`, () => backend.remove(`${path}/${id}`));
+      return trackWrite(`Видалення ${label}`, () => backend.remove(`${path}/${id}`));
     },
     put(record) {
-      return trackWrite(`Save ${label}`, () => backend.set(`${path}/${record.id}`, stripUndefined(record)));
+      return trackWrite(`Збереження ${label}`, () => backend.set(`${path}/${record.id}`, stripUndefined(record)));
     },
   };
 }
@@ -71,35 +71,35 @@ export function createRepositories(backend: Backend, uid: string) {
   return {
     base,
     backend,
-    categories: collectionRepo<Category>(backend, base, 'categories', 'category'),
-    tasks: collectionRepo<Task>(backend, base, 'tasks', 'task'),
-    events: collectionRepo<CalendarEvent>(backend, base, 'events', 'event'),
-    projects: collectionRepo<Project>(backend, base, 'projects', 'project'),
-    habits: collectionRepo<Habit>(backend, base, 'habits', 'habit'),
-    goals: collectionRepo<Goal>(backend, base, 'goals', 'goal'),
-    notes: collectionRepo<Note>(backend, base, 'notes', 'note'),
+    categories: collectionRepo<Category>(backend, base, 'categories', 'категорії'),
+    tasks: collectionRepo<Task>(backend, base, 'tasks', 'задачі'),
+    events: collectionRepo<CalendarEvent>(backend, base, 'events', 'події'),
+    projects: collectionRepo<Project>(backend, base, 'projects', 'проєкту'),
+    habits: collectionRepo<Habit>(backend, base, 'habits', 'звички'),
+    goals: collectionRepo<Goal>(backend, base, 'goals', 'цілі'),
+    notes: collectionRepo<Note>(backend, base, 'notes', 'нотатки'),
     habitLogs: {
       set(habitId: string, date: string, value: number) {
         const path = `${base}/habitLogs/${habitId}/${date}`;
-        return trackWrite('Update habit', () => (value > 0 ? backend.set(path, value) : backend.remove(path)));
+        return trackWrite('Оновлення звички', () => (value > 0 ? backend.set(path, value) : backend.remove(path)));
       },
       removeHabit(habitId: string) {
-        return trackWrite('Delete habit history', () => backend.remove(`${base}/habitLogs/${habitId}`));
+        return trackWrite('Видалення історії звички', () => backend.remove(`${base}/habitLogs/${habitId}`));
       },
     },
     settings: {
       update(patch: Partial<Settings>) {
-        return trackWrite('Save settings', () => backend.update(`${base}/settings`, toPatch(patch)));
+        return trackWrite('Збереження налаштувань', () => backend.update(`${base}/settings`, toPatch(patch)));
       },
     },
     profile: {
       update(patch: Partial<Profile>) {
-        return trackWrite('Save profile', () => backend.update(`${base}/profile`, toPatch({ ...patch, updatedAt: nowIso() })));
+        return trackWrite('Збереження профілю', () => backend.update(`${base}/profile`, toPatch({ ...patch, updatedAt: nowIso() })));
       },
     },
     integrations: {
       set(key: string, value: IntegrationState) {
-        return trackWrite('Save integration', () => backend.set(`${base}/integrations/${key}`, stripUndefined(value)));
+        return trackWrite('Збереження інтеграції', () => backend.set(`${base}/integrations/${key}`, stripUndefined(value)));
       },
     },
     /** Applies several writes atomically (multi-path update relative to the user root). */
@@ -108,10 +108,10 @@ export function createRepositories(backend: Backend, uid: string) {
     },
     /** Replaces all user data (import). */
     replaceAll(data: Partial<UserData>) {
-      return trackWrite('Import data', () => backend.set(base, stripUndefined(data)));
+      return trackWrite('Імпорт даних', () => backend.set(base, stripUndefined(data)));
     },
     removeAll() {
-      return trackWrite('Delete all data', () => backend.remove(base));
+      return trackWrite('Видалення всіх даних', () => backend.remove(base));
     },
   };
 }

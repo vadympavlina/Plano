@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils/cn';
 
 export function ColorPicker({ value, onChange }: { value: ColorKey; onChange: (c: ColorKey) => void }) {
   return (
-    <div role="radiogroup" aria-label="Color" className="flex flex-wrap gap-2">
+    <div role="radiogroup" aria-label="Колір" className="flex flex-wrap gap-2">
       {COLOR_KEYS.map((key) => (
         <button
           key={key}

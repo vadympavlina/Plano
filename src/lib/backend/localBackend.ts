@@ -62,7 +62,7 @@ export function createLocalBackend(): Backend {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tree));
     } catch (e) {
       console.error('Plano preview: could not persist data', e);
-      throw new Error('Browser storage is full or unavailable.');
+      throw new Error('Сховище браузера переповнене або недоступне.');
     }
   }
 

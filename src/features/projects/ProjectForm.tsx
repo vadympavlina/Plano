@@ -19,8 +19,8 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
   const { draft, patch, dirty, saving, submitError, submit } = useFormDialog<Draft>(initial, onClose);
   const [showErrors, setShowErrors] = useState(false);
   const errors: Record<string, string> = {};
-  if (!draft.name.trim()) errors.name = 'Give the project a name.';
-  if (draft.startDate && draft.targetDate && draft.targetDate < draft.startDate) errors.targetDate = 'Target date must be after the start date.';
+  if (!draft.name.trim()) errors.name = 'Вкажіть назву проєкту.';
+  if (draft.startDate && draft.targetDate && draft.targetDate < draft.startDate) errors.targetDate = 'Цільова дата має бути пізніше за дату початку.';
   const visible = showErrors ? errors : {};
 
   const onSubmit = (e: FormEvent) => {
@@ -28,30 +28,30 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
     setShowErrors(true);
     if (Object.keys(errors).length) return;
     const clean = { ...draft, name: draft.name.trim(), description: draft.description?.trim() || undefined };
-    if (project) void submit(() => actions.projects.update(project.id, clean), 'Project updated');
+    if (project) void submit(() => actions.projects.update(project.id, clean), 'Проєкт оновлено');
     else
       void submit(() => {
         const { id, write } = actions.projects.create(clean);
         return write.then(() => onCreated?.(id));
-      }, 'Project created');
+      }, 'Проєкт створено');
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={project ? 'Edit project' : 'New project'} preventDismiss={dirty}>
+      <DialogContent title={project ? 'Редагувати проєкт' : 'Новий проєкт'} preventDismiss={dirty}>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
-          <Field label="Name" error={visible.name}>
-            {(p) => <Input {...p} autoFocus maxLength={120} placeholder="e.g. EdFlow, Home renovation" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
+          <Field label="Назва" error={visible.name}>
+            {(p) => <Input {...p} autoFocus maxLength={120} placeholder="напр. EdFlow, Ремонт" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
           </Field>
-          <Field label="Description">
-            {(p) => <Textarea {...p} rows={3} placeholder="What is this project about?" value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />}
+          <Field label="Опис">
+            {(p) => <Textarea {...p} rows={3} placeholder="Про що цей проєкт?" value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />}
           </Field>
           <div>
-            <p className="mb-1.5 text-[13px] font-medium">Color</p>
+            <p className="mb-1.5 text-[13px] font-medium">Колір</p>
             <ColorPicker value={draft.color} onChange={(color) => patch({ color })} />
           </div>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Status">
+            <Field label="Статус">
               {(p) => (
                 <Select {...p} value={draft.status} onChange={(e) => patch({ status: e.target.value as Project['status'] })}>
                   {PROJECT_STATUSES.map((s) => (
@@ -62,20 +62,20 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
                 </Select>
               )}
             </Field>
-            <Field label="Start date">
+            <Field label="Дата початку">
               {(p) => <Input {...p} type="date" value={draft.startDate ?? ''} onChange={(e) => patch({ startDate: e.target.value || undefined })} />}
             </Field>
-            <Field label="Target date" error={visible.targetDate}>
+            <Field label="Цільова дата" error={visible.targetDate}>
               {(p) => <Input {...p} type="date" value={draft.targetDate ?? ''} onChange={(e) => patch({ targetDate: e.target.value || undefined })} />}
             </Field>
           </div>
           {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
+              Скасувати
             </Button>
             <Button type="submit" variant="dark" loading={saving}>
-              {project ? 'Save changes' : 'Create project'}
+              {project ? 'Зберегти зміни' : 'Створити проєкт'}
             </Button>
           </DialogFooter>
         </form>

@@ -1,10 +1,10 @@
 import type { DateKey, Project, ProjectStatus, Task } from '@/types';
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
-  active: 'Active',
-  on_hold: 'On hold',
-  completed: 'Completed',
-  archived: 'Archived',
+  active: 'Активний',
+  on_hold: 'На паузі',
+  completed: 'Завершений',
+  archived: 'В архіві',
 };
 
 export interface ProjectProgress {

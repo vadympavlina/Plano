@@ -12,7 +12,7 @@ import type { Habit } from '@/types';
 type Draft = Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>;
 const ICONS = ['🏋️', '📚', '💧', '🧠', '🚶', '🧘', '🥗', '😴', '✍️', '🎸', '💊', '🌱'];
 const DAYS = [1, 2, 3, 4, 5, 6, 0];
-const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAMES = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
 export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => void }) {
   const actions = useActions();
@@ -22,10 +22,10 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
   const { draft, patch, dirty, saving, submitError, submit } = useFormDialog<Draft>(initial, onClose);
   const [showErrors, setShowErrors] = useState(false);
   const errors: Record<string, string> = {};
-  if (!draft.name.trim()) errors.name = 'Give the habit a name.';
-  if (!draft.schedule.length) errors.schedule = 'Pick at least one day.';
-  if (draft.goalType === 'count' && (!Number.isFinite(draft.target) || draft.target < 1)) errors.target = 'Target must be 1 or more.';
-  if (!draft.startDate) errors.startDate = 'Pick a start date.';
+  if (!draft.name.trim()) errors.name = 'Вкажіть назву звички.';
+  if (!draft.schedule.length) errors.schedule = 'Оберіть хоча б один день.';
+  if (draft.goalType === 'count' && (!Number.isFinite(draft.target) || draft.target < 1)) errors.target = 'Ціль має бути не менше 1.';
+  if (!draft.startDate) errors.startDate = 'Оберіть дату початку.';
   const visible = showErrors ? errors : {};
 
   const onSubmit = (e: FormEvent) => {
@@ -38,20 +38,20 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
       target: draft.goalType === 'check' ? 1 : Math.round(draft.target),
       unit: draft.goalType === 'count' ? draft.unit?.trim() || undefined : undefined,
     };
-    if (habit) void submit(() => actions.habits.update(habit.id, clean), 'Habit updated');
-    else void submit(() => actions.habits.create(clean).write, 'Habit created');
+    if (habit) void submit(() => actions.habits.update(habit.id, clean), 'Звичку оновлено');
+    else void submit(() => actions.habits.create(clean).write, 'Звичку створено');
   };
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent title={habit ? 'Edit habit' : 'New habit'} preventDismiss={dirty}>
+      <DialogContent title={habit ? 'Редагувати звичку' : 'Нова звичка'} preventDismiss={dirty}>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
-          <Field label="Name" error={visible.name}>
-            {(p) => <Input {...p} autoFocus maxLength={120} placeholder="e.g. Read 20 pages" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
+          <Field label="Назва" error={visible.name}>
+            {(p) => <Input {...p} autoFocus maxLength={120} placeholder="напр. Прочитати 20 сторінок" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
           </Field>
           <div>
-            <p className="mb-1.5 text-[13px] font-medium">Icon</p>
-            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Icon">
+            <p className="mb-1.5 text-[13px] font-medium">Іконка</p>
+            <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Іконка">
               {ICONS.map((i) => (
                 <button
                   key={i}
@@ -64,16 +64,16 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                   {i}
                 </button>
               ))}
-              <Input aria-label="Custom icon" className="h-9 w-16 text-center" maxLength={4} value={ICONS.includes(draft.icon) ? '' : draft.icon} placeholder="✨" onChange={(e) => e.target.value && patch({ icon: e.target.value })} />
+              <Input aria-label="Своя іконка" className="h-9 w-16 text-center" maxLength={4} value={ICONS.includes(draft.icon) ? '' : draft.icon} placeholder="✨" onChange={(e) => e.target.value && patch({ icon: e.target.value })} />
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-[13px] font-medium">Color</p>
+            <p className="mb-1.5 text-[13px] font-medium">Колір</p>
             <ColorPicker value={draft.color} onChange={(color) => patch({ color })} />
           </div>
           <div>
-            <p className="mb-1.5 text-[13px] font-medium">Schedule</p>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Days">
+            <p className="mb-1.5 text-[13px] font-medium">Розклад</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Дні">
               {DAYS.map((d) => {
                 const on = draft.schedule.includes(d);
                 return (
@@ -90,14 +90,14 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
               })}
             </div>
             <div className="mt-2 flex gap-2 text-xs">
-              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [0, 1, 2, 3, 4, 5, 6] })}>Every day</button>
-              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [1, 2, 3, 4, 5] })}>Weekdays</button>
-              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [0, 6] })}>Weekends</button>
+              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [0, 1, 2, 3, 4, 5, 6] })}>Щодня</button>
+              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [1, 2, 3, 4, 5] })}>Будні</button>
+              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [0, 6] })}>Вихідні</button>
             </div>
             {visible.schedule && <p role="alert" className="mt-1.5 text-xs text-danger">{visible.schedule}</p>}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Goal type">
+            <Field label="Тип цілі">
               {(p) => (
                 <div className="flex gap-2" id={p.id}>
                   {(['check', 'count'] as const).map((t) => (
@@ -108,30 +108,30 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                       onClick={() => patch({ goalType: t, target: t === 'check' ? 1 : Math.max(2, draft.target) })}
                       className={cn('h-10 flex-1 rounded-xl border text-sm font-medium', draft.goalType === t ? 'border-accent bg-surface-2' : 'border-line text-muted')}
                     >
-                      {t === 'check' ? 'Yes / No' : 'Count'}
+                      {t === 'check' ? 'Так / Ні' : 'Кількість'}
                     </button>
                   ))}
                 </div>
               )}
             </Field>
-            <Field label="Start date" error={visible.startDate}>
+            <Field label="Дата початку" error={visible.startDate}>
               {(p) => <Input {...p} type="date" value={draft.startDate} onChange={(e) => patch({ startDate: e.target.value })} />}
             </Field>
           </div>
           {draft.goalType === 'count' && (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Daily target" error={visible.target}>
+              <Field label="Ціль на день" error={visible.target}>
                 {(p) => <Input {...p} type="number" min={1} value={draft.target} onChange={(e) => patch({ target: Number(e.target.value) })} />}
               </Field>
-              <Field label="Unit">
-                {(p) => <Input {...p} placeholder="glasses, pages…" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
+              <Field label="Одиниця">
+                {(p) => <Input {...p} placeholder="склянки, сторінки…" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
               </Field>
             </div>
           )}
           {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}
           <DialogFooter>
-            <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
-            <Button type="submit" variant="dark" loading={saving}>{habit ? 'Save changes' : 'Create habit'}</Button>
+            <Button variant="outline" onClick={onClose} disabled={saving}>Скасувати</Button>
+            <Button type="submit" variant="dark" loading={saving}>{habit ? 'Зберегти зміни' : 'Створити звичку'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

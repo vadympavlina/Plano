@@ -9,9 +9,18 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
+import { uk } from 'date-fns/locale';
 import type { DateKey, Settings, TimeString } from '@/types';
 
 export const DATE_KEY_FORMAT = 'yyyy-MM-dd';
+/** Interface language: Ukrainian. */
+export const LOCALE = uk;
+export const INTL_LOCALE = 'uk-UA';
+
+/** Capitalises the first letter (Ukrainian month/day names are lowercase). */
+export function capitalize(s: string): string {
+  return s ? s.charAt(0).toLocaleUpperCase('uk-UA') + s.slice(1) : s;
+}
 
 /** Local calendar date → "yyyy-MM-dd". */
 export function toDateKey(date: Date): DateKey {
@@ -89,18 +98,19 @@ export function formatTimeRange(
   return end ? `${formatTime(start, fmt)} – ${formatTime(end, fmt)}` : formatTime(start, fmt);
 }
 
+/** Formats a date key with the Ukrainian locale; the first letter is capitalised. */
 export function formatDateKey(key: DateKey, pattern: string): string {
-  return format(fromDateKey(key), pattern);
+  return capitalize(format(fromDateKey(key), pattern, { locale: uk }));
 }
 
-/** Human friendly relative date label: Today / Tomorrow / Yesterday / weekday / date. */
-export function relativeDayLabel(key: DateKey, today: DateKey, pattern = 'MMM d'): string {
+/** Human friendly relative date label: Сьогодні / Завтра / Вчора / weekday / date. */
+export function relativeDayLabel(key: DateKey, today: DateKey, pattern = 'd MMM'): string {
   const diff = diffDaysKey(key, today);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Tomorrow';
-  if (diff === -1) return 'Yesterday';
-  if (diff > 1 && diff < 7) return format(fromDateKey(key), 'EEEE');
-  return format(fromDateKey(key), pattern);
+  if (diff === 0) return 'Сьогодні';
+  if (diff === 1) return 'Завтра';
+  if (diff === -1) return 'Вчора';
+  if (diff > 1 && diff < 7) return formatDateKey(key, 'EEEE');
+  return formatDateKey(key, pattern);
 }
 
 export function weekRange(key: DateKey, weekStartsOn: 0 | 1): { start: DateKey; end: DateKey } {
@@ -121,15 +131,17 @@ export function monthGrid(key: DateKey, weekStartsOn: 0 | 1): DateKey[] {
 
 export function weekdayLabels(weekStartsOn: 0 | 1, style: 'short' | 'narrow' = 'short'): string[] {
   const base = startOfWeek(new Date(2024, 0, 10), { weekStartsOn });
-  return Array.from({ length: 7 }, (_, i) => format(addDays(base, i), style === 'short' ? 'EEE' : 'EEEEE'));
+  return Array.from({ length: 7 }, (_, i) =>
+    capitalize(format(addDays(base, i), style === 'short' ? 'EEEEEE' : 'EEEEE', { locale: uk })),
+  );
 }
 
 export function greetingFor(date: Date): string {
   const h = date.getHours();
-  if (h < 5) return 'Good night';
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 5) return 'Доброї ночі';
+  if (h < 12) return 'Доброго ранку';
+  if (h < 18) return 'Доброго дня';
+  return 'Доброго вечора';
 }
 
 export function nowTime(date: Date = new Date()): TimeString {
@@ -148,4 +160,14 @@ export function deviceTimeZone(): string {
   } catch {
     return 'UTC';
   }
+}
+
+/** Ukrainian plural forms: plural(5, ['день', 'дні', 'днів']) → 'днів'. */
+export function plural(n: number, forms: [string, string, string]): string {
+  const abs = Math.abs(n) % 100;
+  const last = abs % 10;
+  if (abs > 10 && abs < 20) return forms[2];
+  if (last === 1) return forms[0];
+  if (last >= 2 && last <= 4) return forms[1];
+  return forms[2];
 }

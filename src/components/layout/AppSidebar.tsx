@@ -16,7 +16,7 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
         'sticky top-0 hidden h-dvh shrink-0 flex-col bg-sidebar pl-safe text-sidebar-fg transition-[width] duration-200 lg:flex',
         collapsed ? 'w-[76px]' : 'w-[232px]',
       )}
-      aria-label="Main navigation"
+      aria-label="Головна навігація"
     >
       <div className={cn('flex h-[72px] items-center px-5', collapsed && 'justify-center px-0')}>
         {collapsed ? <LogoMark className="h-[22px] w-[22px]" tone="light" /> : <Logo tone="light" className="text-white" />}
@@ -50,9 +50,9 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
       <div className="space-y-3 border-t border-white/5 px-3 pb-4 pt-3">
         {!collapsed && (
           <p className="px-2 text-[11.5px] leading-relaxed text-sidebar-muted/80">
-            Your life.
+            Твоє життя.
             <br />
-            In one place.
+            В одному місці.
           </p>
         )}
         <div className="px-2">
@@ -67,15 +67,15 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
                 'flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-colors hover:bg-sidebar-active',
                 collapsed && 'justify-center',
               )}
-              aria-label="Account menu"
+              aria-label="Меню акаунта"
             >
               <Avatar name={profile.name} src={profile.avatarUrl} />
               {!collapsed && (
                 <>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium text-sidebar-fg">{profile.name || 'Account'}</span>
+                    <span className="block truncate text-[13px] font-medium text-sidebar-fg">{profile.name || 'Акаунт'}</span>
                     <span className="block truncate text-[11px] text-sidebar-muted">
-                      {profile.mode === 'preview' ? 'Local preview' : profile.email}
+                      {profile.mode === 'preview' ? 'Локальний перегляд' : profile.email}
                     </span>
                   </span>
                   <MoreHorizontal className="h-4 w-4 text-sidebar-muted" />
@@ -91,11 +91,11 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
             'flex h-8 w-full items-center gap-2 rounded-lg px-2 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-active hover:text-sidebar-fg',
             collapsed && 'justify-center',
           )}
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? 'Розгорнути панель' : 'Згорнути панель'}
           aria-expanded={!collapsed}
         >
           {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
-          {!collapsed && 'Collapse'}
+          {!collapsed && 'Згорнути'}
         </button>
       </div>
     </aside>

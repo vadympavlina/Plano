@@ -32,7 +32,7 @@ export function EmptyState({
   );
 }
 
-export function LoadingState({ label = 'Loading…', className }: { label?: string; className?: string }) {
+export function LoadingState({ label = 'Завантаження…', className }: { label?: string; className?: string }) {
   return (
     <div role="status" className={cn('flex items-center justify-center gap-2 py-16 text-sm text-muted', className)}>
       <Loader2 className="h-4 w-4 animate-spin" />
@@ -42,7 +42,7 @@ export function LoadingState({ label = 'Loading…', className }: { label?: stri
 }
 
 export function ErrorState({
-  title = 'Something went wrong',
+  title = 'Щось пішло не так',
   message,
   onRetry,
   className,
@@ -61,7 +61,7 @@ export function ErrorState({
       {message && <p className="mt-1 max-w-md text-[13px] text-muted">{message}</p>}
       {onRetry && (
         <Button variant="outline" size="sm" className="mt-4" onClick={onRetry}>
-          Try again
+          Спробувати ще раз
         </Button>
       )}
     </div>

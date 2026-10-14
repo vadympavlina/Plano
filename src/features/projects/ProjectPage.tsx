@@ -61,12 +61,12 @@ export default function ProjectPage() {
       <PageContainer>
         <EmptyState
           icon={<CheckSquare />}
-          title="Project not found"
-          description="It may have been deleted."
+          title="Проєкт не знайдено"
+          description="Можливо, його видалили."
           action={
             <Link to="/projects">
               <Button variant="outline" size="sm">
-                Back to projects
+                До проєктів
               </Button>
             </Link>
           }
@@ -80,15 +80,15 @@ export default function ProjectPage() {
 
   const remove = async () => {
     const ok = await confirm({
-      title: 'Delete project?',
-      description: `“${project.name}” will be deleted. Its tasks, notes and events are kept but unlinked from the project.`,
-      confirmLabel: 'Delete project',
+      title: 'Видалити проєкт?',
+      description: `«${project.name}» буде видалено. Його задачі, нотатки й події залишаться, але без прив’язки до проєкту.`,
+      confirmLabel: 'Видалити проєкт',
       danger: true,
     });
     if (!ok) return;
     try {
       await actions.projects.remove(project.id);
-      toast.success('Project deleted');
+      toast.success('Проєкт видалено');
       navigate('/projects');
     } catch {
       /* toast from sync layer */
@@ -98,7 +98,7 @@ export default function ProjectPage() {
   return (
     <PageContainer>
       <Link to="/projects" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
-        <ArrowLeft className="h-4 w-4" /> Projects
+        <ArrowLeft className="h-4 w-4" /> Проєкти
       </Link>
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
@@ -108,14 +108,14 @@ export default function ProjectPage() {
           </div>
           {project.description && <p className="mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-muted">{project.description}</p>}
           <p className="mt-2 text-xs text-muted">
-            {project.startDate && `Started ${formatDateKey(project.startDate, settings.dateFormat)}`}
+            {project.startDate && `Початок: ${formatDateKey(project.startDate, settings.dateFormat)}`}
             {project.startDate && project.targetDate && ' · '}
-            {project.targetDate && `Target ${formatDateKey(project.targetDate, settings.dateFormat)}`}
+            {project.targetDate && `Мета: ${formatDateKey(project.targetDate, settings.dateFormat)}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select
-            aria-label="Project status"
+            aria-label="Статус проєкту"
             className="h-9 w-auto text-[13px]"
             value={project.status}
             onChange={(e) => void actions.projects.update(project.id, { status: e.target.value as Project['status'] }).catch(() => undefined)}
@@ -127,9 +127,9 @@ export default function ProjectPage() {
             ))}
           </Select>
           <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(true)}>
-            <Pencil className="h-3.5 w-3.5" /> Edit
+            <Pencil className="h-3.5 w-3.5" /> Редагувати
           </Button>
-          <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Delete project" onClick={() => void remove()}>
+          <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Видалити проєкт" onClick={() => void remove()}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -139,45 +139,45 @@ export default function ProjectPage() {
         <Card className="p-5 lg:col-span-3">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-medium text-muted">Progress</p>
+              <p className="text-xs font-medium text-muted">Прогрес</p>
               <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">{prog.percent}%</p>
             </div>
             <div className="flex gap-6 text-sm">
               <div>
-                <p className="text-xs text-muted">Done</p>
+                <p className="text-xs text-muted">Виконано</p>
                 <p className="font-semibold tabular-nums">{prog.done}</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Open</p>
+                <p className="text-xs text-muted">Відкриті</p>
                 <p className="font-semibold tabular-nums">{prog.total - prog.done}</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Overdue</p>
+                <p className="text-xs text-muted">Прострочені</p>
                 <p className={cn('font-semibold tabular-nums', prog.overdue && 'text-danger')}>{prog.overdue}</p>
               </div>
               <div>
-                <p className="text-xs text-muted">Next deadline</p>
+                <p className="text-xs text-muted">Найближчий дедлайн</p>
                 <p className="font-semibold">{prog.nextDeadline ? relativeDayLabel(prog.nextDeadline, today) : '—'}</p>
               </div>
             </div>
           </div>
-          <Progress value={prog.percent} color={color} className="mt-4 h-2" label="Project progress" />
-          <p className="mt-2 text-[11px] text-subtle">Calculated from the project’s tasks (cancelled tasks are not counted).</p>
+          <Progress value={prog.percent} color={color} className="mt-4 h-2" label="Прогрес проєкту" />
+          <p className="mt-2 text-[11px] text-subtle">Обчислюється за задачами проєкту (скасовані не враховуються).</p>
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader
-            title="Tasks"
-            subtitle={`${related.open.length} open`}
+            title="Задачі"
+            subtitle={`Відкритих: ${related.open.length}`}
             action={
               <Button size="sm" variant="outline" onClick={() => openTaskForm({ defaults: { projectId: project.id } })}>
-                <Plus className="h-3.5 w-3.5" /> Add task
+                <Plus className="h-3.5 w-3.5" /> Додати задачу
               </Button>
             }
           />
           <div className="p-2 sm:p-3">
             {related.open.length === 0 ? (
-              <EmptyState compact icon={<CheckSquare />} title="No open tasks" />
+              <EmptyState compact icon={<CheckSquare />} title="Відкритих задач немає" />
             ) : (
               related.open.map((t) => <TaskItem key={t.id} task={t} />)
             )}
@@ -185,7 +185,7 @@ export default function ProjectPage() {
               <>
                 <button type="button" onClick={() => setShowDone((s) => !s)} className="mt-2 flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted hover:text-ink" aria-expanded={showDone}>
                   <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', !showDone && '-rotate-90')} />
-                  Completed ({related.done.length})
+                  Виконані ({related.done.length})
                 </button>
                 {showDone && related.done.map((t) => <TaskItem key={t.id} task={t} />)}
               </>
@@ -196,31 +196,31 @@ export default function ProjectPage() {
         <div className="flex flex-col gap-4">
           <Card>
             <CardHeader
-              title="Notes"
+              title="Нотатки"
               action={
                 <Button size="sm" variant="ghost" onClick={() => createNote({ projectId: project.id })}>
-                  <Plus className="h-3.5 w-3.5" /> New
+                  <Plus className="h-3.5 w-3.5" /> Нова
                 </Button>
               }
             />
             <div className="space-y-1 p-3">
               {related.notes.length === 0 ? (
-                <EmptyState compact icon={<NotebookPen />} title="No notes" className="!py-4" />
+                <EmptyState compact icon={<NotebookPen />} title="Нотаток немає" className="!py-4" />
               ) : (
                 related.notes.slice(0, 5).map((n) => (
                   <Link key={n.id} to={`/notes/${n.id}`} className="block rounded-lg px-2 py-2 hover:bg-surface-2">
-                    <p className="truncate text-[13px] font-medium">{n.title || 'Untitled note'}</p>
-                    <p className="truncate text-xs text-muted">{markdownExcerpt(n.content, 80) || 'Empty'}</p>
+                    <p className="truncate text-[13px] font-medium">{n.title || 'Без назви'}</p>
+                    <p className="truncate text-xs text-muted">{markdownExcerpt(n.content, 80) || 'Порожня'}</p>
                   </Link>
                 ))
               )}
             </div>
           </Card>
           <Card>
-            <CardHeader title="Goals" />
+            <CardHeader title="Цілі" />
             <div className="space-y-3 p-5 pt-3">
               {related.goals.length === 0 ? (
-                <p className="text-xs text-muted">No goals linked. Link a goal to this project from the Goals page.</p>
+                <p className="text-xs text-muted">Немає пов’язаних цілей. Пов’яжіть ціль із цим проєктом на сторінці «Цілі».</p>
               ) : (
                 related.goals.map((g) => (
                   <Link key={g.id} to="/goals" className="block">
@@ -235,10 +235,10 @@ export default function ProjectPage() {
             </div>
           </Card>
           <Card>
-            <CardHeader title="Upcoming events" />
+            <CardHeader title="Найближчі події" />
             <div className="p-3">
               {related.events.length === 0 ? (
-                <EmptyState compact icon={<CalendarDays />} title="No upcoming events" className="!py-4" />
+                <EmptyState compact icon={<CalendarDays />} title="Найближчих подій немає" className="!py-4" />
               ) : (
                 related.events.map((o) => (
                   <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-surface-2">
@@ -253,7 +253,7 @@ export default function ProjectPage() {
           </Card>
           {related.goals.length === 0 && goals.length === 0 && (
             <Link to="/goals?new=1" className="inline-flex items-center gap-1 px-1 text-xs text-muted hover:text-ink">
-              <Target className="h-3.5 w-3.5" /> Create a goal
+              <Target className="h-3.5 w-3.5" /> Створити ціль
             </Link>
           )}
         </div>

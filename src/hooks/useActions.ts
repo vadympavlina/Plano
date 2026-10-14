@@ -33,7 +33,7 @@ export function useActions() {
           const next = nextRecurringInstance(task, new Set(Object.keys(data.tasks)), now);
           if (next) values[`tasks/${next.id}`] = stripUndefined(next);
         }
-        return repos.batch(done ? 'Complete task' : 'Reopen task', values);
+        return repos.batch(done ? 'Виконання задачі' : 'Повернення задачі', values);
       },
       setStatus(task: Task, status: Task['status']) {
         if (status === 'completed') return tasks.setDone(task, true);
@@ -74,7 +74,7 @@ export function useActions() {
         for (const note of Object.values(data.notes)) if (note.projectId === id) values[`notes/${note.id}/projectId`] = null;
         for (const goal of Object.values(data.goals))
           if (goal.projectIds.includes(id)) values[`goals/${goal.id}/projectIds`] = goal.projectIds.filter((p) => p !== id);
-        return repos.batch('Delete project', values);
+        return repos.batch('Видалення проєкту', values);
       },
     };
 
@@ -86,14 +86,14 @@ export function useActions() {
         for (const task of Object.values(data.tasks)) if (task.categoryId === id) values[t(task.id, 'categoryId')] = null;
         for (const ev of Object.values(data.events)) if (ev.categoryId === id) values[`events/${ev.id}/categoryId`] = null;
         for (const goal of Object.values(data.goals)) if (goal.categoryId === id) values[`goals/${goal.id}/categoryId`] = null;
-        return repos.batch('Delete category', values);
+        return repos.batch('Видалення категорії', values);
       },
     };
 
     const habits = {
       create: (input: NewEntity<Habit>) => repos.habits.create(input),
       update: (id: string, patch: Partial<Habit>) => repos.habits.update(id, patch),
-      remove: (id: string) => repos.batch('Delete habit', { [`habits/${id}`]: null, [`habitLogs/${id}`]: null }),
+      remove: (id: string) => repos.batch('Видалення звички', { [`habits/${id}`]: null, [`habitLogs/${id}`]: null }),
       setValue: (habitId: string, date: DateKey, value: number) => repos.habitLogs.set(habitId, date, value),
     };
 

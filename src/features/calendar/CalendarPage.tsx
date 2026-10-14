@@ -38,11 +38,11 @@ function rangeFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
 }
 
 function titleFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
-  if (view === 'day') return formatDateKey(anchor, 'EEEE, MMM d, yyyy');
-  if (view === 'month') return formatDateKey(anchor, 'MMMM yyyy');
+  if (view === 'day') return formatDateKey(anchor, 'EEEE, d MMMM yyyy');
+  if (view === 'month') return formatDateKey(anchor, 'LLLL yyyy');
   const { start, end } = weekRange(anchor, weekStartsOn);
   const sameMonth = start.slice(0, 7) === end.slice(0, 7);
-  return `${formatDateKey(start, 'MMM d')} – ${formatDateKey(end, sameMonth ? 'd, yyyy' : 'MMM d, yyyy')}`;
+  return sameMonth ? `${formatDateKey(start, 'd')} – ${formatDateKey(end, 'd MMMM yyyy')}` : `${formatDateKey(start, 'd MMM')} – ${formatDateKey(end, 'd MMM yyyy')}`;
 }
 
 export default function CalendarPage() {
@@ -99,23 +99,23 @@ export default function CalendarPage() {
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:px-4">
           <Segmented
-            ariaLabel="Calendar view"
+            ariaLabel="Вигляд календаря"
             size="sm"
             value={view}
             onChange={(v) => navigate({ view: v })}
             options={[
-              { value: 'day', label: 'Day' },
-              { value: 'week', label: 'Week' },
-              { value: 'month', label: 'Month' },
+              { value: 'day', label: 'День' },
+              { value: 'week', label: 'Тиждень' },
+              { value: 'month', label: 'Місяць' },
             ]}
           />
           <div className="flex items-center">
-            <Button variant="ghost" size="icon-sm" aria-label="Previous" onClick={() => step(-1)}>
+            <Button variant="ghost" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" className="rounded-lg px-2 py-1 text-[14px] font-semibold tracking-tight hover:bg-surface-2" aria-label="Pick a date">
+                <button type="button" className="rounded-lg px-2 py-1 text-[14px] font-semibold tracking-tight hover:bg-surface-2" aria-label="Обрати дату">
                   {titleFor(view, anchor, settings.weekStartsOn)}
                 </button>
               </PopoverTrigger>
@@ -123,12 +123,12 @@ export default function CalendarPage() {
                 <MiniCalendar selected={anchor} today={today} weekStartsOn={settings.weekStartsOn} onSelect={(d) => navigate({ date: d })} markedDates={monthMarks} />
               </PopoverContent>
             </Popover>
-            <Button variant="ghost" size="icon-sm" aria-label="Next" onClick={() => step(1)}>
+            <Button variant="ghost" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
           <Button variant="outline" size="sm" onClick={() => navigate({ date: today })} disabled={anchor === today}>
-            Today
+            Сьогодні
           </Button>
           <Button
             variant="dark"
@@ -136,7 +136,7 @@ export default function CalendarPage() {
             className="ml-auto"
             onClick={() => openEventForm({ defaults: { date: view === 'month' && anchor.slice(0, 7) !== today.slice(0, 7) ? anchor : view === 'day' ? anchor : today } })}
           >
-            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Add event</span>
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Додати подію</span>
           </Button>
         </div>
 
@@ -161,9 +161,9 @@ export default function CalendarPage() {
           />
         </Card>
         <Card className="min-h-0 flex-1 overflow-y-auto p-4 scrollbar-thin">
-          <h3 className="mb-2 text-sm font-semibold">Upcoming</h3>
+          <h3 className="mb-2 text-sm font-semibold">Найближче</h3>
           {upcoming.length === 0 ? (
-            <EmptyState compact icon={<CalendarDays />} title="Nothing scheduled" className="!py-6" />
+            <EmptyState compact icon={<CalendarDays />} title="Нічого не заплановано" className="!py-6" />
           ) : (
             <div className="-mx-2 space-y-0.5">
               {upcoming.map((o) => (
@@ -177,7 +177,7 @@ export default function CalendarPage() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium">{o.event.title}</span>
                     <span className="block text-[11.5px] tabular-nums text-muted">
-                      {o.event.allDay ? 'All day' : formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
+                      {o.event.allDay ? 'Весь день' : formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
                     </span>
                   </span>
                   <span className="shrink-0 text-[11px] text-subtle">{relativeDayLabel(o.date < today ? today : o.date, today)}</span>
@@ -186,7 +186,7 @@ export default function CalendarPage() {
             </div>
           )}
           <button type="button" onClick={() => navigate({ view: 'month' })} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink">
-            Month overview <ArrowRight className="h-3 w-3" />
+            Огляд місяця <ArrowRight className="h-3 w-3" />
           </button>
         </Card>
       </aside>

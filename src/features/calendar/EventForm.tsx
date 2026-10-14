@@ -35,14 +35,14 @@ function toDraft(event?: CalendarEvent, defaults?: Partial<CalendarEvent>): Draf
 
 function validate(d: Draft): Record<string, string> {
   const e: Record<string, string> = {};
-  if (!d.title.trim()) e.title = 'Give the event a title.';
-  if (!d.date) e.date = 'Pick a date.';
+  if (!d.title.trim()) e.title = 'Вкажіть назву події.';
+  if (!d.date) e.date = 'Оберіть дату.';
   if (!d.allDay) {
-    if (!d.startTime) e.time = 'Set a start time.';
-    else if (!d.endTime) e.time = 'Set an end time.';
-    else if (timeToMinutes(d.endTime) <= timeToMinutes(d.startTime)) e.time = 'End time must be after start time.';
-  } else if (d.endDate && d.endDate < d.date) e.endDate = 'End date must be on or after the start date.';
-  if (d.url && !/^https?:\/\/\S+$/i.test(d.url.trim())) e.url = 'Use a full link starting with https://';
+    if (!d.startTime) e.time = 'Вкажіть час початку.';
+    else if (!d.endTime) e.time = 'Вкажіть час завершення.';
+    else if (timeToMinutes(d.endTime) <= timeToMinutes(d.startTime)) e.time = 'Час завершення має бути пізніше за початок.';
+  } else if (d.endDate && d.endDate < d.date) e.endDate = 'Дата завершення не може бути раніше за початок.';
+  if (d.url && !/^https?:\/\/\S+$/i.test(d.url.trim())) e.url = 'Вкажіть повне посилання, що починається з https://';
   return e;
 }
 
@@ -70,7 +70,7 @@ export default function EventFormDialog({
   }, [events, draft.allDay, draft.date, draft.startTime, draft.endTime, errors.time, event?.id]);
 
   const requestClose = async () => {
-    if (!dirty || (await confirm({ title: 'Discard changes?', description: 'Your edits to this event will be lost.', confirmLabel: 'Discard', danger: true })))
+    if (!dirty || (await confirm({ title: 'Скасувати зміни?', description: 'Ваші зміни в події буде втрачено.', confirmLabel: 'Скасувати зміни', danger: true })))
       onClose();
   };
 
@@ -88,22 +88,22 @@ export default function EventFormDialog({
       endTime: draft.allDay ? undefined : draft.endTime,
       endDate: draft.allDay && draft.endDate && draft.endDate > draft.date ? draft.endDate : undefined,
     };
-    if (event) void submit(() => actions.events.update(event.id, clean), 'Event updated');
-    else void submit(() => actions.events.create(clean).write, 'Event created');
+    if (event) void submit(() => actions.events.update(event.id, clean), 'Подію оновлено');
+    else void submit(() => actions.events.create(clean).write, 'Подію створено');
   };
 
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
-      <DialogContent title={event ? 'Edit event' : 'New event'} size="lg" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
+      <DialogContent title={event ? 'Редагувати подію' : 'Нова подія'} size="lg" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
           {readOnly && (
             <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
-              This event was imported from an external calendar. Changes made here are not sent back yet.
+              Цю подію імпортовано із зовнішнього календаря. Зміни тут поки не надсилаються назад.
             </p>
           )}
-          <Field label="Title" error={visible.title}>
+          <Field label="Назва" error={visible.title}>
             {(p) => (
-              <Input {...p} autoFocus placeholder="Event name" maxLength={300} value={draft.title} onChange={(e) => patch({ title: e.target.value })} />
+              <Input {...p} autoFocus placeholder="Назва події" maxLength={300} value={draft.title} onChange={(e) => patch({ title: e.target.value })} />
             )}
           </Field>
 
@@ -121,22 +121,22 @@ export default function EventFormDialog({
                 );
               }}
             />
-            All-day event
+            Подія на весь день
           </label>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label={draft.allDay ? 'Starts' : 'Date'} error={visible.date} className="col-span-2">
+            <Field label={draft.allDay ? 'Початок' : 'Дата'} error={visible.date} className="col-span-2">
               {(p) => <Input {...p} type="date" value={draft.date} onChange={(e) => patch({ date: e.target.value })} />}
             </Field>
             {draft.allDay ? (
-              <Field label="Ends" error={visible.endDate} className="col-span-2">
+              <Field label="Кінець" error={visible.endDate} className="col-span-2">
                 {(p) => (
                   <Input {...p} type="date" min={draft.date} value={draft.endDate ?? draft.date} onChange={(e) => patch({ endDate: e.target.value || undefined })} />
                 )}
               </Field>
             ) : (
               <>
-                <Field label="Start" error={visible.time}>
+                <Field label="Початок" error={visible.time}>
                   {(p) => (
                     <Input
                       {...p}
@@ -154,7 +154,7 @@ export default function EventFormDialog({
                     />
                   )}
                 </Field>
-                <Field label="End">
+                <Field label="Кінець">
                   {(p) => <Input {...p} type="time" value={draft.endTime ?? ''} onChange={(e) => patch({ endTime: e.target.value })} />}
                 </Field>
               </>
@@ -165,21 +165,21 @@ export default function EventFormDialog({
             <div className="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-[13px] text-ink">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
               <span>
-                Overlaps with{' '}
+                Перетинається з{' '}
                 {conflicts
                   .slice(0, 3)
                   .map((c) => `${c.title} (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
                   .join(', ')}
-                . You can still save it.
+                . Зберегти все одно можна.
               </span>
             </div>
           )}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Category">
+            <Field label="Категорія">
               {(p) => (
                 <Select {...p} value={draft.categoryId ?? ''} onChange={(e) => patch({ categoryId: e.target.value || undefined })}>
-                  <option value="">None</option>
+                  <option value="">Немає</option>
                   {categories.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name}
@@ -188,10 +188,10 @@ export default function EventFormDialog({
                 </Select>
               )}
             </Field>
-            <Field label="Project">
+            <Field label="Проєкт">
               {(p) => (
                 <Select {...p} value={draft.projectId ?? ''} onChange={(e) => patch({ projectId: e.target.value || undefined })}>
-                  <option value="">None</option>
+                  <option value="">Немає</option>
                   {projects.map((pr) => (
                     <option key={pr.id} value={pr.id}>
                       {pr.name}
@@ -202,26 +202,26 @@ export default function EventFormDialog({
             </Field>
           </div>
 
-          <Field label="Repeat">
+          <Field label="Повторення">
             {(p) => (
               <RecurrenceEditor id={p.id} value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
             )}
           </Field>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Location">
-              {(p) => <Input {...p} placeholder="Add a place" value={draft.location ?? ''} onChange={(e) => patch({ location: e.target.value })} />}
+            <Field label="Місце">
+              {(p) => <Input {...p} placeholder="Додайте місце" value={draft.location ?? ''} onChange={(e) => patch({ location: e.target.value })} />}
             </Field>
-            <Field label="Link" error={visible.url}>
+            <Field label="Посилання" error={visible.url}>
               {(p) => (
                 <Input {...p} type="url" inputMode="url" placeholder="https://" value={draft.url ?? ''} onChange={(e) => patch({ url: e.target.value })} />
               )}
             </Field>
           </div>
 
-          <Field label="Description">
+          <Field label="Опис">
             {(p) => (
-              <Textarea {...p} rows={3} placeholder="Agenda, notes…" value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />
+              <Textarea {...p} rows={3} placeholder="Порядок денний, нотатки…" value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />
             )}
           </Field>
 
@@ -233,10 +233,10 @@ export default function EventFormDialog({
 
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
+              Скасувати
             </Button>
             <Button type="submit" variant="dark" loading={saving}>
-              {event ? 'Save changes' : 'Create event'}
+              {event ? 'Зберегти зміни' : 'Створити подію'}
             </Button>
           </DialogFooter>
         </form>

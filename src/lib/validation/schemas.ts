@@ -19,8 +19,8 @@ const arrayish = <T extends z.ZodTypeAny>(item: T) =>
 
 const optionalString = z.preprocess((v) => (v === null || v === '' ? undefined : v), z.string().optional());
 
-export const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected yyyy-MM-dd');
-export const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Expected HH:mm');
+export const dateKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Очікується дата у форматі yyyy-MM-dd');
+export const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Очікується час у форматі HH:mm');
 const optionalDateKey = z.preprocess((v) => (v === null || v === '' ? undefined : v), dateKeySchema.optional());
 const optionalTime = z.preprocess((v) => (v === null || v === '' ? undefined : v), timeSchema.optional());
 const isoSchema = z.string().min(1);
@@ -170,7 +170,7 @@ export const settingsSchema = z.object({
   theme: z.enum(['light', 'dark', 'system']).catch('light'),
   weekStartsOn: z.union([z.literal(0), z.literal(1)]).catch(1),
   timeFormat: z.enum(['12h', '24h']).catch('24h'),
-  dateFormat: z.enum(['MMM d, yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd']).catch('MMM d, yyyy'),
+  dateFormat: z.enum(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd']).catch('d MMM yyyy'),
   defaultCalendarView: z.enum(['day', 'week', 'month']).catch('week'),
   timezone: optionalString,
   showHabitStreakOnDashboard: z.boolean().catch(true),

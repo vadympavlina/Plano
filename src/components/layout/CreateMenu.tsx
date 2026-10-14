@@ -17,7 +17,7 @@ export function useCreateNote() {
       isPinned: false,
       projectId: init?.projectId,
     });
-    write.catch(() => toast.error('Could not create the note'));
+    write.catch(() => toast.error('Не вдалося створити нотатку'));
     navigate(`/notes/${id}`);
   };
 }
@@ -31,23 +31,23 @@ export function CreateMenu({ trigger, align = 'end' }: { trigger: ReactNode; ali
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-56">
         <DropdownMenuItem icon={<CheckSquare />} onSelect={() => openTaskForm()}>
-          New task
+          Нова задача
         </DropdownMenuItem>
         <DropdownMenuItem icon={<CalendarPlus />} onSelect={() => openEventForm()}>
-          New event
+          Нова подія
         </DropdownMenuItem>
         <DropdownMenuItem icon={<NotebookPen />} onSelect={() => createNote()}>
-          New note
+          Нова нотатка
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem icon={<FolderPlus />} onSelect={() => navigate('/projects?new=1')}>
-          New project
+          Новий проєкт
         </DropdownMenuItem>
         <DropdownMenuItem icon={<Heart />} onSelect={() => navigate('/habits?new=1')}>
-          New habit
+          Нова звичка
         </DropdownMenuItem>
         <DropdownMenuItem icon={<Target />} onSelect={() => navigate('/goals?new=1')}>
-          New goal
+          Нова ціль
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

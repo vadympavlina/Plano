@@ -26,8 +26,8 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
   if (!event) {
     return (
       <Dialog open onOpenChange={(o) => !o && onClose()}>
-        <DialogContent title="Event" size="sm">
-          <EmptyState title="Event not found" description="It may have been deleted." compact />
+        <DialogContent title="Подія" size="sm">
+          <EmptyState title="Подію не знайдено" description="Можливо, її видалили." compact />
         </DialogContent>
       </Dialog>
     );
@@ -39,21 +39,21 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
   const occurrence = date ?? event.date;
 
   const removeOccurrence = async () => {
-    await actions.events.removeOccurrence(event, occurrence).then(() => toast.success('Occurrence deleted'), () => undefined);
+    await actions.events.removeOccurrence(event, occurrence).then(() => toast.success('Повторення видалено'), () => undefined);
     onClose();
   };
 
   const removeAll = async () => {
     const ok = await confirm({
-      title: event.recurrence ? 'Delete the whole series?' : 'Delete event?',
+      title: event.recurrence ? 'Видалити всю серію?' : 'Видалити подію?',
       description: event.recurrence
-        ? `All occurrences of “${event.title}” will be deleted.`
-        : `“${event.title}” will be permanently deleted.`,
-      confirmLabel: 'Delete',
+        ? `Усі повторення «${event.title}» буде видалено.`
+        : `«${event.title}» буде видалено назавжди.`,
+      confirmLabel: 'Видалити',
       danger: true,
     });
     if (!ok) return;
-    await actions.events.remove(event.id).then(() => toast.success('Event deleted'), () => undefined);
+    await actions.events.remove(event.id).then(() => toast.success('Подію видалено'), () => undefined);
     onClose();
   };
 
@@ -64,12 +64,12 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
         <div className="space-y-3 text-sm">
           <p className="flex items-center gap-3">
             <CalendarDays className="h-4 w-4 text-muted" />
-            {formatDateKey(occurrence, 'EEEE, MMMM d, yyyy')}
-            {event.endDate && event.endDate > event.date && ` – ${formatDateKey(event.endDate, 'MMM d')}`}
+            {formatDateKey(occurrence, 'EEEE, d MMMM yyyy')}
+            {event.endDate && event.endDate > event.date && ` – ${formatDateKey(event.endDate, 'd MMM')}`}
           </p>
           <p className="flex items-center gap-3">
             <Clock className="h-4 w-4 text-muted" />
-            {event.allDay ? 'All day' : formatTimeRange(event.startTime, event.endTime, settings.timeFormat)}
+            {event.allDay ? 'Весь день' : formatTimeRange(event.startTime, event.endTime, settings.timeFormat)}
           </p>
           {event.recurrence && (
             <p className="flex items-center gap-3">
@@ -97,7 +97,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
           )}
           <div className="flex flex-wrap gap-1.5">
             {category && <Badge color={color}>{category.name}</Badge>}
-            {event.source !== 'plano' && <Badge>Imported from Google Calendar</Badge>}
+            {event.source !== 'plano' && <Badge>Імпортовано з Google Calendar</Badge>}
           </div>
           {event.description && <p className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 leading-relaxed text-muted">{event.description}</p>}
         </div>
@@ -106,21 +106,21 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  <Trash2 className="h-4 w-4" /> Delete…
+                  <Trash2 className="h-4 w-4" /> Видалити…
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem onSelect={() => void removeOccurrence()}>
-                  Only {formatDateKey(occurrence, 'MMM d')}
+                  Лише {formatDateKey(occurrence, 'd MMM')}
                 </DropdownMenuItem>
                 <DropdownMenuItem danger onSelect={() => void removeAll()}>
-                  All events in the series
+                  Усю серію
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Button variant="outline" onClick={() => void removeAll()}>
-              <Trash2 className="h-4 w-4" /> Delete
+              <Trash2 className="h-4 w-4" /> Видалити
             </Button>
           )}
           <Button
@@ -130,7 +130,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
               openEventForm({ event });
             }}
           >
-            <Pencil className="h-4 w-4" /> Edit
+            <Pencil className="h-4 w-4" /> Редагувати
           </Button>
         </DialogFooter>
       </DialogContent>

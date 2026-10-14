@@ -7,7 +7,7 @@ export function SyncFeedback() {
   useEffect(
     () =>
       onWriteFailure(({ label, error, retry }) => {
-        toast.error(`${label} failed`, { description: describeError(error), action: { label: 'Retry', onClick: retry } });
+        toast.error(`Не вдалося: ${label.toLowerCase()}`, { description: describeError(error), action: { label: 'Повторити', onClick: retry } });
       }),
     [],
   );

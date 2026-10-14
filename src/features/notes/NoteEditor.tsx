@@ -83,7 +83,7 @@ export function NoteEditor({ note }: { note: Note }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note.title, note.content, note.tags]);
 
-  const wrap = (before: string, after = before, placeholder = 'text') => {
+  const wrap = (before: string, after = before, placeholder = 'текст') => {
     const el = textRef.current;
     if (!el) return;
     const { selectionStart: s, selectionEnd: e } = el;
@@ -112,12 +112,12 @@ export function NoteEditor({ note }: { note: Note }) {
   const html = useMemo(() => (preview ? renderMarkdown(content) : ''), [preview, content]);
 
   const remove = async () => {
-    const ok = await confirm({ title: 'Delete note?', description: `“${title || 'Untitled note'}” will be permanently deleted.`, confirmLabel: 'Delete', danger: true });
+    const ok = await confirm({ title: 'Видалити нотатку?', description: `«${title || 'Без назви'}» буде видалено назавжди.`, confirmLabel: 'Видалити', danger: true });
     if (!ok) return;
     save.cancel();
     try {
       await actions.notes.remove(note.id);
-      toast.success('Note deleted');
+      toast.success('Нотатку видалено');
       navigate('/notes');
     } catch {
       /* toast from sync layer */
@@ -125,18 +125,18 @@ export function NoteEditor({ note }: { note: Note }) {
   };
 
   const tools = [
-    { icon: Bold, label: 'Bold', run: () => wrap('**') },
-    { icon: Italic, label: 'Italic', run: () => wrap('*') },
-    { icon: Heading2, label: 'Heading', run: () => linePrefix('## ') },
-    { icon: List, label: 'Bullet list', run: () => linePrefix('- ') },
-    { icon: ListChecks, label: 'Checklist', run: () => linePrefix('- [ ] ') },
-    { icon: Link2, label: 'Link', run: () => wrap('[', '](https://)', 'link') },
+    { icon: Bold, label: 'Жирний', run: () => wrap('**') },
+    { icon: Italic, label: 'Курсив', run: () => wrap('*') },
+    { icon: Heading2, label: 'Заголовок', run: () => linePrefix('## ') },
+    { icon: List, label: 'Список', run: () => linePrefix('- ') },
+    { icon: ListChecks, label: 'Чекліст', run: () => linePrefix('- [ ] ') },
+    { icon: Link2, label: 'Посилання', run: () => wrap('[', '](https://)', 'посилання') },
   ];
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-wrap items-center gap-1 border-b border-line px-3 py-2">
-        <Button variant="ghost" size="icon-sm" className="lg:hidden" aria-label="Back to notes" onClick={() => { save.flush(); navigate('/notes'); }}>
+        <Button variant="ghost" size="icon-sm" className="lg:hidden" aria-label="До нотаток" onClick={() => { save.flush(); navigate('/notes'); }}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         {!preview &&
@@ -147,22 +147,22 @@ export function NoteEditor({ note }: { note: Note }) {
           ))}
         <Button variant="ghost" size="sm" onClick={() => setPreview((p) => !p)} aria-pressed={preview}>
           {preview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          {preview ? 'Edit' : 'Preview'}
+          {preview ? 'Редагувати' : 'Перегляд'}
         </Button>
         <div className="ml-auto flex items-center gap-1">
           <span className="mr-1 flex items-center gap-1 text-xs text-muted" role="status">
             {state === 'saving' || state === 'pending' ? <Loader2 className="h-3 w-3 animate-spin" /> : state === 'saved' ? <Check className="h-3 w-3 text-success" /> : null}
-            {state === 'pending' ? 'Editing…' : state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : <span className="text-danger">Not saved</span>}
+            {state === 'pending' ? 'Редагування…' : state === 'saving' ? 'Збереження…' : state === 'saved' ? 'Збережено' : <span className="text-danger">Не збережено</span>}
           </span>
           <Button
             variant="ghost"
             size="icon-sm"
-            aria-label={note.isPinned ? 'Unpin note' : 'Pin note'}
+            aria-label={note.isPinned ? 'Відкріпити' : 'Закріпити'}
             onClick={() => void actions.notes.update(note.id, { isPinned: !note.isPinned }).catch(() => undefined)}
           >
             {note.isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon-sm" aria-label="Delete note" onClick={() => void remove()}>
+          <Button variant="ghost" size="icon-sm" aria-label="Видалити нотатку" onClick={() => void remove()}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
@@ -171,8 +171,8 @@ export function NoteEditor({ note }: { note: Note }) {
         <input
           value={title}
           onChange={(e) => change({ title: e.target.value })}
-          placeholder="Untitled note"
-          aria-label="Note title"
+          placeholder="Без назви"
+          aria-label="Назва нотатки"
           maxLength={300}
           className="w-full bg-transparent text-[22px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle"
         />
@@ -180,32 +180,32 @@ export function NoteEditor({ note }: { note: Note }) {
           <input
             value={tagsText}
             onChange={(e) => change({ tags: e.target.value })}
-            placeholder="Tags, comma separated"
-            aria-label="Tags"
+            placeholder="Теги через кому"
+            aria-label="Теги"
             className="h-8 min-w-[180px] flex-1 rounded-lg border border-line bg-surface px-2.5 text-xs outline-none focus:border-primary"
           />
           <Select
-            aria-label="Project"
+            aria-label="Проєкт"
             className="h-8 w-auto text-xs"
             value={note.projectId ?? ''}
             onChange={(e) => void actions.notes.update(note.id, { projectId: e.target.value || undefined }).catch(() => undefined)}
           >
-            <option value="">No project</option>
+            <option value="">Без проєкту</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </Select>
         </div>
         {preview ? (
-          <div className={cn('prose-note mt-5 text-[15px] text-ink', !content && 'text-muted')} dangerouslySetInnerHTML={{ __html: html || '<p>Nothing to preview yet.</p>' }} />
+          <div className={cn('prose-note mt-5 text-[15px] text-ink', !content && 'text-muted')} dangerouslySetInnerHTML={{ __html: html || '<p>Поки нічого показати.</p>' }} />
         ) : (
           <textarea
             ref={textRef}
             value={content}
             onChange={(e) => change({ content: e.target.value })}
             onBlur={() => save.flush()}
-            placeholder={'Start writing…\n\nMarkdown works: **bold**, *italic*, ## heading, - list, - [ ] checklist'}
-            aria-label="Note content"
+            placeholder={'Почніть писати…\n\nПрацює Markdown: **жирний**, *курсив*, ## заголовок, - список, - [ ] чекліст'}
+            aria-label="Текст нотатки"
             className="mt-5 min-h-[55vh] w-full resize-none bg-transparent text-[15px] leading-relaxed text-ink outline-none placeholder:text-subtle"
           />
         )}

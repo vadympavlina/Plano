@@ -1,10 +1,10 @@
 import { cn } from '@/lib/utils/cn';
 
 const QUOTES = [
-  ['Progress,', 'not perfection.'],
-  ['Small steps,', 'big results.'],
-  ['Focus on', 'what matters.'],
-  ['One thing', 'at a time.'],
+  ['Прогрес,', 'а не досконалість.'],
+  ['Маленькі кроки —', 'великі результати.'],
+  ['Зосередься', 'на важливому.'],
+  ['Одна справа', 'за раз.'],
 ];
 
 /** A calm, decorative card with a rotating daily line and a mountain silhouette. */
@@ -30,7 +30,7 @@ export function MotivationCard({ className }: { className?: string }) {
         <br />
         {b}
       </p>
-      <p className="relative text-xs leading-relaxed text-white/60">A little progress each day adds up to big results.</p>
+      <p className="relative text-xs leading-relaxed text-white/60">Трохи прогресу щодня складається у великі результати.</p>
     </div>
   );
 }

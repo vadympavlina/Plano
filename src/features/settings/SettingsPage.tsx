@@ -27,13 +27,23 @@ import type { Category, Settings, ThemePreference } from '@/types';
 import { buildExport, validateImport, type ImportResult } from './dataTransfer';
 
 const SECTIONS = [
-  { id: 'profile', label: 'Profile', icon: UserRound },
-  { id: 'appearance', label: 'Appearance', icon: Palette },
-  { id: 'preferences', label: 'Preferences', icon: SlidersHorizontal },
-  { id: 'categories', label: 'Categories', icon: Tags },
-  { id: 'data', label: 'Data', icon: Database },
-  { id: 'integrations', label: 'Integrations', icon: Plug },
+  { id: 'profile', label: 'Профіль', icon: UserRound },
+  { id: 'appearance', label: 'Вигляд', icon: Palette },
+  { id: 'preferences', label: 'Параметри', icon: SlidersHorizontal },
+  { id: 'categories', label: 'Категорії', icon: Tags },
+  { id: 'data', label: 'Дані', icon: Database },
+  { id: 'integrations', label: 'Інтеграції', icon: Plug },
 ] as const;
+
+const SUMMARY_LABEL: Record<string, string> = {
+  categories: 'Категорії',
+  tasks: 'Задачі',
+  events: 'Події',
+  projects: 'Проєкти',
+  habits: 'Звички',
+  goals: 'Цілі',
+  notes: 'Нотатки',
+};
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -52,7 +62,7 @@ function ProfileSection() {
   const [name, setName] = useState(data.profile.displayName ?? profile.name);
   const [avatar, setAvatar] = useState(data.profile.avatarUrl ?? '');
   const [busy, setBusy] = useState(false);
-  const avatarError = avatar && !/^https:\/\/\S+$/i.test(avatar) ? 'Use an https:// image link.' : undefined;
+  const avatarError = avatar && !/^https:\/\/\S+$/i.test(avatar) ? 'Вкажіть посилання на зображення, що починається з https://' : undefined;
   const user = state.status === 'signedIn' ? state.user : null;
 
   const save = async () => {
@@ -61,7 +71,7 @@ function ProfileSection() {
     try {
       await settleWrite(repos.profile.update({ displayName: name.trim() || undefined, avatarUrl: avatar.trim() || undefined }));
       if (backendKind === 'firebase') await updateAuthProfile({ displayName: name.trim() || null }).catch(() => undefined);
-      toast.success('Profile saved');
+      toast.success('Профіль збережено');
     } catch {
       /* toast from sync layer */
     } finally {
@@ -70,28 +80,28 @@ function ProfileSection() {
   };
 
   return (
-    <Section title="Profile" description="Your name is used in greetings across Plano.">
+    <Section title="Профіль" description="Ім’я використовується у привітаннях у Plano.">
       <div className="mb-5 flex items-center gap-4">
         <Avatar name={name || profile.name} src={avatar && !avatarError ? avatar : profile.avatarUrl} className="h-14 w-14 text-base" />
         <div className="min-w-0 text-sm">
-          <p className="font-medium">{name || profile.name || 'No name set'}</p>
-          <p className="truncate text-muted">{user?.email ?? (backendKind === 'local' ? 'Local preview (not signed in)' : '')}</p>
+          <p className="font-medium">{name || profile.name || 'Ім’я не вказано'}</p>
+          <p className="truncate text-muted">{user?.email ?? (backendKind === 'local' ? 'Локальний перегляд (без входу)' : '')}</p>
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Display name">{(p) => <Input {...p} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />}</Field>
-        <Field label="Avatar image URL" error={avatarError} hint="Optional. Leave empty to use your account photo.">
+        <Field label="Ім’я">{(p) => <Input {...p} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />}</Field>
+        <Field label="Посилання на аватар" error={avatarError} hint="Необов’язково. Залиште порожнім, щоб використати фото акаунта.">
           {(p) => <Input {...p} type="url" placeholder="https://…" value={avatar} onChange={(e) => setAvatar(e.target.value)} />}
         </Field>
       </div>
       {user && (
         <p className="mt-4 break-all text-xs text-subtle">
-          User ID: <code className="font-mono">{user.uid}</code>
+          ID користувача: <code className="font-mono">{user.uid}</code>
         </p>
       )}
       <div className="mt-5 flex justify-end">
         <Button variant="dark" onClick={() => void save()} loading={busy} disabled={!!avatarError}>
-          Save profile
+          Зберегти профіль
         </Button>
       </div>
     </Section>
@@ -101,13 +111,13 @@ function ProfileSection() {
 function AppearanceSection() {
   const { data, repos } = useData();
   const options: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
-    { value: 'light', label: 'Light', icon: Sun },
-    { value: 'dark', label: 'Dark', icon: Moon },
-    { value: 'system', label: 'System', icon: Monitor },
+    { value: 'light', label: 'Світла', icon: Sun },
+    { value: 'dark', label: 'Темна', icon: Moon },
+    { value: 'system', label: 'Системна', icon: Monitor },
   ];
   return (
-    <Section title="Appearance" description="Light is the default. System follows your device setting.">
-      <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Theme">
+    <Section title="Вигляд" description="За замовчуванням — світла тема. Системна повторює налаштування пристрою.">
+      <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Тема">
         {options.map(({ value, label, icon: Icon }) => (
           <button
             key={value}
@@ -135,28 +145,28 @@ function PreferencesSection() {
   const set = (patch: Partial<Settings>) => void repos.settings.update(patch).catch(() => undefined);
   const sample = todayKey();
   return (
-    <Section title="Preferences">
+    <Section title="Параметри">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Week starts on">
+        <Field label="Початок тижня">
           {(p) => (
             <Select {...p} value={s.weekStartsOn} onChange={(e) => set({ weekStartsOn: Number(e.target.value) as 0 | 1 })}>
-              <option value={1}>Monday</option>
-              <option value={0}>Sunday</option>
+              <option value={1}>Понеділок</option>
+              <option value={0}>Неділя</option>
             </Select>
           )}
         </Field>
-        <Field label="Time format">
+        <Field label="Формат часу">
           {(p) => (
             <Select {...p} value={s.timeFormat} onChange={(e) => set({ timeFormat: e.target.value as Settings['timeFormat'] })}>
-              <option value="24h">24-hour (14:30)</option>
-              <option value="12h">12-hour (2:30 PM)</option>
+              <option value="24h">24 години (14:30)</option>
+              <option value="12h">12 годин (2:30 PM)</option>
             </Select>
           )}
         </Field>
-        <Field label="Date format">
+        <Field label="Формат дати">
           {(p) => (
             <Select {...p} value={s.dateFormat} onChange={(e) => set({ dateFormat: e.target.value as Settings['dateFormat'] })}>
-              {(['MMM d, yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => (
+              {(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => (
                 <option key={f} value={f}>
                   {formatDateKey(sample, f)}
                 </option>
@@ -164,30 +174,30 @@ function PreferencesSection() {
             </Select>
           )}
         </Field>
-        <Field label="Default calendar view" hint="On phones the week view opens as a day view unless chosen explicitly.">
+        <Field label="Вигляд календаря за замовчуванням" hint="На телефоні тижневий вигляд відкривається як день, якщо не обрати інше.">
           {(p) => (
             <Select {...p} value={s.defaultCalendarView} onChange={(e) => set({ defaultCalendarView: e.target.value as Settings['defaultCalendarView'] })}>
-              <option value="day">Day</option>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
+              <option value="day">День</option>
+              <option value="week">Тиждень</option>
+              <option value="month">Місяць</option>
             </Select>
           )}
         </Field>
         <Field
-          label="Time zone"
-          hint="Times are stored as local wall-clock times and shown in this device’s time zone. A separate time-zone override is not supported yet."
+          label="Часовий пояс"
+          hint="Час зберігається як локальний і показується в часовому поясі цього пристрою. Окремий часовий пояс поки не підтримується."
         >
           {(p) => <Input {...p} value={deviceTimeZone()} readOnly disabled />}
         </Field>
       </div>
-      <p className="mt-4 text-xs text-subtle">Changes are saved automatically and sync to your other devices.</p>
+      <p className="mt-4 text-xs text-subtle">Зміни зберігаються автоматично й синхронізуються з іншими пристроями.</p>
       <Button
         variant="link"
         size="sm"
         className="mt-2"
         onClick={() => set({ weekStartsOn: DEFAULT_SETTINGS.weekStartsOn, timeFormat: DEFAULT_SETTINGS.timeFormat, dateFormat: DEFAULT_SETTINGS.dateFormat, defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView })}
       >
-        Reset to defaults
+        Скинути до стандартних
       </Button>
     </Section>
   );
@@ -204,33 +214,33 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
   return (
     <li className="flex items-center gap-3 py-2">
       <Popover>
-        <PopoverTrigger className="h-6 w-6 shrink-0 rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line" style={{ backgroundColor: colorOf(category.color) }} aria-label={`Change color of ${category.name}`} />
+        <PopoverTrigger className="h-6 w-6 shrink-0 rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line" style={{ backgroundColor: colorOf(category.color) }} aria-label={`Змінити колір «${category.name}»`} />
         <PopoverContent className="w-[220px]">
           <ColorPicker value={category.color} onChange={(color) => void actions.categories.update(category.id, { color }).catch(() => undefined)} />
         </PopoverContent>
       </Popover>
       <Input
         className="h-9 flex-1"
-        aria-label="Category name"
+        aria-label="Назва категорії"
         value={name}
         maxLength={60}
         onChange={(e) => setName(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
-      <span className="hidden w-20 text-right text-xs text-muted sm:block">{usage} items</span>
+      <span className="hidden w-20 text-right text-xs text-muted sm:block">елементів: {usage}</span>
       <Button
         variant="ghost"
         size="icon-sm"
-        aria-label={`Delete ${category.name}`}
+        aria-label={`Видалити «${category.name}»`}
         onClick={async () => {
           const ok = await confirm({
-            title: `Delete “${category.name}”?`,
-            description: usage ? `${usage} item(s) use this category. They will be kept without a category.` : undefined,
-            confirmLabel: 'Delete',
+            title: `Видалити «${category.name}»?`,
+            description: usage ? `Цю категорію використовують елементи: ${usage}. Вони залишаться без категорії.` : undefined,
+            confirmLabel: 'Видалити',
             danger: true,
           });
-          if (ok) await actions.categories.remove(category.id).then(() => toast.success('Category deleted'), () => undefined);
+          if (ok) await actions.categories.remove(category.id).then(() => toast.success('Категорію видалено'), () => undefined);
         }}
       >
         <Trash2 className="h-4 w-4" />
@@ -251,7 +261,7 @@ function CategoriesSection() {
     setName('');
   };
   return (
-    <Section title="Categories" description="Used to colour tasks, events and goals.">
+    <Section title="Категорії" description="Кольори для задач, подій і цілей.">
       <ul className="divide-y divide-line">
         {categories.map((c) => (
           <CategoryRow
@@ -268,9 +278,9 @@ function CategoriesSection() {
           add();
         }}
       >
-        <Input placeholder="New category" aria-label="New category name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
+        <Input placeholder="Нова категорія" aria-label="Назва нової категорії" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
         <Button type="submit" variant="outline" disabled={!name.trim()}>
-          <Plus className="h-4 w-4" /> Add
+          <Plus className="h-4 w-4" /> Додати
         </Button>
       </form>
     </Section>
@@ -291,7 +301,7 @@ function DataSection() {
     a.download = `plano-export-${todayKey()}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast.success('Export downloaded');
+    toast.success('Експорт завантажено');
   };
 
   const onFile = async (file: File | undefined) => {
@@ -303,17 +313,17 @@ function DataSection() {
   const applyImport = async () => {
     if (!result?.ok) return;
     const ok = await confirm({
-      title: 'Replace all data with this file?',
-      description: 'Everything currently in Plano will be replaced by the imported data. Export a backup first if unsure.',
-      confirmLabel: 'Replace data',
+      title: 'Замінити всі дані цим файлом?',
+      description: 'Усе, що зараз є в Plano, буде замінено імпортованими даними. Якщо сумніваєтеся, спершу зробіть експорт.',
+      confirmLabel: 'Замінити дані',
       danger: true,
-      typeToConfirm: 'IMPORT',
+      typeToConfirm: 'ІМПОРТ',
     });
     if (!ok) return;
     setBusy(true);
     try {
       await settleWrite(repos.replaceAll({ ...result.file.data, settings: { ...DEFAULT_SETTINGS, ...result.file.data.settings } }));
-      toast.success('Data imported');
+      toast.success('Дані імпортовано');
       setResult(null);
     } catch {
       /* toast from sync layer */
@@ -324,16 +334,16 @@ function DataSection() {
 
   const deleteAll = async () => {
     const ok = await confirm({
-      title: 'Delete all your data?',
-      description: 'Tasks, events, projects, habits, goals, notes, categories and settings will be permanently deleted. This cannot be undone.',
-      confirmLabel: 'Delete everything',
+      title: 'Видалити всі ваші дані?',
+      description: 'Задачі, події, проєкти, звички, цілі, нотатки, категорії та налаштування буде видалено назавжди. Це не можна скасувати.',
+      confirmLabel: 'Видалити все',
       danger: true,
-      typeToConfirm: 'DELETE',
+      typeToConfirm: 'ВИДАЛИТИ',
     });
     if (!ok) return;
     try {
       await settleWrite(repos.removeAll());
-      toast.success('All data deleted');
+      toast.success('Усі дані видалено');
     } catch {
       /* toast from sync layer */
     }
@@ -341,19 +351,19 @@ function DataSection() {
 
   return (
     <>
-      <Section title="Export" description="Download all your Plano data as a JSON file.">
+      <Section title="Експорт" description="Завантажте всі дані Plano у файлі JSON.">
         <Button variant="outline" onClick={exportData}>
-          <Download className="h-4 w-4" /> Export JSON
+          <Download className="h-4 w-4" /> Експорт JSON
         </Button>
       </Section>
-      <Section title="Import" description="Restore from a Plano export. The file is checked before anything is written.">
+      <Section title="Імпорт" description="Відновлення з експорту Plano. Файл перевіряється до того, як щось буде записано.">
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
         <Button variant="outline" onClick={() => fileRef.current?.click()}>
-          <Upload className="h-4 w-4" /> Choose file…
+          <Upload className="h-4 w-4" /> Обрати файл…
         </Button>
         {result && !result.ok && (
           <div role="alert" className="mt-4 rounded-xl bg-danger/10 p-3 text-sm text-danger">
-            <p className="font-medium">This file can’t be imported:</p>
+            <p className="font-medium">Цей файл не можна імпортувати:</p>
             <ul className="mt-1 list-disc pl-5 text-xs">
               {result.errors.map((e) => (
                 <li key={e}>{e}</li>
@@ -363,28 +373,28 @@ function DataSection() {
         )}
         {result?.ok && (
           <div className="mt-4 rounded-xl border border-line p-4">
-            <p className="text-sm font-medium">Valid export from {new Date(result.file.exportedAt).toLocaleString()}</p>
+            <p className="text-sm font-medium">Коректний експорт від {new Date(result.file.exportedAt).toLocaleString('uk-UA')}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {Object.entries(result.summary).map(([k, v]) => (
                 <Badge key={k}>
-                  {v} {k}
+                  {SUMMARY_LABEL[k] ?? k}: {v}
                 </Badge>
               ))}
             </div>
             <div className="mt-4 flex gap-2">
               <Button variant="outline" size="sm" onClick={() => setResult(null)}>
-                Cancel
+                Скасувати
               </Button>
               <Button variant="dark" size="sm" loading={busy} onClick={() => void applyImport()}>
-                Replace my data
+                Замінити мої дані
               </Button>
             </div>
           </div>
         )}
       </Section>
-      <Section title="Delete data" description={backendKind === 'local' ? 'Removes all preview data from this browser.' : 'Permanently removes all your data from Firebase.'}>
+      <Section title="Видалення даних" description={backendKind === 'local' ? 'Видаляє всі дані перегляду з цього браузера.' : 'Назавжди видаляє всі ваші дані з Firebase.'}>
         <Button variant="danger" onClick={() => void deleteAll()}>
-          <Trash2 className="h-4 w-4" /> Delete all data
+          <Trash2 className="h-4 w-4" /> Видалити всі дані
         </Button>
       </Section>
     </>
@@ -394,7 +404,7 @@ function DataSection() {
 function IntegrationsSection() {
   const availability = googleCalendarProvider.availability();
   return (
-    <Section title="Integrations" description="Connect external services to Plano.">
+    <Section title="Інтеграції" description="Підключення зовнішніх сервісів до Plano.">
       <div className="flex flex-col gap-4 rounded-xl border border-line p-4 sm:flex-row sm:items-center">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2">
           <CalendarDays className="h-5 w-5 text-primary" />
@@ -402,16 +412,16 @@ function IntegrationsSection() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium">Google Calendar</p>
-            <Badge>Not connected</Badge>
-            <Badge color="#9275EF">Coming soon</Badge>
+            <Badge>Не підключено</Badge>
+            <Badge color="#9275EF">Незабаром</Badge>
           </div>
           <p className="mt-1 text-[13px] leading-relaxed text-muted">
-            Two-way sync of events is planned. Plano already keeps your own events separate from imported ones and stores external ids to prevent duplicates.
+            Заплановано двосторонню синхронізацію подій. Plano вже відокремлює власні події від імпортованих і зберігає зовнішні ідентифікатори, щоб уникати дублікатів.
             {!availability.available && ` ${availability.reason}`}
           </p>
         </div>
-        <Button variant="outline" disabled aria-disabled title="Not available yet">
-          Connect
+        <Button variant="outline" disabled aria-disabled title="Поки недоступно">
+          Підключити
         </Button>
       </div>
     </Section>
@@ -423,9 +433,9 @@ export default function SettingsPage() {
   const current = SECTIONS.find((s) => s.id === section)?.id ?? 'profile';
   return (
     <PageContainer>
-      <PageHeader title="Settings" />
+      <PageHeader title="Налаштування" />
       <div className="flex flex-col gap-6 lg:flex-row">
-        <nav aria-label="Settings sections" className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:px-0">
+        <nav aria-label="Розділи налаштувань" className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:px-0">
           {SECTIONS.map(({ id, label, icon: Icon }) => (
             <NavLink
               key={id}

@@ -179,7 +179,7 @@ export interface Settings {
   theme: ThemePreference;
   weekStartsOn: 0 | 1;
   timeFormat: '12h' | '24h';
-  dateFormat: 'MMM d, yyyy' | 'd MMM yyyy' | 'dd.MM.yyyy' | 'MM/dd/yyyy' | 'yyyy-MM-dd';
+  dateFormat: 'd MMMM yyyy' | 'd MMM yyyy' | 'dd.MM.yyyy' | 'MM/dd/yyyy' | 'yyyy-MM-dd';
   defaultCalendarView: CalendarView;
   /** Overrides the device time zone for display of "now"; empty = device. */
   timezone?: string;

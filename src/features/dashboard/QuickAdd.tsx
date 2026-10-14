@@ -13,9 +13,9 @@ import { toast } from '@/components/ui/toast';
 type Kind = 'task' | 'event' | 'note';
 
 const KINDS: { value: Kind; label: string; icon: typeof CheckSquare }[] = [
-  { value: 'task', label: 'Task', icon: CheckSquare },
-  { value: 'event', label: 'Event', icon: CalendarDays },
-  { value: 'note', label: 'Note', icon: NotebookPen },
+  { value: 'task', label: 'Задача', icon: CheckSquare },
+  { value: 'event', label: 'Подія', icon: CalendarDays },
+  { value: 'note', label: 'Нотатка', icon: NotebookPen },
 ];
 
 /** One-line capture: type a title, choose what it is, optionally a date. */
@@ -44,7 +44,7 @@ export function QuickAdd({ className }: { className?: string }) {
         await settleWrite(
           actions.tasks.create({ title: t, status: 'todo', priority: 'medium', subtasks: [], tags: [], dueDate: date || undefined }).write,
         );
-        toast.success('Task added');
+        toast.success('Задачу додано');
       } else {
         const start = time || '09:00';
         await settleWrite(
@@ -59,7 +59,7 @@ export function QuickAdd({ className }: { className?: string }) {
             timezone: deviceTimeZone(),
           }).write,
         );
-        toast.success('Event added');
+        toast.success('Подію додано');
       }
       setTitle('');
     } catch {
@@ -75,16 +75,16 @@ export function QuickAdd({ className }: { className?: string }) {
         <Input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={kind === 'task' ? 'Add a task…' : kind === 'event' ? 'Add an event…' : 'Start a note…'}
-          aria-label="Quick add title"
+          placeholder={kind === 'task' ? 'Додати задачу…' : kind === 'event' ? 'Додати подію…' : 'Почати нотатку…'}
+          aria-label="Назва для швидкого додавання"
           maxLength={300}
         />
-        <Button type="submit" variant="dark" size="icon" aria-label="Add" loading={busy} disabled={!title.trim()}>
+        <Button type="submit" variant="dark" size="icon" aria-label="Додати" loading={busy} disabled={!title.trim()}>
           {!busy && <ArrowRight className="h-4 w-4" />}
         </Button>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        <div role="radiogroup" aria-label="Type" className="inline-flex rounded-lg bg-surface-2 p-0.5">
+        <div role="radiogroup" aria-label="Тип" className="inline-flex rounded-lg bg-surface-2 p-0.5">
           {KINDS.map(({ value, label, icon: Icon }) => (
             <button
               key={value}
@@ -105,8 +105,8 @@ export function QuickAdd({ className }: { className?: string }) {
         {kind !== 'note' && (
           <div className="flex flex-wrap items-center gap-1.5">
             {[
-              [today, 'Today'],
-              [addDaysKey(today, 1), 'Tomorrow'],
+              [today, 'Сьогодні'],
+              [addDaysKey(today, 1), 'Завтра'],
             ].map(([d, l]) => (
               <button
                 key={d}
@@ -123,7 +123,7 @@ export function QuickAdd({ className }: { className?: string }) {
             ))}
             <input
               type="date"
-              aria-label="Date"
+              aria-label="Дата"
               value={date}
               onChange={(e) => setDate(e.target.value)}
               className="h-7 rounded-md border border-line bg-surface px-1.5 text-xs text-ink"
@@ -131,7 +131,7 @@ export function QuickAdd({ className }: { className?: string }) {
             {kind === 'event' && (
               <input
                 type="time"
-                aria-label="Start time"
+                aria-label="Час початку"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 className="h-7 rounded-md border border-line bg-surface px-1.5 text-xs text-ink"
@@ -139,7 +139,7 @@ export function QuickAdd({ className }: { className?: string }) {
             )}
             {kind === 'task' && date && (
               <button type="button" className="rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2" onClick={() => setDate('')}>
-                No date
+                Без дати
               </button>
             )}
           </div>

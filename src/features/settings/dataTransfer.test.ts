@@ -9,7 +9,7 @@ const data: UserData = {
     theme: 'light',
     weekStartsOn: 1,
     timeFormat: '24h',
-    dateFormat: 'MMM d, yyyy',
+    dateFormat: 'd MMM yyyy',
     defaultCalendarView: 'week',
     showHabitStreakOnDashboard: true,
   },

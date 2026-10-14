@@ -115,7 +115,7 @@ export function TimeGrid({
     const start = minutesToTime(item.start + deltaMin);
     const end = minutesToTime(Math.min(item.end + deltaMin, 24 * 60 - 1));
     void actions.events.move(ev, date, start, end).then(
-      () => toast.success(`Moved to ${formatDateKey(date, 'EEE d')} · ${formatTime(start, settings.timeFormat)}`),
+      () => toast.success(`Перенесено: ${formatDateKey(date, 'EEEEEE, d MMM')} · ${formatTime(start, settings.timeFormat)}`),
       () => undefined,
     );
   };
@@ -137,10 +137,10 @@ export function TimeGrid({
                 type="button"
                 onClick={() => onSelectDay(d)}
                 className={cn('flex flex-col items-center gap-1 py-2.5 transition-colors hover:bg-surface-2', single && 'items-start pl-3')}
-                aria-label={`Open ${formatDateKey(d, 'EEEE, MMMM d')}`}
+                aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
               >
                 <span className={cn('text-[11px] font-medium uppercase tracking-wide', isToday ? 'text-ink' : 'text-subtle')}>
-                  {formatDateKey(d, single ? 'EEEE' : 'EEE')}
+                  {formatDateKey(d, single ? 'EEEE' : 'EEEEEE')}
                 </span>
                 <span
                   className={cn(
@@ -159,7 +159,7 @@ export function TimeGrid({
       {/* All-day row */}
       {hasAllDayRow && (
         <div className="flex border-b border-line">
-          <div className="flex w-12 shrink-0 items-start justify-end pr-2 pt-2 text-[10px] text-subtle sm:w-14">all-day</div>
+          <div className="flex w-12 shrink-0 items-start justify-end pr-2 pt-2 text-[10px] text-subtle sm:w-14">весь день</div>
           <div className="grid flex-1" style={gridCols}>
             {columns.map((c) => (
               <div key={c.day} className="scrollbar-thin max-h-[108px] min-w-0 space-y-1 overflow-y-auto border-l border-line p-1">
@@ -248,7 +248,7 @@ export function TimeGrid({
                       key={item.key}
                       role="button"
                       tabIndex={0}
-                      aria-label={`${item.title}, ${formatTime(startLabel, settings.timeFormat)} to ${formatTime(endLabel, settings.timeFormat)}`}
+                      aria-label={`${item.title}, ${formatTime(startLabel, settings.timeFormat)} – ${formatTime(endLabel, settings.timeFormat)}`}
                       onPointerDown={(e) => onPointerDown(e, item, dayIndex)}
                       onClick={(e) => {
                         e.stopPropagation();

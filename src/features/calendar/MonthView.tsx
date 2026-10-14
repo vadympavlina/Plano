@@ -60,7 +60,7 @@ export function MonthView({
                 <button
                   type="button"
                   onClick={() => onSelectDay(d)}
-                  aria-label={`Open ${d}`}
+                  aria-label={`Відкрити ${d}`}
                   className={cn(
                     'flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
                     isToday ? 'bg-accent font-semibold text-surface hover:bg-accent' : inMonth ? 'text-ink' : 'text-subtle',
@@ -70,7 +70,7 @@ export function MonthView({
                 </button>
                 <button
                   type="button"
-                  aria-label={`New event on ${d}`}
+                  aria-label={`Нова подія ${d}`}
                   onClick={() => openEventForm({ defaults: { date: d } })}
                   className="hidden rounded p-0.5 text-subtle hover:bg-surface-2 hover:text-ink sm:group-hover:block"
                 >
@@ -78,7 +78,7 @@ export function MonthView({
                 </button>
               </div>
               {/* Phones: dots only */}
-              <button type="button" className="flex flex-wrap gap-0.5 sm:hidden" onClick={() => onSelectDay(d)} aria-label={`${items.length} items`}>
+              <button type="button" className="flex flex-wrap gap-0.5 sm:hidden" onClick={() => onSelectDay(d)} aria-label={`Елементів: ${items.length}`}>
                 {items.slice(0, 6).map((it, i) => (
                   <span
                     key={i}
@@ -126,7 +126,7 @@ export function MonthView({
                 )}
                 {extra > 0 && (
                   <button type="button" onClick={() => onSelectDay(d)} className="px-1 text-[11px] font-medium text-muted hover:text-ink">
-                    +{extra + 1} more
+                    ще {extra + 1}
                   </button>
                 )}
               </div>

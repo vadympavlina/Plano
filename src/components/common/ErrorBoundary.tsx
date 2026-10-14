@@ -35,8 +35,8 @@ export class ErrorBoundary extends Component<Props, State> {
         this.props.fallback(this.state.error, this.reset)
       ) : (
         <ErrorState
-          title="This part of Plano crashed"
-          message="Your data is safe. Try again, or reload the app if the problem persists."
+          title="Ця частина Plano дала збій"
+          message="Ваші дані в безпеці. Спробуйте ще раз або перезавантажте застосунок, якщо проблема повториться."
           onRetry={this.reset}
         />
       );

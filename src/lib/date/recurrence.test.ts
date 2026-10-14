@@ -60,9 +60,10 @@ describe('recurrence', () => {
   });
 
   it('describes rules', () => {
-    expect(describeRecurrence(undefined)).toBe('Does not repeat');
-    expect(describeRecurrence({ freq: 'weekly', interval: 1, byWeekday: [1, 2, 3, 4, 5] })).toBe('Every weekday');
-    expect(describeRecurrence({ freq: 'weekly', interval: 1, byWeekday: [0, 1] })).toBe('Weekly on Mon, Sun');
-    expect(describeRecurrence({ freq: 'daily', interval: 3 })).toBe('Every 3 days');
+    expect(describeRecurrence(undefined)).toBe('Не повторюється');
+    expect(describeRecurrence({ freq: 'weekly', interval: 1, byWeekday: [1, 2, 3, 4, 5] })).toBe('Щобудня');
+    expect(describeRecurrence({ freq: 'weekly', interval: 1, byWeekday: [0, 1] })).toBe('Щотижня: пн, нд');
+    expect(describeRecurrence({ freq: 'daily', interval: 3 })).toBe('Кожні 3 дні');
+    expect(describeRecurrence({ freq: 'monthly', interval: 5 })).toBe('Кожні 5 місяців');
   });
 });

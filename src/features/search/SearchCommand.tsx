@@ -37,7 +37,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
     if (!q) {
       return NAV_ITEMS.map((n) => ({
         id: `nav-${n.to}`,
-        group: 'Go to',
+        group: 'Перейти',
         icon: <n.icon />,
         title: n.label,
         run: go(() => navigate(n.to)),
@@ -59,10 +59,10 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
       (t) => norm(t.title).includes(q) || norm(t.description).includes(q) || t.tags.some((g) => norm(g).includes(q)),
       (t) => ({
         id: `t-${t.id}`,
-        group: 'Tasks',
+        group: 'Задачі',
         icon: <CheckSquare />,
         title: t.title,
-        subtitle: [t.status === 'completed' ? 'Completed' : null, t.dueDate ? formatDateKey(t.dueDate, 'MMM d') : null].filter(Boolean).join(' · '),
+        subtitle: [t.status === 'completed' ? 'Виконано' : null, t.dueDate ? formatDateKey(t.dueDate, 'd MMM') : null].filter(Boolean).join(' · '),
         run: go(() => openTask(t.id)),
       }),
     );
@@ -71,10 +71,10 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
       (e) => norm(e.title).includes(q) || norm(e.location).includes(q) || norm(e.description).includes(q),
       (e) => ({
         id: `e-${e.id}`,
-        group: 'Events',
+        group: 'Події',
         icon: <CalendarDays />,
         title: e.title,
-        subtitle: `${formatDateKey(e.date, 'EEE, MMM d')}${e.startTime ? ` · ${e.startTime}` : ''}${e.recurrence ? ' · repeats' : ''}`,
+        subtitle: `${formatDateKey(e.date, 'EEEEEE, d MMM')}${e.startTime ? ` · ${e.startTime}` : ''}${e.recurrence ? ' · повторюється' : ''}`,
         run: go(() => {
           navigate(`/calendar?date=${e.date}`);
           openEvent(e.id, e.date);
@@ -84,16 +84,16 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
     take(
       projects,
       (p) => norm(p.name).includes(q) || norm(p.description).includes(q),
-      (p) => ({ id: `p-${p.id}`, group: 'Projects', icon: <FolderKanban />, title: p.name, run: go(() => navigate(`/projects/${p.id}`)) }),
+      (p) => ({ id: `p-${p.id}`, group: 'Проєкти', icon: <FolderKanban />, title: p.name, run: go(() => navigate(`/projects/${p.id}`)) }),
     );
     take(
       notes,
       (n) => norm(n.title).includes(q) || norm(n.content).includes(q) || n.tags.some((g) => norm(g).includes(q)),
       (n) => ({
         id: `n-${n.id}`,
-        group: 'Notes',
+        group: 'Нотатки',
         icon: <NotebookPen />,
-        title: n.title || 'Untitled note',
+        title: n.title || 'Без назви',
         subtitle: markdownExcerpt(n.content, 70),
         run: go(() => navigate(`/notes/${n.id}`)),
       }),
@@ -101,12 +101,12 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
     take(
       goals,
       (g) => norm(g.title).includes(q),
-      (g) => ({ id: `g-${g.id}`, group: 'Goals', icon: <Target />, title: g.title, run: go(() => navigate('/goals')) }),
+      (g) => ({ id: `g-${g.id}`, group: 'Цілі', icon: <Target />, title: g.title, run: go(() => navigate('/goals')) }),
     );
     take(
       habits,
       (h) => norm(h.name).includes(q),
-      (h) => ({ id: `h-${h.id}`, group: 'Habits', icon: <Heart />, title: h.name, run: go(() => navigate('/habits')) }),
+      (h) => ({ id: `h-${h.id}`, group: 'Звички', icon: <Heart />, title: h.name, run: go(() => navigate('/habits')) }),
     );
     return out;
   }, [query, tasks, events, projects, notes, goals, habits, navigate, openTask, openEvent, onClose]);
@@ -133,8 +133,8 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
             }
           }}
         >
-          <DialogPrimitive.Title className="sr-only">Search</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">Search tasks, events, projects, notes, goals and habits</DialogPrimitive.Description>
+          <DialogPrimitive.Title className="sr-only">Пошук</DialogPrimitive.Title>
+          <DialogPrimitive.Description className="sr-only">Пошук задач, подій, проєктів, нотаток, цілей і звичок</DialogPrimitive.Description>
           <div className="flex items-center gap-3 border-b border-line px-4">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
             <input
@@ -144,8 +144,8 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
                 setQuery(e.target.value);
                 setActive(0);
               }}
-              placeholder="Search tasks, events, projects, notes…"
-              aria-label="Search"
+              placeholder="Шукати задачі, події, проєкти, нотатки…"
+              aria-label="Пошук"
               role="combobox"
               aria-expanded
               aria-controls="search-results"
@@ -155,7 +155,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
             <Kbd>Esc</Kbd>
           </div>
           <div id="search-results" role="listbox" className="scrollbar-thin min-h-0 flex-1 overflow-y-auto p-2">
-            {results.length === 0 && <p className="px-3 py-10 text-center text-sm text-muted">No results for “{query}”.</p>}
+            {results.length === 0 && <p className="px-3 py-10 text-center text-sm text-muted">Нічого не знайдено за запитом «{query}».</p>}
             {results.map((r, i) => {
               const header = r.group !== lastGroup ? r.group : null;
               lastGroup = r.group;
