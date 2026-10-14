@@ -104,6 +104,7 @@ export function Segmented<T extends string>({
   className,
   size = 'md',
   ariaLabel,
+  stretch,
 }: {
   value: T;
   onChange: (v: T) => void;
@@ -111,6 +112,8 @@ export function Segmented<T extends string>({
   className?: string;
   size?: 'sm' | 'md';
   ariaLabel?: string;
+  /** Buttons share the full width. */
+  stretch?: boolean;
 }) {
   return (
     <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex items-center gap-0.5 rounded-xl bg-surface-2 p-1', className)}>
@@ -122,7 +125,8 @@ export function Segmented<T extends string>({
           aria-selected={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            'inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-all',
+            'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-all',
+            stretch && 'flex-1',
             size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-[13px]',
             value === o.value ? 'bg-surface text-ink shadow-soft' : 'text-muted hover:text-ink',
           )}

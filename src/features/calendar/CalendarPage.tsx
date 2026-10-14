@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
-import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, Segmented } from '@/components/ui/misc';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -27,7 +27,7 @@ import type { CalendarView, DateKey } from '@/types';
 import { expandEvents, upcomingOccurrences } from './logic';
 import { TimeGrid } from './TimeGrid';
 import { MonthView } from './MonthView';
-import { MiniCalendar } from './MiniCalendar';
+import { MiniCalendar } from '@/components/ui/calendar';
 import { EmptyState } from '@/components/common/States';
 
 function rangeFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
@@ -37,7 +37,15 @@ function rangeFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
   return { start: grid[0], end: grid[grid.length - 1] };
 }
 
-function titleFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
+function titleFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1, compact = false) {
+  if (compact) {
+    if (view === 'day') return formatDateKey(anchor, 'EEEEEE, d MMM');
+    if (view === 'month') return formatDateKey(anchor, 'LLLL');
+    const r = weekRange(anchor, weekStartsOn);
+    return r.start.slice(0, 7) === r.end.slice(0, 7)
+      ? `${formatDateKey(r.start, 'd')}–${formatDateKey(r.end, 'd MMM')}`
+      : `${formatDateKey(r.start, 'd MMM')} – ${formatDateKey(r.end, 'd MMM')}`;
+  }
   if (view === 'day') return formatDateKey(anchor, 'EEEE, d MMMM yyyy');
   if (view === 'month') return formatDateKey(anchor, 'LLLL yyyy');
   const { start, end } = weekRange(anchor, weekStartsOn);
@@ -98,25 +106,15 @@ export default function CalendarPage() {
       <Card className="flex h-[calc(100dvh-150px-env(safe-area-inset-bottom)-env(safe-area-inset-top))] min-h-[460px] min-w-0 flex-1 flex-col overflow-hidden lg:h-auto lg:min-h-0">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:px-4">
-          <Segmented
-            ariaLabel="Вигляд календаря"
-            size="sm"
-            value={view}
-            onChange={(v) => navigate({ view: v })}
-            options={[
-              { value: 'day', label: 'День' },
-              { value: 'week', label: 'Тиждень' },
-              { value: 'month', label: 'Місяць' },
-            ]}
-          />
-          <div className="flex items-center">
+          <div className="flex min-w-0 items-center">
             <Button variant="ghost" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" className="rounded-lg px-2 py-1 text-[14px] font-semibold tracking-tight hover:bg-surface-2" aria-label="Обрати дату">
-                  {titleFor(view, anchor, settings.weekStartsOn)}
+                <button type="button" className="truncate rounded-lg px-1.5 py-1 text-[14px] font-semibold tracking-tight hover:bg-surface-2 sm:px-2" aria-label="Обрати дату">
+                  <span className="sm:hidden">{titleFor(view, anchor, settings.weekStartsOn, true)}</span>
+                  <span className="hidden sm:inline">{titleFor(view, anchor, settings.weekStartsOn)}</span>
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-[280px]">
@@ -127,13 +125,27 @@ export default function CalendarPage() {
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate({ date: today })} disabled={anchor === today}>
+          <Segmented
+            ariaLabel="Вигляд календаря"
+            size="sm"
+            stretch
+            className="order-last w-full sm:order-none sm:w-auto"
+            value={view}
+            onChange={(v) => navigate({ view: v })}
+            options={[
+              { value: 'day', label: 'День' },
+              { value: 'week', label: 'Тиждень' },
+              { value: 'month', label: 'Місяць' },
+            ]}
+          />
+          <Button variant="outline" size="sm" className="ml-auto px-2.5 sm:ml-0" onClick={() => navigate({ date: today })} disabled={anchor === today}>
             Сьогодні
           </Button>
           <Button
             variant="dark"
             size="sm"
-            className="ml-auto"
+            className="w-8 px-0 sm:ml-auto sm:w-auto sm:px-3"
+            aria-label="Додати подію"
             onClick={() => openEventForm({ defaults: { date: view === 'month' && anchor.slice(0, 7) !== today.slice(0, 7) ? anchor : view === 'day' ? anchor : today } })}
           >
             <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Додати подію</span>
@@ -186,7 +198,7 @@ export default function CalendarPage() {
             </div>
           )}
           <button type="button" onClick={() => navigate({ view: 'month' })} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink">
-            Огляд місяця <ArrowRight className="h-3 w-3" />
+            Відкрити місяць
           </button>
         </Card>
       </aside>

@@ -26,7 +26,7 @@ export function AppHeader() {
           <LogoMark className="h-5 w-5 text-ink" />
           <h1 className="truncate text-[17px] font-semibold tracking-tight">{title}</h1>
         </div>
-        <h1 className="sr-only lg:not-sr-only lg:text-[15px] lg:font-medium lg:text-muted">{title}</h1>
+        <span className="sr-only">{title}</span>
 
         <div className="ml-auto flex items-center gap-2">
           <button

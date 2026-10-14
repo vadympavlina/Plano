@@ -27,7 +27,7 @@ export default {
         accent: token('accent'),
       },
       fontFamily: {
-        sans: ['"Inter Variable"', 'Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['"Manrope Variable"', 'Manrope', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
       },
       borderRadius: {
         card: '16px',
@@ -38,9 +38,11 @@ export default {
       },
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
-        'scale-in': { from: { opacity: '0', transform: 'scale(0.97) translateY(4px)' }, to: { opacity: '1', transform: 'none' } },
-        'slide-up': { from: { opacity: '0', transform: 'translateY(16px)' }, to: { opacity: '1', transform: 'none' } },
-        'slide-in-right': { from: { transform: 'translateX(100%)' }, to: { transform: 'none' } },
+        // Individual transform properties (scale / translate) so the animation never
+        // overrides the element's own centering transform.
+        'scale-in': { from: { opacity: '0', scale: '0.97' }, to: { opacity: '1', scale: '1' } },
+        'slide-up': { from: { opacity: '0', translate: '0 16px' }, to: { opacity: '1', translate: '0 0' } },
+        'slide-in-right': { from: { translate: '100% 0' }, to: { translate: '0 0' } },
       },
       animation: {
         'fade-in': 'fade-in 150ms ease-out',

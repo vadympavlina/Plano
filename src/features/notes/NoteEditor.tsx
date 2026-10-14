@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bold, Check, Eye, Heading2, Italic, Link2, List, ListChecks, Loader2, Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
+import { ArrowLeft, FolderKanban, Bold, Check, Eye, Heading2, Italic, Link2, List, ListChecks, Loader2, Pencil, Pin, PinOff, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { TagInput } from '@/components/ui/tag-input';
+import { projectOptions } from '@/components/common/options';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 import { useActions } from '@/hooks/useActions';
@@ -26,7 +28,8 @@ export function NoteEditor({ note }: { note: Note }) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [tagsText, setTagsText] = useState(note.tags.join(', '));
-  const [preview, setPreview] = useState(false);
+  // Notes with content open in reading mode; clicking the text switches to editing.
+  const [preview, setPreview] = useState(() => note.content.trim().length > 0);
   const [state, setState] = useState<SaveState>('saved');
   const textRef = useRef<HTMLTextAreaElement>(null);
   const saved = useRef({ title: note.title, content: note.content, tags: note.tags.join(', ') });
@@ -174,30 +177,45 @@ export function NoteEditor({ note }: { note: Note }) {
           placeholder="Без назви"
           aria-label="Назва нотатки"
           maxLength={300}
-          className="w-full bg-transparent text-[22px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle"
+          className="w-full bg-transparent text-[22px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
         />
-        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <input
-            value={tagsText}
-            onChange={(e) => change({ tags: e.target.value })}
-            placeholder="Теги через кому"
-            aria-label="Теги"
-            className="h-8 min-w-[180px] flex-1 rounded-lg border border-line bg-surface px-2.5 text-xs outline-none focus:border-primary"
+        <div className="mt-3 flex flex-wrap items-start gap-2">
+          <TagInput
+            className="min-w-[200px] flex-1"
+            value={tagsText.split(',').map((t) => t.trim()).filter(Boolean)}
+            onChange={(tags) => change({ tags: tags.join(', ') })}
+            placeholder="Додати тег"
           />
           <Select
+            variant="chip"
+            className="h-10"
             aria-label="Проєкт"
-            className="h-8 w-auto text-xs"
+            icon={<FolderKanban />}
             value={note.projectId ?? ''}
-            onChange={(e) => void actions.notes.update(note.id, { projectId: e.target.value || undefined }).catch(() => undefined)}
-          >
-            <option value="">Без проєкту</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </Select>
+            onChange={(v) => void actions.notes.update(note.id, { projectId: v || undefined }).catch(() => undefined)}
+            options={projectOptions(projects, note.projectId)}
+          />
         </div>
         {preview ? (
-          <div className={cn('prose-note mt-5 text-[15px] text-ink', !content && 'text-muted')} dangerouslySetInnerHTML={{ __html: html || '<p>Поки нічого показати.</p>' }} />
+          <div
+            role="button"
+            tabIndex={0}
+            title="Натисніть, щоб редагувати"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('a')) return;
+              setPreview(false);
+              requestAnimationFrame(() => textRef.current?.focus());
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                setPreview(false);
+                requestAnimationFrame(() => textRef.current?.focus());
+              }
+            }}
+            className={cn('prose-note mt-5 min-h-[40vh] cursor-text text-[15px] text-ink outline-none', !content && 'text-muted')}
+            dangerouslySetInnerHTML={{ __html: html || '<p>Поки порожньо. Натисніть, щоб почати писати.</p>' }}
+          />
         ) : (
           <textarea
             ref={textRef}

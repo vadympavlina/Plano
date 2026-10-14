@@ -1,12 +1,16 @@
-import type { RecurrenceRule, RecurrenceFreq } from '@/types';
-import { Input, Select } from '@/components/ui/input';
+import { useState } from 'react';
+import type { RecurrenceFreq, RecurrenceRule } from '@/types';
 import { cn } from '@/lib/utils/cn';
 import { describeRecurrence } from '@/lib/date/recurrence';
+import { Select } from '@/components/ui/select';
+import { Stepper } from '@/components/ui/controls';
+import { DatePicker } from '@/components/ui/date-time';
+import { fromDateKey, plural } from '@/lib/date';
 
 type Preset = 'none' | 'daily' | 'weekdays' | 'weekly' | 'monthly' | 'yearly' | 'custom';
 
 const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
-const DAY_LETTER = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+const DAY_SHORT = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 const DAY_NAME = ['Неділя', 'Понеділок', 'Вівторок', 'Середа', 'Четвер', 'Пʼятниця', 'Субота'];
 
 function presetOf(rule?: RecurrenceRule): Preset {
@@ -21,6 +25,23 @@ function presetOf(rule?: RecurrenceRule): Preset {
   return rule.freq;
 }
 
+const PRESETS: { value: Preset; label: string }[] = [
+  { value: 'none', label: 'Не повторювати' },
+  { value: 'daily', label: 'Щодня' },
+  { value: 'weekdays', label: 'Щобудня (пн–пт)' },
+  { value: 'weekly', label: 'Щотижня' },
+  { value: 'monthly', label: 'Щомісяця' },
+  { value: 'yearly', label: 'Щороку' },
+  { value: 'custom', label: 'Власний розклад' },
+];
+
+const UNIT_FORMS: Record<RecurrenceFreq, [string, string, string]> = {
+  daily: ['день', 'дні', 'днів'],
+  weekly: ['тиждень', 'тижні', 'тижнів'],
+  monthly: ['місяць', 'місяці', 'місяців'],
+  yearly: ['рік', 'роки', 'років'],
+};
+
 export function RecurrenceEditor({
   value,
   onChange,
@@ -33,10 +54,13 @@ export function RecurrenceEditor({
   startDate?: string;
   id?: string;
 }) {
-  const preset = presetOf(value);
-  const startDay = startDate ? new Date(`${startDate}T12:00:00`).getDay() : new Date().getDay();
+  // "Custom" stays open once chosen, even if the rule matches a simple preset.
+  const [customMode, setCustomMode] = useState(() => presetOf(value) === 'custom');
+  const preset = value && customMode ? 'custom' : presetOf(value);
+  const startDay = startDate ? fromDateKey(startDate).getDay() : new Date().getDay();
 
   const setPreset = (p: Preset) => {
+    setCustomMode(p === 'custom');
     const until = value?.until;
     switch (p) {
       case 'none':
@@ -54,46 +78,30 @@ export function RecurrenceEditor({
 
   return (
     <div className="space-y-3">
-      <Select id={id} value={preset} onChange={(e) => setPreset(e.target.value as Preset)}>
-        <option value="none">Не повторювати</option>
-        <option value="daily">Щодня</option>
-        <option value="weekdays">Щобудня (пн–пт)</option>
-        <option value="weekly">Щотижня</option>
-        <option value="monthly">Щомісяця</option>
-        <option value="yearly">Щороку</option>
-        <option value="custom">Власний…</option>
-      </Select>
+      <Select id={id} aria-label="Повторення" value={preset} onChange={setPreset} options={PRESETS} />
 
       {value && preset === 'custom' && (
-        <div className="space-y-3 rounded-xl border border-line bg-surface-2/60 p-3">
+        <div className="space-y-3 rounded-xl bg-surface-2 p-3">
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted">Кожні</span>
-            <Input
-              type="number"
+            <Stepper
+              aria-label="Інтервал"
+              className="h-9 w-[120px]"
               min={1}
               max={99}
-              aria-label="Інтервал"
-              className="h-9 w-16 text-center"
               value={value.interval}
-              onChange={(e) => onChange({ ...value, interval: Math.max(1, Math.min(99, Number(e.target.value) || 1)) })}
+              onChange={(interval) => onChange({ ...value, interval: Math.round(interval) || 1 })}
             />
             <Select
               aria-label="Одиниця"
-              className="h-9 w-auto"
+              className="h-9 w-[130px]"
               value={value.freq}
-              onChange={(e) => {
-                const freq = e.target.value as RecurrenceFreq;
-                onChange({ ...value, freq, byWeekday: freq === 'weekly' ? days : undefined });
-              }}
-            >
-              <option value="daily">{value.interval === 1 ? 'день' : 'дні'}</option>
-              <option value="weekly">{value.interval === 1 ? 'тиждень' : 'тижні'}</option>
-              <option value="monthly">{value.interval === 1 ? 'місяць' : 'місяці'}</option>
-              <option value="yearly">{value.interval === 1 ? 'рік' : 'роки'}</option>
-            </Select>
+              onChange={(freq) => onChange({ ...value, freq, byWeekday: freq === 'weekly' ? days : undefined })}
+              options={(Object.keys(UNIT_FORMS) as RecurrenceFreq[]).map((f) => ({ value: f, label: plural(value.interval, UNIT_FORMS[f]) }))}
+            />
           </div>
           {value.freq === 'weekly' && (
-            <div className="flex gap-1.5" role="group" aria-label="Дні тижня">
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="Дні тижня">
               {DAY_ORDER.map((d) => {
                 const on = days.includes(d);
                 return (
@@ -107,11 +115,11 @@ export function RecurrenceEditor({
                       if (next.length) onChange({ ...value, byWeekday: next.sort() });
                     }}
                     className={cn(
-                      'h-8 w-9 rounded-full text-[11px] font-semibold transition-colors',
+                      'h-8 w-10 rounded-lg text-[12px] font-semibold transition-colors',
                       on ? 'bg-accent text-surface' : 'bg-surface text-muted ring-1 ring-line hover:text-ink',
                     )}
                   >
-                    {DAY_LETTER[d]}
+                    {DAY_SHORT[d]}
                   </button>
                 );
               })}
@@ -121,15 +129,15 @@ export function RecurrenceEditor({
       )}
 
       {value && (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="shrink-0 text-muted">До</span>
-          <Input
-            type="date"
+        <div className="flex items-center gap-3 text-sm">
+          <span className="shrink-0 text-muted">Закінчується</span>
+          <DatePicker
             aria-label="Повторювати до"
-            className="h-9"
-            value={value.until ?? ''}
+            variant="chip"
+            placeholder="Ніколи"
+            value={value.until}
             min={startDate}
-            onChange={(e) => onChange({ ...value, until: e.target.value || undefined })}
+            onChange={(until) => onChange({ ...value, until })}
           />
         </div>
       )}

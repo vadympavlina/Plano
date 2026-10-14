@@ -18,9 +18,6 @@ export function PwaUpdater() {
             action: { label: 'Оновити', onClick: () => void update(true) },
           });
         },
-        onOfflineReady() {
-          toast.success('Plano можна відкривати без інтернету');
-        },
         onRegisteredSW(_url, registration) {
           // Check for updates when the app returns to the foreground (e.g. iOS standalone).
           if (!registration) return;

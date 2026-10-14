@@ -4,7 +4,8 @@ import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, NotebookPen, Pencil,
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, Progress } from '@/components/ui/misc';
-import { Select } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { projectStatusOptions } from '@/components/common/options';
 import { EmptyState } from '@/components/common/States';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
@@ -17,12 +18,11 @@ import { colorOf } from '@/lib/utils/colors';
 import { formatDateKey, formatTimeRange, relativeDayLabel, todayKey } from '@/lib/date';
 import { markdownExcerpt } from '@/lib/utils/markdown';
 import { cn } from '@/lib/utils/cn';
-import { PROJECT_STATUSES, type Project } from '@/types';
 import { TaskItem } from '@/features/tasks/TaskItem';
 import { isOpen, sortTasks } from '@/features/tasks/logic';
 import { upcomingOccurrences } from '@/features/calendar/logic';
 import { goalPercent } from '@/features/goals/logic';
-import { PROJECT_STATUS_LABEL, projectProgress } from './logic';
+import { projectProgress } from './logic';
 import { ProjectForm } from './ProjectForm';
 
 export default function ProjectPage() {
@@ -115,17 +115,13 @@ export default function ProjectPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select
+            variant="chip"
+            className="h-9"
             aria-label="Статус проєкту"
-            className="h-9 w-auto text-[13px]"
             value={project.status}
-            onChange={(e) => void actions.projects.update(project.id, { status: e.target.value as Project['status'] }).catch(() => undefined)}
-          >
-            {PROJECT_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {PROJECT_STATUS_LABEL[s]}
-              </option>
-            ))}
-          </Select>
+            onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
+            options={projectStatusOptions}
+          />
           <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(true)}>
             <Pencil className="h-3.5 w-3.5" /> Редагувати
           </Button>

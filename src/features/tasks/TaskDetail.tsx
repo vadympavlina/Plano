@@ -2,8 +2,11 @@ import { useState } from 'react';
 import { CalendarDays, Clock, Flag, FolderKanban, Pencil, Repeat, Tag, Target, Trash2, CircleDot } from 'lucide-react';
 import { Dialog, SheetContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge, CheckCircle, Dot, Progress } from '@/components/ui/misc';
-import { Input, Select } from '@/components/ui/input';
+import { Badge, CheckCircle, Progress } from '@/components/ui/misc';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-time';
+import { categoryOptions, priorityOptions, projectOptions, statusOptions } from '@/components/common/options';
 import { EmptyState } from '@/components/common/States';
 import { useData } from '@/app/providers/DataProvider';
 import { useCollections, useSettings } from '@/hooks/useCollections';
@@ -12,11 +15,11 @@ import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
 import { colorOf } from '@/lib/utils/colors';
 import { describeRecurrence } from '@/lib/date/recurrence';
-import { addDaysKey, formatDateKey, formatTimeRange, relativeDayLabel } from '@/lib/date';
+import { addDaysKey, formatDateKey, formatTimeRange } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
-import { PRIORITIES, TASK_STATUSES, type Task } from '@/types';
-import { PRIORITY_LABEL, STATUS_LABEL, isOverdue } from './logic';
-import { PRIORITY_COLOR, deleteTaskWithConfirm } from './TaskItem';
+import type { Task } from '@/types';
+import { isOverdue } from './logic';
+import { deleteTaskWithConfirm } from './TaskItem';
 import { toast } from '@/components/ui/toast';
 
 function Row({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
@@ -34,7 +37,7 @@ function Row({ icon, label, children }: { icon: React.ReactNode; label: string; 
 export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
   const { data } = useData();
   const task: Task | undefined = data.tasks[taskId];
-  const { categories, projects, categoryById, projectById } = useCollections();
+  const { categories, projects, categoryById } = useCollections();
   const settings = useSettings();
   const actions = useActions();
   const { openTaskForm } = useUI();
@@ -52,7 +55,6 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
   }
 
   const category = categoryById(task.categoryId);
-  const project = projectById(task.projectId);
   const goal = task.goalId ? data.goals[task.goalId] : undefined;
   const done = task.status === 'completed';
   const subDone = task.subtasks.filter((s) => s.done).length;
@@ -121,18 +123,14 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
 
         <div className="mt-5 space-y-0.5 border-y border-line py-3">
           <Row icon={<CalendarDays />} label="Термін">
-            <Input
-              type="date"
+            <DatePicker
+              variant="ghost"
+              className={cn('-ml-2', isOverdue(task, today) && 'text-danger')}
               aria-label="Термін"
-              className="h-8 w-auto border-transparent bg-transparent px-1.5 hover:border-line"
-              value={task.dueDate ?? ''}
-              onChange={(e) => update({ dueDate: e.target.value || undefined })}
+              weekStartsOn={settings.weekStartsOn}
+              value={task.dueDate}
+              onChange={(dueDate) => update({ dueDate })}
             />
-            {task.dueDate && (
-              <span className={cn('ml-1 text-xs text-muted', isOverdue(task, today) && 'text-danger')}>
-                {relativeDayLabel(task.dueDate, today)}
-              </span>
-            )}
           </Row>
           {task.startDate && (
             <Row icon={<CalendarDays />} label="Початок">
@@ -150,66 +148,37 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
             </Row>
           )}
           <Row icon={<Flag />} label="Пріоритет">
-            <div className="flex items-center gap-2">
-              <Dot color={PRIORITY_COLOR[task.priority]} />
-              <Select
-                aria-label="Пріоритет"
-                className="h-8 w-auto border-transparent bg-transparent pl-1.5 hover:border-line"
-                value={task.priority}
-                onChange={(e) => update({ priority: e.target.value as Task['priority'] })}
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p} value={p}>
-                    {PRIORITY_LABEL[p]}
-                  </option>
-                ))}
-              </Select>
-            </div>
+            <Select variant="ghost" className="-ml-2" aria-label="Пріоритет" value={task.priority} onChange={(priority) => update({ priority })} options={priorityOptions} />
           </Row>
           <Row icon={<CircleDot />} label="Статус">
             <Select
+              variant="ghost"
+              className="-ml-2"
               aria-label="Статус"
-              className="h-8 w-auto border-transparent bg-transparent pl-1.5 hover:border-line"
               value={task.status}
-              onChange={(e) => void actions.tasks.setStatus(task, e.target.value as Task['status']).catch(() => undefined)}
-            >
-              {TASK_STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {STATUS_LABEL[s]}
-                </option>
-              ))}
-            </Select>
+              onChange={(status) => void actions.tasks.setStatus(task, status).catch(() => undefined)}
+              options={statusOptions}
+            />
           </Row>
           <Row icon={<Tag />} label="Категорія">
             <Select
+              variant="ghost"
+              className="-ml-2"
               aria-label="Категорія"
-              className="h-8 w-auto border-transparent bg-transparent pl-1.5 hover:border-line"
               value={task.categoryId ?? ''}
-              onChange={(e) => update({ categoryId: e.target.value || undefined })}
-            >
-              <option value="">Немає</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </Select>
+              onChange={(v) => update({ categoryId: v || undefined })}
+              options={categoryOptions(categories)}
+            />
           </Row>
           <Row icon={<FolderKanban />} label="Проєкт">
             <Select
+              variant="ghost"
+              className="-ml-2 max-w-full"
               aria-label="Проєкт"
-              className="h-8 w-auto max-w-full border-transparent bg-transparent pl-1.5 hover:border-line"
               value={task.projectId ?? ''}
-              onChange={(e) => update({ projectId: e.target.value || undefined })}
-            >
-              <option value="">Немає</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </Select>
-            {project && <Dot color={colorOf(project.color)} className="ml-1" />}
+              onChange={(v) => update({ projectId: v || undefined })}
+              options={projectOptions(projects, task.projectId)}
+            />
           </Row>
           {goal && (
             <Row icon={<Target />} label="Ціль">

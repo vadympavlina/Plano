@@ -1,7 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Field, Input, Select, Textarea, Label } from '@/components/ui/input';
+import { Field, Input, Textarea, Label } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-time';
+import { Stepper } from '@/components/ui/controls';
+import { categoryOptions } from '@/components/common/options';
+import { colorOf } from '@/lib/utils/colors';
+import { cn } from '@/lib/utils/cn';
 import { useActions } from '@/hooks/useActions';
 import { useCollections } from '@/hooks/useCollections';
 import { useFormDialog } from '@/hooks/useFormDialog';
@@ -55,10 +61,10 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
           </Field>
           <div className="grid grid-cols-3 gap-3">
             <Field label="Зараз" error={visible.current}>
-              {(p) => <Input {...p} type="number" min={0} step="any" value={draft.currentValue} onChange={(e) => patch({ currentValue: Number(e.target.value) })} />}
+              {(p) => <Stepper {...p} min={0} value={draft.currentValue} onChange={(currentValue) => patch({ currentValue })} />}
             </Field>
             <Field label="Мета" error={visible.target}>
-              {(p) => <Input {...p} type="number" min={0} step="any" value={draft.targetValue} onChange={(e) => patch({ targetValue: Number(e.target.value) })} />}
+              {(p) => <Stepper {...p} min={0} value={draft.targetValue} onChange={(targetValue) => patch({ targetValue })} />}
             </Field>
             <Field label="Одиниця">
               {(p) => <Input {...p} placeholder="книжки, км, %" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
@@ -66,24 +72,19 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Дата початку">
-              {(p) => <Input {...p} type="date" value={draft.startDate ?? ''} onChange={(e) => patch({ startDate: e.target.value || undefined })} />}
+              {(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}
             </Field>
             <Field label="Цільова дата" error={visible.targetDate}>
-              {(p) => <Input {...p} type="date" value={draft.targetDate ?? ''} onChange={(e) => patch({ targetDate: e.target.value || undefined })} />}
+              {(p) => <DatePicker {...p} placeholder="Без дедлайну" min={draft.startDate} value={draft.targetDate} onChange={(targetDate) => patch({ targetDate })} />}
             </Field>
             <Field label="Категорія">
               {(p) => (
-                <Select {...p} value={draft.categoryId ?? ''} onChange={(e) => patch({ categoryId: e.target.value || undefined })}>
-                  <option value="">Немає</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </Select>
+                <Select {...p} value={draft.categoryId ?? ''} onChange={(v) => patch({ categoryId: v || undefined })} options={categoryOptions(categories)} />
               )}
             </Field>
             <Field label="Статус">
               {(p) => (
-                <Select {...p} value={draft.status} onChange={(e) => patch({ status: e.target.value as Goal['status'] })}>
-                  {GOAL_STATUSES.map((s) => <option key={s} value={s}>{GOAL_STATUS_LABEL[s]}</option>)}
-                </Select>
+                <Select {...p} value={draft.status} onChange={(status) => patch({ status })} options={GOAL_STATUSES.map((s) => ({ value: s, label: GOAL_STATUS_LABEL[s] }))} />
               )}
             </Field>
           </div>
@@ -94,15 +95,19 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
                 {projects.map((pr) => {
                   const on = draft.projectIds.includes(pr.id);
                   return (
-                    <label key={pr.id} className="flex cursor-pointer items-center gap-2 rounded-lg border border-line px-2.5 py-1.5 text-[13px]">
-                      <input
-                        type="checkbox"
-                        className="accent-[rgb(var(--primary))]"
-                        checked={on}
-                        onChange={() => patch({ projectIds: on ? draft.projectIds.filter((x) => x !== pr.id) : [...draft.projectIds, pr.id] })}
-                      />
+                    <button
+                      key={pr.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => patch({ projectIds: on ? draft.projectIds.filter((x) => x !== pr.id) : [...draft.projectIds, pr.id] })}
+                      className={cn(
+                        'inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-[13px] font-medium transition-colors',
+                        on ? 'border-accent bg-accent text-surface' : 'border-line text-muted hover:text-ink',
+                      )}
+                    >
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: colorOf(pr.color) }} />
                       {pr.name}
-                    </label>
+                    </button>
                   );
                 })}
               </div>

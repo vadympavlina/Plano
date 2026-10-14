@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Field, Input, Select, Textarea } from '@/components/ui/input';
+import { Field, Input, Textarea } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { DatePicker } from '@/components/ui/date-time';
+import { projectStatusOptions } from '@/components/common/options';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
-import { PROJECT_STATUSES, type Project } from '@/types';
-import { PROJECT_STATUS_LABEL } from './logic';
+import type { Project } from '@/types';
 import { todayKey } from '@/lib/date';
 
 type Draft = Omit<Project, 'id' | 'createdAt' | 'updatedAt'>;
@@ -53,20 +55,14 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Статус">
               {(p) => (
-                <Select {...p} value={draft.status} onChange={(e) => patch({ status: e.target.value as Project['status'] })}>
-                  {PROJECT_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {PROJECT_STATUS_LABEL[s]}
-                    </option>
-                  ))}
-                </Select>
+<Select {...p} value={draft.status} onChange={(status) => patch({ status })} options={projectStatusOptions} />
               )}
             </Field>
             <Field label="Дата початку">
-              {(p) => <Input {...p} type="date" value={draft.startDate ?? ''} onChange={(e) => patch({ startDate: e.target.value || undefined })} />}
+              {(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}
             </Field>
             <Field label="Цільова дата" error={visible.targetDate}>
-              {(p) => <Input {...p} type="date" value={draft.targetDate ?? ''} onChange={(e) => patch({ targetDate: e.target.value || undefined })} />}
+              {(p) => <DatePicker {...p} placeholder="Без дати" min={draft.startDate} value={draft.targetDate} onChange={(targetDate) => patch({ targetDate })} />}
             </Field>
           </div>
           {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}

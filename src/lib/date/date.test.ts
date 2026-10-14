@@ -103,3 +103,26 @@ describe('labels', () => {
     ]);
   });
 });
+
+import { formatDuration, parseTimeInput } from './index';
+
+describe('time input parsing', () => {
+  it('accepts common ways of typing a time', () => {
+    expect(parseTimeInput('9')).toBe('09:00');
+    expect(parseTimeInput('930')).toBe('09:30');
+    expect(parseTimeInput('9:5')).toBe('09:05');
+    expect(parseTimeInput('21.15')).toBe('21:15');
+    expect(parseTimeInput('2359')).toBe('23:59');
+  });
+  it('rejects invalid input', () => {
+    expect(parseTimeInput('25')).toBeNull();
+    expect(parseTimeInput('12:61')).toBeNull();
+    expect(parseTimeInput('abc')).toBeNull();
+    expect(parseTimeInput('')).toBeNull();
+  });
+  it('formats durations', () => {
+    expect(formatDuration(30)).toBe('30 хв');
+    expect(formatDuration(60)).toBe('1 год');
+    expect(formatDuration(90)).toBe('1 год 30 хв');
+  });
+});

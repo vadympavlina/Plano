@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CheckSquare, ChevronDown, Plus, Search, X } from 'lucide-react';
+import { ArrowDownUp, CheckSquare, ChevronDown, Layers, List, Plus, Search, Tag, X } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Input, Select } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { Card, Dot, Segmented } from '@/components/ui/misc';
 import { EmptyState } from '@/components/common/States';
 import { useCollections } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
+import { plural } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { TaskItem } from './TaskItem';
@@ -94,7 +96,7 @@ export default function TasksPage() {
     <PageContainer>
       <PageHeader
         title="Задачі"
-        subtitle={`Відкритих: ${counts.all} · на сьогодні: ${counts.today}${counts.overdue ? ` · прострочених: ${counts.overdue}` : ''}`}
+        subtitle={counts.all === 0 ? 'Відкритих задач немає' : `${counts.all} ${plural(counts.all, ['відкрита задача', 'відкриті задачі', 'відкритих задач'])}, на сьогодні ${counts.today}${counts.overdue ? `, прострочено ${counts.overdue}` : ''}`}
         actions={
           <Button variant="dark" onClick={() => openTaskForm({ defaults: defaultsForFilter() })}>
             <Plus className="h-4 w-4" /> Додати задачу
@@ -133,27 +135,46 @@ export default function TasksPage() {
                 </button>
               )}
             </div>
-            <Select aria-label="Категорія" className="h-9 w-auto text-[13px]" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-              <option value="">Усі категорії</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-              <option value="none">Без категорії</option>
-            </Select>
-            <Select aria-label="Сортування" className="h-9 w-auto text-[13px]" value={prefs.sort} onChange={(e) => updatePrefs({ sort: e.target.value as TaskSort })}>
-              <option value="due">За терміном</option>
-              <option value="priority">За пріоритетом</option>
-              <option value="created">Спершу нові</option>
-              <option value="title">За назвою</option>
-            </Select>
+            <Select
+              variant="chip"
+              className="h-9"
+              aria-label="Категорія"
+              icon={<Tag />}
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              options={[
+                { value: '', label: 'Усі категорії' },
+                ...categories.map((c) => ({ value: c.id, label: c.name, color: colorOf(c.color) })),
+                { value: 'none', label: 'Без категорії', color: '#C3C8D3' },
+              ]}
+            />
+            <Select
+              variant="chip"
+              className="h-9"
+              aria-label="Сортування"
+              icon={<ArrowDownUp />}
+              value={prefs.sort}
+              onChange={(sort) => updatePrefs({ sort })}
+              options={[
+                { value: 'due' as TaskSort, label: 'За терміном', icon: <ArrowDownUp /> },
+                { value: 'priority' as TaskSort, label: 'За пріоритетом', icon: <ArrowDownUp /> },
+                { value: 'created' as TaskSort, label: 'Спершу нові', icon: <ArrowDownUp /> },
+                { value: 'title' as TaskSort, label: 'За назвою', icon: <ArrowDownUp /> },
+              ]}
+            />
             {filter !== 'completed' && (
-              <Select aria-label="Групування" className="h-9 w-auto text-[13px]" value={prefs.group} onChange={(e) => updatePrefs({ group: e.target.value as TaskGrouping })}>
-                <option value="category">Групувати: категорії</option>
-                <option value="project">Групувати: проєкти</option>
-                <option value="none">Без групування</option>
-              </Select>
+              <Select
+                variant="chip"
+                className="h-9"
+                aria-label="Групування"
+                value={prefs.group}
+                onChange={(group) => updatePrefs({ group })}
+                options={[
+                  { value: 'category' as TaskGrouping, label: 'За категоріями', icon: <Layers /> },
+                  { value: 'project' as TaskGrouping, label: 'За проєктами', icon: <Layers /> },
+                  { value: 'none' as TaskGrouping, label: 'Без групування', icon: <List /> },
+                ]}
+              />
             )}
           </div>
         </div>

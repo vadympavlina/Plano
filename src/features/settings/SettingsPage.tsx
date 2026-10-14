@@ -4,8 +4,9 @@ import { CalendarDays, Database, Download, Monitor, Moon, Palette, Plug, Plus, S
 import { PageContainer } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card, Badge } from '@/components/ui/misc';
-import { Field, Input, Select } from '@/components/ui/input';
+import { Card, Badge, Segmented } from '@/components/ui/misc';
+import { Field, Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { confirm } from '@/components/common/ConfirmDialog';
@@ -44,6 +45,18 @@ const SUMMARY_LABEL: Record<string, string> = {
   goals: 'Цілі',
   notes: 'Нотатки',
 };
+
+function PrefRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-2 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-ink">{label}</p>
+        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
@@ -146,55 +159,59 @@ function PreferencesSection() {
   const sample = todayKey();
   return (
     <Section title="Параметри">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Початок тижня">
-          {(p) => (
-            <Select {...p} value={s.weekStartsOn} onChange={(e) => set({ weekStartsOn: Number(e.target.value) as 0 | 1 })}>
-              <option value={1}>Понеділок</option>
-              <option value={0}>Неділя</option>
-            </Select>
-          )}
-        </Field>
-        <Field label="Формат часу">
-          {(p) => (
-            <Select {...p} value={s.timeFormat} onChange={(e) => set({ timeFormat: e.target.value as Settings['timeFormat'] })}>
-              <option value="24h">24 години (14:30)</option>
-              <option value="12h">12 годин (2:30 PM)</option>
-            </Select>
-          )}
-        </Field>
-        <Field label="Формат дати">
-          {(p) => (
-            <Select {...p} value={s.dateFormat} onChange={(e) => set({ dateFormat: e.target.value as Settings['dateFormat'] })}>
-              {(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => (
-                <option key={f} value={f}>
-                  {formatDateKey(sample, f)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
-        <Field label="Вигляд календаря за замовчуванням" hint="На телефоні тижневий вигляд відкривається як день, якщо не обрати інше.">
-          {(p) => (
-            <Select {...p} value={s.defaultCalendarView} onChange={(e) => set({ defaultCalendarView: e.target.value as Settings['defaultCalendarView'] })}>
-              <option value="day">День</option>
-              <option value="week">Тиждень</option>
-              <option value="month">Місяць</option>
-            </Select>
-          )}
-        </Field>
-        <Field
-          label="Часовий пояс"
-          hint="Час зберігається як локальний і показується в часовому поясі цього пристрою. Окремий часовий пояс поки не підтримується."
-        >
-          {(p) => <Input {...p} value={deviceTimeZone()} readOnly disabled />}
-        </Field>
+      <div className="divide-y divide-line">
+        <PrefRow label="Початок тижня">
+          <Segmented
+            ariaLabel="Початок тижня"
+            value={String(s.weekStartsOn) as '0' | '1'}
+            onChange={(v) => set({ weekStartsOn: Number(v) as 0 | 1 })}
+            options={[
+              { value: '1', label: 'Понеділок' },
+              { value: '0', label: 'Неділя' },
+            ]}
+          />
+        </PrefRow>
+        <PrefRow label="Формат часу">
+          <Segmented
+            ariaLabel="Формат часу"
+            value={s.timeFormat}
+            onChange={(timeFormat) => set({ timeFormat })}
+            options={[
+              { value: '24h', label: '14:30' },
+              { value: '12h', label: '2:30 PM' },
+            ]}
+          />
+        </PrefRow>
+        <PrefRow label="Формат дати">
+          <Select
+            aria-label="Формат дати"
+            className="w-[200px]"
+            value={s.dateFormat}
+            onChange={(dateFormat) => set({ dateFormat })}
+            options={(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => ({ value: f, label: formatDateKey(sample, f) }))}
+          />
+        </PrefRow>
+        <PrefRow label="Календар відкривається" hint="На телефоні тиждень показується як день.">
+          <Segmented
+            ariaLabel="Вигляд календаря за замовчуванням"
+            value={s.defaultCalendarView}
+            onChange={(defaultCalendarView) => set({ defaultCalendarView })}
+            options={[
+              { value: 'day', label: 'День' },
+              { value: 'week', label: 'Тиждень' },
+              { value: 'month', label: 'Місяць' },
+            ]}
+          />
+        </PrefRow>
+        <PrefRow label="Часовий пояс" hint="Час показується в часовому поясі пристрою. Окремий пояс поки не налаштовується.">
+          <span className="text-sm font-medium text-ink">{deviceTimeZone()}</span>
+        </PrefRow>
       </div>
       <p className="mt-4 text-xs text-subtle">Зміни зберігаються автоматично й синхронізуються з іншими пристроями.</p>
       <Button
         variant="link"
         size="sm"
-        className="mt-2"
+        className="mt-2 px-0"
         onClick={() => set({ weekStartsOn: DEFAULT_SETTINGS.weekStartsOn, timeFormat: DEFAULT_SETTINGS.timeFormat, dateFormat: DEFAULT_SETTINGS.dateFormat, defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView })}
       >
         Скинути до стандартних

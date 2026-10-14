@@ -171,3 +171,38 @@ export function plural(n: number, forms: [string, string, string]): string {
   if (last >= 2 && last <= 4) return forms[1];
   return forms[2];
 }
+
+/**
+ * Parses free-form time typed by a person: "9", "930", "9:30", "21.15", "7 30".
+ * Returns "HH:mm" or null when it is not a valid time.
+ */
+export function parseTimeInput(raw: string): TimeString | null {
+  const s = raw.trim().replace(/[.\s-]/g, ':');
+  if (!s) return null;
+  let h: number;
+  let m: number;
+  const colon = /^(\d{1,2}):(\d{1,2})$/.exec(s);
+  if (colon) {
+    h = Number(colon[1]);
+    m = Number(colon[2]);
+  } else if (/^\d{1,4}$/.test(s)) {
+    if (s.length <= 2) {
+      h = Number(s);
+      m = 0;
+    } else {
+      h = Number(s.slice(0, s.length - 2));
+      m = Number(s.slice(-2));
+    }
+  } else return null;
+  if (h > 23 || m > 59) return null;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+/** "1 год 30 хв" style duration label. */
+export function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h && m) return `${h} год ${m} хв`;
+  if (h) return `${h} год`;
+  return `${m} хв`;
+}

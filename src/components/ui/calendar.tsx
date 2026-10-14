@@ -12,6 +12,8 @@ export function MiniCalendar({
   onSelect,
   markedDates,
   highlightRange,
+  min,
+  className,
 }: {
   selected: DateKey;
   today: DateKey;
@@ -19,6 +21,9 @@ export function MiniCalendar({
   onSelect: (d: DateKey) => void;
   markedDates?: Set<DateKey>;
   highlightRange?: { start: DateKey; end: DateKey };
+  /** Dates before this are disabled. */
+  min?: DateKey;
+  className?: string;
 }) {
   const [cursor, setCursor] = useState(selected.slice(0, 7));
   const [lastSelected, setLastSelected] = useState(selected);
@@ -32,9 +37,9 @@ export function MiniCalendar({
   const shift = (n: number) => setCursor(toDateKey(addMonths(fromDateKey(month), n)).slice(0, 7));
 
   return (
-    <div className="select-none">
+    <div className={cn('select-none', className)}>
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-semibold">{formatDateKey(month, 'LLLL yyyy')}</p>
+        <p className="pl-1 text-sm font-semibold">{formatDateKey(month, 'LLLL yyyy')}</p>
         <div className="flex">
           <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Попередній місяць" onClick={() => shift(-1)}>
             <ChevronLeft className="h-4 w-4" />
@@ -44,7 +49,7 @@ export function MiniCalendar({
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-7 text-center text-[11px] text-subtle">
+      <div className="grid grid-cols-7 text-center text-[11px] font-medium text-subtle">
         {labels.map((l, i) => (
           <span key={i} className="py-1">
             {l}
@@ -57,16 +62,18 @@ export function MiniCalendar({
           const isSel = d === selected;
           const isToday = d === today;
           const inRange = highlightRange && d >= highlightRange.start && d <= highlightRange.end;
+          const disabled = !!min && d < min;
           return (
             <button
               key={d}
               type="button"
               role="gridcell"
               aria-selected={isSel}
+              disabled={disabled}
               aria-label={formatDateKey(d, 'EEEE, d MMMM')}
               onClick={() => onSelect(d)}
               className={cn(
-                'relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs tabular-nums transition-colors',
+                'relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-[12.5px] tabular-nums transition-colors disabled:pointer-events-none disabled:opacity-30',
                 inMonth ? 'text-ink' : 'text-subtle/70',
                 inRange && !isSel && 'bg-surface-2',
                 isSel ? 'bg-accent font-semibold text-surface' : 'hover:bg-surface-2',

@@ -18,6 +18,8 @@ interface DialogContentProps {
   hideTitle?: boolean;
   size?: 'sm' | 'md' | 'lg';
   headerActions?: ReactNode;
+  /** Small muted title, for forms whose first field is the real headline. */
+  quietTitle?: boolean;
 }
 
 const sizes = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' };
@@ -36,6 +38,7 @@ export function DialogContent({
   hideTitle,
   size = 'md',
   headerActions,
+  quietTitle,
 }: DialogContentProps) {
   const block = (e: Event) => {
     if (preventDismiss) {
@@ -61,7 +64,7 @@ export function DialogContent({
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
         <div className={cn('flex items-start gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pt-5', hideTitle && 'sr-only')}>
           <div className="min-w-0 flex-1">
-            <DialogPrimitive.Title className="text-[17px] font-semibold tracking-tight text-ink">{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Title className={cn(quietTitle ? 'text-[13px] font-medium text-muted' : 'text-[17px] font-semibold tracking-tight text-ink')}>{title}</DialogPrimitive.Title>
             {description ? (
               <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description>
             ) : (

@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { ArrowRight, CalendarDays, CheckSquare, NotebookPen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { DatePicker, TimePicker } from '@/components/ui/date-time';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 import { useActions } from '@/hooks/useActions';
 import { useToday } from '@/hooks/useNow';
 import { useCreateNote } from '@/components/layout/CreateMenu';
-import { addDaysKey, deviceTimeZone, minutesToTime, roundUpTime, timeToMinutes } from '@/lib/date';
+import { deviceTimeZone, minutesToTime, roundUpTime, timeToMinutes } from '@/lib/date';
 import { settleWrite } from '@/services/sync';
 import { toast } from '@/components/ui/toast';
 
@@ -104,43 +105,17 @@ export function QuickAdd({ className }: { className?: string }) {
         </div>
         {kind !== 'note' && (
           <div className="flex flex-wrap items-center gap-1.5">
-            {[
-              [today, 'Сьогодні'],
-              [addDaysKey(today, 1), 'Завтра'],
-            ].map(([d, l]) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDate(d)}
-                aria-pressed={date === d}
-                className={cn(
-                  'rounded-md px-2 py-1 text-xs font-medium transition-colors',
-                  date === d ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-surface-2',
-                )}
-              >
-                {l}
-              </button>
-            ))}
-            <input
-              type="date"
+            <DatePicker
+              variant="chip"
+              className="h-7 text-xs"
               aria-label="Дата"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-7 rounded-md border border-line bg-surface px-1.5 text-xs text-ink"
+              clearable={kind === 'task'}
+              placeholder="Без дати"
+              value={date || undefined}
+              onChange={(d) => setDate(d ?? '')}
             />
             {kind === 'event' && (
-              <input
-                type="time"
-                aria-label="Час початку"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="h-7 rounded-md border border-line bg-surface px-1.5 text-xs text-ink"
-              />
-            )}
-            {kind === 'task' && date && (
-              <button type="button" className="rounded-md px-2 py-1 text-xs text-muted hover:bg-surface-2" onClick={() => setDate('')}>
-                Без дати
-              </button>
+              <TimePicker variant="chip" className="h-7 text-xs" aria-label="Час початку" value={time} onChange={(t) => t && setTime(t)} />
             )}
           </div>
         )}

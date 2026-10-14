@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge, Card, Progress, Segmented } from '@/components/ui/misc';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Field, Input } from '@/components/ui/input';
+import { Stepper } from '@/components/ui/controls';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown';
 import { EmptyState } from '@/components/common/States';
 import { confirm } from '@/components/common/ConfirmDialog';
@@ -50,9 +51,8 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="flex items-end gap-2">
             <Field label={`Поточне значення${goal.unit ? ` (${goal.unit})` : ''}`} error={invalid ? 'Введіть 0 або більше.' : undefined} className="flex-1">
-              {(p) => <Input {...p} type="number" min={0} step="any" autoFocus value={value} onChange={(e) => setValue(e.target.value)} />}
+              {(p) => <Stepper {...p} min={0} value={Number(value) || 0} onChange={(v) => setValue(String(v))} />}
             </Field>
-            <Button variant="outline" onClick={() => setValue(String((Number(value) || 0) + 1))}>+1</Button>
           </div>
           <p className="text-xs text-muted">Мета: {goal.targetValue} {goal.unit}</p>
           <Field label="Нотатка (необов’язково)">

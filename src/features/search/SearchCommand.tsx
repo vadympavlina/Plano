@@ -161,7 +161,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
               lastGroup = r.group;
               return (
                 <div key={r.id}>
-                  {header && <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-subtle">{header}</p>}
+                  {header && <p className="px-3 pb-1 pt-3 text-xs font-semibold text-subtle">{header}</p>}
                   <button
                     id={`sr-${r.id}`}
                     role="option"

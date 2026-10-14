@@ -1,9 +1,13 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { AlertTriangle, AlignLeft, Clock, FolderKanban, Link2, MapPin, Repeat, Tag } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Field, Input, Select, Textarea } from '@/components/ui/input';
-import { RecurrenceEditor } from '@/components/common/RecurrenceEditor';
+import { Input, Textarea } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { DatePicker, TimePicker } from '@/components/ui/date-time';
+import { Switch } from '@/components/ui/controls';
+import { RepeatChip } from '@/components/common/RepeatChip';
+import { categoryOptions, projectOptions } from '@/components/common/options';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
@@ -46,6 +50,18 @@ function validate(d: Draft): Record<string, string> {
   return e;
 }
 
+/** A labelled row: icon on the left, controls on the right. */
+function Row({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 py-1.5">
+      <span className="mt-2 flex h-4 w-4 shrink-0 text-subtle [&_svg]:h-4 [&_svg]:w-4" title={label} aria-hidden>
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
 export default function EventFormDialog({
   event,
   defaults,
@@ -74,6 +90,13 @@ export default function EventFormDialog({
       onClose();
   };
 
+  const setStart = (startTime: string | undefined) => {
+    if (!startTime) return;
+    // Keep the duration when the start moves.
+    const dur = draft.startTime && draft.endTime ? timeToMinutes(draft.endTime) - timeToMinutes(draft.startTime) : 60;
+    patch({ startTime, endTime: minutesToTime(Math.min(timeToMinutes(startTime) + Math.max(dur, 15), 23 * 60 + 59)) });
+  };
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setShowErrors(true);
@@ -92,151 +115,165 @@ export default function EventFormDialog({
     else void submit(() => actions.events.create(clean).write, 'Подію створено');
   };
 
+  const timeError = visible.date ?? visible.time ?? visible.endDate;
+
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
-      <DialogContent title={event ? 'Редагувати подію' : 'Нова подія'} size="lg" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
-        <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <DialogContent quietTitle title={event ? 'Редагувати подію' : 'Нова подія'} size="md" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
+        <form onSubmit={onSubmit} noValidate>
           {readOnly && (
-            <p className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
-              Цю подію імпортовано із зовнішнього календаря. Зміни тут поки не надсилаються назад.
+            <p className="mb-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted">
+              Подію імпортовано із зовнішнього календаря. Зміни тут поки не надсилаються назад.
             </p>
           )}
-          <Field label="Назва" error={visible.title}>
-            {(p) => (
-              <Input {...p} autoFocus placeholder="Назва події" maxLength={300} value={draft.title} onChange={(e) => patch({ title: e.target.value })} />
-            )}
-          </Field>
+          <input
+            autoFocus
+            aria-label="Назва"
+            aria-invalid={visible.title ? true : undefined}
+            placeholder="Назва події"
+            maxLength={300}
+            value={draft.title}
+            onChange={(e) => patch({ title: e.target.value })}
+            className="mb-3 w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          {visible.title && <p role="alert" className="-mt-2 mb-3 text-[13px] text-danger">{visible.title}</p>}
 
-          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-[rgb(var(--primary))]"
-              checked={draft.allDay}
-              onChange={(e) => {
-                const allDay = e.target.checked;
-                patch(
-                  allDay
-                    ? { allDay }
-                    : { allDay, startTime: draft.startTime ?? '09:00', endTime: draft.endTime ?? '10:00', endDate: undefined },
-                );
-              }}
-            />
-            Подія на весь день
-          </label>
-
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label={draft.allDay ? 'Початок' : 'Дата'} error={visible.date} className="col-span-2">
-              {(p) => <Input {...p} type="date" value={draft.date} onChange={(e) => patch({ date: e.target.value })} />}
-            </Field>
-            {draft.allDay ? (
-              <Field label="Кінець" error={visible.endDate} className="col-span-2">
-                {(p) => (
-                  <Input {...p} type="date" min={draft.date} value={draft.endDate ?? draft.date} onChange={(e) => patch({ endDate: e.target.value || undefined })} />
-                )}
-              </Field>
-            ) : (
-              <>
-                <Field label="Початок" error={visible.time}>
-                  {(p) => (
-                    <Input
-                      {...p}
-                      type="time"
-                      value={draft.startTime ?? ''}
-                      onChange={(e) => {
-                        const startTime = e.target.value;
-                        // Keep the duration when the start time moves.
-                        if (startTime && draft.startTime && draft.endTime) {
-                          const dur = timeToMinutes(draft.endTime) - timeToMinutes(draft.startTime);
-                          const end = timeToMinutes(startTime) + Math.max(dur, 15);
-                          patch({ startTime, endTime: minutesToTime(Math.min(end, 23 * 60 + 59)) });
-                        } else patch({ startTime });
-                      }}
+          <div className="divide-y divide-line/70 border-y border-line/70">
+            <Row icon={<Clock />} label="Час">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <DatePicker
+                  variant="chip"
+                  aria-label={draft.allDay ? 'Початок' : 'Дата'}
+                  clearable={false}
+                  weekStartsOn={settings.weekStartsOn}
+                  value={draft.date}
+                  onChange={(date) => date && patch({ date })}
+                />
+                {draft.allDay ? (
+                  <>
+                    <span className="text-subtle">–</span>
+                    <DatePicker
+                      variant="chip"
+                      aria-label="Кінець"
+                      clearable={false}
+                      min={draft.date}
+                      weekStartsOn={settings.weekStartsOn}
+                      value={draft.endDate ?? draft.date}
+                      onChange={(endDate) => patch({ endDate })}
                     />
-                  )}
-                </Field>
-                <Field label="Кінець">
-                  {(p) => <Input {...p} type="time" value={draft.endTime ?? ''} onChange={(e) => patch({ endTime: e.target.value })} />}
-                </Field>
-              </>
-            )}
-          </div>
-
-          {conflicts.length > 0 && (
-            <div className="flex items-start gap-2 rounded-lg bg-warning/10 px-3 py-2 text-[13px] text-ink">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-              <span>
-                Перетинається з{' '}
-                {conflicts
-                  .slice(0, 3)
-                  .map((c) => `${c.title} (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
-                  .join(', ')}
-                . Зберегти все одно можна.
-              </span>
-            </div>
-          )}
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Категорія">
-              {(p) => (
-                <Select {...p} value={draft.categoryId ?? ''} onChange={(e) => patch({ categoryId: e.target.value || undefined })}>
-                  <option value="">Немає</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
+                  </>
+                ) : (
+                  <>
+                    <TimePicker variant="chip" aria-label="Початок" timeFormat={settings.timeFormat} value={draft.startTime} onChange={setStart} />
+                    <span className="text-subtle">–</span>
+                    <TimePicker
+                      variant="chip"
+                      aria-label="Кінець"
+                      after={draft.startTime}
+                      timeFormat={settings.timeFormat}
+                      value={draft.endTime}
+                      onChange={(endTime) => patch({ endTime })}
+                    />
+                  </>
+                )}
+              </div>
+              <Switch
+                className="mt-2.5 max-w-[220px]"
+                label="Весь день"
+                checked={draft.allDay}
+                onChange={(allDay) =>
+                  patch(
+                    allDay
+                      ? { allDay }
+                      : { allDay, startTime: draft.startTime ?? '09:00', endTime: draft.endTime ?? '10:00', endDate: undefined },
+                  )
+                }
+              />
+              {timeError && <p role="alert" className="mt-2 text-[13px] text-danger">{timeError}</p>}
+              {conflicts.length > 0 && (
+                <p className="mt-2 flex items-start gap-2 text-[13px] text-muted">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                  <span>
+                    Перетинається з{' '}
+                    {conflicts
+                      .slice(0, 3)
+                      .map((c) => `«${c.title}» (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
+                      .join(', ')}
+                    . Зберегти все одно можна.
+                  </span>
+                </p>
               )}
-            </Field>
-            <Field label="Проєкт">
-              {(p) => (
-                <Select {...p} value={draft.projectId ?? ''} onChange={(e) => patch({ projectId: e.target.value || undefined })}>
-                  <option value="">Немає</option>
-                  {projects.map((pr) => (
-                    <option key={pr.id} value={pr.id}>
-                      {pr.name}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
+            </Row>
+            <Row icon={<Repeat />} label="Повторення">
+              <RepeatChip variant="ghost" showIcon={false} className="-ml-2" value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
+            </Row>
+            <Row icon={<Tag />} label="Категорія">
+              <div className="-ml-2 flex flex-wrap gap-1">
+                <Select
+                  variant="ghost"
+                  aria-label="Категорія"
+                  value={draft.categoryId ?? ''}
+                  onChange={(v) => patch({ categoryId: v || undefined })}
+                  options={categoryOptions(categories)}
+                />
+              </div>
+            </Row>
+            <Row icon={<FolderKanban />} label="Проєкт">
+              <Select
+                variant="ghost"
+                className="-ml-2"
+                aria-label="Проєкт"
+                value={draft.projectId ?? ''}
+                onChange={(v) => patch({ projectId: v || undefined })}
+                options={projectOptions(projects, draft.projectId)}
+              />
+            </Row>
+            <Row icon={<MapPin />} label="Місце">
+              <Input
+                aria-label="Місце"
+                placeholder="Додати місце"
+                value={draft.location ?? ''}
+                onChange={(e) => patch({ location: e.target.value })}
+                className="h-8 border-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
+              />
+            </Row>
+            <Row icon={<Link2 />} label="Посилання">
+              <Input
+                aria-label="Посилання"
+                aria-invalid={visible.url ? true : undefined}
+                type="url"
+                inputMode="url"
+                placeholder="Додати посилання"
+                value={draft.url ?? ''}
+                onChange={(e) => patch({ url: e.target.value })}
+                className="h-8 border-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
+              />
+              {visible.url && <p role="alert" className="mt-1 text-[13px] text-danger">{visible.url}</p>}
+            </Row>
+            <Row icon={<AlignLeft />} label="Опис">
+              <Textarea
+                aria-label="Опис"
+                rows={3}
+                placeholder="Порядок денний, нотатки…"
+                value={draft.description ?? ''}
+                onChange={(e) => patch({ description: e.target.value })}
+                className="min-h-[72px] resize-none border-transparent px-0 py-1.5 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
+              />
+            </Row>
           </div>
-
-          <Field label="Повторення">
-            {(p) => (
-              <RecurrenceEditor id={p.id} value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
-            )}
-          </Field>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Місце">
-              {(p) => <Input {...p} placeholder="Додайте місце" value={draft.location ?? ''} onChange={(e) => patch({ location: e.target.value })} />}
-            </Field>
-            <Field label="Посилання" error={visible.url}>
-              {(p) => (
-                <Input {...p} type="url" inputMode="url" placeholder="https://" value={draft.url ?? ''} onChange={(e) => patch({ url: e.target.value })} />
-              )}
-            </Field>
-          </div>
-
-          <Field label="Опис">
-            {(p) => (
-              <Textarea {...p} rows={3} placeholder="Порядок денний, нотатки…" value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />
-            )}
-          </Field>
 
           {submitError && (
-            <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+            <p role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
               {submitError}
             </p>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={onClose} disabled={saving}>
+            <Button variant="ghost" onClick={() => void requestClose()} disabled={saving}>
               Скасувати
             </Button>
             <Button type="submit" variant="dark" loading={saving}>
-              {event ? 'Зберегти зміни' : 'Створити подію'}
+              {event ? 'Зберегти' : 'Створити подію'}
             </Button>
           </DialogFooter>
         </form>

@@ -21,7 +21,7 @@ const emit = () => listeners.forEach((l) => l());
 function push(kind: ToastKind, message: string, opts: Partial<Omit<ToastItem, 'id' | 'kind' | 'message'>> = {}) {
   const id = ++seq;
   const duration = opts.duration ?? (kind === 'error' ? 8000 : 3500);
-  items = [...items.slice(-3), { id, kind, message, duration, ...opts }];
+  items = [...items.slice(-2), { id, kind, message, duration, ...opts }];
   emit();
   return id;
 }

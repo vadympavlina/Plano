@@ -21,12 +21,8 @@ import { PRIORITY_LABEL, isOverdue, taskDate } from './logic';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 
-export const PRIORITY_COLOR: Record<Task['priority'], string> = {
-  urgent: '#E5484D',
-  high: '#E8628F',
-  medium: '#F0A54A',
-  low: '#35B98A',
-};
+export { PRIORITY_COLOR } from '@/components/common/options';
+import { PRIORITY_COLOR } from '@/components/common/options';
 
 export async function deleteTaskWithConfirm(task: Task, remove: (id: string) => Promise<void>) {
   const ok = await confirm({

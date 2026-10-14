@@ -139,7 +139,7 @@ export function TimeGrid({
                 className={cn('flex flex-col items-center gap-1 py-2.5 transition-colors hover:bg-surface-2', single && 'items-start pl-3')}
                 aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
               >
-                <span className={cn('text-[11px] font-medium uppercase tracking-wide', isToday ? 'text-ink' : 'text-subtle')}>
+                <span className={cn('text-[12px] font-medium', isToday ? 'text-ink' : 'text-subtle')}>
                   {formatDateKey(d, single ? 'EEEE' : 'EEEEEE')}
                 </span>
                 <span
@@ -159,7 +159,7 @@ export function TimeGrid({
       {/* All-day row */}
       {hasAllDayRow && (
         <div className="flex border-b border-line">
-          <div className="flex w-12 shrink-0 items-start justify-end pr-2 pt-2 text-[10px] text-subtle sm:w-14">весь день</div>
+          <div className="flex w-12 shrink-0 items-start justify-end whitespace-nowrap pr-1.5 pt-2 text-[10px] leading-tight text-subtle sm:w-14">весь<br />день</div>
           <div className="grid flex-1" style={gridCols}>
             {columns.map((c) => (
               <div key={c.day} className="scrollbar-thin max-h-[108px] min-w-0 space-y-1 overflow-y-auto border-l border-line p-1">
@@ -267,7 +267,7 @@ export function TimeGrid({
                         short ? 'py-0.5' : 'py-1',
                         item.draggable ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-pointer',
                         isDragging && drag.moved && 'z-20 opacity-90 shadow-pop',
-                        item.kind === 'task' && 'border border-l-[3px] border-dashed bg-surface',
+                        item.kind === 'task' && 'border border-l-[3px] border-line bg-surface shadow-soft',
                       )}
                       style={{
                         top,

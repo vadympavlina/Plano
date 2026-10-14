@@ -35,7 +35,7 @@ export function MonthView({
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid grid-cols-7 border-b border-line">
         {labels.map((l) => (
-          <div key={l} className="py-2 text-center text-[11px] font-medium uppercase tracking-wide text-subtle">
+          <div key={l} className="py-2 text-center text-[12px] font-medium text-subtle">
             {l}
           </div>
         ))}

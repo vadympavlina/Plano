@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-time';
+import { Stepper } from '@/components/ui/controls';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
@@ -115,13 +117,13 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
               )}
             </Field>
             <Field label="Дата початку" error={visible.startDate}>
-              {(p) => <Input {...p} type="date" value={draft.startDate} onChange={(e) => patch({ startDate: e.target.value })} />}
+              {(p) => <DatePicker {...p} clearable={false} value={draft.startDate} onChange={(startDate) => startDate && patch({ startDate })} />}
             </Field>
           </div>
           {draft.goalType === 'count' && (
             <div className="grid grid-cols-2 gap-3">
               <Field label="Ціль на день" error={visible.target}>
-                {(p) => <Input {...p} type="number" min={1} value={draft.target} onChange={(e) => patch({ target: Number(e.target.value) })} />}
+                {(p) => <Stepper {...p} min={1} max={10000} value={draft.target} onChange={(target) => patch({ target })} />}
               </Field>
               <Field label="Одиниця">
                 {(p) => <Input {...p} placeholder="склянки, сторінки…" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
