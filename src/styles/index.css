@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 243 245 249;
+    --surface: 255 255 255;
+    --surface-2: 248 249 252;
+    --sidebar: 23 27 36;
+    --sidebar-fg: 236 239 245;
+    --sidebar-muted: 140 148 166;
+    --sidebar-active: 39 45 58;
+    --ink: 23 32 51;
+    --muted: 107 116 135;
+    --subtle: 154 162 178;
+    --line: 231 234 241;
+    --primary: 71 120 245;
+    --primary-fg: 255 255 255;
+    --success: 53 185 138;
+    --warning: 224 146 50;
+    --danger: 229 72 77;
+    --purple: 146 117 239;
+    --accent: 23 27 36;
+    color-scheme: light;
+  }
+
+  .dark {
+    --bg: 14 17 23;
+    --surface: 23 27 36;
+    --surface-2: 29 34 45;
+    --sidebar: 10 12 17;
+    --sidebar-fg: 236 239 245;
+    --sidebar-muted: 128 137 156;
+    --sidebar-active: 32 37 49;
+    --ink: 232 235 242;
+    --muted: 150 159 178;
+    --subtle: 108 117 137;
+    --line: 40 46 60;
+    --primary: 102 145 255;
+    --primary-fg: 255 255 255;
+    --success: 64 199 150;
+    --warning: 240 165 74;
+    --danger: 240 98 102;
+    --purple: 166 141 247;
+    --accent: 236 239 245;
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    overscroll-behavior-y: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary/60 ring-offset-1 ring-offset-surface;
+  }
+
+  ::selection {
+    background: rgb(var(--primary) / 0.2);
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator {
+    opacity: 0.55;
+    cursor: pointer;
+  }
+  .dark input[type='date']::-webkit-calendar-picker-indicator,
+  .dark input[type='time']::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-card border border-line bg-surface;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--line)) transparent;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pl-safe {
+    padding-left: env(safe-area-inset-left);
+  }
+  .pr-safe {
+    padding-right: env(safe-area-inset-right);
+  }
+  .prose-note h1 { @apply mb-2 mt-4 text-xl font-semibold; }
+  .prose-note h2 { @apply mb-2 mt-4 text-lg font-semibold; }
+  .prose-note h3 { @apply mb-1 mt-3 text-base font-semibold; }
+  .prose-note p { @apply my-2 leading-relaxed; }
+  .prose-note ul { @apply my-2 list-disc pl-5; }
+  .prose-note ol { @apply my-2 list-decimal pl-5; }
+  .prose-note li { @apply my-0.5; }
+  .prose-note code { @apply rounded bg-surface-2 px-1 py-0.5 font-mono text-[0.85em]; }
+  .prose-note pre { @apply my-2 overflow-x-auto rounded-lg bg-surface-2 p-3 font-mono text-sm; }
+  .prose-note blockquote { @apply my-2 border-l-2 border-line pl-3 text-muted; }
+  .prose-note a { @apply text-primary underline underline-offset-2; }
+  .prose-note hr { @apply my-4 border-line; }
+  .prose-note .task-item { @apply list-none -ml-5 flex items-start gap-2; }
+}

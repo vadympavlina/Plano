@@ -1,0 +1,220 @@
+// Domain types for Plano. All dates are stored as local wall-clock values:
+// dates as "yyyy-MM-dd" keys and times as "HH:mm". Timestamps (createdAt etc.)
+// are ISO-8601 strings.
+
+export type ID = string;
+export type DateKey = string; // yyyy-MM-dd
+export type TimeString = string; // HH:mm
+export type ISODateTime = string;
+
+export const COLOR_KEYS = ['blue', 'green', 'purple', 'pink', 'orange', 'teal', 'yellow', 'red', 'slate'] as const;
+export type ColorKey = (typeof COLOR_KEYS)[number];
+
+export interface Timestamps {
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export type RecurrenceFreq = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+export interface RecurrenceRule {
+  freq: RecurrenceFreq;
+  /** Repeat every N units (days / weeks / months / years). */
+  interval: number;
+  /** Weekly only: 0 = Sunday … 6 = Saturday. Empty means "same weekday as start". */
+  byWeekday?: number[];
+  /** Last date (inclusive) on which the rule may produce an occurrence. */
+  until?: DateKey;
+}
+
+export interface Category extends Timestamps {
+  id: ID;
+  name: string;
+  color: ColorKey;
+  order: number;
+}
+
+export const TASK_STATUSES = ['todo', 'in_progress', 'completed', 'cancelled'] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const PRIORITIES = ['low', 'medium', 'high', 'urgent'] as const;
+export type Priority = (typeof PRIORITIES)[number];
+
+export interface Subtask {
+  id: ID;
+  title: string;
+  done: boolean;
+  order: number;
+}
+
+export interface Task extends Timestamps {
+  id: ID;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: Priority;
+  categoryId?: ID;
+  projectId?: ID;
+  goalId?: ID;
+  dueDate?: DateKey;
+  startDate?: DateKey;
+  startTime?: TimeString;
+  endTime?: TimeString;
+  subtasks: Subtask[];
+  notes?: string;
+  tags: string[];
+  recurrence?: RecurrenceRule;
+  /** Id of the first task of a recurring series (absent on the first one). */
+  seriesId?: ID;
+  /** First date of the recurring series (absent on the first task). */
+  seriesStart?: DateKey;
+  completedAt?: ISODateTime;
+}
+
+export type EventSource = 'plano' | 'google';
+
+/** Link between a Plano event and an event in an external calendar. */
+export interface ExternalEventRef {
+  provider: 'google';
+  calendarId: string;
+  eventId: string;
+  etag?: string;
+  lastSyncedAt?: ISODateTime;
+}
+
+export interface CalendarEvent extends Timestamps {
+  id: ID;
+  title: string;
+  description?: string;
+  date: DateKey;
+  /** All-day events may span several days. */
+  endDate?: DateKey;
+  allDay: boolean;
+  startTime?: TimeString;
+  endTime?: TimeString;
+  categoryId?: ID;
+  projectId?: ID;
+  location?: string;
+  url?: string;
+  recurrence?: RecurrenceRule;
+  /** Occurrence dates removed from a recurring series. */
+  exdates: DateKey[];
+  /** IANA time zone the event was created in (informational). */
+  timezone?: string;
+  source: EventSource;
+  external?: ExternalEventRef;
+}
+
+export const PROJECT_STATUSES = ['active', 'on_hold', 'completed', 'archived'] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export interface Project extends Timestamps {
+  id: ID;
+  name: string;
+  description?: string;
+  color: ColorKey;
+  status: ProjectStatus;
+  startDate?: DateKey;
+  targetDate?: DateKey;
+}
+
+export type HabitGoalType = 'check' | 'count';
+
+export interface Habit extends Timestamps {
+  id: ID;
+  name: string;
+  icon: string;
+  color: ColorKey;
+  /** Weekdays (0 = Sunday … 6 = Saturday) on which the habit is scheduled. */
+  schedule: number[];
+  startDate: DateKey;
+  goalType: HabitGoalType;
+  /** For "count" habits: the value that counts as done for a day. */
+  target: number;
+  unit?: string;
+  archived: boolean;
+}
+
+/** habitLogs/{habitId}/{dateKey} = value (1 for a check habit). */
+export type HabitLogs = Record<ID, Record<DateKey, number>>;
+
+export const GOAL_STATUSES = ['active', 'completed', 'paused', 'abandoned'] as const;
+export type GoalStatus = (typeof GOAL_STATUSES)[number];
+
+export interface GoalProgressEntry {
+  id: ID;
+  date: ISODateTime;
+  value: number;
+  note?: string;
+}
+
+export interface Goal extends Timestamps {
+  id: ID;
+  title: string;
+  description?: string;
+  categoryId?: ID;
+  targetValue: number;
+  currentValue: number;
+  unit?: string;
+  startDate?: DateKey;
+  targetDate?: DateKey;
+  status: GoalStatus;
+  projectIds: ID[];
+  history: GoalProgressEntry[];
+}
+
+export interface Note extends Timestamps {
+  id: ID;
+  title: string;
+  content: string;
+  tags: string[];
+  projectId?: ID;
+  isPinned: boolean;
+}
+
+export type ThemePreference = 'light' | 'dark' | 'system';
+export type CalendarView = 'day' | 'week' | 'month';
+
+export interface Settings {
+  theme: ThemePreference;
+  weekStartsOn: 0 | 1;
+  timeFormat: '12h' | '24h';
+  dateFormat: 'MMM d, yyyy' | 'd MMM yyyy' | 'dd.MM.yyyy' | 'MM/dd/yyyy' | 'yyyy-MM-dd';
+  defaultCalendarView: CalendarView;
+  /** Overrides the device time zone for display of "now"; empty = device. */
+  timezone?: string;
+  showHabitStreakOnDashboard: boolean;
+}
+
+export interface Profile {
+  displayName?: string;
+  avatarUrl?: string;
+  updatedAt?: ISODateTime;
+}
+
+export type IntegrationStatus = 'not_connected' | 'connected' | 'error';
+
+export interface IntegrationState {
+  provider: 'google_calendar';
+  status: IntegrationStatus;
+  /** Calendars selected for sync (external calendar ids). */
+  calendarIds?: string[];
+  lastSyncAt?: ISODateTime;
+  lastError?: string;
+}
+
+export interface UserData {
+  profile: Profile;
+  settings: Settings;
+  categories: Record<ID, Category>;
+  tasks: Record<ID, Task>;
+  events: Record<ID, CalendarEvent>;
+  projects: Record<ID, Project>;
+  habits: Record<ID, Habit>;
+  habitLogs: HabitLogs;
+  goals: Record<ID, Goal>;
+  notes: Record<ID, Note>;
+  integrations: Record<string, IntegrationState>;
+}
+
+export type CollectionName = 'categories' | 'tasks' | 'events' | 'projects' | 'habits' | 'goals' | 'notes';
