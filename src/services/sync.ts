@@ -35,7 +35,9 @@ export function resetSyncState() {
 
 export function onWriteFailure(cb: (f: WriteFailure) => void) {
   failureListeners.add(cb);
-  return () => failureListeners.delete(cb);
+  return () => {
+    failureListeners.delete(cb);
+  };
 }
 
 export function getSyncState() {

@@ -188,6 +188,6 @@ function diff(a: DateKey, b: DateKey): number {
 }
 
 /** Patch to apply when toggling a task's completion. */
-export function completionPatch(task: Task, done: boolean, now: string): Partial<Task> {
+export function completionPatch(_task: Task, done: boolean, now: string): Partial<Task> {
   return done ? { status: 'completed', completedAt: now } : { status: 'todo', completedAt: undefined };
 }

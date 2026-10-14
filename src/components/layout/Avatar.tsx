@@ -1,7 +1,8 @@
+import { UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export function Avatar({ name, src, className }: { name?: string | null; src?: string | null; className?: string }) {
-  const initials = (name || '?')
+  const initials = (name || '')
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -14,7 +15,13 @@ export function Avatar({ name, src, className }: { name?: string | null; src?: s
         className,
       )}
     >
-      {src ? <img src={src} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" /> : initials || '?'}
+      {src ? (
+        <img src={src} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+      ) : initials && initials !== '?' ? (
+        initials
+      ) : (
+        <UserRound className="h-[55%] w-[55%]" aria-hidden />
+      )}
     </span>
   );
 }

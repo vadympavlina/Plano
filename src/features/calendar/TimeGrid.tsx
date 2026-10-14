@@ -49,15 +49,6 @@ export function TimeGrid({
   const [drag, setDrag] = useState<DragState | null>(null);
   const single = days.length === 1;
 
-  // Scroll to a useful hour on first render.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const hour = days.includes(today) ? Math.max(0, now.getHours() - 2) : 7;
-    el.scrollTop = hour * HOUR_PX;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days[0]]);
-
   const columns = useMemo(
     () =>
       days.map((day) => ({
@@ -68,6 +59,17 @@ export function TimeGrid({
       })),
     [days, occurrences, tasks, categoryById],
   );
+  // Scroll to a useful hour: the earliest item in view, or shortly before now.
+  const earliest = Math.min(...columns.flatMap((c) => c.positioned.map((p) => p.item.start)), 24 * 60);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const base = days.includes(today) ? Math.max(0, now.getHours() - 2) : 7;
+    const hour = Math.max(0, Math.min(base, Math.floor(earliest / 60)) - (earliest < base * 60 ? 0.25 : 0));
+    el.scrollTop = hour * HOUR_PX;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days[0], days.length]);
+
   const hasAllDayRow = columns.some((c) => c.allDay.length > 0 || c.untimedTasks.length > 0);
 
   const onSlotClick = (day: DateKey, e: React.MouseEvent<HTMLDivElement>) => {

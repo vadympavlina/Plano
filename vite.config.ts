@@ -61,6 +61,16 @@ export default defineConfig(({ mode }) => {
         devOptions: { enabled: false },
       }),
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            firebase: ['firebase/app', 'firebase/auth', 'firebase/database'],
+            react: ['react', 'react-dom', 'react-router-dom'],
+          },
+        },
+      },
+    },
     test: {
       environment: 'node',
       include: ['src/**/*.test.ts'],

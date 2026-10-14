@@ -1,0 +1,282 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "allowlist": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": false
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid && root.child('allowlist').child(auth.uid).val() === true",
+        ".write": "auth != null && auth.uid === $uid && root.child('allowlist').child(auth.uid).val() === true",
+        "profile": {
+          "displayName": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "avatarUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 2000 && newData.val().beginsWith('https://')"
+          },
+          "updatedAt": {
+            ".validate": "newData.isString()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "settings": {
+          "$key": {
+            ".validate": "newData.isString() || newData.isNumber() || newData.isBoolean()"
+          }
+        },
+        "categories": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt', 'name', 'color'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().matches(/^(blue|green|purple|pink|orange|teal|yellow|red|slate)$/)"
+            },
+            "order": {
+              ".validate": "newData.isNumber()"
+            }
+          }
+        },
+        "tasks": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt', 'title', 'status', 'priority'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 300"
+            },
+            "description": {
+              ".validate": "newData.isString() && newData.val().length <= 20000"
+            },
+            "notes": {
+              ".validate": "newData.isString() && newData.val().length <= 20000"
+            },
+            "status": {
+              ".validate": "newData.isString() && newData.val().matches(/^(todo|in_progress|completed|cancelled)$/)"
+            },
+            "priority": {
+              ".validate": "newData.isString() && newData.val().matches(/^(low|medium|high|urgent)$/)"
+            },
+            "dueDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "startDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "seriesStart": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "startTime": {
+              ".validate": "newData.isString() && newData.val().matches(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)"
+            },
+            "endTime": {
+              ".validate": "newData.isString() && newData.val().matches(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)"
+            }
+          }
+        },
+        "events": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt', 'title', 'date', 'allDay', 'source'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 300"
+            },
+            "description": {
+              ".validate": "newData.isString() && newData.val().length <= 20000"
+            },
+            "date": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "endDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "allDay": {
+              ".validate": "newData.isBoolean()"
+            },
+            "startTime": {
+              ".validate": "newData.isString() && newData.val().matches(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)"
+            },
+            "endTime": {
+              ".validate": "newData.isString() && newData.val().matches(/^([01][0-9]|2[0-3]):[0-5][0-9]$/)"
+            },
+            "source": {
+              ".validate": "newData.isString() && newData.val().matches(/^(plano|google)$/)"
+            },
+            "location": {
+              ".validate": "newData.isString() && newData.val().length <= 500"
+            },
+            "url": {
+              ".validate": "newData.isString() && newData.val().length <= 2000"
+            }
+          }
+        },
+        "projects": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt', 'name', 'color', 'status'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+            },
+            "description": {
+              ".validate": "newData.isString() && newData.val().length <= 20000"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().matches(/^(blue|green|purple|pink|orange|teal|yellow|red|slate)$/)"
+            },
+            "status": {
+              ".validate": "newData.isString() && newData.val().matches(/^(active|on_hold|completed|archived)$/)"
+            },
+            "startDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "targetDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            }
+          }
+        },
+        "habits": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt', 'name', 'schedule', 'startDate', 'goalType'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+            },
+            "startDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "color": {
+              ".validate": "newData.isString() && newData.val().matches(/^(blue|green|purple|pink|orange|teal|yellow|red|slate)$/)"
+            },
+            "goalType": {
+              ".validate": "newData.isString() && newData.val().matches(/^(check|count)$/)"
+            },
+            "target": {
+              ".validate": "newData.isNumber() && newData.val() >= 1"
+            }
+          }
+        },
+        "habitLogs": {
+          "$habitId": {
+            "$date": {
+              ".validate": "$date.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+            }
+          }
+        },
+        "goals": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt', 'title', 'targetValue', 'currentValue', 'status'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+            },
+            "description": {
+              ".validate": "newData.isString() && newData.val().length <= 20000"
+            },
+            "targetValue": {
+              ".validate": "newData.isNumber() && newData.val() > 0"
+            },
+            "currentValue": {
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "status": {
+              ".validate": "newData.isString() && newData.val().matches(/^(active|completed|paused|abandoned)$/)"
+            },
+            "startDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            },
+            "targetDate": {
+              ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+            }
+          }
+        },
+        "notes": {
+          "$id": {
+            ".validate": "newData.hasChildren(['id', 'createdAt', 'updatedAt'])",
+            "id": {
+              ".validate": "newData.val() === $id"
+            },
+            "createdAt": {
+              ".validate": "newData.isString()"
+            },
+            "updatedAt": {
+              ".validate": "newData.isString()"
+            },
+            "title": {
+              ".validate": "newData.isString() && newData.val().length <= 300"
+            },
+            "content": {
+              ".validate": "newData.isString() && newData.val().length <= 200000"
+            },
+            "isPinned": {
+              ".validate": "newData.isBoolean()"
+            }
+          }
+        },
+        "integrations": {
+          "$provider": {
+            ".validate": "newData.hasChildren(['provider', 'status'])"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
