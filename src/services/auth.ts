@@ -1,10 +1,7 @@
 import {
-  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
-  signInWithPopup,
-  signInWithRedirect,
   signOut as fbSignOut,
   updateProfile,
   type User,
@@ -29,23 +26,6 @@ export function watchAuth(cb: (user: AppUser | null) => void): () => void {
 
 export async function signInWithEmail(email: string, password: string) {
   await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-}
-
-export async function signInWithGoogle() {
-  const auth = getFirebaseAuth();
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: 'select_account' });
-  try {
-    await signInWithPopup(auth, provider);
-  } catch (e) {
-    const code = (e as { code?: string }).code;
-    // Popups are blocked in some standalone PWAs — fall back to a redirect.
-    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
-      await signInWithRedirect(auth, provider);
-      return;
-    }
-    throw e;
-  }
 }
 
 export async function resetPassword(email: string) {
@@ -85,9 +65,6 @@ export function describeAuthError(error: unknown): string {
       return 'Too many attempts. Please wait a moment and try again.';
     case 'auth/network-request-failed':
       return 'Network error. Check your connection.';
-    case 'auth/popup-closed-by-user':
-    case 'auth/cancelled-popup-request':
-      return 'Sign-in was cancelled.';
     case 'auth/unauthorized-domain':
       return 'This domain is not authorised in Firebase Authentication settings.';
     case 'auth/operation-not-allowed':

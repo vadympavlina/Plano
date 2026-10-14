@@ -19,12 +19,6 @@ const REQUIRED: (keyof FirebaseOptions)[] = ['apiKey', 'authDomain', 'databaseUR
 export const missingFirebaseKeys = REQUIRED.filter((k) => !options[k]);
 export const isFirebaseConfigured = missingFirebaseKeys.length === 0;
 
-export type AuthMethod = 'email' | 'google';
-export const authMethods: AuthMethod[] = (env.VITE_AUTH_METHODS || 'email,google')
-  .split(',')
-  .map((s: string) => s.trim())
-  .filter((s: string): s is AuthMethod => s === 'email' || s === 'google');
-
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Database | null = null;

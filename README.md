@@ -37,7 +37,7 @@ Plano — приватний персональний центр планува�
 ## Технології
 
 React 19 + TypeScript (strict) · Vite 6 · Tailwind CSS 3 · компоненти в стилі shadcn/ui на
-Radix UI · Lucide · Firebase Authentication + Realtime Database · React Router (HashRouter) ·
+Radix UI · Lucide · Firebase Authentication (email + пароль) + Realtime Database · React Router (HashRouter) ·
 date-fns · zod · vite-plugin-pwa (Workbox) · Vitest · GitHub Pages + GitHub Actions.
 
 ## Вимоги
@@ -76,11 +76,11 @@ npm run dev                  # http://localhost:5173
 ### Firebase Authentication
 
 1. **Build → Authentication → Get started.**
-2. **Sign-in method:** увімкніть **Email/Password** та/або **Google**.
+2. **Sign-in method:** увімкніть лише **Email/Password**. Інші провайдери (зокрема Google) залиште вимкненими — у Plano вхід тільки за поштою й паролем.
 3. **Settings → Authorized domains:** додайте `localhost` (є за замовчуванням) і домен
    GitHub Pages, наприклад `vadympavlina.github.io`.
 4. Публічної реєстрації в застосунку немає. Створіть свій акаунт вручну:
-   **Authentication → Users → Add user** (email + пароль), або один раз увійдіть через Google.
+   **Authentication → Users → Add user** (email + пароль).
 
 ### Realtime Database
 
@@ -143,7 +143,6 @@ npm run dev                  # http://localhost:5173
 | `VITE_FIREBASE_APP_ID` | так | App ID web-застосунку |
 | `VITE_FIREBASE_STORAGE_BUCKET` | ні | Storage bucket |
 | `VITE_FIREBASE_MESSAGING_SENDER_ID` | ні | Sender ID |
-| `VITE_AUTH_METHODS` | ні | `email,google` (за замовчуванням), `email` або `google` |
 | `VITE_BASE_PATH` | ні | базовий шлях; у CI встановлюється автоматично `/<repo>/` |
 
 Конфігурація Firebase для web — **не секрет**: вона ідентифікує проєкт, а захист
@@ -153,7 +152,7 @@ npm run dev                  # http://localhost:5173
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
 2. **Settings → Secrets and variables → Actions → Variables** — додайте змінні
-   `VITE_FIREBASE_*` (і за бажанням `VITE_AUTH_METHODS`) як *repository variables*.
+   `VITE_FIREBASE_*` як *repository variables*.
 3. Зробіть push у гілку `main` (або запустіть workflow вручну: **Actions → Test & deploy → Run workflow**).
 
 Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) встановлює залежності,
@@ -213,8 +212,6 @@ UI не звертається до Firebase напряму: компонент�
 - Редагування повторюваної події змінює всю серію; видалити можна окреме повторення або всю серію.
 - Повторювані та імпортовані події не перетягуються мишею (редагуйте через форму).
 - Окремий часовий пояс (відмінний від пристрою) не підтримується: час зберігається як локальний.
-- Вхід через Google у встановленій PWA на iOS може бути нестабільним через обмеження
-  popup/redirect у standalone-режимі — для iPhone рекомендовано Email/Password.
 - Security Rules перевірено вручну й за структурою; автоматичних тестів з Firebase Emulator немає.
 - Google Calendar ще не підключено.
 

@@ -3,8 +3,8 @@ import { ArrowRight, KeyRound, Loader2, ShieldAlert, Wrench } from 'lucide-react
 import { AppIcon, Logo } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
-import { authMethods, missingFirebaseKeys } from '@/lib/firebase/config';
-import { describeAuthError, resetPassword, signInWithEmail, signInWithGoogle } from '@/services/auth';
+import { missingFirebaseKeys } from '@/lib/firebase/config';
+import { describeAuthError, resetPassword, signInWithEmail } from '@/services/auth';
 import { useAuth } from '@/app/providers/AuthProvider';
 
 const ENV_NAMES: Record<string, string> = {
@@ -35,21 +35,10 @@ export function SplashScreen() {
   );
 }
 
-function GoogleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-      <path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z" />
-      <path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.6-2.7c-1 .7-2.2 1-3.7 1-2.9 0-5.3-1.9-6.2-4.5H2.1v2.8A11 11 0 0 0 12 23z" />
-      <path fill="#FBBC05" d="M5.8 14.1a6.6 6.6 0 0 1 0-4.2V7.1H2.1a11 11 0 0 0 0 9.8l3.7-2.8z" />
-      <path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.6l3.1-3.1A11 11 0 0 0 2.1 7.1l3.7 2.8C6.7 7.3 9.1 5.4 12 5.4z" />
-    </svg>
-  );
-}
-
 export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState<null | 'email' | 'google' | 'reset'>(null);
+  const [busy, setBusy] = useState<null | 'email' | 'reset'>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
@@ -63,17 +52,6 @@ export function LoginScreen() {
     setError(null);
     try {
       await signInWithEmail(email, password);
-    } catch (err) {
-      setError(describeAuthError(err));
-      setBusy(null);
-    }
-  };
-
-  const google = async () => {
-    setBusy('google');
-    setError(null);
-    try {
-      await signInWithGoogle();
     } catch (err) {
       setError(describeAuthError(err));
       setBusy(null);
@@ -105,36 +83,24 @@ export function LoginScreen() {
         <p className="mt-1.5 text-sm text-muted">Your life. In one place.</p>
       </div>
       <div className="card p-6">
-        {authMethods.includes('email') && (
-          <form onSubmit={onSubmit} className="space-y-4" noValidate>
-            <Field label="Email">
-              {(p) => (
-                <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              )}
-            </Field>
-            <Field label="Password">
-              {(p) => (
-                <Input {...p} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              )}
-            </Field>
-            <Button type="submit" variant="dark" className="w-full" loading={busy === 'email'} disabled={!!busy}>
-              Sign in <ArrowRight className="h-4 w-4" />
-            </Button>
-            <button type="button" className="w-full text-center text-xs text-muted hover:text-ink" onClick={() => void reset()} disabled={!!busy}>
-              Forgot password?
-            </button>
-          </form>
-        )}
-        {authMethods.includes('email') && authMethods.includes('google') && (
-          <div className="my-5 flex items-center gap-3 text-xs text-subtle">
-            <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
-          </div>
-        )}
-        {authMethods.includes('google') && (
-          <Button variant="outline" className="w-full" onClick={() => void google()} loading={busy === 'google'} disabled={!!busy}>
-            {busy !== 'google' && <GoogleIcon />} Continue with Google
+        <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          <Field label="Email">
+            {(p) => (
+              <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            )}
+          </Field>
+          <Field label="Password">
+            {(p) => (
+              <Input {...p} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            )}
+          </Field>
+          <Button type="submit" variant="dark" className="w-full" loading={busy === 'email'} disabled={!!busy}>
+            Sign in <ArrowRight className="h-4 w-4" />
           </Button>
-        )}
+          <button type="button" className="w-full text-center text-xs text-muted hover:text-ink" onClick={() => void reset()} disabled={!!busy}>
+            Forgot password?
+          </button>
+        </form>
         {error && (
           <p role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
             {error}
