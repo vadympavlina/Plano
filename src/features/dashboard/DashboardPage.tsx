@@ -1,355 +1,409 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckSquare, Flame, Plus } from 'lucide-react';
+import { ArrowRight, CalendarDays, Flame, MapPin, Plus, Repeat } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
-import { StatStrip } from '@/components/common/StatCard';
-import { Card, Progress, CheckCircle } from '@/components/ui/misc';
+import { CheckCircle, Progress } from '@/components/ui/misc';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/common/States';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useData } from '@/app/providers/DataProvider';
 import { useNow } from '@/hooks/useNow';
 import { useProfile } from '@/hooks/useProfile';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
-import { addDaysKey, plural, formatDateKey, formatTime, greetingFor, relativeDayLabel, todayKey, weekRange } from '@/lib/date';
+import { formatDateKey, formatTime, greetingFor, minutesToTime, plural, relativeDayLabel, todayKey } from '@/lib/date';
 import { colorOf, tint } from '@/lib/utils/colors';
-import { markdownExcerpt } from '@/lib/utils/markdown';
 import { cn } from '@/lib/utils/cn';
-import { TaskItem } from '@/features/tasks/TaskItem';
-import { dayProgress, isOpen, isOverdue, percent, sortTasks, taskDate, weekProgress } from '@/features/tasks/logic';
-import { expandEvents, loadByDay, upcomingOccurrences, type EventOccurrence } from '@/features/calendar/logic';
+import type { Habit } from '@/types';
+import { isOverdue, sortTasks, taskDate } from '@/features/tasks/logic';
+import { expandEvents, occurrencesOnDay, upcomingOccurrences } from '@/features/calendar/logic';
 import { currentStreak, habitValue, isDone, isScheduled } from '@/features/habits/logic';
 import { goalPercent } from '@/features/goals/logic';
 import { eventColor } from '@/features/calendar/items';
 import { QuickAdd } from './QuickAdd';
+import { WeekBoard } from './WeekBoard';
+import { buildSchedule, nextUpLabel, nowLineIndex } from './logic';
 
-function Panel({ title, meta, link, children, className }: { title: string; meta?: ReactNode; link?: { to: string; label: string }; children: ReactNode; className?: string }) {
+const panel = 'rounded-[20px] border border-line/60 bg-surface shadow-soft';
+
+function Section({ title, meta, link, children, className }: { title: string; meta?: ReactNode; link?: { to: string; label: string }; children: ReactNode; className?: string }) {
   return (
-    <Card className={cn('flex min-w-0 flex-col', className)}>
-      <div className="flex items-baseline justify-between gap-3 px-5 pb-1 pt-4">
-        <h2 className="text-[15px] font-semibold tracking-tight">
-          {title}
-          {meta && <span className="ml-2 text-[13px] font-normal text-muted">{meta}</span>}
-        </h2>
-        {link && (
-          <Link to={link.to} className="shrink-0 text-[13px] font-medium text-muted hover:text-ink">
-            {link.label}
+    <section className={cn(panel, 'p-5', className)}>
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
+        {link ? (
+          <Link to={link.to} className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-medium text-muted hover:text-ink">
+            {link.label} <ArrowRight className="h-3 w-3" />
           </Link>
+        ) : (
+          meta && <span className="text-[12.5px] text-muted">{meta}</span>
         )}
       </div>
-      <div className="flex flex-1 flex-col">{children}</div>
-    </Card>
+      {children}
+    </section>
+  );
+}
+
+function Ring({ value, size, stroke, color, track = 'rgb(var(--line))', children }: { value: number; size: number; stroke: number; color: string; track?: string; children?: ReactNode }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  return (
+    <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90" aria-hidden>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - Math.min(1, Math.max(0, value)))}
+          className="transition-[stroke-dashoffset] duration-500"
+        />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center">{children}</span>
+    </span>
   );
 }
 
 export default function DashboardPage() {
   const now = useNow();
   const today = todayKey(now);
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const { data } = useData();
-  const { tasks, events, habits, goals, notes, categoryById } = useCollections();
+  const { tasks, events, habits, goals, categoryById } = useCollections();
   const settings = useSettings();
   const profile = useProfile();
-  const { openTaskForm, openEvent, openEventForm } = useUI();
+  const { openTask, openTaskForm, openEvent, openEventForm } = useUI();
   const actions = useActions();
+  const fmt = (t?: string) => (t ? formatTime(t, settings.timeFormat) : '');
 
-  const todayTasks = useMemo(() => sortTasks(tasks.filter((t) => taskDate(t) === today && t.status !== 'cancelled'), 'due'), [tasks, today]);
-  const openToday = todayTasks.filter((t) => t.status !== 'completed');
-  const doneToday = todayTasks.filter((t) => t.status === 'completed');
+  const todayTasks = useMemo(() => tasks.filter((t) => taskDate(t) === today && t.status !== 'cancelled'), [tasks, today]);
+  const doneCount = todayTasks.filter((t) => t.status === 'completed').length;
+  const openCount = todayTasks.length - doneCount;
+  const untimed = useMemo(() => sortTasks(todayTasks.filter((t) => !t.startTime && t.status !== 'completed'), 'due'), [todayTasks]);
   const overdue = useMemo(() => tasks.filter((t) => isOverdue(t, today)), [tasks, today]);
-  const todayCounts = dayProgress(tasks, today);
-  const weekCounts = weekProgress(tasks, today, settings.weekStartsOn);
-  const week = weekRange(today, settings.weekStartsOn);
 
-  const upcoming = useMemo(() => upcomingOccurrences(events, now, today, 30, 6), [events, now, today]);
-  const upcomingWeekCount = useMemo(() => upcomingOccurrences(events, now, today, 6, 999).length, [events, now, today]);
-  const agenda = useMemo(() => {
-    const groups: { day: string; items: EventOccurrence[] }[] = [];
-    for (const o of upcoming) {
-      const day = o.date < today ? today : o.date;
-      const g = groups.find((x) => x.day === day);
-      if (g) g.items.push(o);
-      else groups.push({ day, items: [o] });
-    }
-    return groups;
-  }, [upcoming, today]);
-  const weekLoad = useMemo(() => loadByDay(expandEvents(events, week.start, week.end), tasks, week.start, week.end), [events, tasks, week.start, week.end]);
-  const maxLoad = Math.max(1, ...weekLoad.map((d) => d.events + d.tasks));
+  const todayOcc = useMemo(() => occurrencesOnDay(expandEvents(events, today, today), today), [events, today]);
+  const allDay = todayOcc.filter((o) => o.event.allDay);
+  const schedule = useMemo(() => buildSchedule(todayOcc, todayTasks), [todayOcc, todayTasks]);
+  const nowAt = nowLineIndex(schedule, nowMinutes);
+  const next = useMemo(() => upcomingOccurrences(events, now, today, 14, 4).find((o) => !o.event.allDay) ?? upcomingOccurrences(events, now, today, 14, 1)[0], [events, now, today]);
 
   const activeHabits = habits.filter((h) => !h.archived);
   const habitsToday = activeHabits.filter((h) => isScheduled(h, today));
+  const habitsDone = habitsToday.filter((h) => isDone(h, data.habitLogs, today)).length;
   const bestStreak = activeHabits.reduce((best, h) => Math.max(best, currentStreak(h, data.habitLogs, today)), 0);
   const activeGoals = goals.filter((g) => g.status === 'active').slice(0, 4);
-  const recentNotes = [...notes].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)).slice(0, 3);
-  const deadlines = sortTasks(tasks.filter((t) => isOpen(t) && t.dueDate && t.dueDate > today && t.dueDate <= addDaysKey(today, 14)), 'due').slice(0, 4);
 
-  return (
-    <PageContainer className="pt-2 lg:pt-0">
-      <header className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 className="text-[26px] font-semibold leading-tight tracking-tight sm:text-[30px]">
-            {greetingFor(now)}
-            {profile.firstName ? `, ${profile.firstName}` : ''}
-          </h2>
-          <p className="mt-1 text-[15px] text-muted">
-            {todayCounts.total === 0
-              ? 'На сьогодні задач немає.'
-              : openToday.length === 0
-                ? 'Усі задачі на сьогодні виконано.'
-                : `Сьогодні ${openToday.length} ${plural(openToday.length, ['задача', 'задачі', 'задач'])} в роботі${upcomingWeekCount ? `, найближча подія ${upcoming[0] && relativeDayLabel(upcoming[0].date < today ? today : upcoming[0].date, today).toLowerCase()}` : ''}.`}
+  const tapHabit = (h: Habit) => {
+    const value = habitValue(data.habitLogs, h.id, today);
+    const done = isDone(h, data.habitLogs, today);
+    const nextValue = h.goalType === 'count' ? (done ? 0 : value + 1) : done ? 0 : 1;
+    void actions.habits.setValue(h.id, today, nextValue).catch(() => undefined);
+  };
+
+  /* ---------- blocks ---------- */
+
+  const nextUp = (
+    <div className="relative flex min-h-[176px] flex-col overflow-hidden rounded-[20px] bg-sidebar p-5 text-sidebar-fg sm:p-6">
+      <div className="pointer-events-none absolute -right-12 -top-20 h-56 w-56 rounded-full bg-primary/30 blur-3xl" aria-hidden />
+      {next ? (
+        <>
+          <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-sidebar-fg/55">
+            {nextUpLabel(next.event, next.date, now, today, (d) => relativeDayLabel(d, today), fmt)}
           </p>
-        </div>
-        <p className="text-sm text-muted">{formatDateKey(today, 'EEEE, d MMMM')}</p>
-      </header>
-
-      <StatStrip
-        stats={[
-          { label: 'Задачі на сьогодні', value: `${todayCounts.done} з ${todayCounts.total}`, progress: percent(todayCounts.done, todayCounts.total), to: '/tasks?filter=today' },
-          { label: 'Цей тиждень', value: `${weekCounts.done} з ${weekCounts.total}`, progress: percent(weekCounts.done, weekCounts.total), progressColor: 'rgb(var(--primary))' },
-          { label: 'Події за 7 днів', value: upcomingWeekCount, hint: upcoming[0] ? `Далі: ${upcoming[0].event.title}` : 'Календар вільний', to: '/calendar' },
-          activeHabits.length > 0
-            ? {
-                label: 'Найкраща серія',
-                value: `${bestStreak} ${plural(bestStreak, ['день', 'дні', 'днів'])}`,
-                hint: bestStreak > 0 ? 'Не перервіть її сьогодні' : 'Виконайте звичку, щоб почати',
-                accent: <Flame className="h-3.5 w-3.5 text-warning" />,
-                to: '/habits',
-              }
-            : { label: 'Прострочені', value: overdue.length, hint: overdue.length ? 'Потребують уваги' : 'Нічого не прострочено', to: '/tasks?filter=overdue' },
-        ]}
-      />
-
-      <QuickAdd className="mt-4" />
-
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <Panel
-          className="min-h-[320px] lg:col-span-7"
-          title="Сьогодні"
-          meta={todayCounts.total ? `${todayCounts.done} з ${todayCounts.total}` : undefined}
-          link={{ to: '/tasks?filter=today', label: 'Усі задачі' }}
-        >
-          <div className="flex flex-1 flex-col px-2 pb-2 pt-1">
-            {todayTasks.length === 0 ? (
-              <EmptyState
-                className="flex-1"
-                compact
-                icon={<CheckSquare />}
-                title="На сьогодні нічого не заплановано"
-                description="Додайте задачу або залиште день вільним."
-              />
-            ) : (
-              <>
-                {openToday.map((t) => (
-                  <TaskItem key={t.id} task={t} showDate={false} />
-                ))}
-                {doneToday.length > 0 && <div className="mx-3 my-1 border-t border-dashed border-line" />}
-                {doneToday.map((t) => (
-                  <TaskItem key={t.id} task={t} showDate={false} compact />
-                ))}
-              </>
+          <p className="mt-1.5 line-clamp-2 text-[21px] font-bold leading-tight tracking-tight">{next.event.title}</p>
+          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[13px] text-sidebar-fg/70">
+            {next.event.allDay ? 'Весь день' : `${fmt(next.event.startTime)} – ${fmt(next.event.endTime)}`}
+            {next.event.location && (
+              <span className="inline-flex items-center gap-1">
+                · <MapPin className="h-3.5 w-3.5" /> {next.event.location}
+              </span>
             )}
-            {overdue.length > 0 && (
-              <Link to="/tasks?filter=overdue" className="mx-3 mt-1 flex items-center justify-between rounded-lg bg-danger/[0.07] px-3 py-2 text-[13px] font-medium text-danger hover:bg-danger/10">
-                Прострочено: {overdue.length} {plural(overdue.length, ['задача', 'задачі', 'задач'])}
-                <span className="font-normal">Переглянути</span>
-              </Link>
+          </p>
+          <div className="mt-auto flex items-center gap-2 pt-5">
+            {next.event.url && (
+              <a href={next.event.url} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033] hover:bg-white/90">
+                Приєднатися
+              </a>
             )}
+            <button type="button" onClick={() => openEvent(next.event.id, next.date)} className="rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-medium hover:bg-white/15">
+              Деталі
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => openTaskForm({ defaults: { dueDate: today } })}
-            className="flex w-full items-center gap-3 border-t border-line px-5 py-3 text-left text-sm text-muted transition-colors hover:bg-surface-2/60 hover:text-ink"
-          >
-            <Plus className="h-4 w-4" /> Додати задачу на сьогодні
-          </button>
-        </Panel>
+        </>
+      ) : (
+        <>
+          <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-sidebar-fg/55">Найближчі 2 тижні</p>
+          <p className="mt-1.5 text-[21px] font-bold leading-tight">Календар вільний</p>
+          <p className="mt-1 text-[13px] text-sidebar-fg/70">Подій не заплановано.</p>
+          <div className="mt-auto pt-5">
+            <button type="button" onClick={() => openEventForm()} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033]">
+              <Plus className="h-3.5 w-3.5" /> Додати подію
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
 
-          <Panel className="min-h-[320px] lg:col-span-5" title="Найближчі події" link={{ to: '/calendar', label: 'Календар' }}>
-            <div className="flex flex-1 flex-col px-2 pb-3 pt-1">
-              {agenda.length === 0 ? (
-                <EmptyState
-                  className="flex-1"
-                  compact
-                  icon={<CalendarDays />}
-                  title="Найближчих подій немає"
-                  action={
-                    <Button size="sm" variant="outline" onClick={() => openEventForm()}>
-                      <Plus className="h-3.5 w-3.5" /> Додати подію
-                    </Button>
-                  }
-                />
+  const progress = (
+    <Link to="/tasks?filter=today" className={cn(panel, 'flex min-h-[120px] items-center gap-4 p-5 transition-colors hover:border-line')}>
+      <Ring value={todayTasks.length ? doneCount / todayTasks.length : 0} size={64} stroke={7} color="rgb(var(--success))">
+        <span className="text-[15px] font-bold tabular-nums">
+          {doneCount}/{todayTasks.length}
+        </span>
+      </Ring>
+      <div className="min-w-0">
+        <p className="text-[15px] font-semibold">Задачі на сьогодні</p>
+        <p className="text-[12.5px] text-muted">
+          {todayTasks.length === 0
+            ? 'Задач немає'
+            : openCount === 0
+              ? 'Усе виконано'
+              : `Ще ${openCount}${overdue.length ? ` · ${overdue.length} ${plural(overdue.length, ['прострочена', 'прострочені', 'прострочених'])}` : ''}`}
+        </p>
+        {bestStreak > 0 && (
+          <p className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium text-warning">
+            <Flame className="h-3.5 w-3.5" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])}
+          </p>
+        )}
+      </div>
+    </Link>
+  );
+
+  const nowLine = (
+    <div className="relative my-1 flex items-center gap-3" aria-label={`Зараз ${minutesToTime(nowMinutes)}`}>
+      <span className="w-11 text-right text-[11.5px] font-semibold tabular-nums text-danger">{fmt(minutesToTime(nowMinutes))}</span>
+      <span className="h-2 w-2 shrink-0 rounded-full bg-danger" />
+      <span className="h-px flex-1 bg-danger/50" />
+    </div>
+  );
+
+  const scheduleBlock = (
+    <Section title="Розклад дня" link={{ to: `/calendar?date=${today}&view=day`, label: 'Календар' }}>
+      {allDay.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-1.5">
+          {allDay.map((o) => (
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => openEvent(o.event.id, o.date)}
+              className="rounded-lg px-2.5 py-1 text-[12.5px] font-semibold"
+              style={{ backgroundColor: tint(eventColor(o.event, categoryById), 0.14) }}
+            >
+              {o.event.title} <span className="font-normal text-muted">· весь день</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {schedule.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface-2/70 px-4 py-8 text-center">
+          <CalendarDays className="h-6 w-6 text-subtle" />
+          <p className="text-[14px] text-muted">На сьогодні нічого не заплановано за часом.</p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => openEventForm({ defaults: { date: today } })}>
+              <Plus className="h-3.5 w-3.5" /> Подія
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openTaskForm({ defaults: { dueDate: today } })}>
+              <Plus className="h-3.5 w-3.5" /> Задача
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div>
+          {schedule.map((item, i) => {
+            const past = (item.end ?? item.start) <= nowMinutes;
+            const started = item.start <= nowMinutes;
+            const row =
+              item.kind === 'event' ? (
+                <button
+                  type="button"
+                  onClick={() => openEvent(item.occurrence.event.id, item.occurrence.date)}
+                  className="mb-2 block w-full rounded-xl px-3.5 py-2.5 text-left transition-[filter] hover:brightness-[0.98]"
+                  style={{ backgroundColor: tint(eventColor(item.occurrence.event, categoryById), 0.1) }}
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.occurrence.event.title}</span>
+                    {item.occurrence.event.recurrence && <Repeat className="h-3.5 w-3.5 shrink-0 text-muted" />}
+                    <span className="shrink-0 text-[11px] font-medium text-muted">Подія</span>
+                  </span>
+                  <span className="mt-0.5 block truncate text-[12px] text-muted">
+                    {fmt(item.occurrence.event.startTime)}
+                    {item.occurrence.event.endTime ? ` – ${fmt(item.occurrence.event.endTime)}` : ''}
+                    {item.occurrence.event.location ? ` · ${item.occurrence.event.location}` : ''}
+                  </span>
+                </button>
               ) : (
-                agenda.map((g) => (
-                  <div key={g.day} className="mt-1">
-                    <p className="px-3 pb-1 pt-2 text-xs font-medium text-subtle">{relativeDayLabel(g.day, today, 'EEEEEE, d MMM')}</p>
-                    {g.items.map((o) => {
-                      const color = eventColor(o.event, categoryById);
-                      return (
-                        <button
-                          key={o.key}
-                          type="button"
-                          onClick={() => openEvent(o.event.id, o.date)}
-                          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors hover:bg-surface-2"
-                        >
-                          <span className="w-11 shrink-0 text-[13px] font-medium tabular-nums text-ink">
-                            {o.event.allDay ? 'Весь' : formatTime(o.event.startTime, settings.timeFormat)}
-                          </span>
-                          <span className="h-8 w-[3px] shrink-0 rounded-full" style={{ backgroundColor: color }} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13.5px] font-medium">{o.event.title}</span>
-                            <span className="block truncate text-xs text-muted">
-                              {o.event.allDay ? 'Весь день' : `до ${formatTime(o.event.endTime, settings.timeFormat)}`}
-                              {o.event.location ? `, ${o.event.location}` : ''}
-                            </span>
-                          </span>
-                        </button>
-                      );
-                    })}
+                <div className="mb-2 flex w-full items-start gap-3 rounded-xl border border-line px-3.5 py-2.5">
+                  <span className="pt-0.5">
+                    <CheckCircle
+                      checked={item.task.status === 'completed'}
+                      onChange={(c) => void actions.tasks.setDone(item.task, c).catch(() => undefined)}
+                      label={`Виконати «${item.task.title}»`}
+                      size="sm"
+                    />
+                  </span>
+                  <button type="button" onClick={() => openTask(item.task.id)} className="min-w-0 flex-1 text-left">
+                    <span className={cn('block truncate text-[14px] font-medium', item.task.status === 'completed' && 'text-subtle line-through')}>{item.task.title}</span>
+                    <span className="mt-0.5 block truncate text-[12px] text-muted">
+                      {fmt(item.task.startTime)}
+                      {item.task.endTime ? ` – ${fmt(item.task.endTime)}` : ''}
+                      {item.task.subtasks.length > 0 && ` · підзадачі ${item.task.subtasks.filter((s) => s.done).length}/${item.task.subtasks.length}`}
+                    </span>
+                  </button>
+                </div>
+              );
+            const color = item.kind === 'event' ? eventColor(item.occurrence.event, categoryById) : colorOf(categoryById(item.task.categoryId)?.color ?? 'slate');
+            return (
+              <div key={item.key}>
+                {i === nowAt && nowLine}
+                <div className={cn('flex items-stretch gap-3', past && 'opacity-60')}>
+                  <span className={cn('w-11 shrink-0 pt-2.5 text-right text-[12.5px] font-semibold tabular-nums', started ? 'text-subtle' : 'text-ink')}>
+                    {fmt(minutesToTime(item.start))}
+                  </span>
+                  <div className="flex w-2 shrink-0 flex-col items-center">
+                    <span className="mt-[15px] h-2 w-2 rounded-full ring-4 ring-surface" style={{ backgroundColor: color }} />
+                    <span className={cn('w-px flex-1 bg-line', i === schedule.length - 1 && nowAt !== schedule.length && 'bg-transparent')} />
                   </div>
-                ))
+                  <div className="min-w-0 flex-1">{row}</div>
+                </div>
+              </div>
+            );
+          })}
+          {nowAt === schedule.length && nowLine}
+        </div>
+      )}
+    </Section>
+  );
+
+  const untimedBlock = (untimed.length > 0 || overdue.length > 0) && (
+    <Section title="Без часу" meta={untimed.length ? String(untimed.length) : undefined}>
+      <div className="-mx-1">
+        {untimed.slice(0, 6).map((t) => {
+          const cat = categoryById(t.categoryId);
+          return (
+            <div key={t.id} className="flex items-center gap-3 rounded-lg px-1 py-2">
+              <CheckCircle checked={false} onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)} label={`Виконати «${t.title}»`} size="sm" />
+              <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left text-[14px]">
+                {t.title}
+              </button>
+              {cat && (
+                <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium" style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: colorOf(cat.color) }}>
+                  {cat.name}
+                </span>
               )}
             </div>
-          </Panel>
-
-        <Panel className="min-h-[280px] lg:col-span-7" title="Тиждень" meta={`${formatDateKey(week.start, 'd MMM')} – ${formatDateKey(week.end, 'd MMM')}`}>
-          <div className="flex min-h-[168px] flex-1 items-end gap-2 px-5 pb-4 pt-3" role="img" aria-label="Задачі й події за днями цього тижня">
-            {weekLoad.map((d) => {
-              const total = d.events + d.tasks;
-              const isToday = d.date === today;
-              return (
-                <Link
-                  key={d.date}
-                  to={`/calendar?date=${d.date}&view=day`}
-                  className="group flex h-full flex-1 flex-col items-center justify-end gap-2"
-                  title={`${formatDateKey(d.date, 'EEEE')}: задач — ${d.tasks}, подій — ${d.events}`}
-                >
-                  <span className={cn('text-[11px] tabular-nums', isToday ? 'font-semibold text-ink' : 'text-subtle')}>{total || ''}</span>
-                  <div className="flex w-full max-w-[34px] flex-1 flex-col justify-end">
-                    <div
-                      className="flex w-full flex-col gap-[2px] overflow-hidden rounded-[7px] transition-opacity group-hover:opacity-80"
-                      style={{ height: `${Math.max(total ? 10 : 3, (total / maxLoad) * 100)}%` }}
-                    >
-                      {total === 0 ? (
-                        <div className="h-full rounded-[7px] bg-line" />
-                      ) : (
-                        <>
-                          {d.events > 0 && <div className="rounded-[3px] bg-primary/60" style={{ flex: d.events }} />}
-                          {d.tasks > 0 && <div className={cn('rounded-[3px]', isToday ? 'bg-accent' : 'bg-subtle/50')} style={{ flex: d.tasks }} />}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  <span className={cn('text-xs', isToday ? 'font-semibold text-ink' : 'text-muted')}>{formatDateKey(d.date, 'EEEEEE')}</span>
-                </Link>
-              );
-            })}
-          </div>
-          <div className="flex gap-4 px-5 pb-4 text-xs text-muted">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-subtle/50" /> Задачі
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-primary/60" /> Події
-            </span>
-          </div>
-        </Panel>
-
-        <Panel className="min-h-[280px] lg:col-span-5" title="Звички на сьогодні" link={{ to: '/habits', label: 'Усі звички' }}>
-          <div className="flex flex-1 flex-col px-2 pb-3 pt-1">
-            {habitsToday.length === 0 ? (
-              <EmptyState
-                className="flex-1"
-                compact
-                icon={<Flame />}
-                title={activeHabits.length ? 'Сьогодні звичок не заплановано' : 'Звичок поки немає'}
-                action={
-                  !activeHabits.length && (
-                    <Link to="/habits?new=1">
-                      <Button size="sm" variant="outline">
-                        <Plus className="h-3.5 w-3.5" /> Створити звичку
-                      </Button>
-                    </Link>
-                  )
-                }
-              />
-            ) : (
-              habitsToday.map((h) => {
-                const done = isDone(h, data.habitLogs, today);
-                const value = habitValue(data.habitLogs, h.id, today);
-                const color = colorOf(h.color);
-                return (
-                  <div key={h.id} className="flex items-center gap-3 rounded-xl px-3 py-2">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl text-base" style={{ backgroundColor: tint(color, 0.14) }}>
-                      {h.icon}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13.5px] font-medium">{h.name}</span>
-                      <span className="block text-xs text-muted">
-                        {h.goalType === 'count' ? `${value} з ${h.target} ${h.unit ?? ''}` : done ? 'Виконано' : 'Ще ні'}
-                      </span>
-                    </span>
-                    {h.goalType === 'count' && !done ? (
-                      <Button size="xs" variant="outline" onClick={() => void actions.habits.setValue(h.id, today, value + 1).catch(() => undefined)} aria-label={`Додати 1 до «${h.name}»`}>
-                        +1
-                      </Button>
-                    ) : (
-                      <CheckCircle
-                        checked={done}
-                        color={color}
-                        label={`«${h.name}» виконано сьогодні`}
-                        onChange={(c) => void actions.habits.setValue(h.id, today, c ? (h.goalType === 'count' ? h.target : 1) : 0).catch(() => undefined)}
-                      />
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </Panel>
-
-        {(activeGoals.length > 0 || deadlines.length > 0) && (
-          <>
-            {deadlines.length > 0 && (
-              <Panel className={activeGoals.length ? 'lg:col-span-7' : 'lg:col-span-12'} title="Дедлайни" meta="на 14 днів">
-                <div className="px-2 pb-2 pt-1">
-                  {deadlines.map((t) => (
-                    <TaskItem key={t.id} task={t} compact />
-                  ))}
-                </div>
-              </Panel>
-            )}
-            {activeGoals.length > 0 && (
-              <Panel className={deadlines.length ? 'lg:col-span-5' : 'lg:col-span-12'} title="Цілі" link={{ to: '/goals', label: 'Усі цілі' }}>
-                <div className="space-y-4 px-5 pb-5 pt-3">
-                  {activeGoals.map((g) => (
-                    <div key={g.id}>
-                      <div className="mb-1.5 flex items-baseline justify-between gap-2 text-[13px]">
-                        <span className="truncate font-medium">{g.title}</span>
-                        <span className="shrink-0 text-xs tabular-nums text-muted">
-                          {g.currentValue} з {g.targetValue} {g.unit}
-                        </span>
-                      </div>
-                      <Progress value={goalPercent(g)} color={colorOf(categoryById(g.categoryId)?.color ?? 'blue')} label={g.title} />
-                    </div>
-                  ))}
-                </div>
-              </Panel>
-            )}
-          </>
+          );
+        })}
+        {untimed.length > 6 && (
+          <Link to="/tasks?filter=today" className="block px-1 py-1 text-[12.5px] font-medium text-muted hover:text-ink">
+            Ще {untimed.length - 6}
+          </Link>
         )}
+      </div>
+      {overdue.length > 0 && (
+        <Link to="/tasks?filter=overdue" className="mt-2 flex items-center justify-between rounded-xl bg-danger/[0.07] px-3 py-2 text-[13px] font-medium text-danger hover:bg-danger/10">
+          <span className="truncate">
+            Прострочено: {overdue.length === 1 ? overdue[0].title : `${overdue.length} ${plural(overdue.length, ['задача', 'задачі', 'задач'])}`}
+          </span>
+          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
+        </Link>
+      )}
+    </Section>
+  );
 
-        {recentNotes.length > 0 && (
-          <Panel className="lg:col-span-12" title="Останні нотатки" link={{ to: '/notes', label: 'Усі нотатки' }}>
-            <div className="grid gap-2 p-3 sm:grid-cols-3">
-              {recentNotes.map((n) => (
-                <Link key={n.id} to={`/notes/${n.id}`} className="rounded-xl border border-line p-3.5 transition-colors hover:bg-surface-2">
-                  <p className="truncate text-[13.5px] font-medium">{n.title || 'Без назви'}</p>
-                  <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted">{markdownExcerpt(n.content, 120) || 'Порожня нотатка'}</p>
-                </Link>
-              ))}
+  const habitsBlock = (
+    <Section title="Звички" link={habitsToday.length ? undefined : { to: '/habits', label: 'Усі звички' }} meta={habitsToday.length ? `${habitsDone} з ${habitsToday.length}` : undefined}>
+      {habitsToday.length === 0 ? (
+        <p className="text-[13px] text-muted">
+          {activeHabits.length ? 'Сьогодні звичок не заплановано.' : 'Звичок поки немає.'}{' '}
+          {!activeHabits.length && (
+            <Link to="/habits?new=1" className="font-medium text-ink underline-offset-2 hover:underline">
+              Створити
+            </Link>
+          )}
+        </p>
+      ) : (
+        <div className="grid grid-cols-4 gap-x-2 gap-y-3">
+          {habitsToday.slice(0, 8).map((h) => {
+            const value = habitValue(data.habitLogs, h.id, today);
+            const done = isDone(h, data.habitLogs, today);
+            const color = colorOf(h.color);
+            const ratio = h.goalType === 'count' ? value / Math.max(1, h.target) : done ? 1 : 0;
+            return (
+              <button
+                key={h.id}
+                type="button"
+                onClick={() => tapHabit(h)}
+                aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
+                className="group flex min-w-0 flex-col items-center gap-1.5"
+              >
+                <Ring value={ratio} size={52} stroke={4.5} color={color}>
+                  <span className={cn('flex h-[38px] w-[38px] items-center justify-center rounded-full text-[18px] transition-colors', done ? '' : 'group-hover:bg-surface-2')} style={done ? { backgroundColor: tint(color, 0.14) } : undefined}>
+                    {h.icon}
+                  </span>
+                </Ring>
+                <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
+                <span className="-mt-1 text-[10.5px] tabular-nums text-subtle">{h.goalType === 'count' ? `${value}/${h.target}` : done ? 'Готово' : '—'}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </Section>
+  );
+
+  const goalsBlock = activeGoals.length > 0 && (
+    <Section title="Цілі" link={{ to: '/goals', label: 'Усі' }}>
+      <div className="space-y-3.5">
+        {activeGoals.map((g) => (
+          <Link key={g.id} to="/goals" className="block">
+            <div className="mb-1.5 flex items-baseline justify-between gap-2 text-[13px]">
+              <span className="truncate font-medium">{g.title}</span>
+              <span className="shrink-0 tabular-nums text-muted">
+                {g.currentValue}/{g.targetValue}
+              </span>
             </div>
-          </Panel>
-        )}
+            <Progress value={goalPercent(g)} color={colorOf(categoryById(g.categoryId)?.color ?? 'blue')} label={g.title} />
+          </Link>
+        ))}
+      </div>
+    </Section>
+  );
+
+  return (
+    <PageContainer className="pb-6 pt-2 lg:pt-0">
+      <header className="mb-5">
+        <p className="text-[13px] font-medium text-muted">{formatDateKey(today, 'EEEE, d MMMM')}</p>
+        <h1 className="text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]">
+          {greetingFor(now)}
+          {profile.firstName ? `, ${profile.firstName}` : ''}
+        </h1>
+      </header>
+
+      <QuickAdd className="mb-4" />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="min-w-0 space-y-4 lg:col-span-8">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
+            <div className="sm:col-span-3">{nextUp}</div>
+            <div className="flex sm:col-span-2 [&>a]:flex-1">{progress}</div>
+          </div>
+          {scheduleBlock}
+        </div>
+        <div className="min-w-0 space-y-4 lg:col-span-4">
+          {untimedBlock}
+          {habitsBlock}
+          {goalsBlock}
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <WeekBoard today={today} />
       </div>
     </PageContainer>
   );
