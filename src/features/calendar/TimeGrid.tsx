@@ -4,7 +4,7 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { useNow } from '@/hooks/useNow';
-import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, minutesToTime, todayKey, weekRange } from '@/lib/date';
+import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, fromDateKey, minutesToTime, todayKey, weekRange } from '@/lib/date';
 import { tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
@@ -358,6 +358,9 @@ export function TimeGrid({
 
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const gridCols = { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` };
+  // Weekends are shaded in multi-day views.
+  const weekend = (d: DateKey) => !single && [0, 6].includes(fromDateKey(d).getDay());
+  const showsToday = days.includes(today);
   const selRange = sel?.active ? (sel.moved ? selectionRange(sel.anchor, sel.pointer, SNAP) : null) : null;
   const daySelRange = daySel ? { a: Math.min(daySel.from, daySel.to), b: Math.max(daySel.from, daySel.to) } : null;
 
@@ -403,16 +406,14 @@ export function TimeGrid({
                 key={d}
                 type="button"
                 onClick={() => onSelectDay(d)}
-                className={cn('flex flex-col items-center gap-1 py-2.5 transition-colors hover:bg-surface-2', single && 'items-start pl-3')}
+                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 transition-colors hover:bg-surface-2 lg:flex-row lg:gap-1.5 lg:py-3', weekend(d) && 'bg-surface-2/70')}
                 aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
               >
-                <span className={cn('text-[12px] font-medium', isToday ? 'text-ink' : 'text-subtle')}>
-                  {formatDateKey(d, single ? 'EEEE' : 'EEEEEE')}
-                </span>
+                <span className={cn('text-[12.5px] font-medium', isToday ? 'text-danger' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
                 <span
                   className={cn(
-                    'flex h-8 min-w-8 items-center justify-center rounded-full px-1 text-[15px] font-semibold tabular-nums',
-                    isToday ? 'bg-accent text-surface' : 'text-ink',
+                    'flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-[14px] font-semibold tabular-nums',
+                    isToday ? 'bg-danger text-white' : d < today ? 'text-subtle' : 'text-ink',
                   )}
                 >
                   {Number(d.slice(8))}
@@ -450,7 +451,7 @@ export function TimeGrid({
                 title="Натисніть або протягніть, щоб додати подію на весь день"
                 className={cn(
                   'scrollbar-thin max-h-[108px] min-h-[30px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line p-1 transition-colors',
-                  selected ? 'bg-primary/10' : 'hover:bg-surface-2/60',
+                  selected ? 'bg-primary/10' : weekend(c.day) ? 'bg-surface-2/70 hover:bg-surface-2' : 'hover:bg-surface-2/60',
                 )}
               >
                 {c.allDay.map((o) => {
@@ -460,8 +461,8 @@ export function TimeGrid({
                       key={o.key}
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
-                      className="block w-full truncate rounded-md px-1.5 py-1 text-left text-[11px] font-medium"
-                      style={{ backgroundColor: tint(color, 0.16), color: 'rgb(var(--ink))' }}
+                      className="block w-full truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold"
+                      style={{ backgroundColor: tint(color, 0.18), color }}
                       title={o.event.title}
                     >
                       {o.event.title}
@@ -505,8 +506,20 @@ export function TimeGrid({
       <div ref={scrollRef} className="scrollbar-thin relative min-h-0 flex-1 overflow-y-auto">
         <div className="flex" style={{ height: HOUR_PX * 24 }}>
           <div className="relative w-12 shrink-0 sm:w-14" aria-hidden>
+            {showsToday && (
+              <span
+                className="absolute right-1 z-10 -translate-y-1/2 rounded-md bg-danger px-1 text-[10px] font-bold tabular-nums text-white"
+                style={{ top: (nowMinutes / 60) * HOUR_PX }}
+              >
+                {fmt(nowMinutes)}
+              </span>
+            )}
             {HOURS.slice(1).map((h) => (
-              <span key={h} className="absolute right-2 -translate-y-1/2 text-[10.5px] tabular-nums text-subtle" style={{ top: h * HOUR_PX }}>
+              <span
+                key={h}
+                className={cn('absolute right-2 -translate-y-1/2 text-[10.5px] tabular-nums text-subtle', showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible')}
+                style={{ top: h * HOUR_PX }}
+              >
                 {formatTime(minutesToTime(h * 60), settings.timeFormat).replace(':00', settings.timeFormat === '12h' ? '' : ':00')}
               </span>
             ))}
@@ -520,6 +533,9 @@ export function TimeGrid({
             onPointerCancel={onPointerCancel}
             onPointerLeave={() => setHover(null)}
           >
+            {showsToday && !single && (
+              <div className="pointer-events-none absolute inset-x-0 z-[5] h-px bg-danger/30" style={{ top: (nowMinutes / 60) * HOUR_PX }} aria-hidden />
+            )}
             {/* hour and half-hour lines */}
             <div className="pointer-events-none absolute inset-0" aria-hidden>
               {HOURS.map((h) => (
@@ -533,7 +549,7 @@ export function TimeGrid({
               <div
                 key={c.day}
                 data-day-index={dayIndex}
-                className={cn('relative cursor-cell border-l border-line', c.day === today && !single && 'bg-primary/[0.025]')}
+                className={cn('relative cursor-cell border-l border-line', weekend(c.day) && 'bg-surface-2/70')}
                 onPointerDown={(e) => onColumnPointerDown(e, dayIndex)}
                 role="presentation"
               >
@@ -594,23 +610,28 @@ export function TimeGrid({
                         width: `calc(${100 / cols}% - 4px)`,
                         transform: dayShift ? `translateX(${dayShift}px)` : undefined,
                         borderLeftColor: item.color,
-                        backgroundColor: item.kind === 'event' ? tint(item.color, 0.16) : undefined,
+                        backgroundColor: item.kind === 'event' ? tint(item.color, 0.17) : undefined,
                       }}
                     >
-                      <p className={cn('flex items-center gap-1 truncate text-[11.5px] font-semibold leading-tight text-ink', done && 'text-subtle line-through')}>
+                      <p
+                        className={cn('flex items-center gap-1 truncate text-[11.5px] font-semibold leading-tight text-ink', done && 'text-subtle line-through')}
+                        style={item.kind === 'event' ? { color: item.color } : undefined}
+                      >
                         {item.kind === 'task' && (
                           <span className={cn('inline-block h-2.5 w-2.5 shrink-0 rounded-[3px] border border-subtle', done && 'border-transparent bg-accent')} />
                         )}
                         <span className="truncate">{item.title}</span>
-                        {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 text-muted" />}
+                        {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-60" />}
                       </p>
                       {!short && (
-                        <p className="truncate text-[10.5px] tabular-nums text-muted">
+                        <p className="truncate text-[10.5px] tabular-nums text-muted" style={item.kind === 'event' ? { color: item.color, opacity: 0.75 } : undefined}>
                           {fmt(start)} – {fmt(end)}
                         </p>
                       )}
                       {!short && single && item.kind === 'event' && item.occurrence.event.location && (
-                        <p className="truncate text-[10.5px] text-muted">{item.occurrence.event.location}</p>
+                        <p className="truncate text-[10.5px]" style={{ color: item.color, opacity: 0.75 }}>
+                          {item.occurrence.event.location}
+                        </p>
                       )}
                       {item.kind === 'event' && item.draggable && (
                         <div
@@ -664,9 +685,9 @@ export function TimeGrid({
                 )}
 
                 {c.day === today && (
-                  <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: (nowMinutes / 60) * HOUR_PX }} aria-hidden>
-                    <div className="relative h-px bg-danger">
-                      <span className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-danger" />
+                  <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: (nowMinutes / 60) * HOUR_PX - 1 }} aria-hidden>
+                    <div className="relative h-[2px] bg-danger">
+                      <span className="absolute -left-[5px] -top-[4px] h-2.5 w-2.5 rounded-full bg-danger" />
                     </div>
                   </div>
                 )}
@@ -675,9 +696,6 @@ export function TimeGrid({
           </div>
         </div>
       </div>
-      <p className="hidden border-t border-line px-4 py-2 text-[11.5px] text-subtle [@media(hover:hover)]:lg:block">
-        Протягніть по сітці, щоб створити подію. Перетягуйте подію, щоб перенести, або її нижній край, щоб змінити тривалість.
-      </p>
     </div>
   );
 }

@@ -101,7 +101,7 @@ export function MonthView({
                   aria-label={`Відкрити ${d}`}
                   className={cn(
                     'pointer-events-auto flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
-                    isToday ? 'bg-accent font-semibold text-surface hover:bg-accent' : inMonth ? 'text-ink' : 'text-subtle',
+                    isToday ? 'bg-danger font-semibold text-white hover:bg-danger' : inMonth ? 'text-ink' : 'text-subtle',
                   )}
                 >
                   {Number(d.slice(8))}
