@@ -4,10 +4,11 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
 import { formatTime, monthGrid, weekdayLabels } from '@/lib/date';
-import { colorOf, tint } from '@/lib/utils/colors';
+import { tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey, Task } from '@/types';
 import { occurrencesOnDay, type EventOccurrence } from './logic';
+import { eventColor } from './items';
 
 const MAX_ITEMS = 3;
 
@@ -85,7 +86,7 @@ export function MonthView({
                     className="h-1.5 w-1.5 rounded-full"
                     style={{
                       backgroundColor:
-                        it.type === 'event' ? colorOf(categoryById(it.o.event.categoryId)?.color ?? 'blue') : 'rgb(var(--subtle))',
+                        it.type === 'event' ? eventColor(it.o.event, categoryById) : 'rgb(var(--subtle))',
                     }}
                   />
                 ))}
@@ -100,12 +101,12 @@ export function MonthView({
                       className="flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px]"
                       style={
                         it.o.event.allDay
-                          ? { backgroundColor: tint(colorOf(categoryById(it.o.event.categoryId)?.color ?? 'blue'), 0.16) }
+                          ? { backgroundColor: tint(eventColor(it.o.event, categoryById), 0.16) }
                           : undefined
                       }
                     >
                       {!it.o.event.allDay && (
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: colorOf(categoryById(it.o.event.categoryId)?.color ?? 'blue') }} />
+                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: eventColor(it.o.event, categoryById) }} />
                       )}
                       {!it.o.event.allDay && it.o.event.startTime && (
                         <span className="shrink-0 tabular-nums text-muted">{formatTime(it.o.event.startTime, settings.timeFormat)}</span>

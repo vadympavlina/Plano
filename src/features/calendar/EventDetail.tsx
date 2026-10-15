@@ -7,7 +7,7 @@ import { useData } from '@/app/providers/DataProvider';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
 import { useUI } from '@/app/providers/UIProvider';
-import { colorOf } from '@/lib/utils/colors';
+import { eventColor } from './items';
 import { describeRecurrence } from '@/lib/date/recurrence';
 import { formatDateKey, formatTimeRange } from '@/lib/date';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown';
@@ -35,7 +35,9 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
 
   const category = categoryById(event.categoryId);
   const project = projectById(event.projectId);
-  const color = colorOf(category?.color ?? 'blue');
+  const color = eventColor(event, categoryById);
+  const gcal = data.integrations.google_calendar;
+  const googleCalendar = event.external ? gcal?.calendars?.find((c) => c.id === event.external!.calendarId) : undefined;
   const occurrence = date ?? event.date;
 
   const removeOccurrence = async () => {
@@ -97,7 +99,8 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
           )}
           <div className="flex flex-wrap gap-1.5">
             {category && <Badge color={color}>{category.name}</Badge>}
-            {event.source !== 'plano' && <Badge>Імпортовано з Google Calendar</Badge>}
+            {event.external && <Badge color={googleCalendar?.color}>Google Calendar{googleCalendar ? ` · ${googleCalendar.name}` : ''}</Badge>}
+            {event.syncPending && gcal?.status === 'connected' && <Badge>Очікує синхронізації</Badge>}
           </div>
           {event.description && <p className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 leading-relaxed text-muted">{event.description}</p>}
         </div>

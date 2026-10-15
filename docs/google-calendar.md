@@ -1,53 +1,56 @@
-# Google Calendar — план інтеграції
+# Google Calendar — синхронізація
 
-Статус: **не реалізовано** (у застосунку показується чесний стан *Not connected · Coming soon*).
+Статус: **реалізовано** (двостороння синхронізація подій, задачі не синхронізуються).
 
-## Що вже підготовлено
+## Як це працює
 
-- Модель події `CalendarEvent` має поля `source` (`plano` | `google`) та `external`
-  (`provider`, `calendarId`, `eventId`, `etag`, `lastSyncedAt`).
-- Власні події Plano та імпортовані події розрізняються за `source`; імпортовані
-  в UI позначаються як «Imported from Google Calendar» і не перетягуються мишею.
-- Абстракція провайдера: `src/services/integrations/types.ts`
-  (`CalendarIntegrationProvider`: `connect`, `listCalendars`, `pull`, `push`, `remove`)
-  і ключ дедуплікації `externalKey()` = `google:<calendarId>:<eventId>`.
-- Заглушка `src/services/integrations/googleCalendar.ts` — усі методи кидають помилку,
-  тож нічого не може «вдавати» підключення.
-- Вузол бази `/users/{uid}/integrations/google_calendar` для стану (вибрані календарі,
-  час останньої синхронізації, помилка).
+- Вхід у Google — через Google Identity Services (token model) прямо в браузері.
+  Сервер не потрібен, GitHub Pages залишається статичним хостингом.
+- Токен доступу живе ~1 годину і зберігається **лише в `sessionStorage` цієї вкладки**.
+  Він ніколи не записується в базу даних і очищується при виході з Plano.
+  Коли токен закінчується, у календарі й налаштуваннях з’являється кнопка «Увійти в Google».
+- Синхронізація запускається, поки Plano відкритий: після локальних змін (через ~1,5 с),
+  кожні 5 хвилин і при поверненні на вкладку. Фонової синхронізації без відкритого Plano немає.
+- Вікно синхронізації: від 60 днів тому до 400 днів уперед.
 
-## Чому потрібен серверний компонент
+## Алгоритм одного проходу
 
-GitHub Pages — статичний хостинг. Безпечно зберігати refresh token і client secret
-у браузері неможливо. Тому синхронізація має виконуватися на сервері:
+1. Список календарів (`calendarList`) — назви, кольори, права (запис / лише читання).
+2. Видалення, зроблені в Plano (`integrations/google_calendar/pendingDeletes`), надсилаються в Google.
+3. Події з `syncPending: true` надсилаються в Google:
+   - пов’язані з Google (`external`) — `PATCH` наявної події;
+   - нові події Plano — `POST` у календар «Нові події з Plano» з **детермінованим id**
+     (base32hex від id Plano). Повторна вставка з іншого пристрою повертає 409 і стає оновленням,
+     тож дублікатів у Google немає.
+   - повторювані події Plano надсилаються з `RRULE` та `EXDATE`.
+4. Події з вибраних календарів завантажуються з `singleEvents=true` (повторювані серії розгорнуті).
+   Чиста функція `planPull` (`src/services/integrations/google/reconcile.ts`) вирішує:
+   - нові події імпортуються з детермінованим локальним id (`localIdForGoogle`) — без дублікатів;
+   - змінені в Google оновлюються, **якщо в Plano немає ненадісланих змін** (локальні правки мають пріоритет);
+   - зниклі з Google (у межах вікна) видаляються з Plano;
+   - екземпляри серій, створених у Plano, не імпортуються повторно;
+   - події з календарів, з яких зняли позначку, прибираються.
 
-1. **Firebase Cloud Functions** (план Blaze) або інший бекенд.
-2. OAuth 2.0 Authorization Code flow з PKCE: браузер отримує `code`, функція обмінює
-   його на токени, **refresh token зберігається лише на сервері**
-   (наприклад, у Secret Manager або в захищеному вузлі, недоступному клієнту за правилами).
-3. Scopes: `https://www.googleapis.com/auth/calendar.events` (+ `calendar.readonly` для списку календарів).
+## Модель даних
 
-## Алгоритм синхронізації
+- `CalendarEvent.source`: `plano` | `google`; `external`: `{ calendarId, eventId, etag, color }`;
+  `syncPending`: локальна зміна ще не надіслана.
+- `/users/{uid}/integrations/google_calendar`: `status`, `calendarIds`, `targetCalendarId`,
+  `calendars`, `pendingDeletes`, `lastSyncAt`, `lastError`.
 
-1. **Початковий імпорт:** `events.list` для кожного вибраного календаря
-   (`singleEvents=false`, щоб зберегти правила повторення), збереження `nextSyncToken`.
-2. **Інкрементальна синхронізація:** `events.list?syncToken=…` за розкладом
-   (Cloud Scheduler) або через push-сповіщення (`events.watch`).
-   При `410 Gone` — повний ресинк.
-3. **Upsert:** шукати подію за `externalKey`; якщо є — оновити (порівнюючи `etag`),
-   якщо немає — створити з `source: 'google'`. Дублікати неможливі, бо ключ стабільний.
-4. **Скасовані події** (`status: 'cancelled'`) — видаляти локальну копію або додавати
-   дату в `exdates` для окремих повторень.
-5. **Двостороння синхронізація:** зміни в Plano для подій із `external` відправляються
-   через `events.patch` з `If-Match: etag`; конфлікти — «останній запис перемагає»
-   з логуванням, або показ користувачу.
-6. **Часові пояси:** Google повертає `dateTime` з offset або `date` для all-day —
-   перетворювати у локальні `date` + `HH:mm` у часовому поясі користувача, а
-   оригінальний `timeZone` зберігати в полі `timezone`.
+## Обмеження
 
-## Обмеження Google API
+- Події Google, що тривають через північ, показуються до 23:59 першого дня.
+- Повторення подій, імпортованих з Google, редагується в Google Calendar
+  (в Plano редагуються окремі повторення).
+- Поле «Посилання» події Plano не передається в Google.
+- Для фонової синхронізації без відкритого застосунку потрібен серверний компонент
+  (наприклад, Firebase Cloud Functions на тарифі Blaze) з refresh token на сервері.
 
-- Квоти на запити: використовувати `syncToken` і батчинг.
-- Access token живе ~1 годину — оновлювати на сервері.
-- Для публічного використання застосунок має пройти верифікацію OAuth consent screen;
-  для особистого користування достатньо режиму *Testing* з вашим акаунтом у списку тестувальників.
+## Налаштування Google Cloud
+
+1. Увімкнути **Google Calendar API** у проєкті, де створено OAuth Client ID.
+2. **OAuth consent screen**: External, статус Testing, у Test users — ваша Google-пошта.
+3. **OAuth Client ID** типу Web application, Authorized JavaScript origins:
+   `https://<user>.github.io`, `http://localhost:5173`.
+4. Client ID — у `VITE_GOOGLE_CLIENT_ID` (`.env.production`). Client secret не потрібен.

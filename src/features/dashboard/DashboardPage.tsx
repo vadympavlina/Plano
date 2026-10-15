@@ -21,6 +21,7 @@ import { dayProgress, isOpen, isOverdue, percent, sortTasks, taskDate, weekProgr
 import { expandEvents, loadByDay, upcomingOccurrences, type EventOccurrence } from '@/features/calendar/logic';
 import { currentStreak, habitValue, isDone, isScheduled } from '@/features/habits/logic';
 import { goalPercent } from '@/features/goals/logic';
+import { eventColor } from '@/features/calendar/items';
 import { QuickAdd } from './QuickAdd';
 
 function Panel({ title, meta, link, children, className }: { title: string; meta?: ReactNode; link?: { to: string; label: string }; children: ReactNode; className?: string }) {
@@ -182,7 +183,7 @@ export default function DashboardPage() {
                   <div key={g.day} className="mt-1">
                     <p className="px-3 pb-1 pt-2 text-xs font-medium text-subtle">{relativeDayLabel(g.day, today, 'EEEEEE, d MMM')}</p>
                     {g.items.map((o) => {
-                      const color = colorOf(categoryById(o.event.categoryId)?.color ?? 'blue');
+                      const color = eventColor(o.event, categoryById);
                       return (
                         <button
                           key={o.key}

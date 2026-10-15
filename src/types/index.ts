@@ -80,6 +80,8 @@ export interface ExternalEventRef {
   eventId: string;
   etag?: string;
   lastSyncedAt?: ISODateTime;
+  /** Colour of the source calendar (hex), used when the event has no category. */
+  color?: string;
 }
 
 export interface CalendarEvent extends Timestamps {
@@ -103,6 +105,8 @@ export interface CalendarEvent extends Timestamps {
   timezone?: string;
   source: EventSource;
   external?: ExternalEventRef;
+  /** Local change not yet sent to the external calendar. */
+  syncPending?: boolean;
 }
 
 export const PROJECT_STATUSES = ['active', 'on_hold', 'completed', 'archived'] as const;
@@ -194,11 +198,31 @@ export interface Profile {
 
 export type IntegrationStatus = 'not_connected' | 'connected' | 'error';
 
+export interface ExternalCalendarInfo {
+  id: string;
+  name: string;
+  color?: string;
+  primary?: boolean;
+  /** Google access role: owner / writer can receive events from Plano. */
+  writable: boolean;
+}
+
+export interface PendingExternalDelete {
+  calendarId: string;
+  eventId: string;
+}
+
 export interface IntegrationState {
   provider: 'google_calendar';
   status: IntegrationStatus;
   /** Calendars selected for sync (external calendar ids). */
   calendarIds?: string[];
+  /** Calendar that receives events created in Plano. */
+  targetCalendarId?: string;
+  /** Calendars seen at the last sync. */
+  calendars?: ExternalCalendarInfo[];
+  /** Deletions made in Plano that still have to be sent (keyed by local event id). */
+  pendingDeletes?: Record<string, PendingExternalDelete>;
   lastSyncAt?: ISODateTime;
   lastError?: string;
 }

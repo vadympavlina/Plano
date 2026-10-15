@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { NavLink, useParams } from 'react-router-dom';
-import { CalendarDays, Database, Download, Monitor, Moon, Palette, Plug, Plus, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
+import { Database, Download, Monitor, Moon, Palette, Plug, Plus, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { useCollections } from '@/hooks/useCollections';
 import { useProfile } from '@/hooks/useProfile';
 import { settleWrite } from '@/services/sync';
 import { updateAuthProfile } from '@/services/auth';
-import { googleCalendarProvider } from '@/services/integrations/googleCalendar';
+import { GoogleCalendarSettings } from '@/features/integrations/GoogleCalendarSettings';
 import { deviceTimeZone, formatDateKey, todayKey } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
@@ -419,28 +419,9 @@ function DataSection() {
 }
 
 function IntegrationsSection() {
-  const availability = googleCalendarProvider.availability();
   return (
     <Section title="Інтеграції" description="Підключення зовнішніх сервісів до Plano.">
-      <div className="flex flex-col gap-4 rounded-xl border border-line p-4 sm:flex-row sm:items-center">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-2">
-          <CalendarDays className="h-5 w-5 text-primary" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium">Google Calendar</p>
-            <Badge>Не підключено</Badge>
-            <Badge color="#9275EF">Незабаром</Badge>
-          </div>
-          <p className="mt-1 text-[13px] leading-relaxed text-muted">
-            Заплановано двосторонню синхронізацію подій. Plano вже відокремлює власні події від імпортованих і зберігає зовнішні ідентифікатори, щоб уникати дублікатів.
-            {!availability.available && ` ${availability.reason}`}
-          </p>
-        </div>
-        <Button variant="outline" disabled aria-disabled title="Поки недоступно">
-          Підключити
-        </Button>
-      </div>
+      <GoogleCalendarSettings />
     </Section>
   );
 }

@@ -26,8 +26,8 @@ export function buildTimedItems(
       end: m.end,
       occurrence: o,
       title: o.event.title,
-      color: colorOf(categoryById(o.event.categoryId)?.color ?? 'blue'),
-      draggable: !o.event.recurrence && o.event.source === 'plano',
+      color: eventColor(o.event, categoryById),
+      draggable: !o.event.recurrence,
     });
   }
   for (const t of tasks) {
@@ -52,6 +52,9 @@ export function isAllDayOn(o: EventOccurrence, day: DateKey): boolean {
   return o.event.allDay && o.date <= day && o.endDate >= day;
 }
 
+/** Category colour, else the colour of the source Google calendar, else blue. */
 export function eventColor(event: CalendarEvent, categoryById: (id?: string) => Category | undefined) {
-  return colorOf(categoryById(event.categoryId)?.color ?? 'blue');
+  const category = categoryById(event.categoryId);
+  if (category) return colorOf(category.color);
+  return event.external?.color ?? colorOf('blue');
 }

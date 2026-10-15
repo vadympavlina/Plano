@@ -83,6 +83,7 @@ export const externalRefSchema = z.object({
   eventId: z.string(),
   etag: optionalString,
   lastSyncedAt: optionalString,
+  color: optionalString,
 });
 
 export const eventSchema = z.object({
@@ -103,6 +104,7 @@ export const eventSchema = z.object({
   timezone: optionalString,
   source: z.enum(['plano', 'google']).default('plano'),
   external: externalRefSchema.optional(),
+  syncPending: z.boolean().optional(),
   ...timestamps,
 });
 
@@ -186,6 +188,17 @@ export const integrationSchema = z.object({
   provider: z.literal('google_calendar'),
   status: z.enum(['not_connected', 'connected', 'error']),
   calendarIds: arrayish(z.string()).optional(),
+  targetCalendarId: optionalString,
+  calendars: arrayish(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      color: optionalString,
+      primary: z.boolean().optional(),
+      writable: z.boolean().default(false),
+    }),
+  ).optional(),
+  pendingDeletes: z.record(z.string(), z.object({ calendarId: z.string(), eventId: z.string() })).optional(),
   lastSyncAt: optionalString,
   lastError: optionalString,
 });

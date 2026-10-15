@@ -47,19 +47,42 @@ export function useActions() {
       },
     };
 
+    // Google Calendar: changes are flagged here and sent by the sync engine.
+    const gcal = data.integrations.google_calendar;
+    const gcalOn = gcal?.status === 'connected';
+    const syncsToGoogle = (e: Pick<CalendarEvent, 'external' | 'source'>) =>
+      gcalOn && (!!e.external || (e.source === 'plano' && !!gcal?.targetCalendarId));
+    const updateEvent = (id: string, patch: Partial<CalendarEvent>) => {
+      const current = data.events[id];
+      return repos.events.update(id, current && syncsToGoogle(current) ? { ...patch, syncPending: true } : patch);
+    };
+
     const events = {
-      create: (input: NewEntity<CalendarEvent>) => repos.events.create(input),
-      update: (id: string, patch: Partial<CalendarEvent>) => repos.events.update(id, patch),
-      remove: (id: string) => repos.events.remove(id),
+      create: (input: NewEntity<CalendarEvent>) =>
+        repos.events.create(syncsToGoogle(input) ? { ...input, syncPending: true } : input),
+      update: updateEvent,
+      remove(id: string) {
+        const current = data.events[id];
+        if (current?.external && gcalOn) {
+          return repos.batch('Видалення події', {
+            [`events/${id}`]: null,
+            [`integrations/google_calendar/pendingDeletes/${id}`]: {
+              calendarId: current.external.calendarId,
+              eventId: current.external.eventId,
+            },
+          });
+        }
+        return repos.events.remove(id);
+      },
       /** Removes a single occurrence of a recurring series. */
       removeOccurrence: (event: CalendarEvent, date: DateKey) =>
-        repos.events.update(event.id, { exdates: [...new Set([...event.exdates, date])].sort() }),
+        updateEvent(event.id, { exdates: [...new Set([...event.exdates, date])].sort() }),
       move: (event: CalendarEvent, date: DateKey, startTime?: TimeString, endTime?: TimeString) => {
         const patch: Partial<CalendarEvent> = { date };
         if (event.allDay && event.endDate) patch.endDate = addDaysKey(date, diffDaysKey(event.endDate, event.date));
         if (startTime) patch.startTime = startTime;
         if (endTime) patch.endTime = endTime;
-        return repos.events.update(event.id, patch);
+        return updateEvent(event.id, patch);
       },
     };
 

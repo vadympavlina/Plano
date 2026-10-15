@@ -12,6 +12,7 @@ import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
+import { useData } from '@/app/providers/DataProvider';
 import { deviceTimeZone, formatTimeRange, minutesToTime, roundUpTime, timeToMinutes, todayKey } from '@/lib/date';
 import type { CalendarEvent } from '@/types';
 import { findConflicts } from './logic';
@@ -78,7 +79,11 @@ export default function EventFormDialog({
   const [showErrors, setShowErrors] = useState(false);
   const errors = validate(draft);
   const visible = showErrors ? errors : {};
-  const readOnly = draft.source !== 'plano';
+  const fromGoogle = draft.source === 'google';
+  const gcal = useData().data.integrations.google_calendar;
+  const linkedCalendar = draft.external ? gcal?.calendars?.find((c) => c.id === draft.external!.calendarId) : undefined;
+  const willSync = gcal?.status === 'connected' && (!!draft.external || !!gcal.targetCalendarId);
+  const syncCalendarName = linkedCalendar?.name ?? gcal?.calendars?.find((c) => c.id === gcal?.targetCalendarId)?.name;
 
   const conflicts = useMemo(() => {
     if (draft.allDay || !draft.date || !draft.startTime || !draft.endTime || errors.time) return [];
@@ -121,9 +126,10 @@ export default function EventFormDialog({
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
       <DialogContent quietTitle title={event ? 'Редагувати подію' : 'Нова подія'} size="md" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
         <form onSubmit={onSubmit} noValidate>
-          {readOnly && (
-            <p className="mb-3 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted">
-              Подію імпортовано із зовнішнього календаря. Зміни тут поки не надсилаються назад.
+          {willSync && (
+            <p className="mb-3 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: linkedCalendar?.color ?? '#4778F5' }} />
+              Синхронізується з Google Calendar{syncCalendarName ? ` · ${syncCalendarName}` : ''}
             </p>
           )}
           <input
@@ -205,7 +211,11 @@ export default function EventFormDialog({
               )}
             </Row>
             <Row icon={<Repeat />} label="Повторення">
+              {fromGoogle ? (
+                <p className="py-1.5 text-sm text-muted">Повторення цієї події налаштовується в Google Calendar.</p>
+              ) : (
               <RepeatChip variant="ghost" showIcon={false} className="-ml-2" value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
+              )}
             </Row>
             <Row icon={<Tag />} label="Категорія">
               <div className="-ml-2 flex flex-wrap gap-1">

@@ -6,6 +6,7 @@ import { AppHeader } from './AppHeader';
 import { MobileNav } from './MobileNav';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { UIProvider, useUI } from '@/app/providers/UIProvider';
+import { GoogleSyncProvider } from '@/features/integrations/GoogleSyncProvider';
 import { useData } from '@/app/providers/DataProvider';
 import { LoadingState, ErrorState } from '@/components/common/States';
 
@@ -14,7 +15,9 @@ const COLLAPSE_KEY = 'plano:sidebar-collapsed';
 export function AppLayout() {
   return (
     <UIProvider>
-      <LayoutInner />
+      <GoogleSyncProvider>
+        <LayoutInner />
+      </GoogleSyncProvider>
     </UIProvider>
   );
 }

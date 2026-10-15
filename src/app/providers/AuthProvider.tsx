@@ -3,6 +3,7 @@ import { isFirebaseConfigured } from '@/lib/firebase/config';
 import type { Backend } from '@/lib/backend/types';
 import { checkAccess, signOutFirebase, watchAuth, type AppUser } from '@/services/auth';
 import { resetSyncState } from '@/services/sync';
+import { clearStoredToken } from '@/services/integrations/google/auth';
 
 export type AuthState =
   | { status: 'loading' }
@@ -76,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     resetSyncState();
+    clearStoredToken();
     if (state.status === 'signedIn' && state.mode === 'preview') {
       localStorage.removeItem(PREVIEW_FLAG);
       setState({ status: 'unconfigured' });

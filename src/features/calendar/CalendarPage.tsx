@@ -22,9 +22,10 @@ import {
   todayKey,
   weekRange,
 } from '@/lib/date';
-import { colorOf } from '@/lib/utils/colors';
 import type { CalendarView, DateKey } from '@/types';
 import { expandEvents, upcomingOccurrences } from './logic';
+import { eventColor } from './items';
+import { GoogleSyncButton } from '@/features/integrations/GoogleSyncButton';
 import { TimeGrid } from './TimeGrid';
 import { MonthView } from './MonthView';
 import { MiniCalendar } from '@/components/ui/calendar';
@@ -138,7 +139,10 @@ export default function CalendarPage() {
               { value: 'month', label: 'Місяць' },
             ]}
           />
-          <Button variant="outline" size="sm" className="ml-auto px-2.5 sm:ml-0" onClick={() => navigate({ date: today })} disabled={anchor === today}>
+          <span className="ml-auto sm:ml-0">
+            <GoogleSyncButton />
+          </span>
+          <Button variant="outline" size="sm" className="px-2.5" onClick={() => navigate({ date: today })} disabled={anchor === today}>
             Сьогодні
           </Button>
           <Button
@@ -185,7 +189,7 @@ export default function CalendarPage() {
                   onClick={() => openEvent(o.event.id, o.date)}
                   className="flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-surface-2"
                 >
-                  <span className="mt-0.5 h-8 w-[3px] shrink-0 rounded-full" style={{ backgroundColor: colorOf(categoryById(o.event.categoryId)?.color ?? 'blue') }} />
+                  <span className="mt-0.5 h-8 w-[3px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium">{o.event.title}</span>
                     <span className="block text-[11.5px] tabular-nums text-muted">
