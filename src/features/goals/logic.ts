@@ -38,3 +38,31 @@ export const PACE_LABEL: Record<Pace, string> = {
   overdue: 'Термін минув',
   no_deadline: 'Без дедлайну',
 };
+
+/** Where the goal should be today on a straight line from start to deadline; undefined without a deadline. */
+export function expectedValue(goal: Goal, today: DateKey): number | undefined {
+  if (!goal.targetDate) return undefined;
+  const start = goal.startDate ?? goal.createdAt.slice(0, 10);
+  const total = diffDaysKey(goal.targetDate, start);
+  if (total <= 0) return goal.targetValue;
+  const elapsed = Math.min(total, Math.max(0, diffDaysKey(today, start)));
+  return (elapsed / total) * goal.targetValue;
+}
+
+const roundNice = (n: number) => (Math.abs(n) >= 10 ? Math.round(n) : Math.round(n * 10) / 10);
+const num = (n: number) => roundNice(n).toLocaleString('uk-UA');
+
+/** Human pace line: "Випереджаєте на 2 книжки", "Відстаєте на 46 км", "Потрібно ~3 км на день"… */
+export function paceText(goal: Goal, today: DateKey): string {
+  const pace = goalPace(goal, today);
+  const unit = goal.unit ? ` ${goal.unit}` : '';
+  if (pace === 'done') return 'Ціль досягнуто 🎉';
+  if (pace === 'no_deadline') return 'Без дедлайну';
+  if (pace === 'overdue') return 'Термін минув';
+  const expected = expectedValue(goal, today) ?? 0;
+  const delta = goal.currentValue - expected;
+  const left = diffDaysKey(goal.targetDate!, today);
+  if (pace === 'behind' && left > 0 && left <= 30) return `Потрібно ~${num((goal.targetValue - goal.currentValue) / left)}${unit} на день`;
+  if (pace === 'on_track' || roundNice(Math.abs(delta)) === 0) return 'За планом';
+  return delta > 0 ? `Випереджаєте на ${num(delta)}${unit}` : `Відстаєте на ${num(-delta)}${unit}`;
+}
