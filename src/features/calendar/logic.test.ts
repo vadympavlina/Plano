@@ -85,3 +85,22 @@ describe('conflicts and upcoming', () => {
     expect(upcomingOccurrences(list, now, '2025-04-24').map((o) => o.event.id)).toEqual(['dinner']);
   });
 });
+
+import { selectionRange } from './logic';
+
+describe('selectionRange', () => {
+  it('drags downwards from the anchor slot', () => {
+    expect(selectionRange(600, 690)).toEqual({ start: 600, end: 690 });
+    expect(selectionRange(607, 700)).toEqual({ start: 600, end: 705 });
+  });
+  it('drags upwards and still includes the anchor slot', () => {
+    expect(selectionRange(600, 540)).toEqual({ start: 540, end: 615 });
+  });
+  it('a click without movement covers one slot', () => {
+    expect(selectionRange(600, 602)).toEqual({ start: 600, end: 615 });
+  });
+  it('is clamped to the day', () => {
+    expect(selectionRange(1430, 1500)).toEqual({ start: 1425, end: 1440 });
+    expect(selectionRange(10, -50)).toEqual({ start: 0, end: 15 });
+  });
+});

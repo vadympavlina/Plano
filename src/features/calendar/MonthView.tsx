@@ -1,5 +1,4 @@
-import { useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
@@ -31,6 +30,33 @@ export function MonthView({
   const month = anchor.slice(0, 7);
   const labels = weekdayLabels(settings.weekStartsOn);
   const weeks = days.length / 7;
+  const [range, setRange] = useState<{ pointerId: number; from: number; to: number } | null>(null);
+
+  // Drag across empty space in day cells to create a (multi-day) all-day event; a click creates one for that day.
+  const indexAt = (x: number, y: number) => {
+    const el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-month-index]');
+    return el ? Number(el.dataset.monthIndex) : null;
+  };
+  const onDown = (e: ReactPointerEvent<HTMLDivElement>, index: number) => {
+    if (e.target !== e.currentTarget || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (e.pointerType === 'mouse') e.currentTarget.setPointerCapture(e.pointerId);
+    setRange({ pointerId: e.pointerId, from: index, to: index });
+  };
+  const onMove = (e: ReactPointerEvent) => {
+    if (!range || e.pointerId !== range.pointerId || e.pointerType !== 'mouse') return;
+    const to = indexAt(e.clientX, e.clientY);
+    if (to !== null && to !== range.to) setRange({ ...range, to });
+  };
+  const onUp = (e: ReactPointerEvent) => {
+    if (!range || e.pointerId !== range.pointerId) return;
+    const a = Math.min(range.from, range.to);
+    const b = Math.max(range.from, range.to);
+    setRange(null);
+    if (a === b) openEventForm({ defaults: { date: days[a] } });
+    else openEventForm({ defaults: { date: days[a], endDate: days[b], allDay: true, startTime: undefined, endTime: undefined } });
+  };
+  const lo = range ? Math.min(range.from, range.to) : -1;
+  const hi = range ? Math.max(range.from, range.to) : -1;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -41,8 +67,13 @@ export function MonthView({
           </div>
         ))}
       </div>
-      <div className="grid min-h-0 flex-1 grid-cols-7" style={{ gridTemplateRows: `repeat(${weeks}, minmax(84px, 1fr))` }}>
-        {days.map((d) => {
+      <div
+        className="grid min-h-0 flex-1 select-none grid-cols-7"
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={() => setRange(null)}
+        style={{ gridTemplateRows: `repeat(${weeks}, minmax(84px, 1fr))` }}>
+        {days.map((d, index) => {
           const inMonth = d.startsWith(month);
           const isToday = d === today;
           const evs = occurrencesOnDay(occurrences, d);
@@ -55,27 +86,25 @@ export function MonthView({
           return (
             <div
               key={d}
-              className={cn('group relative min-w-0 border-b border-r border-line p-1 sm:p-1.5', !inMonth && 'bg-surface-2/50')}
+              data-month-index={index}
+              onPointerDown={(e) => onDown(e, index)}
+              className={cn(
+                'relative min-w-0 cursor-cell border-b border-r border-line p-1 transition-colors sm:p-1.5',
+                !inMonth && 'bg-surface-2/50',
+                index >= lo && index <= hi ? 'bg-primary/10' : 'hover:bg-surface-2/40',
+              )}
             >
-              <div className="mb-1 flex items-center justify-between">
+              <div className="pointer-events-none mb-1 flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => onSelectDay(d)}
                   aria-label={`Відкрити ${d}`}
                   className={cn(
-                    'flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
+                    'pointer-events-auto flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
                     isToday ? 'bg-accent font-semibold text-surface hover:bg-accent' : inMonth ? 'text-ink' : 'text-subtle',
                   )}
                 >
                   {Number(d.slice(8))}
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Нова подія ${d}`}
-                  onClick={() => openEventForm({ defaults: { date: d } })}
-                  className="hidden rounded p-0.5 text-subtle hover:bg-surface-2 hover:text-ink sm:group-hover:block"
-                >
-                  <Plus className="h-3.5 w-3.5" />
                 </button>
               </div>
               {/* Phones: dots only */}

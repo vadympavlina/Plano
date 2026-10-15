@@ -160,3 +160,18 @@ export function upcomingOccurrences(
     })
     .slice(0, limit);
 }
+
+const DAY_END = 24 * 60;
+
+/**
+ * Time range picked by dragging on the grid. The anchor is where the pointer
+ * went down; the range always covers at least one `snap` slot and works when
+ * dragging upwards too.
+ */
+export function selectionRange(anchorMin: number, pointerMin: number, snap = 15): { start: number; end: number } {
+  const a = Math.floor(anchorMin / snap) * snap;
+  const p = Math.round(pointerMin / snap) * snap;
+  const start = Math.max(0, Math.min(a, p >= a + snap ? a : Math.min(p, a)));
+  const end = Math.min(DAY_END, Math.max(p, a + snap));
+  return { start, end: Math.max(end, start + snap) };
+}

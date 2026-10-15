@@ -1,19 +1,22 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { AlertTriangle, AlignLeft, Clock, FolderKanban, Link2, MapPin, Repeat, Tag } from 'lucide-react';
+import { AlertTriangle, AlignLeft, FolderKanban, Link2, MapPin, Repeat, Sun } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { DatePicker, TimePicker } from '@/components/ui/date-time';
-import { Switch } from '@/components/ui/controls';
 import { RepeatChip } from '@/components/common/RepeatChip';
-import { categoryOptions, projectOptions } from '@/components/common/options';
+import { projectOptions } from '@/components/common/options';
+import { colorOf, tint } from '@/lib/utils/colors';
+import { cn } from '@/lib/utils/cn';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
 import { useData } from '@/app/providers/DataProvider';
-import { deviceTimeZone, formatTimeRange, minutesToTime, roundUpTime, timeToMinutes, todayKey } from '@/lib/date';
+import { deviceTimeZone, formatDuration, formatTimeRange, minutesToTime, diffDaysKey, plural, roundUpTime, timeToMinutes, todayKey } from '@/lib/date';
+
+const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 import type { CalendarEvent } from '@/types';
 import { findConflicts } from './logic';
 
@@ -51,10 +54,10 @@ function validate(d: Draft): Record<string, string> {
   return e;
 }
 
-/** A labelled row: icon on the left, controls on the right. */
+/** A compact detail row: icon on the left, an inline field on the right. */
 function Row({ icon, label, children }: { icon: ReactNode; label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-3 py-1.5">
+    <div className="flex items-start gap-3 px-3 py-1">
       <span className="mt-2 flex h-4 w-4 shrink-0 text-subtle [&_svg]:h-4 [&_svg]:w-4" title={label} aria-hidden>
         {icon}
       </span>
@@ -62,6 +65,9 @@ function Row({ icon, label, children }: { icon: ReactNode; label: string; childr
     </div>
   );
 }
+
+const QUICK_DURATIONS = [30, 60, 90, 120];
+const bareInput = 'h-9 border-transparent bg-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0';
 
 export default function EventFormDialog({
   event,
@@ -102,6 +108,17 @@ export default function EventFormDialog({
     patch({ startTime, endTime: minutesToTime(Math.min(timeToMinutes(startTime) + Math.max(dur, 15), 23 * 60 + 59)) });
   };
 
+  const duration = draft.startTime && draft.endTime ? timeToMinutes(draft.endTime) - timeToMinutes(draft.startTime) : 0;
+  const setDuration = (m: number) => {
+    if (!draft.startTime) return;
+    patch({ endTime: minutesToTime(Math.min(timeToMinutes(draft.startTime) + m, 23 * 60 + 59)) });
+  };
+  const toggleAllDay = (allDay: boolean) =>
+    patch(allDay ? { allDay } : { allDay, startTime: draft.startTime ?? '09:00', endTime: draft.endTime ?? '10:00', endDate: undefined });
+  const spanDays = draft.endDate && draft.endDate > draft.date ? diffDaysKey(draft.endDate, draft.date) + 1 : 1;
+  const allDaySpan = spanDays > 1 ? `${spanDays} ${plural(spanDays, ['день', 'дні', 'днів'])}` : 'Один день';
+  const categoryColor = draft.categoryId ? colorOf(categories.find((c) => c.id === draft.categoryId)?.color) : undefined;
+
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setShowErrors(true);
@@ -125,127 +142,182 @@ export default function EventFormDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
       <DialogContent quietTitle title={event ? 'Редагувати подію' : 'Нова подія'} size="md" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
-        <form onSubmit={onSubmit} noValidate>
-          {willSync && (
-            <p className="mb-3 flex items-center gap-2 rounded-lg bg-surface-2 px-3 py-2 text-[13px] text-muted">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: linkedCalendar?.color ?? '#4778F5' }} />
-              Синхронізується з Google Calendar{syncCalendarName ? ` · ${syncCalendarName}` : ''}
-            </p>
-          )}
-          <input
-            autoFocus
-            aria-label="Назва"
-            aria-invalid={visible.title ? true : undefined}
-            placeholder="Назва події"
-            maxLength={300}
-            value={draft.title}
-            onChange={(e) => patch({ title: e.target.value })}
-            className="mb-3 w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
-          />
-          {visible.title && <p role="alert" className="-mt-2 mb-3 text-[13px] text-danger">{visible.title}</p>}
+        <form
+          onSubmit={onSubmit}
+          noValidate
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              e.currentTarget.requestSubmit();
+            }
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className="h-3 w-3 shrink-0 rounded-full transition-colors"
+              style={{ backgroundColor: categoryColor ?? linkedCalendar?.color ?? '#4778F5' }}
+              aria-hidden
+            />
+            <input
+              autoFocus
+              aria-label="Назва"
+              aria-invalid={visible.title ? true : undefined}
+              placeholder="Назва події"
+              maxLength={300}
+              value={draft.title}
+              onChange={(e) => patch({ title: e.target.value })}
+              className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+          {visible.title && <p role="alert" className="ml-6 mt-1 text-[13px] text-danger">{visible.title}</p>}
 
-          <div className="divide-y divide-line/70 border-y border-line/70">
-            <Row icon={<Clock />} label="Час">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <DatePicker
-                  variant="chip"
-                  aria-label={draft.allDay ? 'Початок' : 'Дата'}
-                  clearable={false}
-                  weekStartsOn={settings.weekStartsOn}
-                  value={draft.date}
-                  onChange={(date) => date && patch({ date })}
-                />
-                {draft.allDay ? (
-                  <>
-                    <span className="text-subtle">–</span>
-                    <DatePicker
-                      variant="chip"
-                      aria-label="Кінець"
-                      clearable={false}
-                      min={draft.date}
-                      weekStartsOn={settings.weekStartsOn}
-                      value={draft.endDate ?? draft.date}
-                      onChange={(endDate) => patch({ endDate })}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <TimePicker variant="chip" aria-label="Початок" timeFormat={settings.timeFormat} value={draft.startTime} onChange={setStart} />
-                    <span className="text-subtle">–</span>
-                    <TimePicker
-                      variant="chip"
-                      aria-label="Кінець"
-                      after={draft.startTime}
-                      timeFormat={settings.timeFormat}
-                      value={draft.endTime}
-                      onChange={(endTime) => patch({ endTime })}
-                    />
-                  </>
-                )}
-              </div>
-              <Switch
-                className="mt-2.5 max-w-[220px]"
-                label="Весь день"
-                checked={draft.allDay}
-                onChange={(allDay) =>
-                  patch(
-                    allDay
-                      ? { allDay }
-                      : { allDay, startTime: draft.startTime ?? '09:00', endTime: draft.endTime ?? '10:00', endDate: undefined },
-                  )
-                }
+          {/* When */}
+          <section aria-label="Час" className="mt-4 rounded-2xl bg-surface-2/70 p-3">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <DatePicker
+                variant="chip"
+                aria-label={draft.allDay ? 'Початок' : 'Дата'}
+                clearable={false}
+                weekStartsOn={settings.weekStartsOn}
+                value={draft.date}
+                onChange={(date) => date && patch({ date, endDate: draft.endDate && draft.endDate < date ? undefined : draft.endDate })}
               />
-              {timeError && <p role="alert" className="mt-2 text-[13px] text-danger">{timeError}</p>}
-              {conflicts.length > 0 && (
-                <p className="mt-2 flex items-start gap-2 text-[13px] text-muted">
-                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-                  <span>
-                    Перетинається з{' '}
-                    {conflicts
-                      .slice(0, 3)
-                      .map((c) => `«${c.title}» (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
-                      .join(', ')}
-                    . Зберегти все одно можна.
-                  </span>
-                </p>
-              )}
-            </Row>
-            <Row icon={<Repeat />} label="Повторення">
-              {fromGoogle ? (
-                <p className="py-1.5 text-sm text-muted">Повторення цієї події налаштовується в Google Calendar.</p>
+              {draft.allDay ? (
+                <>
+                  <span className="text-subtle">→</span>
+                  <DatePicker
+                    variant="chip"
+                    aria-label="Кінець"
+                    clearable={false}
+                    min={draft.date}
+                    weekStartsOn={settings.weekStartsOn}
+                    value={draft.endDate ?? draft.date}
+                    onChange={(endDate) => patch({ endDate })}
+                  />
+                </>
               ) : (
-              <RepeatChip variant="ghost" showIcon={false} className="-ml-2" value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
+                <span className="inline-flex items-center gap-1">
+                  <TimePicker variant="chip" aria-label="Початок" timeFormat={settings.timeFormat} value={draft.startTime} onChange={setStart} />
+                  <span className="text-subtle">–</span>
+                  <TimePicker
+                    variant="chip"
+                    aria-label="Кінець"
+                    after={draft.startTime}
+                    timeFormat={settings.timeFormat}
+                    value={draft.endTime}
+                    onChange={(endTime) => patch({ endTime })}
+                  />
+                </span>
               )}
-            </Row>
-            <Row icon={<Tag />} label="Категорія">
-              <div className="-ml-2 flex flex-wrap gap-1">
-                <Select
-                  variant="ghost"
-                  aria-label="Категорія"
-                  value={draft.categoryId ?? ''}
-                  onChange={(v) => patch({ categoryId: v || undefined })}
-                  options={categoryOptions(categories)}
-                />
+            </div>
+
+            <div className="mt-2 flex items-center gap-1 text-[12.5px]">
+              {draft.allDay ? (
+                <span className="text-muted">{allDaySpan}</span>
+              ) : (
+                <>
+                  {!QUICK_DURATIONS.includes(duration) && (
+                    <span className="mr-1 tabular-nums text-muted">{duration > 0 ? formatDuration(duration) : '—'}</span>
+                  )}
+                  {QUICK_DURATIONS.map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setDuration(m)}
+                      aria-pressed={duration === m}
+                      className={cn(
+                        'h-7 shrink-0 rounded-md px-2 font-medium tabular-nums transition-colors',
+                        duration === m ? 'bg-surface text-ink shadow-soft ring-1 ring-line' : 'text-subtle hover:bg-surface hover:text-ink',
+                      )}
+                    >
+                      {formatDuration(m).replace(' год 30 хв', ',5 год')}
+                    </button>
+                  ))}
+                </>
+              )}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={draft.allDay}
+                onClick={() => toggleAllDay(!draft.allDay)}
+                className={cn(
+                  'ml-auto inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2 text-[12.5px] font-medium transition-colors',
+                  draft.allDay ? 'border-accent bg-accent text-surface' : 'border-line bg-surface text-muted hover:text-ink',
+                )}
+              >
+                <Sun className="h-3.5 w-3.5" />
+                Весь день
+              </button>
+            </div>
+
+            <div className="mt-2 border-t border-line/70 pt-2">
+              {fromGoogle ? (
+                <p className="flex items-center gap-2 py-1 text-[13px] text-muted">
+                  <Repeat className="h-3.5 w-3.5" /> Повторення налаштовується в Google Calendar
+                </p>
+              ) : (
+                <RepeatChip variant="ghost" className="-ml-2" value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
+              )}
+            </div>
+            {timeError && <p role="alert" className="mt-2 text-[13px] text-danger">{timeError}</p>}
+            {conflicts.length > 0 && (
+              <p className="mt-2 flex items-start gap-2 text-[12.5px] text-muted">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <span>
+                  Перетинається з{' '}
+                  {conflicts
+                    .slice(0, 3)
+                    .map((c) => `«${c.title}» (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
+                    .join(', ')}
+                </span>
+              </p>
+            )}
+          </section>
+
+          {/* Category & project */}
+          <div className="mt-4 space-y-2.5">
+            {categories.length > 0 && (
+              <div role="radiogroup" aria-label="Категорія" className="flex flex-wrap gap-1.5">
+                {categories.map((c) => {
+                  const on = draft.categoryId === c.id;
+                  const color = colorOf(c.color);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => patch({ categoryId: on ? undefined : c.id })}
+                      className={cn(
+                        'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
+                        on ? 'text-ink' : 'border-line bg-surface text-muted hover:text-ink',
+                      )}
+                      style={on ? { backgroundColor: tint(color, 0.16), borderColor: tint(color, 0.5) } : undefined}
+                    >
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                      {c.name}
+                    </button>
+                  );
+                })}
               </div>
-            </Row>
-            <Row icon={<FolderKanban />} label="Проєкт">
+            )}
+            {(projects.some((p) => p.status !== 'archived') || draft.projectId) && (
               <Select
-                variant="ghost"
-                className="-ml-2"
+                variant="chip"
                 aria-label="Проєкт"
-                value={draft.projectId ?? ''}
+                icon={<FolderKanban />}
+                placeholder="Додати до проєкту"
+                value={draft.projectId}
                 onChange={(v) => patch({ projectId: v || undefined })}
                 options={projectOptions(projects, draft.projectId)}
               />
-            </Row>
+            )}
+          </div>
+
+          {/* Details */}
+          <div className="mt-4 divide-y divide-line/70 rounded-2xl border border-line/80">
             <Row icon={<MapPin />} label="Місце">
-              <Input
-                aria-label="Місце"
-                placeholder="Додати місце"
-                value={draft.location ?? ''}
-                onChange={(e) => patch({ location: e.target.value })}
-                className="h-8 border-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
-              />
+              <Input aria-label="Місце" placeholder="Місце" value={draft.location ?? ''} onChange={(e) => patch({ location: e.target.value })} className={bareInput} />
             </Row>
             <Row icon={<Link2 />} label="Посилання">
               <Input
@@ -253,24 +325,31 @@ export default function EventFormDialog({
                 aria-invalid={visible.url ? true : undefined}
                 type="url"
                 inputMode="url"
-                placeholder="Додати посилання"
+                placeholder="Посилання на зустріч"
                 value={draft.url ?? ''}
                 onChange={(e) => patch({ url: e.target.value })}
-                className="h-8 border-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
+                className={bareInput}
               />
-              {visible.url && <p role="alert" className="mt-1 text-[13px] text-danger">{visible.url}</p>}
+              {visible.url && <p role="alert" className="mb-1.5 text-[13px] text-danger">{visible.url}</p>}
             </Row>
             <Row icon={<AlignLeft />} label="Опис">
               <Textarea
                 aria-label="Опис"
-                rows={3}
-                placeholder="Порядок денний, нотатки…"
+                rows={2}
+                placeholder="Нотатки"
                 value={draft.description ?? ''}
                 onChange={(e) => patch({ description: e.target.value })}
-                className="min-h-[72px] resize-none border-transparent px-0 py-1.5 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
+                className="min-h-[60px] resize-none border-transparent bg-transparent px-0 py-2 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
               />
             </Row>
           </div>
+
+          {willSync && (
+            <p className="mt-3 flex items-center gap-2 text-[12.5px] text-muted">
+              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: linkedCalendar?.color ?? '#4778F5' }} />
+              Синхронізується з Google Calendar{syncCalendarName ? ` · ${syncCalendarName}` : ''}
+            </p>
+          )}
 
           {submitError && (
             <p role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
@@ -284,6 +363,7 @@ export default function EventFormDialog({
             </Button>
             <Button type="submit" variant="dark" loading={saving}>
               {event ? 'Зберегти' : 'Створити подію'}
+              <kbd className="ml-1.5 hidden font-sans text-[11.5px] font-medium opacity-50 lg:inline">{isMac ? '⌘' : 'Ctrl'}↵</kbd>
             </Button>
           </DialogFooter>
         </form>
