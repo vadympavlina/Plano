@@ -4,12 +4,12 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { useNow } from '@/hooks/useNow';
-import { addDaysKey, formatDateKey, formatDuration, formatTime, minutesToTime, todayKey } from '@/lib/date';
+import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, minutesToTime, todayKey, weekRange } from '@/lib/date';
 import { tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
-import { layoutDay, occurrencesOnDay, selectionRange, type EventOccurrence } from './logic';
+import { expandEvents, layoutDay, occurrencesOnDay, selectionRange, type EventOccurrence } from './logic';
 import { buildTimedItems, eventColor, type GridItem } from './items';
 
 const HOUR_PX = 52;
@@ -39,6 +39,7 @@ interface Selection {
   anchor: number;
   pointer: number;
   startY: number;
+  startX: number;
   /** Touch selections start only after a long press. */
   active: boolean;
   moved: boolean;
@@ -56,13 +57,16 @@ export function TimeGrid({
   occurrences,
   tasks,
   onSelectDay,
+  onSwipe,
 }: {
   days: DateKey[];
   occurrences: EventOccurrence[];
   tasks: Task[];
   onSelectDay: (d: DateKey) => void;
+  /** Horizontal swipe on touch screens: -1 = previous, 1 = next. */
+  onSwipe?: (dir: 1 | -1) => void;
 }) {
-  const { categoryById } = useCollections();
+  const { categoryById, events } = useCollections();
   const settings = useSettings();
   const { openEvent, openEventForm, openTask } = useUI();
   const actions = useActions();
@@ -75,6 +79,8 @@ export function TimeGrid({
   const [sel, setSel] = useState<Selection | null>(null);
   const [daySel, setDaySel] = useState<DaySelection | null>(null);
   const [hover, setHover] = useState<{ dayIndex: number; min: number } | null>(null);
+  /** Touch: the first tap on an empty slot places a draft block; tapping the block opens the form. */
+  const [draftSlot, setDraftSlot] = useState<{ dayIndex: number; start: number; end: number; at: number } | null>(null);
   const longPress = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blockScroll = useRef(false);
   const single = days.length === 1;
@@ -97,10 +103,65 @@ export function TimeGrid({
     const el = scrollRef.current;
     if (!el) return;
     const base = days.includes(today) ? Math.max(0, now.getHours() - 2) : 7;
-    const hour = Math.max(0, Math.min(base, Math.floor(earliest / 60)) - (earliest < base * 60 ? 0.25 : 0));
-    el.scrollTop = hour * HOUR_PX;
+    const hour = Math.min(base, Math.floor(earliest / 60));
+    const apply = () => {
+      el.scrollTop = Math.max(0, hour * HOUR_PX - 16);
+    };
+    apply();
+    // Mobile Safari can lay the scroller out after the first effect; apply again once it has a size.
+    const raf = requestAnimationFrame(apply);
+    let done = el.clientHeight > 0 && el.scrollTop > 0;
+    const ro = new ResizeObserver(() => {
+      if (done || el.clientHeight === 0) return;
+      done = true;
+      apply();
+    });
+    ro.observe(el);
+    setDraftSlot(null);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days[0], days.length]);
+
+  // Swipe left/right to page through days (touch only, ignored while drawing a selection).
+  const swipeRef = useRef(onSwipe);
+  swipeRef.current = onSwipe;
+  useEffect(() => {
+    const el = scrollRef.current?.parentElement;
+    if (!el) return;
+    let start: { x: number; y: number; t: number } | null = null;
+    const onStart = (e: TouchEvent) => {
+      start = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null;
+    };
+    const onEnd = (e: TouchEvent) => {
+      if (!start || blockScroll.current) return (start = null);
+      const t = e.changedTouches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - start.t < 700) swipeRef.current?.(dx < 0 ? 1 : -1);
+      start = null;
+    };
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchend', onEnd);
+    };
+  }, []);
+
+  // Day view: a week strip replaces the single big day header.
+  const strip = useMemo(() => {
+    if (!single) return null;
+    const r = weekRange(days[0], settings.weekStartsOn);
+    const marked = new Set(expandEvents(events, r.start, r.end).map((o) => o.date));
+    for (const t of tasks) {
+      const d = t.dueDate ?? t.startDate;
+      if (d && t.status !== 'cancelled') marked.add(d);
+    }
+    return eachDateKey(r.start, r.end).map((d) => ({ d, marked: marked.has(d) }));
+  }, [single, days, settings.weekStartsOn, events, tasks]);
 
   // While a touch selection or drag is in progress, stop the page from scrolling.
   useEffect(() => {
@@ -132,7 +193,7 @@ export function TimeGrid({
     if (e.target !== e.currentTarget || drag || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const min = minuteAt(e.clientY);
     const touch = e.pointerType !== 'mouse';
-    const next: Selection = { pointerId: e.pointerId, dayIndex, anchor: min, pointer: min, startY: e.clientY, active: !touch, moved: false };
+    const next: Selection = { pointerId: e.pointerId, dayIndex, anchor: min, pointer: min, startY: e.clientY, startX: e.clientX, active: !touch, moved: false };
     setHover(null);
     setSel(next);
     if (touch) {
@@ -153,22 +214,29 @@ export function TimeGrid({
     }
   };
 
+  const hourAt = (min: number) => {
+    const start = Math.min(Math.floor(min / 30) * 30, 23 * 60);
+    return { start, end: Math.min(start + 60, DAY_END - 1) };
+  };
+  const openSlot = (dayIndex: number, range: { start: number; end: number }) => {
+    setDraftSlot(null);
+    openEventForm({
+      defaults: { date: days[dayIndex], allDay: false, startTime: minutesToTime(range.start), endTime: minutesToTime(Math.min(range.end, DAY_END - 1)) },
+    });
+  };
+
   const finishSelection = (s: Selection) => {
     clearLongPress();
     blockScroll.current = false;
     setSel(null);
-    const day = days[s.dayIndex];
     let range: { start: number; end: number };
     if (!s.moved) {
-      // A click (or a tap / long press without dragging) creates a one-hour event.
-      const start = Math.min(Math.floor(s.anchor / 30) * 30, 23 * 60);
-      range = { start, end: Math.min(start + 60, DAY_END - 1) };
+      // A click (or a long press without dragging) creates a one-hour event.
+      range = hourAt(s.anchor);
     } else {
       range = selectionRange(s.anchor, s.pointer, SNAP);
     }
-    openEventForm({
-      defaults: { date: day, allDay: false, startTime: minutesToTime(range.start), endTime: minutesToTime(Math.min(range.end, DAY_END - 1)) },
-    });
+    openSlot(s.dayIndex, range);
   };
 
   // ---- creating all-day events in the all-day row ------------------------------
@@ -224,7 +292,7 @@ export function TimeGrid({
     if (sel && e.pointerId === sel.pointerId) {
       if (!sel.active) {
         // Touch: moving before the long press fires means the person is scrolling.
-        if (Math.abs(e.clientY - sel.startY) > 8) {
+        if (Math.abs(e.clientY - sel.startY) > 8 || Math.abs(e.clientX - sel.startX) > 8) {
           clearLongPress();
           setSel(null);
         }
@@ -247,9 +315,10 @@ export function TimeGrid({
     if (sel && e.pointerId === sel.pointerId) {
       if (sel.active || e.pointerType === 'mouse') finishSelection(sel);
       else {
-        // Short tap on touch: create a one-hour event, like a click.
+        // Short tap on touch: place (or move) a draft block instead of opening the form right away.
         clearLongPress();
-        finishSelection({ ...sel, moved: false });
+        setSel(null);
+        setDraftSlot({ dayIndex: sel.dayIndex, ...hourAt(sel.anchor), at: Date.now() });
       }
       return;
     }
@@ -295,6 +364,35 @@ export function TimeGrid({
   return (
     <div className="flex h-full min-h-0 select-none flex-col">
       {/* Day headers */}
+      {strip ? (
+        <div className="grid grid-cols-7 gap-0.5 border-b border-line px-1.5 py-1.5 sm:px-3">
+          {strip.map(({ d, marked }) => {
+            const on = d === days[0];
+            const isToday = d === today;
+            return (
+              <button
+                key={d}
+                type="button"
+                onClick={() => onSelectDay(d)}
+                aria-pressed={on}
+                aria-label={formatDateKey(d, 'EEEE, d MMMM')}
+                className={cn('flex flex-col items-center gap-0.5 rounded-xl py-1 transition-colors', !on && 'hover:bg-surface-2')}
+              >
+                <span className={cn('text-[11px] font-medium', isToday ? 'text-primary' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
+                <span
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors',
+                    on ? (isToday ? 'bg-primary text-white' : 'bg-accent text-surface') : isToday ? 'text-primary' : 'text-ink',
+                  )}
+                >
+                  {Number(d.slice(8))}
+                </span>
+                <span className={cn('h-1 w-1 rounded-full', marked && !on ? 'bg-subtle' : 'bg-transparent')} />
+              </button>
+            );
+          })}
+        </div>
+      ) : (
       <div className="flex border-b border-line">
         <div className="w-12 shrink-0 sm:w-14" />
         <div className="grid flex-1" style={gridCols}>
@@ -324,13 +422,16 @@ export function TimeGrid({
           })}
         </div>
       </div>
+      )}
 
       {/* All-day row: always present so all-day events can be drawn here */}
       <div className="flex border-b border-line">
-        <div className="flex w-12 shrink-0 items-start justify-end whitespace-nowrap pr-1.5 pt-2 text-[10px] leading-tight text-subtle sm:w-14">
-          весь
-          <br />
-          день
+        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[10px] leading-[1.1] text-subtle sm:w-14">
+          <span>
+            весь
+            <br />
+            день
+          </span>
         </div>
         <div
           ref={allDayRef}
@@ -348,7 +449,7 @@ export function TimeGrid({
                 onPointerDown={(e) => onAllDayPointerDown(e, index)}
                 title="Натисніть або протягніть, щоб додати подію на весь день"
                 className={cn(
-                  'scrollbar-thin max-h-[108px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line p-1 transition-colors',
+                  'scrollbar-thin max-h-[108px] min-h-[30px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line p-1 transition-colors',
                   selected ? 'bg-primary/10' : 'hover:bg-surface-2/60',
                 )}
               >
@@ -432,7 +533,7 @@ export function TimeGrid({
               <div
                 key={c.day}
                 data-day-index={dayIndex}
-                className={cn('relative cursor-cell border-l border-line', c.day === today && 'bg-primary/[0.025]')}
+                className={cn('relative cursor-cell border-l border-line', c.day === today && !single && 'bg-primary/[0.025]')}
                 onPointerDown={(e) => onColumnPointerDown(e, dayIndex)}
                 role="presentation"
               >
@@ -536,10 +637,29 @@ export function TimeGrid({
                     <p className="truncate text-[10.5px] text-primary/80">{formatDuration(selRange.end - selRange.start)}</p>
                   </div>
                 )}
-                {sel?.active && !sel.moved && sel.dayIndex === dayIndex && sel.pointerId !== undefined && (
+                {draftSlot && draftSlot.dayIndex === dayIndex && !sel && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Ignore the click the browser synthesises from the tap that placed the block.
+                      if (Date.now() - draftSlot.at < 450) return;
+                      openSlot(dayIndex, draftSlot);
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="absolute inset-x-1 z-10 flex flex-col items-start rounded-lg bg-primary px-2 py-1 text-left text-white shadow-pop animate-scale-in"
+                    style={{ top: (draftSlot.start / 60) * HOUR_PX, height: ((draftSlot.end - draftSlot.start) / 60) * HOUR_PX }}
+                  >
+                    <span className="text-[12px] font-semibold">+ Нова подія</span>
+                    <span className="text-[11px] tabular-nums opacity-85">
+                      {fmt(draftSlot.start)} – {fmt(draftSlot.end)}
+                    </span>
+                  </button>
+                )}
+                {sel?.active && !sel.moved && sel.dayIndex === dayIndex && (
                   <div
                     className="pointer-events-none absolute inset-x-1 z-10 rounded-lg border-2 border-primary bg-primary/15"
-                    style={{ top: (Math.floor(sel.anchor / SNAP) * SNAP / 60) * HOUR_PX, height: (SNAP / 60) * HOUR_PX }}
+                    style={{ top: (hourAt(sel.anchor).start / 60) * HOUR_PX, height: HOUR_PX }}
                   />
                 )}
 
@@ -555,7 +675,7 @@ export function TimeGrid({
           </div>
         </div>
       </div>
-      <p className="hidden border-t border-line px-4 py-2 text-[11.5px] text-subtle lg:block">
+      <p className="hidden border-t border-line px-4 py-2 text-[11.5px] text-subtle [@media(hover:hover)]:lg:block">
         Протягніть по сітці, щоб створити подію. Перетягуйте подію, щоб перенести, або її нижній край, щоб змінити тривалість.
       </p>
     </div>

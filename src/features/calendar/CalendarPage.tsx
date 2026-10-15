@@ -30,6 +30,7 @@ import { TimeGrid } from './TimeGrid';
 import { MonthView } from './MonthView';
 import { MiniCalendar } from '@/components/ui/calendar';
 import { EmptyState } from '@/components/common/States';
+import { cn } from '@/lib/utils/cn';
 
 function rangeFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
   if (view === 'day') return { start: anchor, end: anchor };
@@ -107,7 +108,7 @@ export default function CalendarPage() {
       <Card className="flex h-[calc(100dvh-150px-env(safe-area-inset-bottom)-env(safe-area-inset-top))] min-h-[460px] min-w-0 flex-1 flex-col overflow-hidden lg:h-auto lg:min-h-0">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:px-4">
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 flex-1 basis-0 items-center sm:flex-none sm:basis-auto">
             <Button variant="ghost" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -139,10 +140,14 @@ export default function CalendarPage() {
               { value: 'month', label: 'Місяць' },
             ]}
           />
-          <span className="ml-auto sm:ml-0">
-            <GoogleSyncButton />
-          </span>
-          <Button variant="outline" size="sm" className="px-2.5" onClick={() => navigate({ date: today })} disabled={anchor === today}>
+          <GoogleSyncButton />
+          <Button
+            variant="outline"
+            size="sm"
+            className={cn('px-2.5', anchor === today && 'hidden sm:inline-flex')}
+            onClick={() => navigate({ date: today })}
+            disabled={anchor === today}
+          >
             Сьогодні
           </Button>
           <Button
@@ -160,7 +165,7 @@ export default function CalendarPage() {
           {view === 'month' ? (
             <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
           ) : (
-            <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
+            <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} />
           )}
         </div>
       </Card>

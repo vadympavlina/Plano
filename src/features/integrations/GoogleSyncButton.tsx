@@ -26,12 +26,14 @@ export function GoogleSyncButton() {
             setAuthBusy(false);
           }
         }}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-warning/15 px-2.5 text-[12.5px] font-medium text-ink hover:bg-warning/25"
+        aria-label="Увійти в Google, щоб продовжити синхронізацію"
+        className="relative inline-flex h-8 w-8 items-center justify-center gap-1.5 rounded-lg bg-warning/15 text-[12.5px] font-medium text-ink hover:bg-warning/25 sm:w-auto sm:px-2.5"
         title="Доступ до Google Calendar закінчився"
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+        <span className="hidden h-1.5 w-1.5 rounded-full bg-warning sm:block" />
         <span className="hidden sm:inline">Увійти в Google</span>
-        <span className="sm:hidden">Google</span>
+        <RefreshCw className="h-4 w-4 text-muted sm:hidden" />
+        <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-warning sm:hidden" />
       </button>
     );
   }
