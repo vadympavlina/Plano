@@ -174,6 +174,10 @@ export interface Note extends Timestamps {
   tags: string[];
   projectId?: ID;
   isPinned: boolean;
+  /** Emoji shown next to the title. */
+  icon?: string;
+  /** Colour of the cover band; no cover when empty. */
+  cover?: ColorKey;
 }
 
 export type ThemePreference = 'light' | 'dark' | 'system';

@@ -165,6 +165,8 @@ export const noteSchema = z.object({
   tags: arrayish(z.string()),
   projectId: optionalString,
   isPinned: z.boolean().default(false),
+  icon: z.string().max(16).optional().catch(undefined),
+  cover: z.enum(COLOR_KEYS).optional().catch(undefined),
   ...timestamps,
 });
 
