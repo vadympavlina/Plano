@@ -92,7 +92,7 @@ export function WeekBoard({ today }: { today: DateKey }) {
               className={cn(
                 'flex w-[128px] shrink-0 flex-col rounded-2xl p-2.5 transition-colors lg:w-auto lg:min-w-0',
                 isToday ? 'bg-surface shadow-pop ring-1 ring-primary/30' : 'bg-surface/70 hover:bg-surface',
-                'min-h-[124px]',
+                'min-h-[104px]',
               )}
             >
               <div className="mb-2 flex items-baseline justify-between px-0.5">

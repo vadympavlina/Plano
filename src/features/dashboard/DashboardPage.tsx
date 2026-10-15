@@ -14,7 +14,7 @@ import { formatDateKey, formatTime, greetingFor, minutesToTime, plural, relative
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
-import { isOverdue, sortTasks, taskDate } from '@/features/tasks/logic';
+import { isOverdue, percent, sortTasks, taskDate, weekProgress } from '@/features/tasks/logic';
 import { expandEvents, occurrencesOnDay, upcomingOccurrences } from '@/features/calendar/logic';
 import { currentStreak, habitValue, isDone, isScheduled } from '@/features/habits/logic';
 import { goalPercent } from '@/features/goals/logic';
@@ -25,7 +25,19 @@ import { buildSchedule, nextUpLabel, nowLineIndex } from './logic';
 
 const panel = 'rounded-[20px] border border-line/60 bg-surface shadow-soft';
 
-function Section({ title, meta, link, children, className }: { title: string; meta?: ReactNode; link?: { to: string; label: string }; children: ReactNode; className?: string }) {
+function Section({
+  title,
+  meta,
+  link,
+  children,
+  className,
+}: {
+  title: string;
+  meta?: ReactNode;
+  link?: { to: string; label: string };
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <section className={cn(panel, 'p-5', className)}>
       <div className="mb-3 flex items-baseline justify-between gap-3">
@@ -43,7 +55,21 @@ function Section({ title, meta, link, children, className }: { title: string; me
   );
 }
 
-function Ring({ value, size, stroke, color, track = 'rgb(var(--line))', children }: { value: number; size: number; stroke: number; color: string; track?: string; children?: ReactNode }) {
+function Ring({
+  value,
+  size,
+  stroke,
+  color,
+  track = 'rgb(var(--line))',
+  children,
+}: {
+  value: number;
+  size: number;
+  stroke: number;
+  color: string;
+  track?: string;
+  children?: ReactNode;
+}) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   return (
@@ -83,14 +109,39 @@ export default function DashboardPage() {
   const todayTasks = useMemo(() => tasks.filter((t) => taskDate(t) === today && t.status !== 'cancelled'), [tasks, today]);
   const doneCount = todayTasks.filter((t) => t.status === 'completed').length;
   const openCount = todayTasks.length - doneCount;
-  const untimed = useMemo(() => sortTasks(todayTasks.filter((t) => !t.startTime && t.status !== 'completed'), 'due'), [todayTasks]);
+  const untimed = useMemo(
+    () =>
+      sortTasks(
+        todayTasks.filter((t) => !t.startTime && t.status !== 'completed'),
+        'due',
+      ),
+    [todayTasks],
+  );
   const overdue = useMemo(() => tasks.filter((t) => isOverdue(t, today)), [tasks, today]);
 
   const todayOcc = useMemo(() => occurrencesOnDay(expandEvents(events, today, today), today), [events, today]);
   const allDay = todayOcc.filter((o) => o.event.allDay);
   const schedule = useMemo(() => buildSchedule(todayOcc, todayTasks), [todayOcc, todayTasks]);
   const nowAt = nowLineIndex(schedule, nowMinutes);
-  const next = useMemo(() => upcomingOccurrences(events, now, today, 14, 4).find((o) => !o.event.allDay) ?? upcomingOccurrences(events, now, today, 14, 1)[0], [events, now, today]);
+  const next = useMemo(
+    () => upcomingOccurrences(events, now, today, 14, 4).find((o) => !o.event.allDay) ?? upcomingOccurrences(events, now, today, 14, 1)[0],
+    [events, now, today],
+  );
+
+  const weekCounts = weekProgress(tasks, today, settings.weekStartsOn);
+  const ahead = useMemo(() => {
+    const groups: {
+      day: string;
+      items: ReturnType<typeof upcomingOccurrences>;
+    }[] = [];
+    for (const o of upcomingOccurrences(events, now, today, 7, 30)) {
+      if (o.date <= today) continue;
+      const g = groups.find((x) => x.day === o.date);
+      if (g) g.items.push(o);
+      else groups.push({ day: o.date, items: [o] });
+    }
+    return groups.slice(0, 3);
+  }, [events, now, today]);
 
   const activeHabits = habits.filter((h) => !h.archived);
   const habitsToday = activeHabits.filter((h) => isScheduled(h, today));
@@ -126,11 +177,20 @@ export default function DashboardPage() {
           </p>
           <div className="mt-auto flex items-center gap-2 pt-5">
             {next.event.url && (
-              <a href={next.event.url} target="_blank" rel="noopener noreferrer" className="rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033] hover:bg-white/90">
+              <a
+                href={next.event.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033] hover:bg-white/90"
+              >
                 Приєднатися
               </a>
             )}
-            <button type="button" onClick={() => openEvent(next.event.id, next.date)} className="rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-medium hover:bg-white/15">
+            <button
+              type="button"
+              onClick={() => openEvent(next.event.id, next.date)}
+              className="rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-medium hover:bg-white/15"
+            >
               Деталі
             </button>
           </div>
@@ -141,7 +201,11 @@ export default function DashboardPage() {
           <p className="mt-1.5 text-[21px] font-bold leading-tight">Календар вільний</p>
           <p className="mt-1 text-[13px] text-sidebar-fg/70">Подій не заплановано.</p>
           <div className="mt-auto pt-5">
-            <button type="button" onClick={() => openEventForm()} className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033]">
+            <button
+              type="button"
+              onClick={() => openEventForm()}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033]"
+            >
               <Plus className="h-3.5 w-3.5" /> Додати подію
             </button>
           </div>
@@ -151,26 +215,37 @@ export default function DashboardPage() {
   );
 
   const progress = (
-    <Link to="/tasks?filter=today" className={cn(panel, 'flex min-h-[120px] items-center gap-4 p-5 transition-colors hover:border-line')}>
-      <Ring value={todayTasks.length ? doneCount / todayTasks.length : 0} size={64} stroke={7} color="rgb(var(--success))">
-        <span className="text-[15px] font-bold tabular-nums">
-          {doneCount}/{todayTasks.length}
-        </span>
-      </Ring>
-      <div className="min-w-0">
-        <p className="text-[15px] font-semibold">Задачі на сьогодні</p>
-        <p className="text-[12.5px] text-muted">
-          {todayTasks.length === 0
-            ? 'Задач немає'
-            : openCount === 0
-              ? 'Усе виконано'
-              : `Ще ${openCount}${overdue.length ? ` · ${overdue.length} ${plural(overdue.length, ['прострочена', 'прострочені', 'прострочених'])}` : ''}`}
-        </p>
-        {bestStreak > 0 && (
-          <p className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium text-warning">
-            <Flame className="h-3.5 w-3.5" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])}
+    <Link to="/tasks?filter=today" className={cn(panel, 'flex min-h-[120px] flex-col justify-between gap-4 p-5 transition-colors hover:border-line')}>
+      <div className="flex items-center gap-4">
+        <Ring value={todayTasks.length ? doneCount / todayTasks.length : 0} size={64} stroke={7} color="rgb(var(--success))">
+          <span className="text-[15px] font-bold tabular-nums">
+            {doneCount}/{todayTasks.length}
+          </span>
+        </Ring>
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold">Задачі на сьогодні</p>
+          <p className="text-[12.5px] text-muted">
+            {todayTasks.length === 0
+              ? 'Задач немає'
+              : openCount === 0
+                ? 'Усе виконано'
+                : `Ще ${openCount}${overdue.length ? ` · ${overdue.length} ${plural(overdue.length, ['прострочена', 'прострочені', 'прострочених'])}` : ''}`}
           </p>
-        )}
+          {bestStreak > 0 && (
+            <p className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium text-warning">
+              <Flame className="h-3.5 w-3.5" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])}
+            </p>
+          )}
+        </div>
+      </div>
+      <div>
+        <div className="mb-1.5 flex justify-between text-[12px] text-muted">
+          <span>Цей тиждень</span>
+          <span className="tabular-nums">
+            {weekCounts.done} з {weekCounts.total}
+          </span>
+        </div>
+        <Progress value={percent(weekCounts.done, weekCounts.total)} color="rgb(var(--primary))" label="Задачі цього тижня" />
       </div>
     </Link>
   );
@@ -193,7 +268,9 @@ export default function DashboardPage() {
               type="button"
               onClick={() => openEvent(o.event.id, o.date)}
               className="rounded-lg px-2.5 py-1 text-[12.5px] font-semibold"
-              style={{ backgroundColor: tint(eventColor(o.event, categoryById), 0.14) }}
+              style={{
+                backgroundColor: tint(eventColor(o.event, categoryById), 0.14),
+              }}
             >
               {o.event.title} <span className="font-normal text-muted">· весь день</span>
             </button>
@@ -224,7 +301,9 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => openEvent(item.occurrence.event.id, item.occurrence.date)}
                   className="mb-2 block w-full rounded-xl px-3.5 py-2.5 text-left transition-[filter] hover:brightness-[0.98]"
-                  style={{ backgroundColor: tint(eventColor(item.occurrence.event, categoryById), 0.1) }}
+                  style={{
+                    backgroundColor: tint(eventColor(item.occurrence.event, categoryById), 0.1),
+                  }}
                 >
                   <span className="flex items-center gap-2">
                     <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.occurrence.event.title}</span>
@@ -248,7 +327,9 @@ export default function DashboardPage() {
                     />
                   </span>
                   <button type="button" onClick={() => openTask(item.task.id)} className="min-w-0 flex-1 text-left">
-                    <span className={cn('block truncate text-[14px] font-medium', item.task.status === 'completed' && 'text-subtle line-through')}>{item.task.title}</span>
+                    <span className={cn('block truncate text-[14px] font-medium', item.task.status === 'completed' && 'text-subtle line-through')}>
+                      {item.task.title}
+                    </span>
                     <span className="mt-0.5 block truncate text-[12px] text-muted">
                       {fmt(item.task.startTime)}
                       {item.task.endTime ? ` – ${fmt(item.task.endTime)}` : ''}
@@ -257,7 +338,8 @@ export default function DashboardPage() {
                   </button>
                 </div>
               );
-            const color = item.kind === 'event' ? eventColor(item.occurrence.event, categoryById) : colorOf(categoryById(item.task.categoryId)?.color ?? 'slate');
+            const color =
+              item.kind === 'event' ? eventColor(item.occurrence.event, categoryById) : colorOf(categoryById(item.task.categoryId)?.color ?? 'slate');
             return (
               <div key={item.key}>
                 {i === nowAt && nowLine}
@@ -287,12 +369,23 @@ export default function DashboardPage() {
           const cat = categoryById(t.categoryId);
           return (
             <div key={t.id} className="flex items-center gap-3 rounded-lg px-1 py-2">
-              <CheckCircle checked={false} onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)} label={`Виконати «${t.title}»`} size="sm" />
+              <CheckCircle
+                checked={false}
+                onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)}
+                label={`Виконати «${t.title}»`}
+                size="sm"
+              />
               <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left text-[14px]">
                 {t.title}
               </button>
               {cat && (
-                <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium" style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: colorOf(cat.color) }}>
+                <span
+                  className="shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-medium"
+                  style={{
+                    backgroundColor: tint(colorOf(cat.color), 0.12),
+                    color: colorOf(cat.color),
+                  }}
+                >
                   {cat.name}
                 </span>
               )}
@@ -306,7 +399,10 @@ export default function DashboardPage() {
         )}
       </div>
       {overdue.length > 0 && (
-        <Link to="/tasks?filter=overdue" className="mt-2 flex items-center justify-between rounded-xl bg-danger/[0.07] px-3 py-2 text-[13px] font-medium text-danger hover:bg-danger/10">
+        <Link
+          to="/tasks?filter=overdue"
+          className="mt-2 flex items-center justify-between rounded-xl bg-danger/[0.07] px-3 py-2 text-[13px] font-medium text-danger hover:bg-danger/10"
+        >
           <span className="truncate">
             Прострочено: {overdue.length === 1 ? overdue[0].title : `${overdue.length} ${plural(overdue.length, ['задача', 'задачі', 'задач'])}`}
           </span>
@@ -316,17 +412,15 @@ export default function DashboardPage() {
     </Section>
   );
 
-  const habitsBlock = (
-    <Section title="Звички" link={habitsToday.length ? undefined : { to: '/habits', label: 'Усі звички' }} meta={habitsToday.length ? `${habitsDone} з ${habitsToday.length}` : undefined}>
+  const habitsBlock = activeHabits.length > 0 && (
+    <Section
+      className="h-full"
+      title="Звички"
+      link={habitsToday.length ? undefined : { to: '/habits', label: 'Усі звички' }}
+      meta={habitsToday.length ? `${habitsDone} з ${habitsToday.length}` : undefined}
+    >
       {habitsToday.length === 0 ? (
-        <p className="text-[13px] text-muted">
-          {activeHabits.length ? 'Сьогодні звичок не заплановано.' : 'Звичок поки немає.'}{' '}
-          {!activeHabits.length && (
-            <Link to="/habits?new=1" className="font-medium text-ink underline-offset-2 hover:underline">
-              Створити
-            </Link>
-          )}
-        </p>
+        <p className="text-[13px] text-muted">Сьогодні звичок не заплановано.</p>
       ) : (
         <div className="grid grid-cols-4 gap-x-2 gap-y-3">
           {habitsToday.slice(0, 8).map((h) => {
@@ -343,7 +437,13 @@ export default function DashboardPage() {
                 className="group flex min-w-0 flex-col items-center gap-1.5"
               >
                 <Ring value={ratio} size={52} stroke={4.5} color={color}>
-                  <span className={cn('flex h-[38px] w-[38px] items-center justify-center rounded-full text-[18px] transition-colors', done ? '' : 'group-hover:bg-surface-2')} style={done ? { backgroundColor: tint(color, 0.14) } : undefined}>
+                  <span
+                    className={cn(
+                      'flex h-[38px] w-[38px] items-center justify-center rounded-full text-[18px] transition-colors',
+                      done ? '' : 'group-hover:bg-surface-2',
+                    )}
+                    style={done ? { backgroundColor: tint(color, 0.14) } : undefined}
+                  >
                     {h.icon}
                   </span>
                 </Ring>
@@ -352,6 +452,40 @@ export default function DashboardPage() {
               </button>
             );
           })}
+        </div>
+      )}
+    </Section>
+  );
+
+  const aheadBlock = (
+    <Section title="Попереду" link={{ to: '/calendar?view=week', label: 'Тиждень' }}>
+      {ahead.length === 0 ? (
+        <p className="text-[13px] text-muted">Найближчі 7 днів подій немає.</p>
+      ) : (
+        <div className="space-y-3">
+          {ahead.map((g) => (
+            <div key={g.day}>
+              <p className="mb-1 text-[12px] font-semibold text-subtle">{relativeDayLabel(g.day, today, 'EEEE, d MMM')}</p>
+              {g.items.slice(0, 4).map((o) => (
+                <button
+                  key={o.key}
+                  type="button"
+                  onClick={() => openEvent(o.event.id, o.date)}
+                  className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-surface-2"
+                >
+                  <span
+                    className="h-6 w-[3px] shrink-0 rounded-full"
+                    style={{
+                      backgroundColor: eventColor(o.event, categoryById),
+                    }}
+                  />
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{o.event.title}</span>
+                  <span className="shrink-0 text-[12px] tabular-nums text-muted">{o.event.allDay ? 'весь день' : fmt(o.event.startTime)}</span>
+                </button>
+              ))}
+              {g.items.length > 4 && <p className="pl-3 text-[12px] text-muted">ще {g.items.length - 4}</p>}
+            </div>
+          ))}
         </div>
       )}
     </Section>
@@ -387,17 +521,17 @@ export default function DashboardPage() {
 
       <QuickAdd className="mb-4" />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="min-w-0 space-y-4 lg:col-span-8">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-5">
-            <div className="sm:col-span-3">{nextUp}</div>
-            <div className="flex sm:col-span-2 [&>a]:flex-1">{progress}</div>
-          </div>
-          {scheduleBlock}
-        </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-12">
+        <div className={cn('min-w-0 sm:col-span-2', habitsBlock ? 'lg:col-span-5' : 'lg:col-span-7')}>{nextUp}</div>
+        <div className={cn('flex min-w-0 [&>a]:flex-1', habitsBlock ? 'lg:col-span-3' : 'sm:col-span-2 lg:col-span-5')}>{progress}</div>
+        {habitsBlock && <div className="min-w-0 lg:col-span-4">{habitsBlock}</div>}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <div className="min-w-0 lg:col-span-8">{scheduleBlock}</div>
         <div className="min-w-0 space-y-4 lg:col-span-4">
+          {aheadBlock}
           {untimedBlock}
-          {habitsBlock}
           {goalsBlock}
         </div>
       </div>
