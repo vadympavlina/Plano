@@ -230,7 +230,7 @@ export default function GoalsPage() {
     .filter((g) => g.list.length > 0);
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 pb-8 sm:px-6 lg:px-8">
+    <div className="w-full px-4 pb-8 sm:px-6">
       <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-3">
         <h1 className="text-[26px] font-bold tracking-tight sm:text-[28px]">Цілі</h1>
         {goals.length > 0 && (

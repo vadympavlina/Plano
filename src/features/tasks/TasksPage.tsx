@@ -330,7 +330,7 @@ export default function TasksPage() {
           />
         ) : (
           <div className="scrollbar-thin -mx-2 min-h-0 flex-1 overflow-y-auto px-2">
-            <div className="mx-auto w-full max-w-[820px]">
+            <div className="w-full">
               {scopeList !== 'done' && (
                 <button
                   type="button"
