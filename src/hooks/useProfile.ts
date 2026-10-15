@@ -6,7 +6,16 @@ export function useProfile() {
   const { state } = useAuth();
   const { data } = useData();
   const user = state.status === 'signedIn' ? state.user : null;
-  const name = data.profile.displayName || user?.displayName || (user?.email ? user.email.split('@')[0] : '') || '';
+  // Without a display name, derive one from the email: "vadym.pavlina@…" → "Vadym Pavlina".
+  const fromEmail = user?.email
+    ? user.email
+        .split('@')[0]
+        .split(/[._-]+/)
+        .filter(Boolean)
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(' ')
+    : '';
+  const name = data.profile.displayName || user?.displayName || fromEmail || '';
   return {
     name,
     firstName: name.split(/\s+/)[0] ?? '',

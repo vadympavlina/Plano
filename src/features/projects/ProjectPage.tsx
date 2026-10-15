@@ -131,7 +131,7 @@ export default function ProjectPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-3">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>

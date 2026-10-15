@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, CheckSquare, Flame, Plus, Target } from 'lucide-react';
+import { CalendarDays, CheckSquare, Flame, Plus } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { StatStrip } from '@/components/common/StatCard';
 import { Card, Progress, CheckCircle } from '@/components/ui/misc';
@@ -25,7 +25,7 @@ import { QuickAdd } from './QuickAdd';
 
 function Panel({ title, meta, link, children, className }: { title: string; meta?: ReactNode; link?: { to: string; label: string }; children: ReactNode; className?: string }) {
   return (
-    <Card className={cn('flex flex-col', className)}>
+    <Card className={cn('flex min-w-0 flex-col', className)}>
       <div className="flex items-baseline justify-between gap-3 px-5 pb-1 pt-4">
         <h2 className="text-[15px] font-semibold tracking-tight">
           {title}
@@ -37,7 +37,7 @@ function Panel({ title, meta, link, children, className }: { title: string; meta
           </Link>
         )}
       </div>
-      <div className="flex-1">{children}</div>
+      <div className="flex flex-1 flex-col">{children}</div>
     </Card>
   );
 }
@@ -118,16 +118,19 @@ export default function DashboardPage() {
         ]}
       />
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-12">
+      <QuickAdd className="mt-4" />
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
         <Panel
-          className="lg:col-span-7 lg:self-start"
+          className="min-h-[320px] lg:col-span-7"
           title="Сьогодні"
           meta={todayCounts.total ? `${todayCounts.done} з ${todayCounts.total}` : undefined}
           link={{ to: '/tasks?filter=today', label: 'Усі задачі' }}
         >
-          <div className="px-2 pb-2 pt-1">
+          <div className="flex flex-1 flex-col px-2 pb-2 pt-1">
             {todayTasks.length === 0 ? (
               <EmptyState
+                className="flex-1"
                 compact
                 icon={<CheckSquare />}
                 title="На сьогодні нічого не заплановано"
@@ -160,11 +163,11 @@ export default function DashboardPage() {
           </button>
         </Panel>
 
-        <div className="flex flex-col gap-4 lg:col-span-5">
-          <Panel title="Найближчі події" link={{ to: '/calendar', label: 'Календар' }}>
-            <div className="px-2 pb-3 pt-1">
+          <Panel className="min-h-[320px] lg:col-span-5" title="Найближчі події" link={{ to: '/calendar', label: 'Календар' }}>
+            <div className="flex flex-1 flex-col px-2 pb-3 pt-1">
               {agenda.length === 0 ? (
                 <EmptyState
+                  className="flex-1"
                   compact
                   icon={<CalendarDays />}
                   title="Найближчих подій немає"
@@ -206,14 +209,9 @@ export default function DashboardPage() {
               )}
             </div>
           </Panel>
-          <Card className="p-5">
-            <h2 className="mb-3 text-[15px] font-semibold tracking-tight">Швидко додати</h2>
-            <QuickAdd />
-          </Card>
-        </div>
 
-        <Panel className="lg:col-span-7" title="Тиждень" meta={`${formatDateKey(week.start, 'd MMM')} – ${formatDateKey(week.end, 'd MMM')}`}>
-          <div className="flex h-[168px] items-end gap-2 px-5 pb-4 pt-3" role="img" aria-label="Задачі й події за днями цього тижня">
+        <Panel className="min-h-[280px] lg:col-span-7" title="Тиждень" meta={`${formatDateKey(week.start, 'd MMM')} – ${formatDateKey(week.end, 'd MMM')}`}>
+          <div className="flex min-h-[168px] flex-1 items-end gap-2 px-5 pb-4 pt-3" role="img" aria-label="Задачі й події за днями цього тижня">
             {weekLoad.map((d) => {
               const total = d.events + d.tasks;
               const isToday = d.date === today;
@@ -255,10 +253,11 @@ export default function DashboardPage() {
           </div>
         </Panel>
 
-        <Panel className="lg:col-span-5" title="Звички на сьогодні" link={{ to: '/habits', label: 'Усі звички' }}>
-          <div className="px-2 pb-3 pt-1">
+        <Panel className="min-h-[280px] lg:col-span-5" title="Звички на сьогодні" link={{ to: '/habits', label: 'Усі звички' }}>
+          <div className="flex flex-1 flex-col px-2 pb-3 pt-1">
             {habitsToday.length === 0 ? (
               <EmptyState
+                className="flex-1"
                 compact
                 icon={<Flame />}
                 title={activeHabits.length ? 'Сьогодні звичок не заплановано' : 'Звичок поки немає'}
@@ -351,15 +350,6 @@ export default function DashboardPage() {
           </Panel>
         )}
       </div>
-      {activeGoals.length === 0 && goals.length === 0 && (
-        <p className="mt-6 flex items-center justify-center gap-2 text-[13px] text-muted">
-          <Target className="h-4 w-4" />
-          <Link to="/goals?new=1" className="font-medium text-ink hover:underline">
-            Поставте першу ціль
-          </Link>
-          і відстежуйте прогрес тут.
-        </p>
-      )}
     </PageContainer>
   );
 }

@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, CalendarDays, CheckSquare, NotebookPen } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Plus, CalendarDays, CheckSquare, NotebookPen } from 'lucide-react';
 import { DatePicker, TimePicker } from '@/components/ui/date-time';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
@@ -71,20 +70,25 @@ export function QuickAdd({ className }: { className?: string }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className={cn('space-y-3', className)}>
-      <div className="flex gap-2">
-        <Input
+    <form
+      onSubmit={onSubmit}
+      className={cn(
+        'card flex flex-col gap-2 p-2 transition-colors focus-within:border-subtle/60 lg:flex-row lg:items-center lg:gap-3',
+        className,
+      )}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-2 pl-2">
+        <Plus className="h-4 w-4 shrink-0 text-subtle" aria-hidden />
+        <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={kind === 'task' ? 'Додати задачу…' : kind === 'event' ? 'Додати подію…' : 'Почати нотатку…'}
+          placeholder={kind === 'task' ? 'Швидко додати задачу…' : kind === 'event' ? 'Швидко додати подію…' : 'Почати нотатку…'}
           aria-label="Назва для швидкого додавання"
           maxLength={300}
+          className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"
         />
-        <Button type="submit" variant="dark" size="icon" aria-label="Додати" loading={busy} disabled={!title.trim()}>
-          {!busy && <ArrowRight className="h-4 w-4" />}
-        </Button>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 pl-2 lg:flex-nowrap lg:pl-0">
         <div role="radiogroup" aria-label="Тип" className="inline-flex rounded-lg bg-surface-2 p-0.5">
           {KINDS.map(({ value, label, icon: Icon }) => (
             <button
@@ -94,7 +98,7 @@ export function QuickAdd({ className }: { className?: string }) {
               aria-checked={kind === value}
               onClick={() => setKind(value)}
               className={cn(
-                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors',
+                'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
                 kind === value ? 'bg-surface text-ink shadow-soft' : 'text-muted hover:text-ink',
               )}
             >
@@ -104,21 +108,19 @@ export function QuickAdd({ className }: { className?: string }) {
           ))}
         </div>
         {kind !== 'note' && (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <DatePicker
-              variant="chip"
-              className="h-7 text-xs"
-              aria-label="Дата"
-              clearable={kind === 'task'}
-              placeholder="Без дати"
-              value={date || undefined}
-              onChange={(d) => setDate(d ?? '')}
-            />
-            {kind === 'event' && (
-              <TimePicker variant="chip" className="h-7 text-xs" aria-label="Час початку" value={time} onChange={(t) => t && setTime(t)} />
-            )}
-          </div>
+          <DatePicker
+            variant="chip"
+            aria-label="Дата"
+            clearable={kind === 'task'}
+            placeholder="Без дати"
+            value={date || undefined}
+            onChange={(d) => setDate(d ?? '')}
+          />
         )}
+        {kind === 'event' && <TimePicker variant="chip" aria-label="Час початку" value={time} onChange={(t) => t && setTime(t)} />}
+        <Button type="submit" variant="dark" size="sm" className="ml-auto h-9 px-4" loading={busy} disabled={!title.trim()}>
+          Додати
+        </Button>
       </div>
     </form>
   );
