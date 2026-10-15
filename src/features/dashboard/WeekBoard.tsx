@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
+import { formatTime } from '@/lib/date';
 import { addDaysKey, eachDateKey, formatDateKey, weekRange } from '@/lib/date';
 import { tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
@@ -10,12 +11,12 @@ import { expandEvents, occurrencesOnDay } from '@/features/calendar/logic';
 import { eventColor } from '@/features/calendar/items';
 import { taskDate } from '@/features/tasks/logic';
 
-const MAX_ITEMS = 3;
+const MAX_ITEMS = 4;
 
-type BoardItem = { key: string; kind: 'event' | 'task'; title: string; color?: string; done?: boolean };
+type BoardItem = { key: string; kind: 'event' | 'task'; title: string; time?: string; color?: string; done?: boolean };
 
 /** Seven day columns with the events and tasks of each day; a day opens it in the calendar. */
-export function WeekBoard({ today }: { today: DateKey }) {
+export function WeekBoard({ today, className }: { today: DateKey; className?: string }) {
   const { events, tasks, categoryById } = useCollections();
   const settings = useSettings();
   const [offset, setOffset] = useState(0);
@@ -30,6 +31,7 @@ export function WeekBoard({ today }: { today: DateKey }) {
         key: o.key,
         kind: 'event',
         title: o.event.title,
+        time: o.event.allDay || !o.event.startTime ? undefined : formatTime(o.event.startTime, settings.timeFormat),
         color: eventColor(o.event, categoryById),
       }));
       for (const t of tasks) {
@@ -38,7 +40,7 @@ export function WeekBoard({ today }: { today: DateKey }) {
       }
       return { day: d, items };
     });
-  }, [events, tasks, categoryById, days, range.start, range.end]);
+  }, [events, tasks, categoryById, days, range.start, range.end, settings.timeFormat]);
 
   // Phones: start the strip at today (or the first day of another week).
   useEffect(() => {
@@ -55,7 +57,7 @@ export function WeekBoard({ today }: { today: DateKey }) {
     : `${formatDateKey(range.start, 'd MMM')} – ${formatDateKey(range.end, 'd MMM')}`;
 
   return (
-    <section aria-label="Тиждень">
+    <section aria-label="Тиждень" className={cn('flex flex-col', className)}>
       <div className="mb-2.5 flex items-center justify-between">
         <h2 className="text-[15px] font-semibold tracking-tight">
           Тиждень <span className="ml-1 text-[13px] font-normal text-muted">{label}</span>
@@ -76,7 +78,7 @@ export function WeekBoard({ today }: { today: DateKey }) {
       </div>
       <div
         ref={stripRef}
-        className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4 pt-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-7 lg:overflow-visible lg:px-0 lg:pb-0"
+        className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-4 pt-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:flex-1 lg:grid-cols-7 lg:gap-3 lg:overflow-visible lg:px-0 lg:pb-0"
       >
         {byDay.map(({ day, items }) => {
           const isToday = day === today;
@@ -90,7 +92,7 @@ export function WeekBoard({ today }: { today: DateKey }) {
               data-today={isToday}
               aria-label={`${formatDateKey(day, 'EEEE, d MMMM')}: ${items.length ? `елементів ${items.length}` : 'вільно'}`}
               className={cn(
-                'flex w-[128px] shrink-0 flex-col rounded-2xl p-2.5 transition-colors lg:w-auto lg:min-w-0',
+                'flex w-[128px] shrink-0 flex-col rounded-2xl p-2.5 transition-colors lg:w-auto lg:min-w-0 lg:rounded-[18px] lg:p-3',
                 isToday ? 'bg-surface shadow-pop ring-1 ring-primary/30' : 'bg-surface/70 hover:bg-surface',
                 'min-h-[104px]',
               )}
@@ -106,9 +108,10 @@ export function WeekBoard({ today }: { today: DateKey }) {
               <div className={cn('space-y-1', past && 'opacity-60')}>
                 {shown.map((it) =>
                   it.kind === 'event' ? (
-                    <p key={it.key} className="truncate rounded-md px-1.5 py-1 text-[11px] font-semibold text-ink" style={{ backgroundColor: tint(it.color!, 0.14) }}>
-                      {it.title}
-                    </p>
+                    <div key={it.key} className="rounded-md px-1.5 py-1 lg:rounded-lg lg:px-2.5 lg:py-1.5" style={{ backgroundColor: tint(it.color!, 0.14) }}>
+                      <p className="truncate text-[11px] font-semibold text-ink lg:text-[12px]">{it.title}</p>
+                      {it.time && <p className="hidden text-[11px] tabular-nums text-muted lg:block">{it.time}</p>}
+                    </div>
                   ) : (
                     <p key={it.key} className={cn('flex items-center gap-1.5 px-1 py-0.5 text-[11px] text-muted', it.done && 'line-through')}>
                       <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full border border-subtle', it.done && 'border-transparent bg-subtle')} />

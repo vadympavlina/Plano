@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarEvent, Task } from '@/types';
 import type { EventOccurrence } from '@/features/calendar/logic';
-import { buildSchedule, nextUpLabel, nowLineIndex } from './logic';
+import { buildSchedule, busiestDay, freeTime, nextUpLabel, nowLineIndex } from './logic';
 
 const ev = (id: string, startTime?: string, endTime?: string, allDay = false): CalendarEvent =>
   ({ id, title: id, date: '2026-10-15', allDay, startTime, endTime, exdates: [], source: 'plano', createdAt: '', updatedAt: '' }) as CalendarEvent;
@@ -37,5 +37,29 @@ describe('nextUpLabel', () => {
     expect(nextUpLabel(e, '2026-10-15', new Date(2026, 9, 15, 13, 20), '2026-10-15', dayLabel, time)).toBe('Через 40 хв');
     expect(nextUpLabel(e, '2026-10-16', new Date(2026, 9, 15, 20, 0), '2026-10-15', dayLabel, time)).toBe('Завтра о 14:00');
     expect(nextUpLabel(ev('h', undefined, undefined, true), '2026-10-15', new Date(), '2026-10-15', dayLabel, time)).toBe('Сьогодні · весь день');
+  });
+});
+
+describe('freeTime', () => {
+  const items = buildSchedule([occ(ev('vfx', '16:30', '18:00'))], []);
+  it('reports the gap until the next item and the free evening', () => {
+    expect(freeTime(items, 15 * 60 + 10)).toEqual({ untilNext: 80, freeAfter: 18 * 60 });
+  });
+  it('skips short gaps and gaps while something is running', () => {
+    expect(freeTime(items, 16 * 60 + 10).untilNext).toBeUndefined();
+    expect(freeTime(items, 17 * 60).untilNext).toBeUndefined();
+    expect(freeTime(items, 17 * 60).freeAfter).toBe(18 * 60);
+  });
+  it('says nothing once the day is over or busy late', () => {
+    expect(freeTime(items, 19 * 60)).toEqual({});
+    expect(freeTime(buildSchedule([occ(ev('late', '20:00', '21:30'))], []), 12 * 60).freeAfter).toBeUndefined();
+    expect(freeTime([], 12 * 60)).toEqual({});
+  });
+});
+
+describe('busiestDay', () => {
+  it('picks the day with most items, earliest on ties', () => {
+    expect(busiestDay([1, 3, 0, 3])).toBe(1);
+    expect(busiestDay([0, 0])).toBe(-1);
   });
 });
