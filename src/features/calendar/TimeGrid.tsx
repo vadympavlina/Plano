@@ -503,7 +503,7 @@ export function TimeGrid({
       </div>
 
       {/* Time grid */}
-      <div ref={scrollRef} className="scrollbar-thin relative min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto">
         <div className="flex" style={{ height: HOUR_PX * 24 }}>
           <div className="relative w-12 shrink-0 sm:w-14" aria-hidden>
             {showsToday && (

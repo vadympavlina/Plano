@@ -155,7 +155,7 @@ export default function CalendarPage() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-col px-4 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-8">
+    <div className="flex w-full flex-col px-4 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-6">
       {/* Desktop toolbar */}
       <div className="mb-3 hidden items-center gap-2 lg:flex">
         <div className="flex items-center gap-1">
