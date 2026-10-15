@@ -49,7 +49,7 @@ date-fns · zod · vite-plugin-pwa (Workbox) · Vitest · GitHub Pages + GitHub 
 
 ```bash
 npm install
-cp .env.example .env.local   # заповніть значення Firebase
+cp .env.production .env.local   # або свої значення з .env.example
 npm run dev                  # http://localhost:5173
 ```
 
@@ -151,8 +151,8 @@ npm run dev                  # http://localhost:5173
 ## Публікація на GitHub Pages
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. **Settings → Secrets and variables → Actions → Variables** — додайте змінні
-   `VITE_FIREBASE_*` як *repository variables*.
+2. Публічна конфігурація Firebase уже лежить у [`.env.production`](.env.production) — додатково нічого
+   налаштовувати не треба. Для іншого проєкту Firebase замініть значення в цьому файлі.
 3. Зробіть push у гілку `main` (або запустіть workflow вручну: **Actions → Test & deploy → Run workflow**).
 
 Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) встановлює залежності,
