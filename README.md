@@ -164,6 +164,16 @@ Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) вста
 
 Не забудьте додати домен `<user>.github.io` в **Authentication → Authorized domains**.
 
+### Власний домен
+
+Застосунок працює на `plano.edvault.online`:
+
+1. DNS: запис `CNAME plano → vadympavlina.github.io`.
+2. GitHub → Settings → Pages → **Custom domain** `plano.edvault.online`, потім **Enforce HTTPS**.
+3. У `.github/workflows/deploy.yml` `VITE_BASE_PATH: /` (для адреси без домену це `/<repo>/`).
+4. Додайте домен у Firebase (**Authorized domains**) і `https://plano.edvault.online`
+   в **Authorized JavaScript origins** OAuth-клієнта Google.
+
 ## Встановлення PWA
 
 - **iPhone (Safari):** відкрийте сайт → кнопка *Поділитися* → **На екран «Додому»**.

@@ -30,8 +30,9 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # GitHub Pages project sites are served from /<repo-name>/
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # Served from the custom domain plano.edvault.online, so the app lives at the root.
+          # Without a custom domain this would be /<repo-name>/.
+          VITE_BASE_PATH: /
           # Firebase web config is read from the committed .env.production.
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
