@@ -84,3 +84,37 @@ export function describeSchedule(schedule: number[]): string {
   const names = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
   return [...s].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => names[d]).join(', ');
 }
+
+/** Completion rate per week for the last `weeks` weeks (oldest first); the current week is included. */
+export function weeklyRates(habit: Habit, logs: HabitLogs, today: DateKey, weekStartsOn: 0 | 1, weeks = 8): { start: DateKey; rate: number; scheduled: number }[] {
+  const out: { start: DateKey; rate: number; scheduled: number }[] = [];
+  const dow = fromDateKey(today).getDay();
+  const thisWeekStart = addDaysKey(today, -((dow - weekStartsOn + 7) % 7));
+  for (let w = weeks - 1; w >= 0; w--) {
+    const start = addDaysKey(thisWeekStart, -7 * w);
+    const s = completionStats(habit, logs, start, addDaysKey(start, 6), today);
+    out.push({ start, rate: s.rate, scheduled: s.scheduled });
+  }
+  return out;
+}
+
+/** Best and most-missed weekdays (0 = Sunday) over the last `days` days; undefined without enough data. */
+export function weekdayInsight(habit: Habit, logs: HabitLogs, today: DateKey, days = 90): { best: number[]; worst: number[] } | undefined {
+  const start = addDaysKey(today, -(days - 1));
+  const from = start < habit.startDate ? habit.startDate : start;
+  if (from > today) return undefined;
+  const sched = new Array(7).fill(0);
+  const done = new Array(7).fill(0);
+  for (const date of eachDateKey(from, addDaysKey(today, -1))) {
+    if (!isScheduled(habit, date)) continue;
+    const d = fromDateKey(date).getDay();
+    sched[d]++;
+    if (isDone(habit, logs, date)) done[d]++;
+  }
+  const rates = sched.map((s, d) => (s >= 2 ? { d, r: done[d] / s } : null)).filter((x): x is { d: number; r: number } => !!x);
+  if (rates.length < 2) return undefined;
+  const max = Math.max(...rates.map((x) => x.r));
+  const min = Math.min(...rates.map((x) => x.r));
+  if (max - min < 0.15) return undefined;
+  return { best: rates.filter((x) => x.r === max).map((x) => x.d), worst: rates.filter((x) => x.r === min).map((x) => x.d) };
+}

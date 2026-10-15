@@ -9,6 +9,7 @@ const TasksPage = lazy(() => import('@/features/tasks/TasksPage'));
 const ProjectsPage = lazy(() => import('@/features/projects/ProjectsPage'));
 const ProjectPage = lazy(() => import('@/features/projects/ProjectPage'));
 const HabitsPage = lazy(() => import('@/features/habits/HabitsPage'));
+const HabitPage = lazy(() => import('@/features/habits/HabitPage'));
 const GoalsPage = lazy(() => import('@/features/goals/GoalsPage'));
 const NotesPage = lazy(() => import('@/features/notes/NotesPage'));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
@@ -25,6 +26,7 @@ const routes: RouteObject[] = [
       { path: 'projects', element: page(<ProjectsPage />) },
       { path: 'projects/:projectId', element: page(<ProjectPage />) },
       { path: 'habits', element: page(<HabitsPage />) },
+      { path: 'habits/:habitId', element: page(<HabitPage />) },
       { path: 'goals', element: page(<GoalsPage />) },
       { path: 'notes', element: page(<NotesPage />) },
       { path: 'notes/:noteId', element: page(<NotesPage />) },
