@@ -3,8 +3,9 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
 import { formatTime, monthGrid, weekdayLabels } from '@/lib/date';
-import { solidTint } from '@/lib/utils/colors';
+import { solidTint, colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
+import { TaskTick, taskChipStyle } from './TaskTick';
 import type { DateKey, Task } from '@/types';
 import { occurrencesOnDay, type EventOccurrence } from './logic';
 import { eventColor } from './items';
@@ -147,9 +148,11 @@ export function MonthView({
                       key={it.t.id}
                       type="button"
                       onClick={() => openTask(it.t.id)}
-                      className={cn('flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] text-muted', it.t.status === 'completed' && 'line-through')}
+                      className={cn('flex w-full items-center gap-1 truncate rounded border border-dashed px-1 py-0.5 text-left text-[11px] font-medium text-ink', it.t.status === 'completed' && 'text-subtle line-through')}
+                      style={taskChipStyle(colorOf(categoryById(it.t.categoryId)?.color ?? 'slate'), it.t.status === 'completed')}
+                      title={`Задача: ${it.t.title}`}
                     >
-                      <span className={cn('h-2 w-2 shrink-0 rounded-[3px] border border-subtle', it.t.status === 'completed' && 'border-transparent bg-accent')} />
+                      <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />
                       <span className="truncate">{it.t.title}</span>
                     </button>
                   ),

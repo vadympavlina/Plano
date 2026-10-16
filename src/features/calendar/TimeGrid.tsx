@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { Check, Repeat } from 'lucide-react';
+import { Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
+import { TaskTick, taskChipStyle } from './TaskTick';
 import { useNow } from '@/hooks/useNow';
 import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, fromDateKey, minutesToTime, todayKey, weekRange } from '@/lib/date';
-import { solidTint } from '@/lib/utils/colors';
+import { solidTint, colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
@@ -67,6 +68,7 @@ export function TimeGrid({
   onSwipe?: (dir: 1 | -1) => void;
 }) {
   const { categoryById, events } = useCollections();
+  const taskColor = (t: Task) => colorOf(categoryById(t.categoryId)?.color ?? 'slate');
   const settings = useSettings();
   const { openEvent, openEventForm, openTask } = useUI();
   const actions = useActions();
@@ -475,19 +477,13 @@ export function TimeGrid({
                     type="button"
                     onClick={() => openTask(t.id)}
                     className={cn(
-                      'flex w-full items-center gap-1 truncate rounded-md border border-line bg-surface px-1.5 py-1 text-left text-[11px]',
+                      'flex w-full items-center gap-1.5 truncate rounded-md border border-dashed px-1.5 py-1 text-left text-[11px] font-medium text-ink',
                       t.status === 'completed' && 'text-subtle line-through',
                     )}
-                    title={t.title}
+                    style={taskChipStyle(taskColor(t), t.status === 'completed')}
+                    title={`Задача: ${t.title}`}
                   >
-                    <span
-                      className={cn(
-                        'flex h-3 w-3 shrink-0 items-center justify-center rounded-[4px] border border-subtle',
-                        t.status === 'completed' && 'border-transparent bg-accent text-surface',
-                      )}
-                    >
-                      {t.status === 'completed' && <Check className="h-2 w-2 stroke-[3]" />}
-                    </span>
+                    <TaskTick task={t} color={taskColor(t)} size={12} />
                     <span className="truncate">{t.title}</span>
                   </button>
                 ))}
@@ -597,11 +593,11 @@ export function TimeGrid({
                         }
                       }}
                       className={cn(
-                        'group/ev absolute z-[1] overflow-hidden rounded-lg border-l-[3px] px-1.5 text-left transition-shadow',
+                        'group/ev absolute z-[1] overflow-hidden rounded-lg px-1.5 text-left transition-shadow',
+                        item.kind === 'event' ? 'border-l-[3px]' : 'border border-dashed hover:shadow-soft',
                         short ? 'py-0.5' : 'py-1',
                         item.draggable ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-pointer',
                         isDragging && drag.moved && 'z-20 opacity-90 shadow-pop',
-                        item.kind === 'task' && 'border border-l-[3px] border-line bg-surface shadow-soft',
                       )}
                       style={{
                         top,
@@ -609,22 +605,20 @@ export function TimeGrid({
                         left: `calc(${(column / cols) * 100}% + 2px)`,
                         width: `calc(${100 / cols}% - 4px)`,
                         transform: dayShift ? `translateX(${dayShift}px)` : undefined,
-                        borderLeftColor: item.color,
-                        backgroundColor: item.kind === 'event' ? solidTint(item.color, 0.17) : undefined,
+                        ...(item.kind === 'event' ? { borderLeftColor: item.color, backgroundColor: solidTint(item.color, 0.17) } : taskChipStyle(item.color, done)),
                       }}
                     >
                       <p
                         className={cn('flex items-center gap-1 truncate text-[11.5px] font-semibold leading-tight text-ink', done && 'text-subtle line-through')}
                         style={item.kind === 'event' ? { color: item.color } : undefined}
                       >
-                        {item.kind === 'task' && (
-                          <span className={cn('inline-block h-2.5 w-2.5 shrink-0 rounded-[3px] border border-subtle', done && 'border-transparent bg-accent')} />
-                        )}
+                        {item.kind === 'task' && <TaskTick task={item.task} color={item.color} size={13} />}
                         <span className="truncate">{item.title}</span>
                         {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-60" />}
                       </p>
                       {!short && (
                         <p className="truncate text-[10.5px] tabular-nums text-muted" style={item.kind === 'event' ? { color: item.color, opacity: 0.75 } : undefined}>
+                          {item.kind === 'task' && 'Задача · '}
                           {fmt(start)} – {fmt(end)}
                         </p>
                       )}
