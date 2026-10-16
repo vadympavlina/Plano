@@ -5,7 +5,7 @@ import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { useNow } from '@/hooks/useNow';
 import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, fromDateKey, minutesToTime, todayKey, weekRange } from '@/lib/date';
-import { tint } from '@/lib/utils/colors';
+import { solidTint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
@@ -462,7 +462,7 @@ export function TimeGrid({
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
                       className="block w-full truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold"
-                      style={{ backgroundColor: tint(color, 0.18), color }}
+                      style={{ backgroundColor: solidTint(color, 0.18), color }}
                       title={o.event.title}
                     >
                       {o.event.title}
@@ -610,7 +610,7 @@ export function TimeGrid({
                         width: `calc(${100 / cols}% - 4px)`,
                         transform: dayShift ? `translateX(${dayShift}px)` : undefined,
                         borderLeftColor: item.color,
-                        backgroundColor: item.kind === 'event' ? tint(item.color, 0.17) : undefined,
+                        backgroundColor: item.kind === 'event' ? solidTint(item.color, 0.17) : undefined,
                       }}
                     >
                       <p

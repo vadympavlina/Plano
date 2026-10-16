@@ -5,7 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CheckCircle, Segmented } from '@/components/ui/misc';
 import { useActions } from '@/hooks/useActions';
-import { tint } from '@/lib/utils/colors';
+import { solidTint } from '@/lib/utils/colors';
 import { taskDate } from '@/features/tasks/logic';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useCollections, useSettings } from '@/hooks/useCollections';
@@ -251,7 +251,7 @@ export default function CalendarPage() {
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
                       className="block w-full rounded-xl p-2.5 text-left transition-[filter] hover:brightness-[0.97]"
-                      style={{ backgroundColor: tint(color, 0.1) }}
+                      style={{ backgroundColor: solidTint(color, 0.1) }}
                     >
                       <span className="flex items-center justify-between gap-2 text-[12px] font-semibold tabular-nums" style={{ color }}>
                         {formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}

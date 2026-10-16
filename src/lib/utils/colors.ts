@@ -27,3 +27,8 @@ export function tint(hex: string, alpha: number): string {
   const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
+
+/** Opaque pastel: `hex` mixed into the surface colour, so grid lines and overlaps don't show through. */
+export function solidTint(hex: string, amount: number): string {
+  return `color-mix(in srgb, ${hex} ${Math.round(amount * 100)}%, rgb(var(--surface)))`;
+}

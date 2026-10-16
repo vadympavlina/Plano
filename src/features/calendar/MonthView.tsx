@@ -3,7 +3,7 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
 import { formatTime, monthGrid, weekdayLabels } from '@/lib/date';
-import { tint } from '@/lib/utils/colors';
+import { solidTint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey, Task } from '@/types';
 import { occurrencesOnDay, type EventOccurrence } from './logic';
@@ -130,7 +130,7 @@ export function MonthView({
                       className="flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px]"
                       style={
                         it.o.event.allDay
-                          ? { backgroundColor: tint(eventColor(it.o.event, categoryById), 0.16) }
+                          ? { backgroundColor: solidTint(eventColor(it.o.event, categoryById), 0.16) }
                           : undefined
                       }
                     >
