@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
 
 type Draft = Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>;
-const ICONS = ['🏋️', '📚', '💧', '🧠', '🚶', '🧘', '🥗', '😴', '✍️', '🎸', '💊', '🌱'];
+const ICONS = ['🏋️', '📚', '💧', '🧠', '🚶', '🧘', '🥗', '😴', '✍️', '🎸', '💊', '🌱', '🚬', '🍬', '📱', '🍺', '☕'];
 const DAYS = [1, 2, 3, 4, 5, 6, 0];
 const DAY_NAMES = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
@@ -48,8 +48,31 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={habit ? 'Редагувати звичку' : 'Нова звичка'} preventDismiss={dirty}>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Тип звички">
+            {(
+              [
+                ['good', 'Корисна', 'Робити регулярно'],
+                ['bad', 'Шкідлива', 'Позбутися або обмежити'],
+              ] as const
+            ).map(([k, t, d]) => {
+              const on = (draft.kind ?? 'good') === k;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() => patch(k === 'bad' ? { kind: 'bad', schedule: [0, 1, 2, 3, 4, 5, 6] } : { kind: undefined })}
+                  className={cn('rounded-xl border-2 px-3 py-2 text-left transition-colors', on ? (k === 'bad' ? 'border-danger/60 bg-danger/[0.06]' : 'border-primary bg-surface-2') : 'border-line')}
+                >
+                  <span className="block text-sm font-semibold">{t}</span>
+                  <span className="block text-xs text-muted">{d}</span>
+                </button>
+              );
+            })}
+          </div>
           <Field label="Назва" error={visible.name}>
-            {(p) => <Input {...p} autoFocus maxLength={120} placeholder="напр. Прочитати 20 сторінок" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
+            {(p) => <Input {...p} autoFocus maxLength={120} placeholder={draft.kind === 'bad' ? 'напр. Курити, Солодке, Соцмережі' : 'напр. Прочитати 20 сторінок'} value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
           </Field>
           <div>
             <p className="mb-1.5 text-[13px] font-medium">Іконка</p>
@@ -73,7 +96,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
             <p className="mb-1.5 text-[13px] font-medium">Колір</p>
             <ColorPicker value={draft.color} onChange={(color) => patch({ color })} />
           </div>
-          <div>
+          <div className={cn(draft.kind === 'bad' && 'hidden')}>
             <p className="mb-1.5 text-[13px] font-medium">Розклад</p>
             <div className="flex flex-wrap gap-1.5" role="group" aria-label="Дні">
               {DAYS.map((d) => {
@@ -99,7 +122,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
             {visible.schedule && <p role="alert" className="mt-1.5 text-xs text-danger">{visible.schedule}</p>}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Тип цілі">
+            <Field label={draft.kind === 'bad' ? 'Мета' : 'Тип цілі'}>
               {(p) => (
                 <div className="flex gap-2" id={p.id}>
                   {(['check', 'count'] as const).map((t) => (
@@ -110,7 +133,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                       onClick={() => patch({ goalType: t, target: t === 'check' ? 1 : Math.max(2, draft.target) })}
                       className={cn('h-10 flex-1 rounded-xl border text-sm font-medium', draft.goalType === t ? 'border-accent bg-surface-2' : 'border-line text-muted')}
                     >
-                      {t === 'check' ? 'Так / Ні' : 'Кількість'}
+                      {draft.kind === 'bad' ? (t === 'check' ? 'Відмовитись' : 'Обмежити') : t === 'check' ? 'Так / Ні' : 'Кількість'}
                     </button>
                   ))}
                 </div>
@@ -122,11 +145,11 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
           </div>
           {draft.goalType === 'count' && (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Ціль на день" error={visible.target}>
+              <Field label={draft.kind === 'bad' ? 'Не більше на день' : 'Ціль на день'} error={visible.target}>
                 {(p) => <Stepper {...p} min={1} max={10000} value={draft.target} onChange={(target) => patch({ target })} />}
               </Field>
               <Field label="Одиниця">
-                {(p) => <Input {...p} placeholder="склянки, сторінки…" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
+                {(p) => <Input {...p} placeholder={draft.kind === 'bad' ? 'сигарети, чашки…' : 'склянки, сторінки…'} value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
               </Field>
             </div>
           )}

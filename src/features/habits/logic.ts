@@ -10,9 +10,30 @@ export function habitValue(logs: HabitLogs, habitId: string, date: DateKey): num
   return logs[habitId]?.[date] ?? 0;
 }
 
+export const isBad = (habit: Habit) => habit.kind === 'bad';
+
+/** Bad habits: the most slips a day can have and still count as clean. */
+export const slipLimit = (habit: Habit) => (habit.goalType === 'count' ? Math.max(1, habit.target) : 0);
+
+/** Good habits: target reached. Bad habits: the day stayed within the limit. */
 export function isDone(habit: Habit, logs: HabitLogs, date: DateKey): boolean {
-  const target = habit.goalType === 'check' ? 1 : Math.max(1, habit.target);
-  return habitValue(logs, habit.id, date) >= target;
+  const value = habitValue(logs, habit.id, date);
+  if (isBad(habit)) return value <= slipLimit(habit);
+  return value >= (habit.goalType === 'check' ? 1 : Math.max(1, habit.target));
+}
+
+/**
+ * Value after a tap on a habit. `tap` adds one (count habits) or toggles; `toggle`
+ * flips the whole day (calendar). For bad habits a tap logs one more slip.
+ */
+export function nextHabitValue(habit: Habit, value: number, mode: 'tap' | 'toggle' = 'tap'): number {
+  if (isBad(habit)) {
+    if (habit.goalType === 'count' && mode === 'tap') return value + 1;
+    return value > slipLimit(habit) || (habit.goalType === 'check' && value > 0) ? 0 : slipLimit(habit) + 1;
+  }
+  const done = value >= (habit.goalType === 'check' ? 1 : Math.max(1, habit.target));
+  if (habit.goalType === 'count' && mode === 'tap') return done ? 0 : value + 1;
+  return done ? 0 : habit.goalType === 'count' ? habit.target : 1;
 }
 
 /**
@@ -71,7 +92,9 @@ export function completionStats(habit: Habit, logs: HabitLogs, start: DateKey, e
   return { scheduled, done, rate: scheduled ? Math.round((done / scheduled) * 100) : 0 };
 }
 
+/** Good habits: days done. Bad habits: days with a slip over the limit. */
 export function totalCompletions(habit: Habit, logs: HabitLogs): number {
+  if (isBad(habit)) return Object.values(logs[habit.id] ?? {}).filter((v) => v > slipLimit(habit)).length;
   const target = habit.goalType === 'check' ? 1 : Math.max(1, habit.target);
   return Object.values(logs[habit.id] ?? {}).filter((v) => v >= target).length;
 }

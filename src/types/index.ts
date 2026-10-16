@@ -137,6 +137,11 @@ export interface Habit extends Timestamps {
   target: number;
   unit?: string;
   archived: boolean;
+  /**
+   * "bad" — a habit to quit: logs are slips, a day is clean while it stays within
+   * the limit (0 for check habits, `target` for count habits). Missing = "good".
+   */
+  kind?: 'good' | 'bad';
 }
 
 /** habitLogs/{habitId}/{dateKey} = value (1 for a check habit). */

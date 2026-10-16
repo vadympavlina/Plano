@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, ShieldCheck, X } from 'lucide-react';
 import { useData } from '@/app/providers/DataProvider';
 import { useActions } from '@/hooks/useActions';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey, Habit } from '@/types';
-import { habitValue, isDone } from './logic';
+import { habitValue, isBad, isDone, nextHabitValue } from './logic';
 
 export function Ring({ value, size, stroke, color, children }: { value: number; size: number; stroke: number; color: string; children?: ReactNode }) {
   const r = (size - stroke) / 2;
@@ -37,9 +37,7 @@ export function useHabitToggle() {
   const { data } = useData();
   const actions = useActions();
   return (habit: Habit, date: DateKey, mode: 'tap' | 'toggle' = 'tap') => {
-    const value = habitValue(data.habitLogs, habit.id, date);
-    const done = isDone(habit, data.habitLogs, date);
-    const next = habit.goalType === 'count' && mode === 'tap' ? (done ? 0 : value + 1) : done ? 0 : habit.goalType === 'count' ? habit.target : 1;
+    const next = nextHabitValue(habit, habitValue(data.habitLogs, habit.id, date), mode);
     return actions.habits.setValue(habit.id, date, next).catch(() => undefined);
   };
 }
@@ -51,6 +49,34 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
   const color = colorOf(habit.color);
   const value = habitValue(data.habitLogs, habit.id, today);
   const done = isDone(habit, data.habitLogs, today);
+  if (isBad(habit)) {
+    // Bad habit: green shield while the day is clean; a tap logs a slip.
+    return (
+      <button
+        type="button"
+        aria-label={done ? `«${habit.name}»: позначити зрив${habit.goalType === 'count' ? ` (${value} з ${habit.target})` : ''}` : `«${habit.name}»: ${habit.goalType === 'count' ? `додати ще (${value})` : 'скасувати зрив'}`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void toggle(habit, today);
+        }}
+        className="relative shrink-0 rounded-full transition-transform active:scale-95"
+      >
+        {done ? (
+          <span className="flex items-center justify-center rounded-full" style={{ width: size, height: size, backgroundColor: tint(color, 0.14), color }}>
+            <ShieldCheck className="h-5 w-5" />
+          </span>
+        ) : (
+          <span className="flex items-center justify-center rounded-full bg-danger text-white" style={{ width: size, height: size }}>
+            <X className="h-5 w-5 stroke-[3]" />
+          </span>
+        )}
+        {habit.goalType === 'count' && value > 0 && (
+          <span className="absolute -right-1 -top-1 rounded-full bg-ink px-1.5 text-[10px] font-bold text-surface">{value}</span>
+        )}
+      </button>
+    );
+  }
   const label =
     habit.goalType === 'count'
       ? done

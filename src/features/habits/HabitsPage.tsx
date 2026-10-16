@@ -12,7 +12,7 @@ import { addDaysKey, eachDateKey, formatDateKey, plural, weekRange } from '@/lib
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
-import { completionStats, currentStreak, describeSchedule, habitValue, isDone, isScheduled, longestStreak } from './logic';
+import { completionStats, currentStreak, describeSchedule, habitValue, isBad, isDone, isScheduled, longestStreak } from './logic';
 import { HabitForm } from './HabitForm';
 import { HabitQuickButton } from './parts';
 
@@ -29,6 +29,7 @@ function HabitCard({ habit }: { habit: Habit }) {
   const month = completionStats(habit, logs, addDaysKey(today, -29), today, today);
   const value = habitValue(logs, habit.id, today);
   const scheduledToday = isScheduled(habit, today);
+  const bad = isBad(habit);
 
   const days = useMemo(() => {
     const end = weekRange(today, settings.weekStartsOn).end;
@@ -48,8 +49,9 @@ function HabitCard({ habit }: { habit: Habit }) {
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[16px] font-bold tracking-tight">{habit.name}</h3>
           <p className="truncate text-[12.5px] text-muted">
-            {describeSchedule(habit.schedule)}
-            {habit.goalType === 'count' && ` · ${scheduledToday ? `${value}/` : ''}${habit.target} ${habit.unit ?? ''}`}
+            {bad ? (habit.goalType === 'count' ? `Шкідлива · не більше ${habit.target} ${habit.unit ?? ''} на день` : 'Шкідлива · без зривів') : describeSchedule(habit.schedule)}
+            {!bad && habit.goalType === 'count' && ` · ${scheduledToday ? `${value}/` : ''}${habit.target} ${habit.unit ?? ''}`}
+            {bad && habit.goalType === 'count' && value > 0 && ` · сьогодні ${value}`}
           </p>
         </div>
         {!habit.archived && (scheduledToday || isDone(habit, logs, today)) && <HabitQuickButton habit={habit} today={today} />}
@@ -62,16 +64,16 @@ function HabitCard({ habit }: { habit: Habit }) {
         aria-label={`Історія «${habit.name}» за ${HEAT_WEEKS} тижнів`}
       >
         {days.map((d) => {
-          const done = isDone(habit, logs, d);
+          const done = d <= today && isDone(habit, logs, d);
           const partial = !done && habit.goalType === 'count' && habitValue(logs, habit.id, d) > 0;
           const scheduled = isScheduled(habit, d);
           return (
             <span
               key={d}
-              title={`${formatDateKey(d, 'd MMM')}: ${done ? 'виконано' : d > today ? 'попереду' : scheduled ? (partial ? 'частково' : 'пропущено') : 'не заплановано'}`}
+              title={`${formatDateKey(d, 'd MMM')}: ${bad && d <= today && scheduled ? (done ? 'без зривів' : 'зрив') : done ? 'виконано' : d > today ? 'попереду' : scheduled ? (partial ? 'частково' : 'пропущено') : 'не заплановано'}`}
               className={cn('aspect-square w-full rounded-[3px]', d === today && 'ring-1 ring-ink/40')}
               style={{
-                backgroundColor: d > today ? 'transparent' : done ? color : partial ? tint(color, 0.45) : scheduled ? 'rgb(var(--surface-2))' : 'rgb(var(--line) / 0.35)',
+                backgroundColor: d > today ? 'transparent' : bad && scheduled && !done ? 'rgb(var(--danger))' : done ? (bad ? 'rgb(var(--success))' : color) : partial ? tint(color, 0.45) : scheduled ? 'rgb(var(--surface-2))' : 'rgb(var(--line) / 0.35)',
               }}
             />
           );
@@ -80,9 +82,9 @@ function HabitCard({ habit }: { habit: Habit }) {
 
       <div className="mt-4 grid grid-cols-3 gap-2 text-center">
         {[
-          [String(streak), 'серія'],
+          [String(streak), bad ? 'днів без зриву' : 'серія'],
           [String(best), 'рекорд'],
-          [`${month.rate}%`, 'за 30 днів'],
+          [`${month.rate}%`, bad ? 'чистих за 30 днів' : 'за 30 днів'],
         ].map(([v, l]) => (
           <div key={l} className="rounded-xl bg-surface-2 py-2">
             <p className="text-[16px] font-bold tabular-nums">{v}</p>

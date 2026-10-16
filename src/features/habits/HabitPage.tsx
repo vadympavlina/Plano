@@ -25,6 +25,7 @@ import {
   totalCompletions,
   weekdayInsight,
   weeklyRates,
+  isBad,
 } from './logic';
 import { HabitForm } from './HabitForm';
 import { Ring, useHabitToggle } from './parts';
@@ -56,7 +57,7 @@ function HabitListItem({ habit, active }: { habit: Habit; active: boolean }) {
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13.5px] font-semibold">{habit.name}</span>
         <span className="block text-[11.5px] text-muted">
-          {!isScheduled(habit, today) && !done ? 'Сьогодні вихідний' : habit.goalType === 'count' ? `${value}/${habit.target} ${habit.unit ?? ''}` : done ? 'Виконано' : 'Ще ні'}
+          {!isScheduled(habit, today) && !done ? 'Сьогодні вихідний' : habit.goalType === 'count' ? `${value}/${habit.target} ${habit.unit ?? ''}` : isBad(habit) ? (done ? 'Без зривів' : 'Зрив') : done ? 'Виконано' : 'Ще ні'}
         </span>
       </span>
       {streak > 0 && <span className="text-[12px] font-semibold text-warning">🔥 {streak}</span>}
@@ -83,6 +84,7 @@ export default function HabitPage() {
   const color = colorOf(habit.color);
   const value = habitValue(logs, habit.id, today);
   const done = isDone(habit, logs, today);
+  const bad = isBad(habit);
   const streak = currentStreak(habit, logs, today);
   const best = longestStreak(habit, logs, today);
   const month30 = completionStats(habit, logs, addDaysKey(today, -29), today, today);
@@ -155,7 +157,7 @@ export default function HabitPage() {
                 className={cn('flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors', done ? 'text-white' : 'border-2')}
                 style={done ? { backgroundColor: color } : { borderColor: tint(color, 0.5), color }}
               >
-                <Check className="h-4 w-4 stroke-[3]" /> {done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}
+                <Check className="h-4 w-4 stroke-[3]" /> {bad ? (done ? 'Сьогодні без зривів · позначити зрив' : 'Зрив сьогодні · скасувати') : done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}
               </button>
             )}
             <DropdownMenu>
@@ -183,10 +185,10 @@ export default function HabitPage() {
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
-            ['Поточна серія', `🔥 ${days(streak)}`],
+            [bad ? 'Без зривів' : 'Поточна серія', `${bad ? '🛡️' : '🔥'} ${days(streak)}`],
             ['Рекорд', `🏆 ${days(best)}`],
             ['За 30 днів', `${month30.rate}%`],
-            ['Усього', `${total} ${plural(total, ['раз', 'рази', 'разів'])}`],
+            [bad ? 'Зривів усього' : 'Усього', `${total} ${plural(total, ['раз', 'рази', 'разів'])}`],
           ].map(([l, v]) => (
             <div key={l} className="rounded-2xl bg-surface-2 p-4">
               <p className="text-[12px] text-muted">{l}</p>
@@ -224,9 +226,10 @@ export default function HabitPage() {
               {grid.map((d) => {
                 const inMonth = d.slice(0, 7) === month.slice(0, 7);
                 if (!inMonth) return <span key={d} />;
-                const dDone = isDone(habit, logs, d);
                 const scheduled = isScheduled(habit, d);
                 const future = d > today;
+                const dDone = !future && scheduled && isDone(habit, logs, d);
+                const slip = bad && !dDone && !future && scheduled;
                 const v = habitValue(logs, habit.id, d);
                 const partial = !dDone && habit.goalType === 'count' && v > 0;
                 return (
@@ -243,8 +246,8 @@ export default function HabitPage() {
                       !dDone && !future && 'hover:brightness-95',
                     )}
                     style={{
-                      backgroundColor: dDone ? color : partial ? tint(color, 0.35) : future ? undefined : scheduled ? 'rgb(var(--surface-2))' : undefined,
-                      color: dDone ? '#fff' : future || !scheduled ? 'rgb(var(--subtle))' : 'rgb(var(--muted))',
+                      backgroundColor: slip ? 'rgb(var(--danger))' : dDone ? (bad ? 'rgb(var(--success))' : color) : partial ? tint(color, 0.35) : future ? undefined : scheduled ? 'rgb(var(--surface-2))' : undefined,
+                      color: dDone || slip ? '#fff' : future || !scheduled ? 'rgb(var(--subtle))' : 'rgb(var(--muted))',
                       ['--tw-ring-color' as string]: tint(color, 0.5),
                     }}
                   >
@@ -253,11 +256,11 @@ export default function HabitPage() {
                 );
               })}
             </div>
-            <p className="mt-2 text-[12px] text-subtle">Натисніть на день, щоб відмітити або зняти відмітку.</p>
+            <p className="mt-2 text-[12px] text-subtle">{bad ? 'Натисніть на день, щоб позначити або зняти зрив.' : 'Натисніть на день, щоб відмітити або зняти відмітку.'}</p>
           </section>
 
           <section aria-label="Статистика">
-            <h2 className="mb-3 text-[14px] font-semibold">Виконання по тижнях</h2>
+            <h2 className="mb-3 text-[14px] font-semibold">{bad ? 'Чисті дні по тижнях' : 'Виконання по тижнях'}</h2>
             <div className="flex h-[180px] items-end gap-2 rounded-2xl bg-surface-2 p-4">
               {weeks.map((w, i) => (
                 <div key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`Тиждень з ${formatDateKey(w.start, 'd MMM')}: ${w.rate}%`}>

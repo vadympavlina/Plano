@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Habit, HabitLogs } from '@/types';
 import { eachDateKey, fromDateKey } from '@/lib/date';
-import { completionStats, currentStreak, isScheduled, longestStreak, weekdayInsight, weeklyRates } from './logic';
+import { completionStats, currentStreak, isDone, isScheduled, longestStreak, nextHabitValue, weekdayInsight, weeklyRates } from './logic';
 
 const T0 = '2025-04-01T10:00:00.000Z';
 const gym: Habit = {
@@ -65,5 +65,31 @@ describe('weekly rates and weekday insight', () => {
 
   it('finds the most missed weekday', () => {
     expect(weekdayInsight(habit, logs, '2026-10-15')?.worst).toEqual([6]);
+  });
+});
+
+describe('bad habits', () => {
+  const smoke: Habit = { ...gym, id: 'smoke', schedule: [0, 1, 2, 3, 4, 5, 6], kind: 'bad' };
+  const coffee: Habit = { ...smoke, id: 'coffee', goalType: 'count', target: 2 };
+  it('counts a day as clean until the limit is passed', () => {
+    const logs: HabitLogs = { smoke: { '2025-04-03': 1 }, coffee: { '2025-04-02': 2, '2025-04-03': 3 } };
+    expect(isDone(smoke, logs, '2025-04-02')).toBe(true);
+    expect(isDone(smoke, logs, '2025-04-03')).toBe(false);
+    expect(isDone(coffee, logs, '2025-04-02')).toBe(true);
+    expect(isDone(coffee, logs, '2025-04-03')).toBe(false);
+  });
+  it('streak is the run of clean days since the last slip', () => {
+    const logs: HabitLogs = { smoke: { '2025-04-03': 1 } };
+    expect(currentStreak(smoke, logs, '2025-04-08')).toBe(5);
+    expect(currentStreak(smoke, {}, '2025-04-08')).toBe(8);
+    expect(longestStreak(smoke, logs, '2025-04-08')).toBe(5);
+  });
+  it('a tap logs a slip; toggle flips the day', () => {
+    expect(nextHabitValue(smoke, 0)).toBe(1);
+    expect(nextHabitValue(smoke, 1)).toBe(0);
+    expect(nextHabitValue(coffee, 2)).toBe(3);
+    expect(nextHabitValue(coffee, 0, 'toggle')).toBe(3);
+    expect(nextHabitValue(coffee, 3, 'toggle')).toBe(0);
+    expect(nextHabitValue(gym, 0)).toBe(1);
   });
 });

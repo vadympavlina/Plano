@@ -128,6 +128,7 @@ export const habitSchema = z.object({
   startDate: dateKeySchema,
   goalType: z.enum(['check', 'count']),
   target: z.number().min(1).default(1),
+  kind: z.enum(['good', 'bad']).optional().catch(undefined),
   unit: optionalString,
   archived: z.boolean().default(false),
   ...timestamps,

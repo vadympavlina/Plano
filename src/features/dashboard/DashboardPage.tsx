@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
 import { isOverdue, percent, sortTasks, taskDate, weekProgress } from '@/features/tasks/logic';
 import { expandEvents, occurrencesOnDay, upcomingOccurrences } from '@/features/calendar/logic';
-import { currentStreak, habitValue, isDone, isScheduled } from '@/features/habits/logic';
+import { currentStreak, habitValue, isDone, isScheduled, nextHabitValue } from '@/features/habits/logic';
 import { goalPercent } from '@/features/goals/logic';
 import { eventColor } from '@/features/calendar/items';
 import { QuickAdd } from './QuickAdd';
@@ -166,10 +166,7 @@ export default function DashboardPage() {
   const activeGoals = goals.filter((g) => g.status === 'active').slice(0, 4);
 
   const tapHabit = (h: Habit) => {
-    const value = habitValue(data.habitLogs, h.id, today);
-    const done = isDone(h, data.habitLogs, today);
-    const nextValue = h.goalType === 'count' ? (done ? 0 : value + 1) : done ? 0 : 1;
-    void actions.habits.setValue(h.id, today, nextValue).catch(() => undefined);
+    void actions.habits.setValue(h.id, today, nextHabitValue(h, habitValue(data.habitLogs, h.id, today))).catch(() => undefined);
   };
 
   /* ---------- blocks ---------- */
@@ -470,7 +467,7 @@ export default function DashboardPage() {
             const value = habitValue(data.habitLogs, h.id, today);
             const done = isDone(h, data.habitLogs, today);
             const color = colorOf(h.color);
-            const ratio = h.goalType === 'count' ? value / Math.max(1, h.target) : done ? 1 : 0;
+            const ratio = h.goalType === 'count' && h.kind !== 'bad' ? value / Math.max(1, h.target) : done ? 1 : 0;
             return (
               <button
                 key={h.id}
@@ -491,7 +488,7 @@ export default function DashboardPage() {
                   </span>
                 </Ring>
                 <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
-                <span className="-mt-1 text-[10.5px] tabular-nums text-subtle">{h.goalType === 'count' ? `${value}/${h.target}` : done ? 'Готово' : '—'}</span>
+                <span className="-mt-1 text-[10.5px] tabular-nums text-subtle">{h.kind === 'bad' ? (done ? 'Без зривів' : 'Зрив') : h.goalType === 'count' ? `${value}/${h.target}` : done ? 'Готово' : '—'}</span>
               </button>
             );
           })}
