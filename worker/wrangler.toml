@@ -1,0 +1,12 @@
+# Google Calendar token server for Plano (Cloudflare Worker).
+# Deployed by .github/workflows/deploy.yml; the client secret is set there as a Worker secret.
+name = "plano-gcal"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[vars]
+# Public values (the same ones the web app ships with).
+GOOGLE_CLIENT_ID = "859267264757-1ej08g30ubf0pna7oq30hrou3k59812l.apps.googleusercontent.com"
+FIREBASE_PROJECT_ID = "plano-ea1b1"
+ALLOWED_ORIGINS = "https://plano.edvault.online,http://localhost:5173,http://localhost:4173"

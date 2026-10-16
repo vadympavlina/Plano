@@ -16,7 +16,57 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Google Calendar token server (worker/). Deployed only when the Cloudflare and
+  # Google secrets are set; without them the app falls back to hourly Google sign-in.
+  worker:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.url.outputs.url }}
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+    steps:
+      - name: Check secrets
+        id: check
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID or GOOGLE_CLIENT_SECRET is not set — skipping the Google Calendar token server."
+          fi
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.ready == 'true'
+      - name: Deploy worker
+        id: deploy
+        if: steps.check.outputs.ready == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          secrets: |
+            GOOGLE_CLIENT_SECRET
+      - name: Worker URL
+        id: url
+        if: steps.check.outputs.ready == 'true'
+        env:
+          DEPLOYED: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          url="$DEPLOYED"
+          if [ -z "$url" ]; then
+            sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r '.result.subdomain // empty') || sub=""
+            [ -n "$sub" ] && url="https://plano-gcal.$sub.workers.dev"
+          fi
+          echo "Token server: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
   build:
+    needs: worker
+    # Runs for pull requests (worker skipped) and even if the worker deploy failed.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +83,8 @@ jobs:
           # Served from the custom domain plano.edvault.online, so the app lives at the root.
           # Without a custom domain this would be /<repo-name>/.
           VITE_BASE_PATH: /
+          # Google Calendar token server; empty → hourly Google sign-in.
+          VITE_GCAL_TOKEN_URL: ${{ needs.worker.outputs.url || vars.GCAL_TOKEN_URL }}
           # Firebase web config is read from the committed .env.production.
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
@@ -40,7 +92,7 @@ jobs:
           path: dist
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.build.result == 'success' }}
     needs: build
     runs-on: ubuntu-latest
     environment:

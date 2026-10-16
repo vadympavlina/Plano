@@ -1,7 +1,9 @@
 /**
  * Google sign-in for Calendar access via Google Identity Services (token model).
- * The access token lives only in this tab's sessionStorage — it is never written
- * to the database — and expires after about an hour.
+ * The access token is kept only in this browser's localStorage — it is never
+ * written to the database — and expires after about an hour. With the token
+ * server (server.ts) the app instead gets a one-time code and the server keeps
+ * the access renewable.
  */
 export const GOOGLE_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 export const isGoogleConfigured = GOOGLE_CLIENT_ID.endsWith('.apps.googleusercontent.com');
@@ -24,6 +26,12 @@ interface TokenClient {
   requestAccessToken(overrides?: { prompt?: string }): void;
 }
 
+interface CodeResponse {
+  code?: string;
+  error?: string;
+  error_description?: string;
+}
+
 declare global {
   interface Window {
     google?: {
@@ -36,6 +44,14 @@ declare global {
             callback: (r: TokenResponse) => void;
             error_callback?: (e: { type: string; message?: string }) => void;
           }): TokenClient;
+          initCodeClient(config: {
+            client_id: string;
+            scope: string;
+            ux_mode: 'popup';
+            select_account?: boolean;
+            callback: (r: CodeResponse) => void;
+            error_callback?: (e: { type: string; message?: string }) => void;
+          }): { requestCode(): void };
           revoke(token: string, done?: () => void): void;
         };
       };
@@ -79,7 +95,7 @@ interface StoredToken {
 
 export function getStoredToken(): string | null {
   try {
-    const raw = sessionStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const t = JSON.parse(raw) as StoredToken;
     // Treat tokens as expired a minute early.
@@ -91,10 +107,47 @@ export function getStoredToken(): string | null {
 
 export function clearStoredToken() {
   try {
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   } catch {
     /* ignore */
   }
+}
+
+export function storeToken(token: string, expiresInSeconds: number) {
+  const stored: StoredToken = { token, expiresAt: Date.now() + expiresInSeconds * 1000 };
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+  } catch {
+    /* ignore */
+  }
+}
+
+function popupError(e: { type: string; message?: string }) {
+  if (e.type === 'popup_closed') return new GoogleAuthError('Вікно входу Google закрито.', 'popup_closed');
+  if (e.type === 'popup_failed_to_open') return new GoogleAuthError('Браузер заблокував вікно входу Google. Дозвольте спливні вікна.', 'popup_failed');
+  return new GoogleAuthError(e.message || 'Помилка входу Google.', 'unknown');
+}
+
+/**
+ * Asks Google for a one-time authorization code for the token server.
+ * Must be called from a click, like requestGoogleToken.
+ */
+export async function requestGoogleCode(): Promise<string> {
+  if (!isGoogleConfigured) throw new GoogleAuthError('Google Client ID не налаштовано.', 'not_configured');
+  await loadScript();
+  return new Promise((resolve, reject) => {
+    const client = window.google!.accounts.oauth2.initCodeClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: SCOPES,
+      ux_mode: 'popup',
+      callback: (r) => {
+        if (r.code) resolve(r.code);
+        else reject(new GoogleAuthError(r.error_description || 'Google не надав доступ.', r.error === 'access_denied' ? 'denied' : 'unknown'));
+      },
+      error_callback: (e) => reject(popupError(e)),
+    });
+    client.requestCode();
+  });
 }
 
 /**
@@ -114,19 +167,10 @@ export async function requestGoogleToken({ consent }: { consent: boolean }): Pro
           reject(new GoogleAuthError(r.error_description || 'Google не надав доступ.', r.error === 'access_denied' ? 'denied' : 'unknown'));
           return;
         }
-        const stored: StoredToken = { token: r.access_token, expiresAt: Date.now() + (r.expires_in ?? 3600) * 1000 };
-        try {
-          sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
-        } catch {
-          /* ignore */
-        }
+        storeToken(r.access_token, r.expires_in ?? 3600);
         resolve(r.access_token);
       },
-      error_callback: (e) => {
-        if (e.type === 'popup_closed') reject(new GoogleAuthError('Вікно входу Google закрито.', 'popup_closed'));
-        else if (e.type === 'popup_failed_to_open') reject(new GoogleAuthError('Браузер заблокував вікно входу Google. Дозвольте спливні вікна.', 'popup_failed'));
-        else reject(new GoogleAuthError(e.message || 'Помилка входу Google.', 'unknown'));
-      },
+      error_callback: (e) => reject(popupError(e)),
     });
     client.requestAccessToken({ prompt: consent ? 'consent' : '' });
   });

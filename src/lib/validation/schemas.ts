@@ -203,6 +203,7 @@ export const integrationSchema = z.object({
   pendingDeletes: z.record(z.string(), z.object({ calendarId: z.string(), eventId: z.string() })).optional(),
   lastSyncAt: optionalString,
   lastError: optionalString,
+  grant: optionalString,
 });
 
 export const collectionSchemas = {

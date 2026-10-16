@@ -8,6 +8,7 @@ import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 import { plural } from '@/lib/date';
 import { GoogleAuthError } from '@/services/integrations/google/auth';
+import { usesTokenServer } from '@/services/integrations/google/server';
 import { useGoogleSync } from './GoogleSyncProvider';
 
 function timeAgo(iso?: string) {
@@ -94,7 +95,9 @@ export function GoogleCalendarSettings() {
         {g.phase === 'needs_auth' && (
           <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl bg-warning/10 p-3">
             <p className="min-w-0 flex-1 text-[13px] text-ink">
-              Доступ від Google діє близько години. Увійдіть ще раз, щоб продовжити синхронізацію
+              {usesTokenServer
+                ? 'Увійдіть у Google ще раз — після цього підключення працюватиме постійно, без повторних входів'
+                : 'Доступ від Google діє близько години. Увійдіть ще раз, щоб продовжити синхронізацію'}
               {g.pending ? `: ${g.pending} ${plural(g.pending, ['зміна чекає', 'зміни чекають', 'змін чекають'])} на відправку` : ''}.
             </p>
             <Button size="sm" variant="dark" loading={busy === 'auth'} onClick={() => void run('auth', g.reauthorize)}>

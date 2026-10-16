@@ -229,6 +229,8 @@ export interface IntegrationState {
   pendingDeletes?: Record<string, PendingExternalDelete>;
   lastSyncAt?: ISODateTime;
   lastError?: string;
+  /** Google refresh token encrypted by the Plano token server; only that server can use it. */
+  grant?: string;
 }
 
 export interface UserData {

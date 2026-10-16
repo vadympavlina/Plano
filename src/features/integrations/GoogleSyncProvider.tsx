@@ -8,9 +8,12 @@ import {
   clearStoredToken,
   getStoredToken,
   isGoogleConfigured,
+  requestGoogleCode,
   requestGoogleToken,
   revokeGoogleToken,
+  storeToken,
 } from '@/services/integrations/google/auth';
+import { TokenServerError, exchangeCode, refreshAccess, revokeGrant, usesTokenServer } from '@/services/integrations/google/server';
 import {
   GoogleApiError,
   deleteEvent,
@@ -38,7 +41,7 @@ interface GoogleSyncValue {
   /** Number of local changes waiting to be sent. */
   pending: number;
   connect: () => Promise<void>;
-  /** Re-authorise after the hourly token expired (needs a click). */
+  /** Signs in to Google again: after the hourly token expired, or when access was revoked (needs a click). */
   reauthorize: () => Promise<void>;
   syncNow: () => Promise<void>;
   disconnect: (removeImported: boolean) => Promise<void>;
@@ -67,6 +70,8 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasToken, setHasToken] = useState(() => !!getStoredToken());
+  // With the token server a stored grant is enough: fresh access tokens are fetched on demand.
+  const canSync = hasToken || (usesTokenServer && !!state?.grant);
 
   // Always read the latest data inside async sync runs.
   const dataRef = useRef(data);
@@ -87,10 +92,18 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
     [repos],
   );
 
+  /** A valid access token: the cached one, or a fresh one from the token server. */
+  const ensureToken = useCallback(async (): Promise<string | null> => {
+    const cached = getStoredToken();
+    if (cached) return cached;
+    const grant = (dataRef.current.integrations[GCAL_KEY] as IntegrationState | undefined)?.grant;
+    if (!usesTokenServer || !grant) return null;
+    const r = await refreshAccess(grant);
+    storeToken(r.accessToken, r.expiresIn);
+    return r.accessToken;
+  }, []);
+
   const runSync = useCallback(async () => {
-    const token = getStoredToken();
-    setHasToken(!!token);
-    if (!token) return;
     const st = dataRef.current.integrations[GCAL_KEY] as IntegrationState | undefined;
     if (st?.status !== 'connected') return;
     if (busy.current) {
@@ -101,8 +114,21 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
     setRunning(true);
     setError(null);
     try {
-      // 1. Calendars
-      const calendars = (await listCalendars(token)).map(toInfo);
+      let token = await ensureToken();
+      setHasToken(!!token);
+      if (!token) return;
+      // 1. Calendars. A token can be revoked before it expires: drop it and, with the token server, get a new one once.
+      let rawCalendars;
+      try {
+        rawCalendars = await listCalendars(token);
+      } catch (err) {
+        if (!(err instanceof GoogleApiError && err.needsAuth) || !usesTokenServer) throw err;
+        clearStoredToken();
+        token = await ensureToken();
+        if (!token) return;
+        rawCalendars = await listCalendars(token);
+      }
+      const calendars = rawCalendars.map(toInfo);
       const calById = new Map(calendars.map((c) => [c.id, c]));
       const selected = (st.calendarIds ?? []).filter((id) => calById.has(id));
       const target = st.targetCalendarId && calById.get(st.targetCalendarId)?.writable ? st.targetCalendarId : undefined;
@@ -192,6 +218,11 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
       if (err instanceof GoogleApiError && err.needsAuth) {
         clearStoredToken();
         setHasToken(false);
+      } else if (err instanceof TokenServerError && err.code === 'invalid_grant') {
+        // Access was revoked in the Google account (or expired): ask to connect again.
+        clearStoredToken();
+        setHasToken(false);
+        await writeState({ grant: undefined }).catch(() => undefined);
       } else {
         const message = err instanceof Error ? err.message : describeError(err);
         setError(message);
@@ -205,12 +236,12 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
         void runSync();
       }
     }
-  }, [repos, writeState]);
+  }, [repos, writeState, ensureToken]);
 
   // Sync on start, on a timer, when the app returns to the foreground and
   // shortly after local changes.
   useEffect(() => {
-    if (!connected || !hasToken || backendKind !== 'firebase') return;
+    if (!connected || !canSync || backendKind !== 'firebase') return;
     void runSync();
     const id = setInterval(() => void runSync(), SYNC_INTERVAL_MS);
     const onVisible = () => document.visibilityState === 'visible' && void runSync();
@@ -219,17 +250,27 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [connected, hasToken, backendKind, runSync]);
+  }, [connected, canSync, backendKind, runSync]);
 
   useEffect(() => {
-    if (!connected || !hasToken || pending === 0) return;
+    if (!connected || !canSync || pending === 0) return;
     const t = setTimeout(() => void runSync(), 1500);
     return () => clearTimeout(t);
-  }, [pending, connected, hasToken, runSync]);
+  }, [pending, connected, canSync, runSync]);
+
+  /** Google sign-in popup → access token (and, with the token server, a lasting grant). */
+  const signIn = useCallback(async (): Promise<{ token: string; grant?: string }> => {
+    if (usesTokenServer) {
+      const r = await exchangeCode(await requestGoogleCode());
+      storeToken(r.accessToken, r.expiresIn);
+      return { token: r.accessToken, grant: r.grant };
+    }
+    return { token: await requestGoogleToken({ consent: true }) };
+  }, []);
 
   const connect = useCallback(async () => {
     setError(null);
-    const token = await requestGoogleToken({ consent: true });
+    const { token, grant } = await signIn();
     setHasToken(true);
     const calendars = (await listCalendars(token)).map(toInfo);
     const primary = calendars.find((c) => c.primary) ?? calendars.find((c) => c.writable);
@@ -239,17 +280,23 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
       calendarIds: primary ? [primary.id] : [],
       targetCalendarId: primary?.writable ? primary.id : undefined,
       lastError: undefined,
+      grant,
     });
-  }, [writeState]);
+  }, [writeState, signIn]);
 
   const reauthorize = useCallback(async () => {
     setError(null);
-    await requestGoogleToken({ consent: false });
+    if (usesTokenServer) {
+      const { grant } = await signIn();
+      await writeState({ grant, lastError: undefined });
+    } else await requestGoogleToken({ consent: false });
     setHasToken(true);
-  }, []);
+  }, [signIn, writeState]);
 
   const disconnect = useCallback(
     async (removeImported: boolean) => {
+      const grant = (dataRef.current.integrations[GCAL_KEY] as IntegrationState | undefined)?.grant;
+      if (grant) await revokeGrant(grant).catch(() => undefined);
       const values: Record<string, unknown> = {
         [`integrations/${GCAL_KEY}`]: { provider: 'google_calendar', status: 'not_connected' },
       };
@@ -293,7 +340,7 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
     ? 'unavailable'
     : !connected
       ? 'off'
-      : !hasToken
+      : !canSync
         ? 'needs_auth'
         : running
           ? 'syncing'

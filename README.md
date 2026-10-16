@@ -223,7 +223,7 @@ UI не звертається до Firebase напряму: компонент�
 - Повторювані та імпортовані події не перетягуються мишею (редагуйте через форму).
 - Окремий часовий пояс (відмінний від пристрою) не підтримується: час зберігається як локальний.
 - Security Rules перевірено вручну й за структурою; автоматичних тестів з Firebase Emulator немає.
-- Google Calendar синхронізується лише поки Plano відкритий (без серверного компонента).
+- Google Calendar синхронізується лише поки Plano відкритий.
 - Вбудовані поля вибору дати й часу (`<input type="date/time">`) показують формат, заданий мовою
   браузера чи пристрою (на iPhone з українською мовою — український формат).
 
@@ -231,5 +231,25 @@ UI не звертається до Firebase напряму: компонент�
 
 Двостороння синхронізація подій з Google Calendar: **Налаштування → Інтеграції → Підключити Google Calendar**.
 Можна вибрати, які календарі показувати в Plano і куди додавати нові події. Синхронізація працює,
-поки Plano відкритий; токен Google зберігається лише у вкладці браузера. Деталі й налаштування
-Google Cloud: [docs/google-calendar.md](docs/google-calendar.md).
+поки Plano відкритий. Деталі й налаштування Google Cloud: [docs/google-calendar.md](docs/google-calendar.md).
+
+### Постійне підключення (сервер токенів на Cloudflare)
+
+Без сервера Google дає доступ лише на годину, і потім треба входити знову. Маленький Cloudflare Worker
+(`worker/`) робить підключення постійним: він обмінює одноразовий код від Google на довгостроковий
+дозвіл і видає застосунку свіжі ключі доступу. Сам Worker нічого не зберігає — дозвіл зашифровано
+ключем, відомим лише Worker'у, і прив'язано до вашого облікового запису Plano.
+
+1. Зареєструйтеся на [dash.cloudflare.com](https://dash.cloudflare.com) (безкоштовно) і один раз
+   відкрийте **Workers & Pages**, щоб вибрати піддомен `*.workers.dev`.
+2. **My Profile → API Tokens → Create Token → Edit Cloudflare Workers** — створіть токен.
+   Account ID видно на головній сторінці акаунта (праве меню).
+3. Google Cloud Console → **APIs & Services → Credentials** → ваш OAuth client → скопіюйте **Client secret**.
+   На сторінці **OAuth consent screen** натисніть **Publish app** (статус *In production*), інакше Google
+   скасовує доступ кожні 7 днів.
+4. GitHub → **Settings → Secrets and variables → Actions** → додайте секрети
+   `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `GOOGLE_CLIENT_SECRET`.
+5. Запустіть workflow «Test & deploy» (або зробіть push у `main`): він опублікує Worker і збере сайт
+   з його адресою. У Plano натисніть **Увійти в Google** ще раз — далі вхід не знадобиться.
+
+Без цих секретів усе працює як раніше (вхід раз на годину).
