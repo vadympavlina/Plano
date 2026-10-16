@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import { AppSidebar } from './AppSidebar';
@@ -54,9 +54,12 @@ function LayoutInner() {
     return () => window.removeEventListener('keydown', onKey);
   }, [openSearch]);
 
-  // Scroll to top on navigation.
+  // Scroll to top on navigation between pages (not between sections of one page, e.g. /settings/data).
+  const lastPage = useRef(pathname.split('/')[1]);
   useEffect(() => {
-    window.scrollTo({ top: 0 });
+    const pageKey = pathname.split('/')[1];
+    if (pageKey !== lastPage.current) window.scrollTo({ top: 0 });
+    lastPage.current = pageKey;
   }, [pathname]);
 
   return (

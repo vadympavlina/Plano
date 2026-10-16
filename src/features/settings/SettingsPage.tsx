@@ -1,10 +1,9 @@
-import { useRef, useState, type ReactNode } from 'react';
-import { NavLink, useParams } from 'react-router-dom';
-import { Database, Download, Monitor, Moon, Palette, Plug, Plus, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
-import { PageHeader } from '@/components/common/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card, Badge, Segmented } from '@/components/ui/misc';
+import { Badge, Segmented } from '@/components/ui/misc';
 import { Field, Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ColorPicker } from '@/components/ui/color-picker';
@@ -12,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 import { Avatar } from '@/components/layout/Avatar';
+import { useSyncSummary } from '@/components/layout/SyncIndicator';
 import { useData } from '@/app/providers/DataProvider';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { useActions } from '@/hooks/useActions';
@@ -20,7 +20,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { settleWrite } from '@/services/sync';
 import { updateAuthProfile } from '@/services/auth';
 import { GoogleCalendarSettings } from '@/features/integrations/GoogleCalendarSettings';
-import { deviceTimeZone, formatDateKey, todayKey } from '@/lib/date';
+import { deviceTimeZone, formatDateKey, plural, todayKey } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
@@ -32,9 +32,10 @@ const SECTIONS = [
   { id: 'appearance', label: 'Вигляд', icon: Palette },
   { id: 'preferences', label: 'Параметри', icon: SlidersHorizontal },
   { id: 'categories', label: 'Категорії', icon: Tags },
-  { id: 'data', label: 'Дані', icon: Database },
   { id: 'integrations', label: 'Інтеграції', icon: Plug },
+  { id: 'data', label: 'Дані', icon: Database },
 ] as const;
+type SectionId = (typeof SECTIONS)[number]['id'];
 
 const SUMMARY_LABEL: Record<string, string> = {
   categories: 'Категорії',
@@ -46,37 +47,73 @@ const SUMMARY_LABEL: Record<string, string> = {
   notes: 'Нотатки',
 };
 
-function PrefRow({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+const panel = 'rounded-[20px] border border-line/60 bg-surface shadow-soft';
+
+/** Current search text; empty means "show everything". */
+const SearchCtx = createContext('');
+const norm = (v: string) => v.toLocaleLowerCase('uk-UA');
+const matches = (q: string, ...parts: (string | undefined)[]) => !q || parts.some((p) => p && norm(p).includes(q));
+
+/** One setting: label (and hint) on the left, control on the right. Hidden when it doesn't match the search. */
+function Row({ label, hint, keywords, children }: { label: ReactNode; hint?: string; keywords?: string; children?: ReactNode }) {
+  const q = useContext(SearchCtx);
+  if (!matches(q, typeof label === 'string' ? label : '', hint, keywords)) return null;
   return (
-    <div className="flex flex-col gap-2 py-3.5 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+    <div className="flex flex-col gap-2.5 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="min-w-0">
-        <p className="text-sm font-medium text-ink">{label}</p>
-        {hint && <p className="mt-0.5 text-xs text-muted">{hint}</p>}
+        <div className="text-[14px] font-medium text-ink">{label}</div>
+        {hint && <p className="mt-0.5 text-[12.5px] text-muted">{hint}</p>}
       </div>
-      <div className="shrink-0">{children}</div>
+      {children !== undefined && <div className="shrink-0">{children}</div>}
     </div>
   );
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+/** A titled group of rows. `keywords` lists the row labels so the group survives a search for any of them. */
+function Group({
+  id,
+  title,
+  description,
+  keywords,
+  footer,
+  children,
+}: {
+  id: SectionId;
+  title: string;
+  description?: string;
+  keywords: string;
+  footer?: ReactNode;
+  children: ReactNode;
+}) {
+  const q = useContext(SearchCtx);
+  const whole = matches(q, title, description);
+  if (!whole && !matches(q, keywords)) return null;
   return (
-    <Card className="p-5 sm:p-6">
-      <h3 className="text-[15px] font-semibold tracking-tight">{title}</h3>
-      {description && <p className="mt-1 text-sm text-muted">{description}</p>}
-      <div className="mt-5">{children}</div>
-    </Card>
+    <section id={`settings-${id}`} data-section={id} className="mb-7 scroll-mt-6">
+      <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">{title}</h2>
+      {description && <p className="-mt-1 mb-2.5 px-1 text-[12.5px] text-muted">{description}</p>}
+      {/* A match on the group itself shows all of its rows. */}
+      <SearchCtx.Provider value={whole ? '' : q}>
+        <div className={cn(panel, 'divide-y divide-line/70')}>{children}</div>
+      </SearchCtx.Provider>
+      {footer}
+    </section>
   );
 }
 
-function ProfileSection() {
+function ProfileCard() {
   const { data, repos, backendKind } = useData();
   const profile = useProfile();
+  const sync = useSyncSummary();
   const { state } = useAuth();
+  const q = useContext(SearchCtx);
+  const [editing, setEditing] = useState(false);
   const [name, setName] = useState(data.profile.displayName ?? profile.name);
   const [avatar, setAvatar] = useState(data.profile.avatarUrl ?? '');
   const [busy, setBusy] = useState(false);
   const avatarError = avatar && !/^https:\/\/\S+$/i.test(avatar) ? 'Вкажіть посилання на зображення, що починається з https://' : undefined;
   const user = state.status === 'signedIn' ? state.user : null;
+  if (!matches(q, 'профіль', 'ім’я', 'аватар', 'акаунт', 'пошта')) return null;
 
   const save = async () => {
     if (avatarError) return;
@@ -85,6 +122,7 @@ function ProfileSection() {
       await settleWrite(repos.profile.update({ displayName: name.trim() || undefined, avatarUrl: avatar.trim() || undefined }));
       if (backendKind === 'firebase') await updateAuthProfile({ displayName: name.trim() || null }).catch(() => undefined);
       toast.success('Профіль збережено');
+      setEditing(false);
     } catch {
       /* toast from sync layer */
     } finally {
@@ -93,62 +131,108 @@ function ProfileSection() {
   };
 
   return (
-    <Section title="Профіль" description="Ім’я використовується у привітаннях у Plano.">
-      <div className="mb-5 flex items-center gap-4">
+    <section id="settings-profile" data-section="profile" className={cn(panel, 'mb-7 scroll-mt-6 p-5')}>
+      <div className="flex flex-wrap items-center gap-4">
         <Avatar name={name || profile.name} src={avatar && !avatarError ? avatar : profile.avatarUrl} className="h-14 w-14 text-base" />
-        <div className="min-w-0 text-sm">
-          <p className="font-medium">{name || profile.name || 'Ім’я не вказано'}</p>
-          <p className="truncate text-muted">{user?.email ?? (backendKind === 'local' ? 'Локальний перегляд (без входу)' : '')}</p>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[17px] font-bold tracking-tight">{profile.name || 'Ім’я не вказано'}</p>
+          <p className="flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted">
+            <span className="truncate">{user?.email ?? (backendKind === 'local' ? 'Локальний перегляд (без входу)' : '')}</span>
+            {backendKind === 'firebase' && (
+              <span className="inline-flex items-center gap-1.5">
+                · <span className={cn('h-1.5 w-1.5 rounded-full', sync.tone === 'success' ? 'bg-success' : sync.tone === 'danger' ? 'bg-danger' : sync.tone === 'warning' ? 'bg-warning' : 'bg-subtle')} />
+                {sync.label}
+              </span>
+            )}
+          </p>
         </div>
+        {!editing && (
+          <Button variant="outline" size="sm" aria-label="Редагувати профіль" onClick={() => setEditing(true)}>
+            <Pencil className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Редагувати</span>
+          </Button>
+        )}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Ім’я">{(p) => <Input {...p} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />}</Field>
-        <Field label="Посилання на аватар" error={avatarError} hint="Необов’язково. Залиште порожнім, щоб використати фото акаунта.">
-          {(p) => <Input {...p} type="url" placeholder="https://…" value={avatar} onChange={(e) => setAvatar(e.target.value)} />}
-        </Field>
-      </div>
-      {user && (
-        <p className="mt-4 break-all text-xs text-subtle">
-          ID користувача: <code className="font-mono">{user.uid}</code>
-        </p>
+      {editing && (
+        <div className="mt-5 border-t border-line/70 pt-5">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Ім’я" hint="Використовується у привітаннях.">
+              {(p) => <Input {...p} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />}
+            </Field>
+            <Field label="Посилання на аватар" error={avatarError} hint="Необов’язково. Порожнє — фото акаунта.">
+              {(p) => <Input {...p} type="url" placeholder="https://…" value={avatar} onChange={(e) => setAvatar(e.target.value)} />}
+            </Field>
+          </div>
+          {user && (
+            <p className="mt-4 break-all text-xs text-subtle">
+              ID користувача: <code className="font-mono">{user.uid}</code>
+            </p>
+          )}
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setName(data.profile.displayName ?? profile.name);
+                setAvatar(data.profile.avatarUrl ?? '');
+                setEditing(false);
+              }}
+            >
+              Скасувати
+            </Button>
+            <Button variant="dark" onClick={() => void save()} loading={busy} disabled={!!avatarError}>
+              Зберегти
+            </Button>
+          </div>
+        </div>
       )}
-      <div className="mt-5 flex justify-end">
-        <Button variant="dark" onClick={() => void save()} loading={busy} disabled={!!avatarError}>
-          Зберегти профіль
-        </Button>
-      </div>
-    </Section>
+    </section>
   );
+}
+
+const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
+  { value: 'light', label: 'Світла', icon: Sun },
+  { value: 'dark', label: 'Темна', icon: Moon },
+  { value: 'system', label: 'Системна', icon: Monitor },
+];
+
+/** Tiny picture of the app in a theme; "system" is split light/dark. */
+function ThemePreview({ theme }: { theme: ThemePreference }) {
+  const half = (dark: boolean) => (
+    <div className={cn('flex-1 p-2', dark ? 'bg-[#151a2b]' : 'bg-[#eef1f6]')}>
+      <div className={cn('h-1.5 w-8 rounded', dark ? 'bg-white/30' : 'bg-[#cfd5df]')} />
+      <div className={cn('mt-2 h-5 rounded-md', dark ? 'bg-white/10' : 'bg-white')} />
+      <div className={cn('mt-1.5 h-1.5 w-10 rounded', dark ? 'bg-white/15' : 'bg-[#dde2ea]')} />
+    </div>
+  );
+  return <div className="flex h-[68px] overflow-hidden rounded-xl">{theme === 'system' ? [half(false), half(true)] : half(theme === 'dark')}</div>;
 }
 
 function AppearanceSection() {
   const { data, repos } = useData();
-  const options: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
-    { value: 'light', label: 'Світла', icon: Sun },
-    { value: 'dark', label: 'Темна', icon: Moon },
-    { value: 'system', label: 'Системна', icon: Monitor },
-  ];
   return (
-    <Section title="Вигляд" description="За замовчуванням — світла тема. Системна повторює налаштування пристрою.">
-      <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Тема">
-        {options.map(({ value, label, icon: Icon }) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={data.settings.theme === value}
-            onClick={() => void repos.settings.update({ theme: value }).catch(() => undefined)}
-            className={cn(
-              'flex flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium transition-colors',
-              data.settings.theme === value ? 'border-accent bg-surface-2' : 'border-line text-muted hover:text-ink',
-            )}
-          >
-            <Icon className="h-5 w-5" />
-            {label}
-          </button>
-        ))}
-      </div>
-    </Section>
+    <Group id="appearance" title="Вигляд" keywords="тема світла темна системна">
+      <Row label="Тема" hint="Системна повторює налаштування пристрою." keywords="світла темна системна">
+        <div className="grid grid-cols-3 gap-2 sm:w-[400px]" role="radiogroup" aria-label="Тема">
+          {THEMES.map(({ value, label, icon: Icon }) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={data.settings.theme === value}
+              onClick={() => void repos.settings.update({ theme: value }).catch(() => undefined)}
+              className={cn(
+                'rounded-2xl border-2 p-1.5 text-left transition-colors',
+                data.settings.theme === value ? 'border-primary' : 'border-line/70 hover:border-line',
+              )}
+            >
+              <ThemePreview theme={value} />
+              <span className="mt-1.5 flex items-center gap-1.5 px-1 pb-0.5 text-[12.5px] font-medium">
+                <Icon className="h-3.5 w-3.5" /> {label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </Row>
+    </Group>
   );
 }
 
@@ -158,65 +242,70 @@ function PreferencesSection() {
   const set = (patch: Partial<Settings>) => void repos.settings.update(patch).catch(() => undefined);
   const sample = todayKey();
   return (
-    <Section title="Параметри">
-      <div className="divide-y divide-line">
-        <PrefRow label="Початок тижня">
-          <Segmented
-            ariaLabel="Початок тижня"
-            value={String(s.weekStartsOn) as '0' | '1'}
-            onChange={(v) => set({ weekStartsOn: Number(v) as 0 | 1 })}
-            options={[
-              { value: '1', label: 'Понеділок' },
-              { value: '0', label: 'Неділя' },
-            ]}
-          />
-        </PrefRow>
-        <PrefRow label="Формат часу">
-          <Segmented
-            ariaLabel="Формат часу"
-            value={s.timeFormat}
-            onChange={(timeFormat) => set({ timeFormat })}
-            options={[
-              { value: '24h', label: '14:30' },
-              { value: '12h', label: '2:30 PM' },
-            ]}
-          />
-        </PrefRow>
-        <PrefRow label="Формат дати">
-          <Select
-            aria-label="Формат дати"
-            className="w-[200px]"
-            value={s.dateFormat}
-            onChange={(dateFormat) => set({ dateFormat })}
-            options={(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => ({ value: f, label: formatDateKey(sample, f) }))}
-          />
-        </PrefRow>
-        <PrefRow label="Календар відкривається" hint="На телефоні тиждень показується як день.">
-          <Segmented
-            ariaLabel="Вигляд календаря за замовчуванням"
-            value={s.defaultCalendarView}
-            onChange={(defaultCalendarView) => set({ defaultCalendarView })}
-            options={[
-              { value: 'day', label: 'День' },
-              { value: 'week', label: 'Тиждень' },
-              { value: 'month', label: 'Місяць' },
-            ]}
-          />
-        </PrefRow>
-        <PrefRow label="Часовий пояс" hint="Час показується в часовому поясі пристрою. Окремий пояс поки не налаштовується.">
-          <span className="text-sm font-medium text-ink">{deviceTimeZone()}</span>
-        </PrefRow>
-      </div>
-      <p className="mt-4 text-xs text-subtle">Зміни зберігаються автоматично й синхронізуються з іншими пристроями.</p>
-      <Button
-        variant="link"
-        size="sm"
-        className="mt-2 px-0"
-        onClick={() => set({ weekStartsOn: DEFAULT_SETTINGS.weekStartsOn, timeFormat: DEFAULT_SETTINGS.timeFormat, dateFormat: DEFAULT_SETTINGS.dateFormat, defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView })}
-      >
-        Скинути до стандартних
-      </Button>
-    </Section>
+    <Group
+      id="preferences"
+      title="Параметри"
+      keywords="початок тижня формат часу дати календар часовий пояс"
+      footer={
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 px-1 text-[12px] text-subtle">
+          <span>Зберігається автоматично й синхронізується з іншими пристроями.</span>
+          <button
+            type="button"
+            className="font-medium text-muted hover:text-ink"
+            onClick={() => set({ weekStartsOn: DEFAULT_SETTINGS.weekStartsOn, timeFormat: DEFAULT_SETTINGS.timeFormat, dateFormat: DEFAULT_SETTINGS.dateFormat, defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView })}
+          >
+            Скинути до стандартних
+          </button>
+        </div>
+      }
+    >
+      <Row label="Початок тижня" hint="Для календаря, звичок і тижневих підсумків.">
+        <Segmented
+          ariaLabel="Початок тижня"
+          value={String(s.weekStartsOn) as '0' | '1'}
+          onChange={(v) => set({ weekStartsOn: Number(v) as 0 | 1 })}
+          options={[
+            { value: '1', label: 'Понеділок' },
+            { value: '0', label: 'Неділя' },
+          ]}
+        />
+      </Row>
+      <Row label="Формат часу">
+        <Segmented
+          ariaLabel="Формат часу"
+          value={s.timeFormat}
+          onChange={(timeFormat) => set({ timeFormat })}
+          options={[
+            { value: '24h', label: '14:30' },
+            { value: '12h', label: '2:30 PM' },
+          ]}
+        />
+      </Row>
+      <Row label="Формат дати">
+        <Select
+          aria-label="Формат дати"
+          className="w-[200px]"
+          value={s.dateFormat}
+          onChange={(dateFormat) => set({ dateFormat })}
+          options={(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => ({ value: f, label: formatDateKey(sample, f) }))}
+        />
+      </Row>
+      <Row label="Календар відкривається" hint="На телефоні тиждень показується як день.">
+        <Segmented
+          ariaLabel="Вигляд календаря за замовчуванням"
+          value={s.defaultCalendarView}
+          onChange={(defaultCalendarView) => set({ defaultCalendarView })}
+          options={[
+            { value: 'day', label: 'День' },
+            { value: 'week', label: 'Тиждень' },
+            { value: 'month', label: 'Місяць' },
+          ]}
+        />
+      </Row>
+      <Row label="Часовий пояс" hint="Береться з пристрою, окремо поки не налаштовується.">
+        <span className="text-[13px] font-medium text-muted">{deviceTimeZone()}</span>
+      </Row>
+    </Group>
   );
 }
 
@@ -229,15 +318,15 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
     else if (n !== category.name) void actions.categories.update(category.id, { name: n }).catch(() => undefined);
   };
   return (
-    <li className="flex items-center gap-3 py-2">
+    <div className="flex items-center gap-3 px-5 py-2.5">
       <Popover>
         <PopoverTrigger className="h-6 w-6 shrink-0 rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line" style={{ backgroundColor: colorOf(category.color) }} aria-label={`Змінити колір «${category.name}»`} />
         <PopoverContent className="w-[220px]">
           <ColorPicker value={category.color} onChange={(color) => void actions.categories.update(category.id, { color }).catch(() => undefined)} />
         </PopoverContent>
       </Popover>
-      <Input
-        className="h-9 flex-1"
+      <input
+        className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-none hover:bg-surface-2 focus:bg-surface-2"
         aria-label="Назва категорії"
         value={name}
         maxLength={60}
@@ -245,7 +334,9 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
       />
-      <span className="hidden w-20 text-right text-xs text-muted sm:block">елементів: {usage}</span>
+      <span className="hidden text-right text-[12px] text-muted sm:block">
+        {usage} {plural(usage, ['елемент', 'елементи', 'елементів'])}
+      </span>
       <Button
         variant="ghost"
         size="icon-sm"
@@ -262,13 +353,14 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
       >
         <Trash2 className="h-4 w-4" />
       </Button>
-    </li>
+    </div>
   );
 }
 
 function CategoriesSection() {
   const { categories, tasks, events, goals } = useCollections();
   const actions = useActions();
+  const q = useContext(SearchCtx);
   const [name, setName] = useState('');
   const add = () => {
     const n = name.trim();
@@ -278,29 +370,51 @@ function CategoriesSection() {
     setName('');
   };
   return (
-    <Section title="Категорії" description="Кольори для задач, подій і цілей.">
-      <ul className="divide-y divide-line">
-        {categories.map((c) => (
+    <Group id="categories" title="Категорії" description="Кольори для задач, подій і цілей." keywords={`колір ${categories.map((c) => c.name).join(' ')}`}>
+      {categories
+        .filter((c) => matches(q, c.name))
+        .map((c) => (
           <CategoryRow
             key={c.id}
             category={c}
             usage={tasks.filter((t) => t.categoryId === c.id).length + events.filter((e) => e.categoryId === c.id).length + goals.filter((g) => g.categoryId === c.id).length}
           />
         ))}
-      </ul>
       <form
-        className="mt-3 flex gap-2"
+        className="flex items-center gap-3 px-5 py-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           add();
         }}
       >
-        <Input placeholder="Нова категорія" aria-label="Назва нової категорії" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
-        <Button type="submit" variant="outline" disabled={!name.trim()}>
-          <Plus className="h-4 w-4" /> Додати
-        </Button>
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-subtle text-subtle">
+          <Plus className="h-3.5 w-3.5" />
+        </span>
+        <input
+          className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] outline-none placeholder:text-subtle hover:bg-surface-2 focus:bg-surface-2"
+          placeholder="Нова категорія"
+          aria-label="Назва нової категорії"
+          maxLength={60}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        {name.trim() && (
+          <Button type="submit" variant="outline" size="sm">
+            Додати
+          </Button>
+        )}
       </form>
-    </Section>
+    </Group>
+  );
+}
+
+function IntegrationsSection() {
+  return (
+    <Group id="integrations" title="Інтеграції" keywords="google calendar календар гугл синхронізація">
+      <div className="p-4 sm:p-5">
+        <GoogleCalendarSettings />
+      </div>
+    </Group>
   );
 }
 
@@ -367,29 +481,31 @@ function DataSection() {
   };
 
   return (
-    <>
-      <Section title="Експорт" description="Завантажте всі дані Plano у файлі JSON.">
-        <Button variant="outline" onClick={exportData}>
-          <Download className="h-4 w-4" /> Експорт JSON
+    <Group id="data" title="Дані" keywords="експорт імпорт json резервна копія видалити">
+      <Row label="Експорт" hint="Усі дані Plano одним файлом JSON." keywords="резервна копія json">
+        <Button variant="outline" size="sm" onClick={exportData}>
+          <Download className="h-4 w-4" /> Завантажити
         </Button>
-      </Section>
-      <Section title="Імпорт" description="Відновлення з експорту Plano. Файл перевіряється до того, як щось буде записано.">
+      </Row>
+      <Row label="Імпорт" hint="Відновлення з експорту. Файл перевіряється до того, як щось буде записано." keywords="json відновити">
         <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => void onFile(e.target.files?.[0])} />
-        <Button variant="outline" onClick={() => fileRef.current?.click()}>
+        <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
           <Upload className="h-4 w-4" /> Обрати файл…
         </Button>
-        {result && !result.ok && (
-          <div role="alert" className="mt-4 rounded-xl bg-danger/10 p-3 text-sm text-danger">
-            <p className="font-medium">Цей файл не можна імпортувати:</p>
-            <ul className="mt-1 list-disc pl-5 text-xs">
-              {result.errors.map((e) => (
-                <li key={e}>{e}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {result?.ok && (
-          <div className="mt-4 rounded-xl border border-line p-4">
+      </Row>
+      {result && !result.ok && (
+        <div role="alert" className="m-4 rounded-xl bg-danger/10 p-3 text-sm text-danger">
+          <p className="font-medium">Цей файл не можна імпортувати:</p>
+          <ul className="mt-1 list-disc pl-5 text-xs">
+            {result.errors.map((e) => (
+              <li key={e}>{e}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {result?.ok && (
+        <div className="p-4">
+          <div className="rounded-xl border border-line p-4">
             <p className="text-sm font-medium">Коректний експорт від {new Date(result.file.exportedAt).toLocaleString('uk-UA')}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {Object.entries(result.summary).map(([k, v]) => (
@@ -407,58 +523,116 @@ function DataSection() {
               </Button>
             </div>
           </div>
-        )}
-      </Section>
-      <Section title="Видалення даних" description={backendKind === 'local' ? 'Видаляє всі дані перегляду з цього браузера.' : 'Назавжди видаляє всі ваші дані з Firebase.'}>
-        <Button variant="danger" onClick={() => void deleteAll()}>
-          <Trash2 className="h-4 w-4" /> Видалити всі дані
+        </div>
+      )}
+      <Row
+        label={<span className="text-danger">Видалити всі дані</span>}
+        hint={backendKind === 'local' ? 'Видаляє всі дані перегляду з цього браузера.' : 'Назавжди видаляє всі ваші дані з Firebase. Це не можна скасувати.'}
+        keywords="видалити всі дані"
+      >
+        <Button variant="danger" size="sm" onClick={() => void deleteAll()}>
+          <Trash2 className="h-4 w-4" /> Видалити
         </Button>
-      </Section>
-    </>
-  );
-}
-
-function IntegrationsSection() {
-  return (
-    <Section title="Інтеграції" description="Підключення зовнішніх сервісів до Plano.">
-      <GoogleCalendarSettings />
-    </Section>
+      </Row>
+    </Group>
   );
 }
 
 export default function SettingsPage() {
-  const { section = 'profile' } = useParams();
-  const current = SECTIONS.find((s) => s.id === section)?.id ?? 'profile';
+  const { section } = useParams();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [active, setActive] = useState<SectionId>('profile');
+  const q = norm(query.trim());
+  const picked = useRef<{ id: SectionId; until: number } | null>(null);
+
+  // /settings/<section> (also used by links elsewhere in the app) scrolls to that section.
+  useEffect(() => {
+    if (!section || !SECTIONS.some((x) => x.id === section)) return;
+    setActive(section as SectionId);
+    picked.current = { id: section as SectionId, until: Date.now() + 1200 };
+    const raf = requestAnimationFrame(() => document.getElementById(`settings-${section}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    return () => cancelAnimationFrame(raf);
+  }, [section]);
+
+  // Highlight the section being read: the last one whose top has passed the upper part of the screen,
+  // or the section that was just picked (the last ones can't scroll to the top).
+  useEffect(() => {
+    const onScroll = () => {
+      const pick = picked.current;
+      if (pick && pick.until > Date.now()) return setActive(pick.id);
+      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      // At the very bottom keep a picked section (e.g. "Дані"), otherwise follow the scroll position.
+      if (atBottom && pick) return setActive(pick.id);
+      picked.current = null;
+      let current: SectionId | null = null;
+      for (const { id } of SECTIONS) {
+        const el = document.getElementById(`settings-${id}`);
+        if (el && (atBottom || el.getBoundingClientRect().top <= window.innerHeight * 0.25)) current = id;
+      }
+      if (current) setActive(current);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [q]);
+
+  const go = (id: SectionId) => {
+    setQuery('');
+    if (id === section) document.getElementById(`settings-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else navigate(`/settings/${id}`, { replace: true });
+  };
+
   return (
-    <PageContainer>
-      <PageHeader title="Налаштування" />
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <nav aria-label="Розділи налаштувань" className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:w-52 lg:shrink-0 lg:flex-col lg:px-0">
-          {SECTIONS.map(({ id, label, icon: Icon }) => (
-            <NavLink
-              key={id}
-              to={`/settings/${id}`}
-              className={() =>
-                cn(
-                  'flex shrink-0 items-center gap-2.5 rounded-xl px-3 py-2 text-[13.5px] font-medium transition-colors',
-                  current === id ? 'bg-surface text-ink shadow-soft ring-1 ring-line' : 'text-muted hover:text-ink',
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="min-w-0 max-w-3xl flex-1 space-y-4">
-          {current === 'profile' && <ProfileSection />}
-          {current === 'appearance' && <AppearanceSection />}
-          {current === 'preferences' && <PreferencesSection />}
-          {current === 'categories' && <CategoriesSection />}
-          {current === 'data' && <DataSection />}
-          {current === 'integrations' && <IntegrationsSection />}
+    <PageContainer className="pb-10">
+      <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
+        <aside className="lg:sticky lg:top-4 lg:w-56 lg:shrink-0 lg:self-start">
+          <h1 className="mb-4 text-[26px] font-bold tracking-tight sm:text-[28px]">Налаштування</h1>
+          <label className="mb-3 flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-[13px] focus-within:border-subtle">
+            <Search className="h-4 w-4 shrink-0 text-subtle" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Знайти налаштування"
+              aria-label="Знайти налаштування"
+              className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-subtle"
+            />
+          </label>
+          <nav aria-label="Розділи налаштувань" className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">
+            {SECTIONS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => go(id)}
+                aria-current={active === id && !q ? 'true' : undefined}
+                className={cn(
+                  'flex shrink-0 items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] transition-colors',
+                  active === id && !q ? 'bg-surface font-semibold text-ink shadow-soft' : 'text-muted hover:text-ink',
+                )}
+              >
+                <Icon className="h-[18px] w-[18px]" />
+                {label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+        <div className="min-w-0 flex-1 lg:pt-[3.25rem]">
+          <SearchCtx.Provider value={q}>
+            <ProfileCard />
+            <AppearanceSection />
+            <PreferencesSection />
+            <CategoriesSection />
+            <IntegrationsSection />
+            <DataSection />
+          </SearchCtx.Provider>
+          {q && <NoResults />}
         </div>
       </div>
     </PageContainer>
   );
+}
+
+/** Shown under the results; visible only when every group hid itself. */
+function NoResults() {
+  return <p className="hidden py-10 text-center text-[13.5px] text-muted only:block">Нічого не знайдено.</p>;
 }
