@@ -128,17 +128,18 @@ export default function HabitPage() {
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[28px]" style={{ backgroundColor: tint(color, 0.13) }}>
             {habit.icon}
           </span>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-[24px] font-bold tracking-tight sm:text-[26px]">{habit.name}</h1>
+          {/* On phones the title takes the whole row and the actions wrap below it. */}
+          <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
+            <h1 className="truncate text-[22px] font-bold tracking-tight sm:text-[26px]">{habit.name}</h1>
             <p className="text-[13.5px] text-muted">
               {describeSchedule(habit.schedule)}
               {habit.goalType === 'count' && ` · ${habit.target} ${habit.unit ?? ''} на день`} · з {formatDateKey(habit.startDate, 'd MMMM')}
               {habit.archived && ' · в архіві'}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto [&>*:first-child]:flex-1 sm:[&>*:first-child]:flex-none">
             {habit.goalType === 'count' ? (
-              <div className="flex items-center gap-1 rounded-xl p-1" style={{ backgroundColor: tint(color, 0.1) }}>
+              <div className="flex items-center justify-between gap-1 rounded-xl p-1" style={{ backgroundColor: tint(color, 0.1) }}>
                 <Button size="icon-sm" variant="ghost" aria-label="Зменшити" onClick={() => setValue(value - 1)} disabled={value <= 0}>
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -154,7 +155,7 @@ export default function HabitPage() {
                 type="button"
                 onClick={() => void toggle(habit, today)}
                 aria-pressed={done}
-                className={cn('flex items-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors', done ? 'text-white' : 'border-2')}
+                className={cn('flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors', done ? 'text-white' : 'border-2')}
                 style={done ? { backgroundColor: color } : { borderColor: tint(color, 0.5), color }}
               >
                 <Check className="h-4 w-4 stroke-[3]" /> {bad ? (done ? 'Сьогодні без зривів · позначити зрив' : 'Зрив сьогодні · скасувати') : done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}

@@ -40,7 +40,7 @@ function HabitCard({ habit }: { habit: Habit }) {
   return (
     <Link
       to={`/habits/${habit.id}`}
-      className={cn('group flex flex-col rounded-[20px] border border-line/60 bg-surface p-5 shadow-soft transition-shadow hover:shadow-pop', habit.archived && 'opacity-60')}
+      className={cn('group flex min-w-0 flex-col rounded-[20px] border border-line/60 bg-surface p-4 shadow-soft transition-shadow hover:shadow-pop sm:p-5', habit.archived && 'opacity-60')}
     >
       <div className="flex items-start gap-3">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[24px]" style={{ backgroundColor: tint(color, 0.13) }}>
@@ -154,7 +154,7 @@ export default function HabitsPage() {
           />
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {list.map((h) => (
             <HabitCard key={h.id} habit={h} />
           ))}
