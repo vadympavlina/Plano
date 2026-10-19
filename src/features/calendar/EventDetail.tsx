@@ -8,6 +8,7 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
 import { useUI } from '@/app/providers/UIProvider';
 import { eventColor } from './items';
+import { EventDescription, JoinMeetingButton, meetingLink } from './EventDescription';
 import { describeRecurrence } from '@/lib/date/recurrence';
 import { formatDateKey, formatTimeRange } from '@/lib/date';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown';
@@ -63,7 +64,8 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent title={event.title} size="sm">
         <div className="-mt-1 mb-4 h-1 w-12 rounded-full" style={{ backgroundColor: color }} />
-        <div className="space-y-3 text-sm">
+        <div className="min-w-0 space-y-3 overflow-x-hidden text-sm">
+          {!event.url && meetingLink(event.description) && <JoinMeetingButton url={meetingLink(event.description)!} />}
           <p className="flex items-center gap-3">
             <CalendarDays className="h-4 w-4 text-muted" />
             {formatDateKey(occurrence, 'EEEE, d MMMM yyyy')}
@@ -80,14 +82,14 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             </p>
           )}
           {event.location && (
-            <p className="flex items-center gap-3">
-              <MapPin className="h-4 w-4 text-muted" />
-              {event.location}
+            <p className="flex items-start gap-3 break-words [overflow-wrap:anywhere]">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+              <span className="min-w-0">{event.location}</span>
             </p>
           )}
           {event.url && (
-            <a href={event.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-primary hover:underline">
-              <ExternalLink className="h-4 w-4" />
+            <a href={event.url} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-3 text-primary hover:underline">
+              <ExternalLink className="h-4 w-4 shrink-0" />
               <span className="truncate">{event.url}</span>
             </a>
           )}
@@ -102,7 +104,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             {event.external && <Badge color={googleCalendar?.color}>Google Calendar{googleCalendar ? ` · ${googleCalendar.name}` : ''}</Badge>}
             {event.syncPending && gcal?.status === 'connected' && <Badge>Очікує синхронізації</Badge>}
           </div>
-          {event.description && <p className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 leading-relaxed text-muted">{event.description}</p>}
+          {event.description && <EventDescription text={event.description} />}
         </div>
         <DialogFooter>
           {event.recurrence ? (
