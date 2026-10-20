@@ -12,7 +12,7 @@ import { addDaysKey, eachDateKey, formatDateKey, plural, weekRange } from '@/lib
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
-import { completionStats, currentStreak, describeSchedule, habitValue, isBad, isDone, isScheduled, longestStreak } from './logic';
+import { completionStats, currentStreak, describeSchedule, habitValue, isBad, isDone, isPaused, isScheduled, longestStreak } from './logic';
 import { HabitForm } from './HabitForm';
 import { HabitQuickButton } from './parts';
 
@@ -58,6 +58,7 @@ function HabitCard({ habit }: { habit: Habit }) {
                 : 'Шкідлива · без зривів'
               : describeSchedule(habit.schedule)}
             {!bad && habit.goalType === 'count' && ` · ${scheduledToday ? `${value}/` : ''}${habit.target} ${habit.unit ?? ''}`}
+            {isPaused(habit, today) && ' · ⏸ на паузі'}
             {bad && habit.goalType === 'count' && value > 0 && ` · сьогодні ${value}`}
           </p>
         </div>

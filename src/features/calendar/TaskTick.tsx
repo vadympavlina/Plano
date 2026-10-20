@@ -1,3 +1,4 @@
+import type React from 'react';
 import { Check } from 'lucide-react';
 import { useActions } from '@/hooks/useActions';
 import { cn } from '@/lib/utils/cn';
@@ -41,3 +42,10 @@ export function taskChipStyle(color: string, done: boolean) {
     ? { borderColor: 'rgb(var(--line))', backgroundColor: 'rgb(var(--surface-2))' }
     : { borderColor: `color-mix(in srgb, ${color} 70%, rgb(var(--surface)))`, backgroundColor: `color-mix(in srgb, ${color} calc(7% * var(--tint-k, 1)), rgb(var(--surface)))` };
 }
+
+/** Drag type for untimed tasks dropped onto the time grid (desktop). */
+export const TASK_DRAG = 'application/x-plano-task';
+export const startTaskDrag = (e: React.DragEvent, id: string) => {
+  e.dataTransfer.setData(TASK_DRAG, id);
+  e.dataTransfer.effectAllowed = 'move';
+};

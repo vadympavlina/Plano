@@ -124,6 +124,10 @@ export interface Project extends Timestamps {
   status: ProjectStatus;
   startDate?: DateKey;
   targetDate?: DateKey;
+  /** Emoji shown instead of the folder icon. */
+  icon?: string;
+  /** Colour of the cover band on the project page; none when empty. */
+  cover?: ColorKey;
 }
 
 export type HabitGoalType = 'check' | 'count';
@@ -150,6 +154,10 @@ export interface Habit extends Timestamps {
   remindAt?: string[];
   /** Bad habits: first day actually tracked (days before it are "no data", not clean). */
   trackFrom?: DateKey;
+  /** Breaks (illness, holiday): paused days don't count and never break a streak. Open-ended without `to`. */
+  pauses?: { from: DateKey; to?: DateKey }[];
+  /** A short note per day: why it slipped, how it felt. */
+  dayNotes?: Record<DateKey, string>;
 }
 
 /** habitLogs/{habitId}/{dateKey} = value (1 for a check habit). */

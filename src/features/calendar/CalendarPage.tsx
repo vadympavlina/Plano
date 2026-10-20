@@ -32,6 +32,7 @@ import { expandEvents, occurrencesOnDay, upcomingOccurrences } from './logic';
 import { eventColor } from './items';
 import { GoogleSyncButton } from '@/features/integrations/GoogleSyncButton';
 import { TimeGrid } from './TimeGrid';
+import { startTaskDrag } from './TaskTick';
 import { MonthView } from './MonthView';
 import { MiniCalendar } from '@/components/ui/calendar';
 import { EmptyState } from '@/components/common/States';
@@ -293,7 +294,7 @@ export default function CalendarPage() {
                 <h3 className="mb-1.5 mt-5 text-sm font-semibold">Задачі без часу</h3>
                 <div className="-mx-1">
                   {untimedToday.map((t) => (
-                    <div key={t.id} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5">
+                    <div key={t.id} draggable onDragStart={(e) => startTaskDrag(e, t.id)} title="Перетягніть у календар, щоб призначити час" className="flex cursor-grab items-center gap-2.5 rounded-lg px-1 py-1.5 active:cursor-grabbing">
                       <CheckCircle checked={false} size="sm" label={`Виконати «${t.title}»`} onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)} />
                       <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left text-[13px]">
                         {t.title}

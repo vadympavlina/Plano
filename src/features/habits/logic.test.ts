@@ -107,3 +107,17 @@ describe('bad habit tracking window', () => {
     expect(isScheduled({ ...sweets, trackFrom: undefined }, '2025-03-31')).toBe(false);
   });
 });
+
+describe('habit pause', () => {
+  it('paused days do not count and keep the streak', () => {
+    const logs: HabitLogs = { gym: { '2025-04-14': 1, '2025-04-16': 1, '2025-04-18': 1 } };
+    // Missed Mon 21 and Wed 23 while on holiday.
+    const paused: Habit = { ...gym, pauses: [{ from: '2025-04-19', to: '2025-04-24' }] };
+    expect(currentStreak(gym, logs, '2025-04-25')).toBe(0);
+    expect(currentStreak(paused, logs, '2025-04-25')).toBe(3);
+    expect(isScheduled(paused, '2025-04-21')).toBe(false);
+    expect(completionStats(paused, logs, '2025-04-14', '2025-04-24', '2025-04-25')).toEqual({ scheduled: 3, done: 3, rate: 100 });
+    // Open-ended pause covers everything after its start.
+    expect(isScheduled({ ...gym, pauses: [{ from: '2025-04-19' }] }, '2025-06-02')).toBe(false);
+  });
+});

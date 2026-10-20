@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Reminders } from './reminders';
+import { checkSnoozeToken, snoozeToken } from './crypto';
 import type { Env } from './index';
 
 function store() {
@@ -44,5 +45,24 @@ describe('user Durable Object', () => {
     const { r } = make();
     await r.fetch(req('/errors/add', { errors: [{ at: 'now', message: 'boom' }] }));
     expect(await (await r.fetch(req('/errors/list', {}))).json()).toEqual({ errors: [{ at: 'now', message: 'boom' }] });
+  });
+
+  it('snoozed reminders survive a new schedule from the app', async () => {
+    const { r, s } = make();
+    await r.fetch(req('/push/schedule', { items: [{ at: Date.now() + 3_600_000, title: 'Подія' }] }));
+    await r.fetch(req('/push/snooze', { item: { title: 'Задача', tag: 'task:1' } }));
+    await r.fetch(req('/push/schedule', { items: [] }));
+    expect(s.m.get('snoozed')).toMatchObject([{ title: 'Задача', tag: 'task:1' }]);
+    expect(s.m.get('uid')).toBe('u1');
+  });
+});
+
+describe('snooze token', () => {
+  it('works only for its own uid and secret', async () => {
+    const t = await snoozeToken('u1', 'secret');
+    expect(await checkSnoozeToken('u1', t, 'secret')).toBe(true);
+    expect(await checkSnoozeToken('u2', t, 'secret')).toBe(false);
+    expect(await checkSnoozeToken('u1', t, 'other')).toBe(false);
+    expect(await checkSnoozeToken('u1', 'junk!', 'secret')).toBe(false);
   });
 });

@@ -118,6 +118,15 @@ export function useActions() {
       update: (id: string, patch: Partial<Habit>) => repos.habits.update(id, patch),
       remove: (id: string) => repos.batch('Видалення звички', { [`habits/${id}`]: null, [`habitLogs/${id}`]: null }),
       setValue: (habitId: string, date: DateKey, value: number) => repos.habitLogs.set(habitId, date, value),
+      setNote: (habitId: string, date: DateKey, text: string) =>
+        repos.batch('Нотатка до звички', { [`habits/${habitId}/dayNotes/${date}`]: text.trim().slice(0, 1000) || null, [`habits/${habitId}/updatedAt`]: nowIso() }),
+      pause: (habit: Habit, from: DateKey, to?: DateKey) =>
+        repos.habits.update(habit.id, { pauses: [...(habit.pauses ?? []).filter((p) => p.to && p.to < from), { from, to }] }),
+      /** Ends the current pause: it lasted until yesterday (or is dropped if it starts today or later). */
+      resume: (habit: Habit, today: DateKey) =>
+        repos.habits.update(habit.id, {
+          pauses: (habit.pauses ?? []).flatMap((p) => (p.to && p.to < today ? [p] : p.from < today ? [{ from: p.from, to: addDaysKey(today, -1) }] : [])),
+        }),
     };
 
     const goals = {

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { Plus, CalendarDays, CheckSquare, NotebookPen } from 'lucide-react';
 import { DatePicker, TimePicker } from '@/components/ui/date-time';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,9 @@ import { cn } from '@/lib/utils/cn';
 import { useActions } from '@/hooks/useActions';
 import { useToday } from '@/hooks/useNow';
 import { useCreateNote } from '@/components/layout/CreateMenu';
-import { deviceTimeZone, minutesToTime, roundUpTime, timeToMinutes } from '@/lib/date';
+import { deviceTimeZone, formatDuration, formatTimeRange, minutesToTime, relativeDayLabel, roundUpTime, timeToMinutes } from '@/lib/date';
+import { useCollections, useSettings } from '@/hooks/useCollections';
+import { parseQuick } from './parse';
 import { settleWrite } from '@/services/sync';
 import { toast } from '@/components/ui/toast';
 
@@ -28,11 +30,34 @@ export function QuickAdd({ className }: { className?: string }) {
   const [date, setDate] = useState<string>(today);
   const [time, setTime] = useState<string>(() => roundUpTime(new Date()));
   const [busy, setBusy] = useState(false);
+  const { categories, projects } = useCollections();
+  const settings = useSettings();
+
+  // «Зустріч завтра о 15 на годину #робота»: date, time, length and #category/#project come from the text.
+  const parsed = useMemo(() => {
+    const p = parseQuick(title, today);
+    const find = <T extends { name: string }>(list: T[]) => list.find((x) => p.tags.some((t) => t.toLowerCase() === x.name.toLowerCase().replace(/\s+/g, '')));
+    const category = find(categories);
+    const project = find(projects);
+    const tags = p.tags.filter((t) => ![category?.name, project?.name].some((n) => n && n.toLowerCase().replace(/\s+/g, '') === t.toLowerCase()));
+    return { ...p, category, project, tags };
+  }, [title, today, categories, projects]);
+  const effective: Kind = kind === 'note' ? 'note' : kind === 'event' || parsed.duration ? 'event' : 'task';
+  const chips = [
+    effective !== kind && 'Подія',
+    parsed.date && relativeDayLabel(parsed.date, today, 'EEEEEE, d MMM'),
+    parsed.time && formatTimeRange(parsed.time, parsed.duration ? minutesToTime(Math.min(timeToMinutes(parsed.time) + parsed.duration, 23 * 60 + 59)) : undefined, settings.timeFormat),
+    !parsed.time && parsed.duration && formatDuration(parsed.duration),
+    parsed.category && `🏷 ${parsed.category.name}`,
+    parsed.project && `📁 ${parsed.project.name}`,
+    ...parsed.tags.map((t) => `#${t}`),
+    parsed.priority && (parsed.priority === 'urgent' ? 'Терміново' : 'Важливо'),
+  ].filter(Boolean) as string[];
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const t = title.trim();
-    if (!t || busy) return;
+    if (!title.trim() || busy) return;
+    const t = (kind === 'note' ? title : parsed.title).trim() || title.trim();
     if (kind === 'note') {
       createNote({ title: t });
       setTitle('');
@@ -40,20 +65,32 @@ export function QuickAdd({ className }: { className?: string }) {
     }
     setBusy(true);
     try {
-      if (kind === 'task') {
+      const day = parsed.date ?? date;
+      const links = { categoryId: parsed.category?.id, projectId: parsed.project?.id };
+      if (effective === 'task') {
         await settleWrite(
-          actions.tasks.create({ title: t, status: 'todo', priority: 'medium', subtasks: [], tags: [], dueDate: date || undefined }).write,
+          actions.tasks.create({
+            title: t,
+            status: 'todo',
+            priority: parsed.priority ?? 'medium',
+            subtasks: [],
+            tags: parsed.tags,
+            dueDate: day || (parsed.time ? today : undefined),
+            startTime: parsed.time,
+            ...links,
+          }).write,
         );
         toast.success('Задачу додано');
       } else {
-        const start = time || '09:00';
+        const start = parsed.time ?? (time || '09:00');
         await settleWrite(
           actions.events.create({
             title: t,
-            date: date || today,
+            date: day || today,
             allDay: false,
             startTime: start,
-            endTime: minutesToTime(Math.min(timeToMinutes(start) + 60, 23 * 60 + 59)),
+            endTime: minutesToTime(Math.min(timeToMinutes(start) + (parsed.duration ?? 60), 23 * 60 + 59)),
+            ...links,
             exdates: [],
             source: 'plano',
             timezone: deviceTimeZone(),
@@ -82,12 +119,30 @@ export function QuickAdd({ className }: { className?: string }) {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={kind === 'task' ? 'Швидко додати задачу…' : kind === 'event' ? 'Швидко додати подію…' : 'Почати нотатку…'}
+          placeholder={kind === 'note' ? 'Почати нотатку…' : 'Напр. «Зустріч завтра о 15 на годину #робота»'}
           aria-label="Назва для швидкого додавання"
           maxLength={300}
           className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"
         />
+        {kind !== 'note' && chips.length > 0 && (
+          <span className="hidden max-w-[50%] shrink-0 gap-1 overflow-hidden sm:flex" aria-live="polite">
+            {chips.map((c) => (
+              <span key={c} className="whitespace-nowrap rounded-md bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-medium text-primary">
+                {c}
+              </span>
+            ))}
+          </span>
+        )}
       </div>
+      {kind !== 'note' && chips.length > 0 && (
+        <p className="flex flex-wrap gap-1 pl-8 sm:hidden" aria-hidden>
+          {chips.map((c) => (
+            <span key={c} className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-medium text-primary">
+              {c}
+            </span>
+          ))}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2 pl-2 lg:flex-nowrap lg:pl-0">
         <div role="radiogroup" aria-label="Тип" className="inline-flex rounded-lg bg-surface-2 p-0.5">
           {KINDS.map(({ value, label, icon: Icon }) => (

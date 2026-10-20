@@ -9,7 +9,7 @@
  *
  * Every call needs the caller's Firebase ID token (Authorization: Bearer …).
  */
-import { AuthError, openGrant, sealGrant, verifyFirebaseToken } from './crypto';
+import { AuthError, checkSnoozeToken, openGrant, sealGrant, verifyFirebaseToken } from './crypto';
 import { vapidPublicKey } from './push';
 export { Reminders } from './reminders';
 
@@ -67,6 +67,17 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
   if (req.method !== 'POST') return json(405, { error: 'method' });
   if (!env.GOOGLE_CLIENT_SECRET) return json(500, { error: 'not_configured' });
 
+  // «Відкласти» on a notification: the service worker has no sign-in, only the token sent with the push.
+  if (path === '/snooze') {
+    const b = (await req.json().catch(() => ({}))) as { uid?: unknown; token?: unknown; item?: unknown };
+    const ok = typeof b.uid === 'string' && typeof b.token === 'string' && b.uid.length < 200 && (await checkSnoozeToken(b.uid, b.token, env.GOOGLE_CLIENT_SECRET));
+    if (!ok || !env.REMINDERS) return json(403, { error: 'forbidden' });
+    const res = await env.REMINDERS.get(env.REMINDERS.idFromName(b.uid as string)).fetch(
+      new Request('https://do/push/snooze', { method: 'POST', body: JSON.stringify({ item: b.item }), headers: { 'x-uid': b.uid as string } }),
+    );
+    return json(res.status, await res.json());
+  }
+
   let uid: string;
   try {
     const bearer = req.headers.get('Authorization')?.match(/^Bearer (.+)$/)?.[1];
@@ -80,7 +91,7 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
   if (/^\/(push|backup|errors)\//.test(path)) {
     if (!env.REMINDERS) return json(503, { error: 'not_configured' });
     const res = await env.REMINDERS.get(env.REMINDERS.idFromName(uid)).fetch(
-      new Request(`https://do${path}`, { method: 'POST', body: req.body, headers: { 'x-uid': uid } }),
+      new Request(`https://do${path}`, { method: 'POST', body: req.body, headers: { 'x-uid': uid, 'x-api': new URL(req.url).origin } }),
     );
     return json(res.status, await res.json());
   }

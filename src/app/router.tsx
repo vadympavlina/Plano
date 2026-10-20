@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageSkeleton } from '@/components/common/States';
 
 const Dashboard = lazy(() => import('@/features/dashboard/DashboardPage'));
+const TodayPage = lazy(() => import('@/features/dashboard/TodayPage'));
 const CalendarPage = lazy(() => import('@/features/calendar/CalendarPage'));
 const TasksPage = lazy(() => import('@/features/tasks/TasksPage'));
 const ProjectsPage = lazy(() => import('@/features/projects/ProjectsPage'));
@@ -21,6 +22,7 @@ const routes: RouteObject[] = [
     element: <AppLayout />,
     children: [
       { index: true, element: page(<Dashboard />) },
+      { path: 'today', element: page(<TodayPage />) },
       { path: 'calendar', element: page(<CalendarPage />) },
       { path: 'tasks', element: page(<TasksPage />) },
       { path: 'projects', element: page(<ProjectsPage />) },

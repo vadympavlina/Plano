@@ -9,8 +9,9 @@ async function start(page: Page) {
 
 test('task: quick add, find it in Tasks, tick it off', async ({ page }) => {
   await start(page);
-  await page.getByPlaceholder('Швидко додати задачу…').fill('Купити молоко');
-  await page.getByPlaceholder('Швидко додати задачу…').press('Enter');
+  // «сьогодні» is read as the date and dropped from the title.
+  await page.getByLabel('Назва для швидкого додавання').fill('Купити молоко сьогодні');
+  await page.getByLabel('Назва для швидкого додавання').press('Enter');
   await page.goto('/#/tasks?list=today');
   const row = page.getByText('Купити молоко').first();
   await expect(row).toBeVisible();

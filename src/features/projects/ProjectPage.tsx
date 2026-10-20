@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, FolderKanban, Pencil, Plus, Target, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, FolderKanban, ImageIcon, Pencil, Plus, Target, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Progress, Segmented } from '@/components/ui/misc';
@@ -25,6 +25,8 @@ import { upcomingOccurrences } from '@/features/calendar/logic';
 import { goalPercent } from '@/features/goals/logic';
 import { deadlineHint, projectProgress } from './logic';
 import { ProjectForm } from './ProjectForm';
+import { CoverPicker, EmojiPicker, coverGradient } from '@/components/common/Pickers';
+import type { Project } from '@/types';
 
 export default function ProjectPage() {
   const { projectId = '' } = useParams();
@@ -78,6 +80,7 @@ export default function ProjectPage() {
   }
 
   const color = colorOf(project.color);
+  const setCover = (cover: Project['cover']) => void actions.projects.update(project.id, { cover }).catch(() => undefined);
   const prog = projectProgress(project, tasks, today);
 
   const remove = async () => {
@@ -112,11 +115,26 @@ export default function ProjectPage() {
         <ArrowLeft className="h-4 w-4" /> Проєкти
       </Link>
 
-      <section className="rounded-[20px] border border-line/60 bg-surface p-5 shadow-soft sm:p-6">
+      <section className="overflow-hidden rounded-[20px] border border-line/60 bg-surface shadow-soft">
+        {project.cover && (
+          <div className="group relative h-24 sm:h-28" style={{ background: coverGradient(project.cover) }}>
+            <div className="absolute bottom-2 right-2 transition-opacity sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover:opacity-100">
+              <CoverPicker label="Обкладинка проєкту" value={project.cover} onChange={setCover} />
+            </div>
+          </div>
+        )}
+        <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-start gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: `${color}1f`, color }}>
-            <FolderKanban className="h-6 w-6" />
-          </span>
+          <div className={cn(project.cover && '-mt-12 sm:-mt-14')}>
+            <EmojiPicker label="Іконка проєкту" value={project.icon} onChange={(icon) => void actions.projects.update(project.id, { icon }).catch(() => undefined)}>
+              <span
+                className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[28px]', project.cover && 'h-16 w-16 bg-surface text-[32px] shadow-pop ring-1 ring-line/60')}
+                style={project.cover ? { color } : { backgroundColor: `${color}1f`, color }}
+              >
+                {project.icon ?? <FolderKanban className="h-6 w-6" />}
+              </span>
+            </EmojiPicker>
+          </div>
           <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
             <h1 className="truncate text-[22px] font-bold tracking-tight sm:text-[26px]">{project.name}</h1>
             <p className="mt-0.5 text-[13.5px] text-muted">
@@ -135,6 +153,13 @@ export default function ProjectPage() {
               onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
               options={projectStatusOptions}
             />
+            {!project.cover && (
+              <CoverPicker label="Додати обкладинку" value={undefined} onChange={setCover}>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-line text-muted hover:bg-surface-2 hover:text-ink" title="Обкладинка">
+                  <ImageIcon className="h-4 w-4" />
+                </span>
+              </CoverPicker>
+            )}
             <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(true)}>
               <Pencil className="h-3.5 w-3.5" /> Редагувати
             </Button>
@@ -159,6 +184,7 @@ export default function ProjectPage() {
               <p className={cn('mt-0.5 truncate text-[18px] font-bold tabular-nums', bad && 'text-danger')}>{v}</p>
             </div>
           ))}
+        </div>
         </div>
       </section>
 

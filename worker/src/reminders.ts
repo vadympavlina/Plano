@@ -5,7 +5,7 @@
  */
 import { DurableObject } from 'cloudflare:workers';
 import { sendPush, type PushSubscriptionJSON } from './push';
-import { openGrant, sealGrant } from './crypto';
+import { openGrant, sealGrant, snoozeToken } from './crypto';
 import type { Env } from './index';
 
 export interface Reminder {
@@ -33,6 +33,8 @@ interface ErrorReport {
   ua?: string;
 }
 const SUBJECT = 'https://plano.edvault.online';
+const SNOOZE_MS = 10 * 60_000;
+const clean = (i: Reminder): Reminder => ({ at: i.at, title: i.title.slice(0, 120), body: i.body?.slice(0, 240), url: i.url?.slice(0, 200), tag: i.tag?.slice(0, 80) });
 
 export class Reminders extends DurableObject<Env> {
   async fetch(req: Request): Promise<Response> {
@@ -41,6 +43,7 @@ export class Reminders extends DurableObject<Env> {
       subscription?: PushSubscriptionJSON;
       endpoint?: string;
       items?: Reminder[];
+      item?: Reminder;
       data?: string;
       at?: string;
       errors?: ErrorReport[];
@@ -86,6 +89,12 @@ export class Reminders extends DurableObject<Env> {
       return Response.json({ ok: true });
     }
     const subs = (await this.ctx.storage.get<PushSubscriptionJSON[]>('subs')) ?? [];
+    // Who and where, so pushes sent later by the alarm can carry a «Відкласти» token.
+    if (pathname === '/push/subscribe' || pathname === '/push/schedule') {
+      await this.ctx.storage.put('uid', uid);
+      const api = req.headers.get('x-api');
+      if (api) await this.ctx.storage.put('api', api);
+    }
     if (pathname === '/push/subscribe' && body.subscription?.endpoint && body.subscription.keys) {
       await this.ctx.storage.put('subs', [...subs.filter((s) => s.endpoint !== body.subscription!.endpoint), body.subscription].slice(-10));
     } else if (pathname === '/push/unsubscribe') {
@@ -94,34 +103,51 @@ export class Reminders extends DurableObject<Env> {
       const now = Date.now();
       const items = body.items
         .filter((i) => typeof i.at === 'number' && i.at > now && typeof i.title === 'string')
-        .map((i) => ({ at: i.at, title: i.title.slice(0, 120), body: i.body?.slice(0, 240), url: i.url?.slice(0, 200), tag: i.tag?.slice(0, 80) }))
+        .map(clean)
         .sort((a, b) => a.at - b.at)
         .slice(0, MAX);
+      // Snoozed reminders aren't in the app's list; keep them.
+      const snoozed = ((await this.ctx.storage.get<Reminder[]>('snoozed')) ?? []).filter((i) => i.at > now);
       await this.ctx.storage.put('items', items);
-      await (items.length ? this.ctx.storage.setAlarm(items[0].at) : this.ctx.storage.deleteAlarm());
+      await this.ctx.storage.put('snoozed', snoozed);
+      await this.arm();
+    } else if (pathname === '/push/snooze' && typeof body.item?.title === 'string') {
+      const snoozed = [...((await this.ctx.storage.get<Reminder[]>('snoozed')) ?? []), clean({ ...body.item, at: Date.now() + SNOOZE_MS })].slice(-20);
+      await this.ctx.storage.put('snoozed', snoozed);
+      await this.arm();
     } else if (pathname === '/push/test') {
       await this.deliver([{ at: Date.now(), title: 'Plano', body: 'Сповіщення працюють 👌', tag: 'test' }]);
     } else return Response.json({ error: 'not_found' }, { status: 404 });
     return Response.json({ ok: true, devices: (await this.ctx.storage.get<PushSubscriptionJSON[]>('subs'))?.length ?? 0 });
   }
 
+  private async arm() {
+    const all = [...((await this.ctx.storage.get<Reminder[]>('items')) ?? []), ...((await this.ctx.storage.get<Reminder[]>('snoozed')) ?? [])];
+    const next = Math.min(...all.map((i) => i.at));
+    await (all.length ? this.ctx.storage.setAlarm(next) : this.ctx.storage.deleteAlarm());
+  }
+
   async alarm() {
-    const items = (await this.ctx.storage.get<Reminder[]>('items')) ?? [];
     const now = Date.now() + 30_000;
-    await this.deliver(items.filter((i) => i.at <= now));
-    const rest = items.filter((i) => i.at > now);
-    await this.ctx.storage.put('items', rest);
-    if (rest.length) await this.ctx.storage.setAlarm(rest[0].at);
+    for (const key of ['items', 'snoozed']) {
+      const items = (await this.ctx.storage.get<Reminder[]>(key)) ?? [];
+      await this.deliver(items.filter((i) => i.at <= now));
+      await this.ctx.storage.put(key, items.filter((i) => i.at > now));
+    }
+    await this.arm();
   }
 
   private async deliver(items: Reminder[]) {
     if (!items.length || !this.env.VAPID_JWK) return;
     const jwk = JSON.parse(this.env.VAPID_JWK) as JsonWebKey;
     const subs = (await this.ctx.storage.get<PushSubscriptionJSON[]>('subs')) ?? [];
+    const uid = await this.ctx.storage.get<string>('uid');
+    const api = await this.ctx.storage.get<string>('api');
+    const snooze = uid && api ? { api, uid, token: await snoozeToken(uid, this.env.GOOGLE_CLIENT_SECRET) } : undefined;
     const alive: PushSubscriptionJSON[] = [];
     for (const s of subs) {
       let ok = true;
-      for (const i of items) ok = (await sendPush(s, { title: i.title, body: i.body, url: i.url, tag: i.tag }, jwk, SUBJECT).catch(() => true)) && ok;
+      for (const i of items) ok = (await sendPush(s, { title: i.title, body: i.body, url: i.url, tag: i.tag, snooze }, jwk, SUBJECT).catch(() => true)) && ok;
       if (ok) alive.push(s);
     }
     if (alive.length !== subs.length) await this.ctx.storage.put('subs', alive);

@@ -119,6 +119,8 @@ export const projectSchema = z.object({
   status: z.enum(PROJECT_STATUSES),
   startDate: optionalDateKey,
   targetDate: optionalDateKey,
+  icon: z.string().max(16).optional().catch(undefined),
+  cover: z.enum(COLOR_KEYS).optional().catch(undefined),
   ...timestamps,
 });
 
@@ -134,6 +136,8 @@ export const habitSchema = z.object({
   kind: z.enum(['good', 'bad']).optional().catch(undefined),
   trackFrom: dateKeySchema.optional().catch(undefined),
   remindAt: arrayish(z.string().regex(/^\d\d:\d\d$/)).optional().catch(undefined),
+  pauses: arrayish(z.object({ from: dateKeySchema, to: optionalDateKey })).optional().catch(undefined),
+  dayNotes: z.record(dateKeySchema, z.string().max(1000)).optional().catch(undefined),
   unit: optionalString,
   archived: z.boolean().default(false),
   ...timestamps,

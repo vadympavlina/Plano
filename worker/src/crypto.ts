@@ -93,3 +93,18 @@ export async function openGrant(grant: string, uid: string, secret: string): Pro
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64url(iv), additionalData: enc.encode(uid) }, await grantKey(secret), fromB64url(ct));
   return dec.decode(pt);
 }
+
+const hmacKey = (secret: string) => crypto.subtle.importKey('raw', enc.encode(`plano-snooze:${secret}`), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+
+/** Token that lets a notification's «Відкласти» button reach this user's reminders without a sign-in. */
+export async function snoozeToken(uid: string, secret: string): Promise<string> {
+  return b64url(new Uint8Array(await crypto.subtle.sign('HMAC', await hmacKey(secret), enc.encode(uid))));
+}
+
+export async function checkSnoozeToken(uid: string, token: string, secret: string): Promise<boolean> {
+  try {
+    return await crypto.subtle.verify('HMAC', await hmacKey(secret), fromB64url(token), enc.encode(uid));
+  } catch {
+    return false;
+  }
+}

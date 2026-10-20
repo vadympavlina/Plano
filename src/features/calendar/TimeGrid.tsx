@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { useData } from '@/app/providers/DataProvider';
-import { TaskTick, taskChipStyle } from './TaskTick';
+import { TASK_DRAG, TaskTick, startTaskDrag, taskChipStyle } from './TaskTick';
 import { useNow } from '@/hooks/useNow';
 import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, fromDateKey, minutesToTime, todayKey, weekRange } from '@/lib/date';
 import { solidTint, colorOf } from '@/lib/utils/colors';
@@ -69,7 +69,8 @@ export function TimeGrid({
   onSwipe?: (dir: 1 | -1) => void;
 }) {
   const { categoryById, events } = useCollections();
-  const gcal = useData().data.integrations.google_calendar;
+  const { data } = useData();
+  const gcal = data.integrations.google_calendar;
   const taskColor = (t: Task) => colorOf(categoryById(t.categoryId)?.color ?? 'slate');
   const settings = useSettings();
   const { openEvent, openEventForm, openTask } = useUI();
@@ -83,6 +84,8 @@ export function TimeGrid({
   const [sel, setSel] = useState<Selection | null>(null);
   const [daySel, setDaySel] = useState<DaySelection | null>(null);
   const [hover, setHover] = useState<{ dayIndex: number; min: number } | null>(null);
+  /** An untimed task dragged over the grid: where it would land. */
+  const [dropAt, setDropAt] = useState<{ dayIndex: number; min: number } | null>(null);
   /** Touch: the first tap on an empty slot places a draft block; tapping the block opens the form. */
   const [draftSlot, setDraftSlot] = useState<{ dayIndex: number; start: number; end: number; at: number } | null>(null);
   const longPress = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -185,6 +188,25 @@ export function TimeGrid({
   const dayAt = (clientX: number, el: HTMLElement | null) => {
     const rect = el!.getBoundingClientRect();
     return Math.max(0, Math.min(days.length - 1, Math.floor(((clientX - rect.left) / rect.width) * days.length)));
+  };
+  const dropMinute = (clientY: number) => Math.min(DAY_END - 60, Math.round((minuteAt(clientY) - 30) / SNAP) * SNAP);
+  const onTaskDragOver = (e: DragEvent, dayIndex: number) => {
+    if (!e.dataTransfer.types.includes(TASK_DRAG)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const min = Math.max(0, dropMinute(e.clientY));
+    if (dropAt?.dayIndex !== dayIndex || dropAt.min !== min) setDropAt({ dayIndex, min });
+  };
+  const onTaskDrop = (e: DragEvent, dayIndex: number) => {
+    const task = data.tasks[e.dataTransfer.getData(TASK_DRAG)];
+    setDropAt(null);
+    if (!task) return;
+    e.preventDefault();
+    const start = Math.max(0, dropMinute(e.clientY));
+    const day = days[dayIndex];
+    void actions.tasks
+      .update(task.id, { ...(task.dueDate || !task.startDate ? { dueDate: day } : { startDate: day }), startTime: minutesToTime(start), endTime: minutesToTime(Math.min(start + 60, DAY_END - 1)) })
+      .catch(() => undefined);
   };
   const clearLongPress = () => {
     if (longPress.current) clearTimeout(longPress.current);
@@ -478,6 +500,8 @@ export function TimeGrid({
                   <button
                     key={t.id}
                     type="button"
+                    draggable={t.status !== 'completed'}
+                    onDragStart={(e) => startTaskDrag(e, t.id)}
                     onClick={() => openTask(t.id)}
                     className={cn(
                       'flex w-full items-center gap-1.5 truncate rounded-md border border-dashed px-1.5 py-1 text-left text-[11px] font-medium text-ink',
@@ -550,8 +574,19 @@ export function TimeGrid({
                 data-day-index={dayIndex}
                 className={cn('relative cursor-cell border-l border-line', weekend(c.day) && 'bg-surface-2/70')}
                 onPointerDown={(e) => onColumnPointerDown(e, dayIndex)}
+                onDragOver={(e) => onTaskDragOver(e, dayIndex)}
+                onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDropAt(null)}
+                onDrop={(e) => onTaskDrop(e, dayIndex)}
                 role="presentation"
               >
+                {dropAt?.dayIndex === dayIndex && (
+                  <div
+                    className="pointer-events-none absolute inset-x-1 z-30 rounded-md border-2 border-dashed border-primary bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-primary"
+                    style={{ top: (dropAt.min / 60) * HOUR_PX, height: HOUR_PX }}
+                  >
+                    {fmt(dropAt.min)} – {fmt(dropAt.min + 60)}
+                  </div>
+                )}
                 {/* hover hint */}
                 {hover && hover.dayIndex === dayIndex && !sel && !drag && (
                   <div
@@ -623,6 +658,7 @@ export function TimeGrid({
                         <p className="truncate text-[10.5px] tabular-nums text-muted" style={item.kind === 'event' ? { color: item.color, opacity: 0.75 } : undefined}>
                           {item.kind === 'task' && 'Задача · '}
                           {fmt(start)} – {fmt(end)}
+                          {item.kind === 'task' && item.task.subtasks.length > 0 && ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}
                         </p>
                       )}
                       {!short && single && item.kind === 'event' && item.occurrence.event.location && (

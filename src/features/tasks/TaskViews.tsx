@@ -1,9 +1,9 @@
-import { useState, type DragEvent, type ReactNode } from 'react';
-import { Check, Clock, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
+import { useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
+import { Check, ChevronDown, Clock, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
-import { formatTime, relativeDayLabel } from '@/lib/date';
+import { addDaysKey, formatTime, relativeDayLabel } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
@@ -41,7 +41,7 @@ export function TaskCheck({ task }: { task: Task }) {
 }
 
 /** Small line under the title: time or date, project, subtasks, repeat. */
-function TaskMeta({ task, today, showDate, showProject = true }: { task: Task; today: DateKey; showDate: boolean; showProject?: boolean }) {
+function TaskMeta({ task, today, showDate, showProject = true, hideSubtasks }: { task: Task; today: DateKey; showDate: boolean; showProject?: boolean; hideSubtasks?: boolean }) {
   const { projectById } = useCollections();
   const settings = useSettings();
   const project = showProject && task.projectId ? projectById(task.projectId) : undefined;
@@ -69,11 +69,11 @@ function TaskMeta({ task, today, showDate, showProject = true }: { task: Task; t
         <span className="truncate">{project.name}</span>
       </span>,
     );
-  if (task.subtasks.length)
+  if (task.subtasks.length && !hideSubtasks)
     parts.push(
       <span key="s" className="inline-flex items-center gap-1 tabular-nums">
         <CornerDownRight className="h-3.5 w-3.5" />
-        {subDone}/{task.subtasks.length}
+        {subDone} з {task.subtasks.length}
       </span>,
     );
   if (task.recurrence) parts.push(<Repeat key="r" className="h-3.5 w-3.5" aria-label="Повторюється" />);
@@ -88,20 +88,137 @@ function CategoryDot({ task }: { task: Task }) {
   return <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorOf(c.color) }} title={c.name} />;
 }
 
+/** Subtask progress as a small bar with "2 з 5". */
+function SubtaskProgress({ task }: { task: Task }) {
+  const done = task.subtasks.filter((s) => s.done).length;
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[12px] tabular-nums text-muted">
+      <span className="h-1 w-8 overflow-hidden rounded-full bg-line">
+        <span className="block h-full rounded-full bg-success transition-[width]" style={{ width: `${(done / task.subtasks.length) * 100}%` }} />
+      </span>
+      {done} з {task.subtasks.length}
+    </span>
+  );
+}
+
+const SWIPE = 80;
+
+/** Touch swipe on a row: right completes, left moves to tomorrow. Vertical scrolling stays native. */
+function useSwipe(onRight: () => void, onLeft: () => void) {
+  const [dx, setDx] = useState(0);
+  const start = useRef<{ x: number; y: number; on: boolean } | null>(null);
+  const moved = useRef(false);
+  return {
+    dx,
+    /** True right after a swipe, so the click that ends it is ignored. */
+    swallowClick: () => moved.current && !(moved.current = false),
+    handlers: {
+      onPointerDown: (e: PointerEvent) => {
+        if (e.pointerType !== 'touch') return;
+        start.current = { x: e.clientX, y: e.clientY, on: false };
+        moved.current = false;
+      },
+      onPointerMove: (e: PointerEvent) => {
+        const s = start.current;
+        if (!s) return;
+        const x = e.clientX - s.x;
+        if (!s.on) {
+          if (Math.abs(e.clientY - s.y) > 10) return void (start.current = null);
+          if (Math.abs(x) < 12) return;
+          s.on = moved.current = true;
+        }
+        setDx(Math.max(-140, Math.min(140, x)));
+      },
+      onPointerUp: () => {
+        if (start.current?.on) {
+          if (dx >= SWIPE) onRight();
+          else if (dx <= -SWIPE) onLeft();
+        }
+        start.current = null;
+        setDx(0);
+      },
+      onPointerCancel: () => {
+        start.current = null;
+        setDx(0);
+      },
+    },
+  };
+}
+
 export function TaskRow({ task, today, showDate = true, showProject = true }: { task: Task; today: DateKey; showDate?: boolean; showProject?: boolean }) {
   const { openTask } = useUI();
+  const actions = useActions();
+  const [open, setOpen] = useState(false);
   const done = task.status === 'completed';
+  const swipe = useSwipe(
+    () => {
+      haptic();
+      void actions.tasks.setDone(task, !done).catch(() => undefined);
+    },
+    () => {
+      const was = taskDate(task);
+      const tomorrow = addDaysKey(today, 1);
+      if (was === tomorrow) return;
+      haptic();
+      void actions.tasks.reschedule(task, tomorrow).then(
+        () => toast.success('Перенесено на завтра', { action: { label: 'Скасувати', onClick: () => void actions.tasks.reschedule(task, was).catch(() => undefined) } }),
+        () => undefined,
+      );
+    },
+  );
+  const reveal = swipe.dx > 0 ? (done ? 'Повернути' : 'Виконано') : 'Завтра';
   return (
-    <div className={cn('group flex items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55')}>
-      <span className="pt-0.5">
-        <TaskCheck task={task} />
-      </span>
-      <button type="button" onClick={() => openTask(task.id)} className="min-w-0 flex-1 text-left">
-        <span className={cn('block truncate text-[14.5px]', done && 'line-through')}>{task.title}</span>
-        <TaskMeta task={task} today={today} showDate={showDate} showProject={showProject} />
-      </button>
-      {task.status === 'in_progress' && <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11.5px] font-medium text-primary">В роботі</span>}
-      <CategoryDot task={task} />
+    <div className="relative overflow-hidden rounded-xl [contain-intrinsic-size:auto_52px] [content-visibility:auto]">
+      {swipe.dx !== 0 && (
+        <div
+          aria-hidden
+          className={cn('absolute inset-0 flex items-center px-4 text-[13px] font-semibold text-white', swipe.dx > 0 ? 'justify-start bg-success' : 'justify-end bg-primary')}
+          style={{ opacity: Math.min(1, Math.abs(swipe.dx) / SWIPE) }}
+        >
+          {reveal}
+        </div>
+      )}
+      <div
+        {...swipe.handlers}
+        className={cn('group relative flex touch-pan-y items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55', swipe.dx !== 0 && 'bg-surface')}
+        style={swipe.dx ? { transform: `translateX(${swipe.dx}px)` } : undefined}
+      >
+        <span className="pt-0.5">
+          <TaskCheck task={task} />
+        </span>
+        <button type="button" onClick={() => !swipe.swallowClick() && openTask(task.id)} className="min-w-0 flex-1 text-left">
+          <span className={cn('block truncate text-[14.5px]', done && 'line-through')}>{task.title}</span>
+          <TaskMeta task={task} today={today} showDate={showDate} showProject={showProject} hideSubtasks />
+        </button>
+        {task.status === 'in_progress' && <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11.5px] font-medium text-primary">В роботі</span>}
+        {task.subtasks.length > 0 && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-label={`Підзадачі: ${task.subtasks.filter((s) => s.done).length} з ${task.subtasks.length}`}
+            onClick={() => setOpen((o) => !o)}
+            className="flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1 hover:bg-surface-2"
+          >
+            <SubtaskProgress task={task} />
+            <ChevronDown className={cn('h-3.5 w-3.5 text-subtle transition-transform', open && 'rotate-180')} />
+          </button>
+        )}
+        <CategoryDot task={task} />
+      </div>
+      {open && (
+        <ul className="relative mb-1 ml-[42px] mr-3 space-y-0.5">
+          {[...task.subtasks]
+            .sort((a, b) => a.order - b.order)
+            .map((st) => (
+              <li key={st.id}>
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13.5px] hover:bg-surface-2/70">
+                  <input type="checkbox" className="h-4 w-4 accent-[rgb(var(--success))]" checked={st.done} onChange={() => void actions.tasks.toggleSubtask(task, st.id).catch(() => undefined)} />
+                  <span className={cn('min-w-0 flex-1 truncate', st.done && 'text-muted line-through')}>{st.title}</span>
+                </label>
+              </li>
+            ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -109,7 +226,6 @@ export function TaskRow({ task, today, showDate = true, showProject = true }: { 
 function TaskCard({ task, today, onDragStart }: { task: Task; today: DateKey; onDragStart: (e: DragEvent, t: Task) => void }) {
   const { openTask } = useUI();
   const done = task.status === 'completed';
-  const subDone = task.subtasks.filter((s) => s.done).length;
   return (
     <div
       draggable
@@ -127,13 +243,13 @@ function TaskCard({ task, today, onDragStart }: { task: Task; today: DateKey; on
         <TaskCheck task={task} />
         <div className="min-w-0 flex-1">
           <p className={cn('text-[14px] leading-snug', done && 'line-through')}>{task.title}</p>
-          <TaskMeta task={task} today={today} showDate />
+          <TaskMeta task={task} today={today} showDate hideSubtasks />
         </div>
         <CategoryDot task={task} />
       </div>
       {task.subtasks.length > 0 && !done && (
-        <div className="ml-[30px] mt-2 h-1 overflow-hidden rounded-full bg-line">
-          <div className="h-full rounded-full bg-success transition-[width]" style={{ width: `${(subDone / task.subtasks.length) * 100}%` }} />
+        <div className="ml-[30px] mt-2">
+          <SubtaskProgress task={task} />
         </div>
       )}
     </div>

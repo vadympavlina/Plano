@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/common/States';
 import { useCollections } from '@/hooks/useCollections';
 import { useCreateNote } from '@/components/layout/CreateMenu';
 import { markdownExcerpt } from '@/lib/utils/markdown';
+import { Progressive } from '@/components/common/Progressive';
 import { cn } from '@/lib/utils/cn';
 import { NoteEditor } from './NoteEditor';
 
@@ -48,7 +49,7 @@ export default function NotesPage() {
         key={n.id}
         to={`/notes/${n.id}`}
         aria-current={active ? 'page' : undefined}
-        className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors', active ? 'bg-surface shadow-soft ring-1 ring-line' : 'hover:bg-surface/70')}
+        className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]', active ? 'bg-surface shadow-soft ring-1 ring-line' : 'hover:bg-surface/70')}
       >
         {n.icon ? (
           <span className="mt-px w-4 shrink-0 text-center text-[14px] leading-5">{n.icon}</span>
@@ -105,7 +106,7 @@ export default function NotesPage() {
               {pinned.length > 0 && <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Закріплені</p>}
               {pinned.map(item)}
               {rest.length > 0 && pinned.length > 0 && <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Останні</p>}
-              {rest.map(item)}
+              <Progressive items={rest}>{item}</Progressive>
             </>
           )}
         </div>

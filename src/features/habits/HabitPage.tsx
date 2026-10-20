@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
-import { Archive, ArchiveRestore, ArrowLeft, Check, ChevronLeft, ChevronRight, Minus, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowLeft, Check, ChevronLeft, ChevronRight, Minus, MoreHorizontal, Pause, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Field, Textarea } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-time';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown';
 import { confirm } from '@/components/common/ConfirmDialog';
@@ -20,6 +23,7 @@ import {
   describeSchedule,
   habitValue,
   isDone,
+  isPaused,
   isScheduled,
   longestStreak,
   totalCompletions,
@@ -57,7 +61,7 @@ function HabitListItem({ habit, active }: { habit: Habit; active: boolean }) {
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13.5px] font-semibold">{habit.name}</span>
         <span className="block text-[11.5px] text-muted">
-          {!isScheduled(habit, today) && !done ? 'Сьогодні вихідний' : habit.goalType === 'count' ? `${value}/${habit.target} ${habit.unit ?? ''}` : isBad(habit) ? (done ? 'Без зривів' : 'Зрив') : done ? 'Виконано' : 'Ще ні'}
+          {isPaused(habit, today) ? 'На паузі' : !isScheduled(habit, today) && !done ? 'Сьогодні вихідний' : habit.goalType === 'count' ? `${value}/${habit.target} ${habit.unit ?? ''}` : isBad(habit) ? (done ? 'Без зривів' : 'Зрив') : done ? 'Виконано' : 'Ще ні'}
         </span>
       </span>
       {streak > 0 && <span className="text-[12px] font-semibold text-warning">🔥 {streak}</span>}
@@ -76,6 +80,7 @@ export default function HabitPage() {
   const today = useToday();
   const [month, setMonth] = useState(today.slice(0, 7) + '-01');
   const [editing, setEditing] = useState(false);
+  const [pausing, setPausing] = useState(false);
 
   const habit = habits.find((h) => h.id === habitId);
   if (!habit) return <Navigate to="/habits" replace />;
@@ -92,6 +97,7 @@ export default function HabitPage() {
   const weeks = weeklyRates(habit, logs, today, settings.weekStartsOn, 8);
   const insight = weekdayInsight(habit, logs, today);
   const grid = monthGrid(month, settings.weekStartsOn);
+  const pause = habit.pauses?.find((p) => today >= p.from && (!p.to || today <= p.to)) ?? habit.pauses?.find((p) => p.from > today);
   const list = habits.filter((h) => !h.archived || h.id === habit.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
   const setValue = (v: number) => void actions.habits.setValue(habit.id, today, Math.max(0, v)).catch(() => undefined);
@@ -138,7 +144,7 @@ export default function HabitPage() {
             </p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto [&>*:first-child]:flex-1 sm:[&>*:first-child]:flex-none">
-            {habit.goalType === 'count' ? (
+            {isPaused(habit, today) ? <span className="sm:hidden" /> : habit.goalType === 'count' ? (
               <div className="flex items-center justify-between gap-1 rounded-xl p-1" style={{ backgroundColor: tint(color, 0.1) }}>
                 <Button size="icon-sm" variant="ghost" aria-label="Зменшити" onClick={() => setValue(value - 1)} disabled={value <= 0}>
                   <Minus className="h-4 w-4" />
@@ -169,6 +175,11 @@ export default function HabitPage() {
                 <DropdownMenuItem icon={<Pencil />} onSelect={() => setEditing(true)}>
                   Редагувати
                 </DropdownMenuItem>
+                {!pause && (
+                  <DropdownMenuItem icon={<Pause />} onSelect={() => setPausing(true)}>
+                    Пауза…
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   icon={habit.archived ? <ArchiveRestore /> : <Archive />}
                   onSelect={() => void actions.habits.update(habit.id, { archived: !habit.archived }).catch(() => undefined)}
@@ -183,6 +194,19 @@ export default function HabitPage() {
             </DropdownMenu>
           </div>
         </div>
+
+        {pause && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-[13.5px]">
+            <Pause className="h-4 w-4 text-muted" />
+            <span className="flex-1">
+              {pause.from > today ? `Пауза з ${formatDateKey(pause.from, 'd MMMM')}` : 'На паузі'}
+              {pause.to ? ` до ${formatDateKey(pause.to, 'd MMMM')}` : ' до відновлення'} — ці дні не рахуються і не обривають серію.
+            </span>
+            <Button size="sm" variant="outline" onClick={() => void actions.habits.resume(habit, today).catch(() => undefined)}>
+              <Play className="h-3.5 w-3.5" /> {pause.from > today ? 'Скасувати' : 'Відновити'}
+            </Button>
+          </div>
+        )}
 
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           {[
@@ -228,6 +252,7 @@ export default function HabitPage() {
                 const inMonth = d.slice(0, 7) === month.slice(0, 7);
                 if (!inMonth) return <span key={d} />;
                 const scheduled = isScheduled(habit, d);
+                const paused = isPaused(habit, d);
                 const future = d > today;
                 const dDone = !future && scheduled && isDone(habit, logs, d);
                 const slip = bad && !dDone && !future && scheduled;
@@ -237,15 +262,17 @@ export default function HabitPage() {
                   <button
                     key={d}
                     type="button"
-                    disabled={future || d < habit.startDate}
+                    disabled={future || paused || d < habit.startDate}
                     // Bad habit, day before tracking started: a tap starts tracking from that day.
                     onClick={() => void (bad && !scheduled ? actions.habits.update(habit.id, { trackFrom: d }).catch(() => undefined) : toggle(habit, d, 'toggle'))}
                     aria-pressed={dDone}
-                    aria-label={`${formatDateKey(d, 'd MMMM')}: ${dDone ? 'виконано' : scheduled ? 'не виконано' : 'не заплановано'}`}
+                    aria-label={`${formatDateKey(d, 'd MMMM')}: ${paused ? 'пауза' : dDone ? 'виконано' : scheduled ? 'не виконано' : 'не заплановано'}`}
+                    title={habit.dayNotes?.[d]}
                     className={cn(
-                      'flex aspect-square max-h-14 w-full items-center justify-center rounded-xl text-[13px] font-semibold tabular-nums transition-colors disabled:cursor-default',
+                      'relative flex aspect-square max-h-14 w-full items-center justify-center rounded-xl text-[13px] font-semibold tabular-nums transition-colors disabled:cursor-default',
                       d === today && 'ring-2 ring-offset-2 ring-offset-surface',
                       !dDone && !future && 'hover:brightness-95',
+                      paused && 'border border-dashed border-line',
                     )}
                     style={{
                       backgroundColor: slip ? 'rgb(var(--danger))' : dDone ? (bad ? 'rgb(var(--success))' : color) : partial ? tint(color, 0.35) : future ? undefined : scheduled ? 'rgb(var(--surface-2))' : undefined,
@@ -254,11 +281,13 @@ export default function HabitPage() {
                     }}
                   >
                     {Number(d.slice(8))}
+                    {habit.dayNotes?.[d] && <span className="absolute bottom-1 h-1 w-1 rounded-full" style={{ backgroundColor: dDone || slip ? '#fff' : color }} />}
                   </button>
                 );
               })}
             </div>
             <p className="mt-2 text-[12px] text-subtle">{bad ? 'Натисніть на день, щоб позначити або зняти зрив. Сірий день до початку відстеження — почати рахувати з нього.' : 'Натисніть на день, щоб відмітити або зняти відмітку.'}</p>
+            <DayNotes habit={habit} today={today} />
           </section>
 
           <section aria-label="Статистика">
@@ -288,6 +317,85 @@ export default function HabitPage() {
         </div>
       </div>
       {editing && <HabitForm habit={habit} onClose={() => setEditing(false)} />}
+      {pausing && <PauseDialog habit={habit} today={today} onClose={() => setPausing(false)} />}
     </div>
+  );
+}
+
+/** A note per day: why it slipped, how it felt. Saved when the field loses focus. */
+function DayNotes({ habit, today }: { habit: Habit; today: string }) {
+  const actions = useActions();
+  const [day, setDay] = useState(today);
+  const saved = habit.dayNotes?.[day] ?? '';
+  const [text, setText] = useState(saved);
+  const [shownFor, setShownFor] = useState(day + saved);
+  if (shownFor !== day + saved) {
+    setShownFor(day + saved);
+    setText(saved);
+  }
+  const recent = Object.entries(habit.dayNotes ?? {})
+    .filter(([d]) => d !== day)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 4);
+  return (
+    <div className="mt-5">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <h2 className="text-[14px] font-semibold">Нотатка до дня</h2>
+        <DatePicker variant="chip" aria-label="День нотатки" clearable={false} value={day} onChange={(d) => d && d <= today && setDay(d)} />
+      </div>
+      <Textarea
+        aria-label="Нотатка до дня"
+        rows={2}
+        maxLength={1000}
+        value={text}
+        placeholder={isBad(habit) ? 'Що спровокувало зрив? Як почувалися?' : 'Як пройшло? Що допомогло або завадило?'}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => text.trim() !== saved && void actions.habits.setNote(habit.id, day, text).catch(() => undefined)}
+      />
+      {recent.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {recent.map(([d, t]) => (
+            <li key={d}>
+              <button type="button" onClick={() => setDay(d)} className="flex w-full gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-surface-2">
+                <span className="shrink-0 font-medium text-muted">{formatDateKey(d, 'd MMM')}</span>
+                <span className="truncate">{t}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function PauseDialog({ habit, today, onClose }: { habit: Habit; today: string; onClose: () => void }) {
+  const actions = useActions();
+  const [from, setFrom] = useState(today);
+  const [to, setTo] = useState<string | undefined>();
+  const save = () => {
+    void actions.habits.pause(habit, from, to && to >= from ? to : undefined).then(() => toast.success('Звичку поставлено на паузу'), () => undefined);
+    onClose();
+  };
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent title="Пауза звички">
+        <p className="-mt-1 mb-4 text-[13px] text-muted">Хвороба, відпустка, поїздка — дні паузи не рахуються в статистиці й не обривають серію.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="З">{(p) => <DatePicker {...p} clearable={false} value={from} onChange={(d) => d && setFrom(d)} />}</Field>
+          <Field label="До (включно)">{(p) => <DatePicker {...p} min={from} placeholder="До відновлення" value={to} onChange={setTo} />}</Field>
+        </div>
+        <div className="mt-2 flex gap-2 text-xs">
+          {[3, 7, 14].map((n) => (
+            <button key={n} type="button" className="text-primary hover:underline" onClick={() => setTo(addDaysKey(from, n - 1))}>
+              {days(n)}
+            </button>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Скасувати</Button>
+          <Button variant="dark" onClick={save}>Поставити на паузу</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

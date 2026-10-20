@@ -51,6 +51,7 @@ export default defineConfig(({ mode }) => {
           categories: ['productivity', 'lifestyle'],
           // Long-press on the app icon.
           shortcuts: [
+            { name: 'Сьогодні', short_name: 'Сьогодні', url: `${base}#/today`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
             { name: 'Нова задача', short_name: 'Задача', url: `${base}#/tasks?new=1`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
             { name: 'Нова подія', short_name: 'Подія', url: `${base}#/calendar?new=1`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
             { name: 'Звички', short_name: 'Звички', url: `${base}#/habits`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },

@@ -14,6 +14,7 @@ import type { Task } from '@/types';
 import { isOverdue, taskDate } from './logic';
 import { boardColumns, listContent, listCounts, listFromParam, type BoardColumn, type TaskListId } from './lists';
 import { TaskBoard, TaskRow } from './TaskViews';
+import { Progressive } from '@/components/common/Progressive';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 
 const LISTS: { id: TaskListId; label: string; icon: typeof Inbox; tint: string }[] = [
@@ -110,23 +111,17 @@ export default function TasksPage() {
         <>
           {late.length > 0 && (
             <Group title="Прострочено" tone="danger">
-              {late.map((t) => (
-                <TaskRow key={t.id} task={t} today={today} />
-              ))}
+              <Progressive items={late}>{(t) => <TaskRow key={t.id} task={t} today={today} />}</Progressive>
             </Group>
           )}
           {now.length > 0 && (
             <Group title={late.length ? 'Сьогодні' : ''}>
-              {now.map((t) => (
-                <TaskRow key={t.id} task={t} today={today} showDate={false} />
-              ))}
+              <Progressive items={now}>{(t) => <TaskRow key={t.id} task={t} today={today} showDate={false} />}</Progressive>
             </Group>
           )}
           {done.length > 0 && (
             <Group title={`Виконано · ${done.length}`}>
-              {done.map((t) => (
-                <TaskRow key={t.id} task={t} today={today} showDate={false} />
-              ))}
+              <Progressive items={done}>{(t) => <TaskRow key={t.id} task={t} today={today} showDate={false} />}</Progressive>
             </Group>
           )}
         </>
@@ -141,9 +136,7 @@ export default function TasksPage() {
       }
       return [...byDay.entries()].map(([key, items]) => (
         <Group key={key} title={key === 'late' ? 'Прострочено' : relativeDayLabel(key, today, 'EEEE, d MMMM')} tone={key === 'late' ? 'danger' : undefined}>
-          {items.map((t) => (
-            <TaskRow key={t.id} task={t} today={today} showDate={key === 'late'} />
-          ))}
+          <Progressive items={items}>{(t) => <TaskRow key={t.id} task={t} today={today} showDate={key === 'late'} />}</Progressive>
         </Group>
       ));
     }
@@ -151,16 +144,12 @@ export default function TasksPage() {
       <>
         {open.length > 0 && (
           <Group title="">
-            {open.map((t) => (
-              <TaskRow key={t.id} task={t} today={today} />
-            ))}
+            <Progressive items={open}>{(t) => <TaskRow key={t.id} task={t} today={today} />}</Progressive>
           </Group>
         )}
         {done.length > 0 && (
           <Group title={scopeList === 'done' ? '' : `Виконано за тиждень · ${done.length}`}>
-            {done.map((t) => (
-              <TaskRow key={t.id} task={t} today={today} />
-            ))}
+            <Progressive items={done}>{(t) => <TaskRow key={t.id} task={t} today={today} />}</Progressive>
           </Group>
         )}
       </>
