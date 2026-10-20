@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { ErrorState } from './States';
+import { reportError } from '@/services/errors';
 
 interface Props {
   children: ReactNode;
@@ -21,6 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('Plano UI error', error, info.componentStack);
+    reportError(error);
   }
 
   componentDidUpdate(prev: Props) {

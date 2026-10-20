@@ -86,6 +86,9 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
+      # Real-browser checks (desktop + phone) on a local-preview build; a failure stops the deploy.
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
       - name: Build
         run: npm run build
         env:

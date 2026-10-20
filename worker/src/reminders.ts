@@ -1,9 +1,11 @@
 /**
- * One Durable Object per user: keeps the user's push subscriptions and the
- * upcoming reminders the app sent, and wakes itself (alarm) to deliver them.
+ * One Durable Object per user (named Reminders for history): push subscriptions
+ * and upcoming reminders (delivered by an alarm), weekly encrypted backups, and
+ * the app's recent error reports.
  */
 import { DurableObject } from 'cloudflare:workers';
 import { sendPush, type PushSubscriptionJSON } from './push';
+import { openGrant, sealGrant } from './crypto';
 import type { Env } from './index';
 
 export interface Reminder {
@@ -15,12 +17,74 @@ export interface Reminder {
 }
 
 const MAX = 300;
+const BACKUPS = 8;
+const CHUNK = 100_000; // storage values are capped at 128 KiB
+
+interface BackupMeta {
+  at: string;
+  size: number;
+  chunks: number;
+}
+interface ErrorReport {
+  at: string;
+  message: string;
+  stack?: string;
+  url?: string;
+  ua?: string;
+}
 const SUBJECT = 'https://plano.edvault.online';
 
 export class Reminders extends DurableObject<Env> {
   async fetch(req: Request): Promise<Response> {
     const { pathname } = new URL(req.url);
-    const body = (await req.json().catch(() => ({}))) as { subscription?: PushSubscriptionJSON; endpoint?: string; items?: Reminder[] };
+    const body = (await req.json().catch(() => ({}))) as {
+      subscription?: PushSubscriptionJSON;
+      endpoint?: string;
+      items?: Reminder[];
+      data?: string;
+      at?: string;
+      errors?: ErrorReport[];
+    };
+    const uid = req.headers.get('x-uid') ?? '';
+    const secret = this.env.GOOGLE_CLIENT_SECRET;
+    const backups = (await this.ctx.storage.get<BackupMeta[]>('backups')) ?? [];
+    if (pathname === '/backup/put' && typeof body.data === 'string' && body.data.length < 8_000_000) {
+      // Unique, increasing timestamp (two backups in one millisecond must not share chunks).
+      const at = new Date(Math.max(Date.now(), backups[0] ? Date.parse(backups[0].at) + 1 : 0)).toISOString();
+      const sealed = await sealGrant(body.data, uid, secret);
+      const chunks = Math.ceil(sealed.length / CHUNK);
+      for (let i = 0; i < chunks; i++) await this.ctx.storage.put(`b:${at}:${i}`, sealed.slice(i * CHUNK, (i + 1) * CHUNK));
+      const list = [{ at, size: body.data.length, chunks }, ...backups];
+      for (const old of list.slice(BACKUPS)) await this.ctx.storage.delete(Array.from({ length: old.chunks }, (_, i) => `b:${old.at}:${i}`));
+      await this.ctx.storage.put('backups', list.slice(0, BACKUPS));
+      return Response.json({ ok: true, at });
+    }
+    if (pathname === '/backup/list') return Response.json({ backups });
+    if (pathname === '/backup/get') {
+      const meta = backups.find((b) => b.at === body.at);
+      if (!meta) return Response.json({ error: 'not_found' }, { status: 404 });
+      let sealed = '';
+      for (let i = 0; i < meta.chunks; i++) sealed += (await this.ctx.storage.get<string>(`b:${meta.at}:${i}`)) ?? '';
+      const data = await openGrant(sealed, uid, secret).catch(() => null);
+      return data === null ? Response.json({ error: 'forbidden' }, { status: 403 }) : Response.json({ data });
+    }
+    if (pathname === '/errors/add' && Array.isArray(body.errors)) {
+      const clean = body.errors.slice(0, 20).map((e) => ({
+        at: String(e.at).slice(0, 40),
+        message: String(e.message).slice(0, 500),
+        stack: e.stack?.slice(0, 2000),
+        url: e.url?.slice(0, 300),
+        ua: e.ua?.slice(0, 200),
+      }));
+      const list = [...clean, ...((await this.ctx.storage.get<ErrorReport[]>('errors')) ?? [])].slice(0, 100);
+      await this.ctx.storage.put('errors', list);
+      return Response.json({ ok: true });
+    }
+    if (pathname === '/errors/list') return Response.json({ errors: (await this.ctx.storage.get<ErrorReport[]>('errors')) ?? [] });
+    if (pathname === '/errors/clear') {
+      await this.ctx.storage.put('errors', []);
+      return Response.json({ ok: true });
+    }
     const subs = (await this.ctx.storage.get<PushSubscriptionJSON[]>('subs')) ?? [];
     if (pathname === '/push/subscribe' && body.subscription?.endpoint && body.subscription.keys) {
       await this.ctx.storage.put('subs', [...subs.filter((s) => s.endpoint !== body.subscription!.endpoint), body.subscription].slice(-10));

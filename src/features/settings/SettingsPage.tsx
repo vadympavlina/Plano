@@ -20,6 +20,9 @@ import { useProfile } from '@/hooks/useProfile';
 import { settleWrite } from '@/services/sync';
 import { updateAuthProfile } from '@/services/auth';
 import { GoogleCalendarSettings } from '@/features/integrations/GoogleCalendarSettings';
+import { backupNow, fetchBackup, listBackups, type BackupMeta } from '@/services/backup';
+import { clearErrors, listErrors } from '@/services/errors';
+import { usesTokenServer } from '@/services/integrations/google/server';
 import { disablePush, enablePush, needsHomeScreen, pushEnabledHere, pushSupported, sendTestPush } from '@/services/push';
 import { deviceTimeZone, formatDateKey, plural, todayKey } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
@@ -516,6 +519,28 @@ function DataSection() {
     toast.success('Експорт завантажено');
   };
 
+  // Server backups (weekly, automatic) and error reports.
+  const cloud = backendKind === 'firebase' && usesTokenServer;
+  const [backups, setBackups] = useState<BackupMeta[] | null>(null);
+  const [errorCount, setErrorCount] = useState<number | null>(null);
+  const [pick, setPick] = useState('');
+  useEffect(() => {
+    if (!cloud) return;
+    void listBackups().then(setBackups, () => setBackups([]));
+    void listErrors().then((r) => setErrorCount(r.errors.length), () => undefined);
+  }, [cloud]);
+  const when = (iso: string) => new Date(iso).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true);
+    try {
+      await fn();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Не вдалося');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setResult(validateImport(await file.text()));
@@ -574,6 +599,66 @@ function DataSection() {
           <Upload className="h-4 w-4" /> Обрати файл…
         </Button>
       </Row>
+      {cloud && (
+        <Row
+          label="Резервні копії"
+          hint={`Автоматично раз на тиждень, зберігаються 8 останніх (зашифровано). ${backups?.length ? `Остання: ${when(backups[0].at)}.` : 'Поки немає.'}`}
+          keywords="резервна копія backup відновити"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            {!!backups?.length && (
+              <Select
+                aria-label="Копія для відновлення"
+                className="w-[190px]"
+                placeholder="Відновити з копії…"
+                value={pick}
+                onChange={(at) => {
+                  setPick(at);
+                  void run(async () => setResult(validateImport(await fetchBackup(at))));
+                }}
+                options={backups.map((b) => ({ value: b.at, label: when(b.at) }))}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              loading={busy}
+              onClick={() =>
+                void run(async () => {
+                  await backupNow(data);
+                  setBackups(await listBackups());
+                  toast.success('Копію збережено');
+                })
+              }
+            >
+              Зробити зараз
+            </Button>
+          </div>
+        </Row>
+      )}
+      {cloud && (
+        <Row label="Звіти про помилки" hint={errorCount ? `Збережено помилок: ${errorCount}. Скопіюйте й надішліть розробнику.` : 'Помилок не було.'} keywords="помилки журнал errors">
+          {!!errorCount && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  void run(async () => {
+                    await navigator.clipboard.writeText(JSON.stringify((await listErrors()).errors, null, 2));
+                    toast.success('Скопійовано');
+                  })
+                }
+              >
+                Копіювати
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => void run(async () => (await clearErrors(), setErrorCount(0)))}>
+                Очистити
+              </Button>
+            </div>
+          )}
+        </Row>
+      )}
       {result && !result.ok && (
         <div role="alert" className="m-4 rounded-xl bg-danger/10 p-3 text-sm text-danger">
           <p className="font-medium">Цей файл не можна імпортувати:</p>

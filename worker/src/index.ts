@@ -76,10 +76,12 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
     return json(401, { error: 'unauthenticated' });
   }
 
-  // Reminders live in the user's own Durable Object.
-  if (path.startsWith('/push/')) {
+  // Reminders, backups and error reports live in the user's own Durable Object.
+  if (/^\/(push|backup|errors)\//.test(path)) {
     if (!env.REMINDERS) return json(503, { error: 'not_configured' });
-    const res = await env.REMINDERS.get(env.REMINDERS.idFromName(uid)).fetch(new Request(`https://do${path}`, { method: 'POST', body: req.body }));
+    const res = await env.REMINDERS.get(env.REMINDERS.idFromName(uid)).fetch(
+      new Request(`https://do${path}`, { method: 'POST', body: req.body, headers: { 'x-uid': uid } }),
+    );
     return json(res.status, await res.json());
   }
 

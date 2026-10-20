@@ -10,6 +10,7 @@ interface DurableObjectState {
   storage: {
     get<T>(key: string): Promise<T | undefined>;
     put(key: string, value: unknown): Promise<void>;
+    delete(keys: string[]): Promise<number>;
     setAlarm(at: number): Promise<void>;
     deleteAlarm(): Promise<void>;
   };
