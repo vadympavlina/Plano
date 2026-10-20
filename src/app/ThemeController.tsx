@@ -5,6 +5,11 @@ import type { ThemePreference } from '@/types';
 export function applyTheme(theme: ThemePreference) {
   const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', dark);
+  // Status bar / browser chrome follows the app theme, not just the OS one.
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
+    m.removeAttribute('media');
+    m.setAttribute('content', dark ? '#0E1117' : '#F3F5F9');
+  });
   try {
     localStorage.setItem('plano:theme', theme);
   } catch {

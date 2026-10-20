@@ -20,6 +20,10 @@
           var t = localStorage.getItem('plano:theme') || 'light';
           var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
+            m.removeAttribute('media');
+            m.setAttribute('content', dark ? '#0E1117' : '#F3F5F9');
+          });
         } catch (e) {}
       })();
     </script>
