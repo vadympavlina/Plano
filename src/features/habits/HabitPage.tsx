@@ -238,7 +238,8 @@ export default function HabitPage() {
                     key={d}
                     type="button"
                     disabled={future || d < habit.startDate}
-                    onClick={() => void toggle(habit, d, 'toggle')}
+                    // Bad habit, day before tracking started: a tap starts tracking from that day.
+                    onClick={() => void (bad && !scheduled ? actions.habits.update(habit.id, { trackFrom: d }).catch(() => undefined) : toggle(habit, d, 'toggle'))}
                     aria-pressed={dDone}
                     aria-label={`${formatDateKey(d, 'd MMMM')}: ${dDone ? 'виконано' : scheduled ? 'не виконано' : 'не заплановано'}`}
                     className={cn(
@@ -257,7 +258,7 @@ export default function HabitPage() {
                 );
               })}
             </div>
-            <p className="mt-2 text-[12px] text-subtle">{bad ? 'Натисніть на день, щоб позначити або зняти зрив.' : 'Натисніть на день, щоб відмітити або зняти відмітку.'}</p>
+            <p className="mt-2 text-[12px] text-subtle">{bad ? 'Натисніть на день, щоб позначити або зняти зрив. Сірий день до початку відстеження — почати рахувати з нього.' : 'Натисніть на день, щоб відмітити або зняти відмітку.'}</p>
           </section>
 
           <section aria-label="Статистика">

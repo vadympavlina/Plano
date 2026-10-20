@@ -93,3 +93,15 @@ describe('bad habits', () => {
     expect(nextHabitValue(gym, 0)).toBe(1);
   });
 });
+
+describe('bad habit tracking window', () => {
+  const sweets: Habit = { ...gym, id: 'sweets', schedule: [0, 1, 2, 3, 4, 5, 6], kind: 'bad', startDate: '2025-03-01', trackFrom: '2025-04-05' };
+  it('days before tracking started are not clean days', () => {
+    expect(isScheduled(sweets, '2025-04-04')).toBe(false);
+    expect(isScheduled(sweets, '2025-04-05')).toBe(true);
+    expect(currentStreak(sweets, {}, '2025-04-08')).toBe(4);
+  });
+  it('falls back to the creation day', () => {
+    expect(isScheduled({ ...sweets, trackFrom: undefined }, '2025-03-31')).toBe(false);
+  });
+});

@@ -142,6 +142,8 @@ export interface Habit extends Timestamps {
    * the limit (0 for check habits, `target` for count habits). Missing = "good".
    */
   kind?: 'good' | 'bad';
+  /** Bad habits: first day actually tracked (days before it are "no data", not clean). */
+  trackFrom?: DateKey;
 }
 
 /** habitLogs/{habitId}/{dateKey} = value (1 for a check habit). */

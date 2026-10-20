@@ -3,6 +3,7 @@ import { Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
+import { useData } from '@/app/providers/DataProvider';
 import { TaskTick, taskChipStyle } from './TaskTick';
 import { useNow } from '@/hooks/useNow';
 import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, fromDateKey, minutesToTime, todayKey, weekRange } from '@/lib/date';
@@ -68,6 +69,7 @@ export function TimeGrid({
   onSwipe?: (dir: 1 | -1) => void;
 }) {
   const { categoryById, events } = useCollections();
+  const gcal = useData().data.integrations.google_calendar;
   const taskColor = (t: Task) => colorOf(categoryById(t.categoryId)?.color ?? 'slate');
   const settings = useSettings();
   const { openEvent, openEventForm, openTask } = useUI();
@@ -92,11 +94,11 @@ export function TimeGrid({
     () =>
       days.map((day) => ({
         day,
-        positioned: layoutDay(buildTimedItems(day, occurrences, tasks, categoryById)),
+        positioned: layoutDay(buildTimedItems(day, occurrences, tasks, categoryById, gcal)),
         allDay: occurrencesOnDay(occurrences, day).filter((o) => o.event.allDay),
         untimedTasks: tasks.filter((t) => (t.dueDate ?? t.startDate) === day && !t.startTime && t.status !== 'cancelled'),
       })),
-    [days, occurrences, tasks, categoryById],
+    [days, occurrences, tasks, categoryById, gcal],
   );
 
   // Scroll to a useful hour: the earliest item in view, or shortly before now.
@@ -264,7 +266,8 @@ export function TimeGrid({
   // ---- moving and resizing events ------------------------------------------
 
   const onItemPointerDown = (e: ReactPointerEvent, item: GridItem, dayIndex: number, mode: DragState['mode']) => {
-    if (item.kind !== 'event' || !item.draggable || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    // Touch never moves events: on phones a scroll too easily turns into a drag.
+    if (item.kind !== 'event' || !item.draggable || e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.button !== 0)) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     blockScroll.current = true;

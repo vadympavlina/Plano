@@ -1,4 +1,4 @@
-import type { CalendarEvent, Category, DateKey, Task } from '@/types';
+import type { CalendarEvent, Category, DateKey, IntegrationState, Task } from '@/types';
 import { colorOf } from '@/lib/utils/colors';
 import { eventMinutes, taskMinutes, type EventOccurrence, type TimedItem } from './logic';
 
@@ -8,11 +8,16 @@ export type GridItem = TimedItem &
     | { kind: 'task'; task: Task; title: string; color: string; draggable: false }
   );
 
+/** Events from Google calendars we may only read (no edits, no drag, nothing sent back). */
+export const isReadOnly = (e: CalendarEvent, gcal?: IntegrationState) =>
+  !!e.external && gcal?.calendars?.find((c) => c.id === e.external!.calendarId)?.writable === false;
+
 export function buildTimedItems(
   day: DateKey,
   occurrences: EventOccurrence[],
   tasks: Task[],
   categoryById: (id?: string) => Category | undefined,
+  gcal?: IntegrationState,
 ): GridItem[] {
   const items: GridItem[] = [];
   for (const o of occurrences) {
@@ -27,7 +32,7 @@ export function buildTimedItems(
       occurrence: o,
       title: o.event.title,
       color: eventColor(o.event, categoryById),
-      draggable: !o.event.recurrence,
+      draggable: !o.event.recurrence && !isReadOnly(o.event, gcal),
     });
   }
   for (const t of tasks) {

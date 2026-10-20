@@ -138,7 +138,7 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
       // 2. Deletions made in Plano
       const pendingDeletes = { ...(st.pendingDeletes ?? {}) };
       for (const [localId, ref] of Object.entries(pendingDeletes)) {
-        await deleteEvent(token, ref.calendarId, ref.eventId);
+        if (calById.get(ref.calendarId)?.writable !== false) await deleteEvent(token, ref.calendarId, ref.eventId);
         delete pendingDeletes[localId];
         await repos.batch('Google Calendar', { [`integrations/${GCAL_KEY}/pendingDeletes/${localId}`]: null });
       }
@@ -147,6 +147,11 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
       // pull below sees the new Google links even before React re-renders.
       const overrides = new Map<string, CalendarEvent | null>();
       for (const e of Object.values(dataRef.current.events).filter((x) => x.syncPending)) {
+        if (e.external && calById.get(e.external.calendarId)?.writable === false) {
+          // Read-only calendar: drop the local change, the pull below restores Google's version.
+          await repos.events.update(e.id, { syncPending: false });
+          continue;
+        }
         const body = toGoogle(e, e.timezone || tz);
         if (e.source === 'google') delete body.recurrence; // instances of Google series keep their own rules
         try {

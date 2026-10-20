@@ -40,7 +40,15 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
       target: draft.goalType === 'check' ? 1 : Math.round(draft.target),
       unit: draft.goalType === 'count' ? draft.unit?.trim() || undefined : undefined,
     };
-    if (habit) void submit(() => actions.habits.update(habit.id, clean), 'Звичку оновлено');
+    // A bad habit is tracked from the day it became one: earlier days are unknown, not "clean".
+    const becameBad = clean.kind === 'bad' && habit?.kind !== 'bad';
+    if (becameBad) clean.trackFrom = todayKey();
+    if (habit)
+      void submit(async () => {
+        await actions.habits.update(habit.id, clean);
+        // Today's mark of the old good habit is not a slip.
+        if (becameBad) await actions.habits.setValue(habit.id, todayKey(), 0);
+      }, 'Звичку оновлено');
     else void submit(() => actions.habits.create(clean).write, 'Звичку створено');
   };
 

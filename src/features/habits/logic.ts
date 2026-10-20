@@ -3,6 +3,8 @@ import type { DateKey, Habit, HabitLogs } from '@/types';
 
 export function isScheduled(habit: Habit, date: DateKey): boolean {
   if (date < habit.startDate) return false;
+  // Bad habits count only tracked days (older ones fall back to the creation day).
+  if (habit.kind === 'bad' && date < (habit.trackFrom ?? habit.createdAt.slice(0, 10))) return false;
   return habit.schedule.includes(fromDateKey(date).getDay());
 }
 

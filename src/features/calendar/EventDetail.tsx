@@ -7,7 +7,7 @@ import { useData } from '@/app/providers/DataProvider';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
 import { useUI } from '@/app/providers/UIProvider';
-import { eventColor } from './items';
+import { eventColor, isReadOnly } from './items';
 import { EventDescription, JoinMeetingButton, meetingLink } from './EventDescription';
 import { describeRecurrence } from '@/lib/date/recurrence';
 import { formatDateKey, formatTimeRange } from '@/lib/date';
@@ -40,6 +40,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
   const gcal = data.integrations.google_calendar;
   const googleCalendar = event.external ? gcal?.calendars?.find((c) => c.id === event.external!.calendarId) : undefined;
   const occurrence = date ?? event.date;
+  const readOnly = isReadOnly(event, gcal);
 
   const removeOccurrence = async () => {
     await actions.events.removeOccurrence(event, occurrence).then(() => toast.success('Повторення видалено'), () => undefined);
@@ -102,10 +103,14 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
           <div className="flex flex-wrap gap-1.5">
             {category && <Badge color={color}>{category.name}</Badge>}
             {event.external && <Badge color={googleCalendar?.color}>Google Calendar{googleCalendar ? ` · ${googleCalendar.name}` : ''}</Badge>}
+            {readOnly && <Badge>Лише перегляд</Badge>}
             {event.syncPending && gcal?.status === 'connected' && <Badge>Очікує синхронізації</Badge>}
           </div>
           {event.description && <EventDescription text={event.description} />}
         </div>
+        {readOnly ? (
+          <p className="mt-4 text-xs text-muted">Цей календар Google доступний лише для перегляду — змінюйте подію в Google Calendar.</p>
+        ) : (
         <DialogFooter>
           {event.recurrence ? (
             <DropdownMenu>
@@ -138,6 +143,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             <Pencil className="h-4 w-4" /> Редагувати
           </Button>
         </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
