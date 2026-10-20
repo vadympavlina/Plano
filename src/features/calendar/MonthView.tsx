@@ -1,4 +1,5 @@
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { iconTitle } from '@/components/common/CategoryMark';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
@@ -141,7 +142,7 @@ export function MonthView({
                       {!it.o.event.allDay && it.o.event.startTime && (
                         <span className="shrink-0 tabular-nums text-muted">{formatTime(it.o.event.startTime, settings.timeFormat)}</span>
                       )}
-                      <span className="truncate font-medium text-ink">{it.o.event.title}</span>
+                      <span className="truncate font-medium text-ink">{iconTitle(it.o.event.title, categoryById(it.o.event.categoryId))}</span>
                     </button>
                   ) : (
                     <button
@@ -153,7 +154,7 @@ export function MonthView({
                       title={`Задача: ${it.t.title}`}
                     >
                       <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />
-                      <span className="truncate">{it.t.title}</span>
+                      <span className="truncate">{iconTitle(it.t.title, categoryById(it.t.categoryId))}</span>
                     </button>
                   ),
                 )}

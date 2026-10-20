@@ -14,16 +14,16 @@ export const DEFAULT_SETTINGS: Settings = {
   accent: 'blue',
 };
 
-const STARTER: [string, string, ColorKey][] = [
-  ['cat_work', 'Робота', 'blue'],
-  ['cat_personal', 'Особисте', 'purple'],
-  ['cat_health', 'Здоров’я', 'green'],
-  ['cat_study', 'Навчання', 'orange'],
+const STARTER: [string, string, ColorKey, string][] = [
+  ['cat_work', 'Робота', 'blue', '💼'],
+  ['cat_personal', 'Особисте', 'purple', '🏠'],
+  ['cat_health', 'Здоров’я', 'green', '💪'],
+  ['cat_study', 'Навчання', 'orange', '📚'],
 ];
 
 /** Starter categories, written once on first sign-in. Fixed ids keep it idempotent. */
 export function starterCategories(now: string): Record<string, Category> {
   return Object.fromEntries(
-    STARTER.map(([id, name, color], order) => [id, { id, name, color, order, createdAt: now, updatedAt: now }]),
+    STARTER.map(([id, name, color, icon], order) => [id, { id, name, color, icon, order, createdAt: now, updatedAt: now }]),
   );
 }

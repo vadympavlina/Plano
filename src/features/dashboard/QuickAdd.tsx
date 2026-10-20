@@ -1,5 +1,6 @@
-import { useMemo, useState, type FormEvent } from 'react';
-import { Plus, CalendarDays, CheckSquare, NotebookPen } from 'lucide-react';
+import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { useDictation } from '@/hooks/useDictation';
+import { Plus, CalendarDays, CheckSquare, Mic, NotebookPen } from 'lucide-react';
 import { DatePicker, TimePicker } from '@/components/ui/date-time';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
@@ -31,6 +32,17 @@ export function QuickAdd({ className }: { className?: string }) {
   const [time, setTime] = useState<string>(() => roundUpTime(new Date()));
   const [busy, setBusy] = useState(false);
   const { categories, projects } = useCollections();
+  // Dictation fills the same field, so «завтра о 15 #робота» is understood the same way.
+  const before = useRef('');
+  const voice = useDictation(
+    (text) => setTitle(`${before.current} ${text}`.trim()),
+    (err) => toast.error(err === 'not-allowed' || err === 'service-not-allowed' ? 'Немає доступу до мікрофона' : 'Не вдалося розпізнати мову'),
+  );
+  const toggleVoice = () => {
+    if (voice.listening) return voice.stop();
+    before.current = title.trim();
+    voice.start();
+  };
   const settings = useSettings();
 
   // «Зустріч завтра о 15 на годину #робота»: date, time, length and #category/#project come from the text.
@@ -124,6 +136,22 @@ export function QuickAdd({ className }: { className?: string }) {
           maxLength={300}
           className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"
         />
+        {voice.supported && (
+          <button
+            type="button"
+            onClick={toggleVoice}
+            aria-pressed={voice.listening}
+            aria-label={voice.listening ? 'Зупинити диктування' : 'Надиктувати'}
+            title={voice.listening ? 'Слухаю… натисніть, щоб зупинити' : 'Надиктувати'}
+            className={cn(
+              'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors',
+              voice.listening ? 'bg-danger text-white' : 'text-subtle hover:bg-surface-2 hover:text-ink',
+            )}
+          >
+            {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-danger/40" aria-hidden />}
+            <Mic className="relative h-4 w-4" />
+          </button>
+        )}
         {kind !== 'note' && chips.length > 0 && (
           <span className="hidden max-w-[50%] shrink-0 gap-1 overflow-hidden sm:flex" aria-live="polite">
             {chips.map((c) => (

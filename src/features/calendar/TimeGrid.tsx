@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { iconTitle } from '@/components/common/CategoryMark';
 import { Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
@@ -492,7 +493,7 @@ export function TimeGrid({
                       style={{ backgroundColor: solidTint(color, 0.18), color }}
                       title={o.event.title}
                     >
-                      {o.event.title}
+                      {iconTitle(o.event.title, categoryById(o.event.categoryId))}
                     </button>
                   );
                 })}
@@ -511,7 +512,7 @@ export function TimeGrid({
                     title={`Задача: ${t.title}`}
                   >
                     <TaskTick task={t} color={taskColor(t)} size={12} />
-                    <span className="truncate">{t.title}</span>
+                    <span className="truncate">{iconTitle(t.title, categoryById(t.categoryId))}</span>
                   </button>
                 ))}
                 {selected && c.allDay.length === 0 && c.untimedTasks.length === 0 && (

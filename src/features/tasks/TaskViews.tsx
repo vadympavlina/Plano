@@ -1,10 +1,10 @@
 import { useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
+import { CategoryChip } from '@/components/common/CategoryMark';
 import { Check, ChevronDown, Clock, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { addDaysKey, formatTime, relativeDayLabel } from '@/lib/date';
-import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
@@ -85,7 +85,7 @@ function CategoryDot({ task }: { task: Task }) {
   const { categoryById } = useCollections();
   const c = task.categoryId ? categoryById(task.categoryId) : undefined;
   if (!c) return null;
-  return <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorOf(c.color) }} title={c.name} />;
+  return <CategoryChip category={c} compact />;
 }
 
 /** Subtask progress as a small bar with "2 з 5". */

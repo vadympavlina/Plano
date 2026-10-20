@@ -1,4 +1,5 @@
 import type { CalendarEvent, Category, DateKey, IntegrationState, Task } from '@/types';
+import { iconTitle } from '@/components/common/CategoryMark';
 import { colorOf } from '@/lib/utils/colors';
 import { eventMinutes, taskMinutes, type EventOccurrence, type TimedItem } from './logic';
 
@@ -30,7 +31,7 @@ export function buildTimedItems(
       start: m.start,
       end: m.end,
       occurrence: o,
-      title: o.event.title,
+      title: iconTitle(o.event.title, categoryById(o.event.categoryId)),
       color: eventColor(o.event, categoryById),
       draggable: !o.event.recurrence && !isReadOnly(o.event, gcal),
     });
@@ -45,7 +46,7 @@ export function buildTimedItems(
       start: m.start,
       end: m.end,
       task: t,
-      title: t.title,
+      title: iconTitle(t.title, categoryById(t.categoryId)),
       color: colorOf(categoryById(t.categoryId)?.color ?? 'slate'),
       draggable: false,
     });

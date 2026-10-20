@@ -45,6 +45,7 @@ export const categorySchema = z.object({
   name: z.string().min(1).max(60),
   color: colorSchema,
   order: z.number().default(0),
+  icon: z.string().max(16).optional().catch(undefined),
   ...timestamps,
 });
 

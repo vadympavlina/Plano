@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { iconTitle } from '@/components/common/CategoryMark';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
@@ -30,13 +31,13 @@ export function WeekBoard({ today, className }: { today: DateKey; className?: st
       const items: BoardItem[] = occurrencesOnDay(occ, d).map((o) => ({
         key: o.key,
         kind: 'event',
-        title: o.event.title,
+        title: iconTitle(o.event.title, categoryById(o.event.categoryId)),
         time: o.event.allDay || !o.event.startTime ? undefined : formatTime(o.event.startTime, settings.timeFormat),
         color: eventColor(o.event, categoryById),
       }));
       for (const t of tasks) {
         if (taskDate(t) !== d || t.status === 'cancelled') continue;
-        items.push({ key: `task:${t.id}`, kind: 'task', title: t.title, done: t.status === 'completed' });
+        items.push({ key: `task:${t.id}`, kind: 'task', title: iconTitle(t.title, categoryById(t.categoryId)), done: t.status === 'completed' });
       }
       return { day: d, items };
     });

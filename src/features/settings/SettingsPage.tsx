@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { EmojiPicker } from '@/components/common/Pickers';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Bell, Check, Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
+import { Bell, Check, Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, SmilePlus, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge, Segmented } from '@/components/ui/misc';
@@ -357,6 +358,11 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
           <ColorPicker value={category.color} onChange={(color) => void actions.categories.update(category.id, { color }).catch(() => undefined)} />
         </PopoverContent>
       </Popover>
+      <EmojiPicker label={`Іконка «${category.name}»`} value={category.icon} onChange={(icon) => void actions.categories.update(category.id, { icon }).catch(() => undefined)}>
+        <span className="flex h-8 w-8 items-center justify-center rounded-lg text-[17px] hover:bg-surface-2" title="Іконка">
+          {category.icon ?? <SmilePlus className="h-4 w-4 text-subtle" />}
+        </span>
+      </EmojiPicker>
       <input
         className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-none hover:bg-surface-2 focus:bg-surface-2"
         aria-label="Назва категорії"
@@ -402,7 +408,7 @@ function CategoriesSection() {
     setName('');
   };
   return (
-    <Group id="categories" title="Категорії" description="Кольори для задач, подій і цілей." keywords={`колір ${categories.map((c) => c.name).join(' ')}`}>
+    <Group id="categories" title="Категорії" description="Колір та іконка для задач, подій і цілей." keywords={`колір ${categories.map((c) => c.name).join(' ')}`}>
       {categories
         .filter((c) => matches(q, c.name))
         .map((c) => (

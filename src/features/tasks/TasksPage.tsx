@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { CategoryMark } from '@/components/common/CategoryMark';
 import { useSearchParams } from 'react-router-dom';
 import { CalendarDays, CheckCircle2, Columns3, Inbox, Layers, List, Plus, Search, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -234,7 +235,7 @@ export default function TasksPage() {
         )}
         {categories.length > 0 && <p className="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Категорії</p>}
         {categories.map((c) =>
-          navItem(categoryId === c.id, () => go({ category: c.id }), <span className="mx-[5px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorOf(c.color) }} />, c.name),
+          navItem(categoryId === c.id, () => go({ category: c.id }), <CategoryMark category={c} className={c.icon ? 'w-[18px] text-center text-[14px]' : 'mx-[5px]'} />, c.name),
         )}
       </nav>
 

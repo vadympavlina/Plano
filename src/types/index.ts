@@ -32,6 +32,8 @@ export interface Category extends Timestamps {
   name: string;
   color: ColorKey;
   order: number;
+  /** Emoji shown before the name in lists and on calendar items. */
+  icon?: string;
 }
 
 export const TASK_STATUSES = ['todo', 'in_progress', 'completed', 'cancelled'] as const;

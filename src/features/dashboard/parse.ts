@@ -28,10 +28,19 @@ const WEEKDAYS: [RegExp, number][] = [
 ];
 const MONTHS = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня'];
 const pad = (n: number) => String(n).padStart(2, '0');
+// Dictation spells hours out: «о третій дня», «о дев'ятій ранку».
+const HOURS = ['першій', 'другій', 'третій', 'четвертій', "п'ятій", 'шостій', 'сьомій', 'восьмій', "дев'ятій", 'десятій', 'одинадцятій', 'дванадцятій'];
+const spoken = (t: string) =>
+  t
+    .replace(new RegExp(`${B}(?:хештег|хеш тег|тег)\\s+`, 'giu'), '#')
+    .replace(
+      new RegExp(`${B}(о|об)\\s+(${HOURS.map((h) => h.replace("'", "[ʼ’'`]")).join('|')})${E}`, 'giu'),
+      (_, o: string, h: string) => `${o} ${HOURS.indexOf(h.toLowerCase().replace(/[ʼ’`]/, "'")) + 1}`,
+    );
 
 /** Pulls dates, times, durations, #tags and !! priority out of a quick-add line. */
 export function parseQuick(input: string, today: DateKey): ParsedQuick {
-  let text = ` ${input} `;
+  let text = ` ${spoken(input)} `;
   const out: ParsedQuick = { title: '', tags: [] };
   const take = (re: RegExp, fn: (m: RegExpMatchArray) => boolean | void) => {
     const m = text.match(re);

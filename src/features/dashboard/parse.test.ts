@@ -29,4 +29,8 @@ describe('parseQuick', () => {
   it('priority and several tags', () => {
     expect(parseQuick('Виправити баг !!! #робота #plano', T)).toMatchObject({ title: 'Виправити баг', priority: 'urgent', tags: ['робота', 'plano'] });
   });
+  it('understands dictation', () => {
+    expect(parseQuick('Зустріч завтра о третій дня на годину хештег робота', T)).toEqual({ title: 'Зустріч', date: '2026-10-21', time: '15:00', duration: 60, tags: ['робота'] });
+    expect(parseQuick('Біг о дев’ятій ранку', T)).toMatchObject({ title: 'Біг', time: '09:00' });
+  });
 });

@@ -32,7 +32,7 @@ export const statusOptions: SelectOption<TaskStatus>[] = TASK_STATUSES.map((s) =
 
 /** "" means none. */
 export function categoryOptions(categories: Category[], noneLabel = 'Без категорії'): SelectOption<string>[] {
-  return [{ value: '', label: noneLabel, color: '#C3C8D3' }, ...categories.map((c) => ({ value: c.id, label: c.name, color: colorOf(c.color) }))];
+  return [{ value: '', label: noneLabel, color: '#C3C8D3' }, ...categories.map((c) => ({ value: c.id, label: c.icon ? `${c.icon} ${c.name}` : c.name, color: colorOf(c.color) }))];
 }
 
 export function projectOptions(projects: Project[], current?: string, noneLabel = 'Без проєкту'): SelectOption<string>[] {

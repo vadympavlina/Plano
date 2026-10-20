@@ -1,4 +1,5 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { CategoryMark } from '@/components/common/CategoryMark';
 import { AlertTriangle, AlignLeft, FolderKanban, Link2, MapPin, Repeat, Sun } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -295,7 +296,7 @@ export default function EventFormDialog({
                       )}
                       style={on ? { backgroundColor: tint(color, 0.16), borderColor: tint(color, 0.5) } : undefined}
                     >
-                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
+                      <CategoryMark category={c} />
                       {c.name}
                     </button>
                   );
