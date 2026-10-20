@@ -7,50 +7,6 @@ import { COLOR_KEYS, type ColorKey } from '@/types';
 /** Gradient used for note and project covers. */
 export const coverGradient = (c: ColorKey, strong = 0.3, soft = 0.12) => `linear-gradient(120deg, ${tint(colorOf(c), strong)}, ${tint(colorOf(c), soft)})`;
 
-const EMOJIS = ['💡', '📝', '📌', '📚', '🎯', '🚀', '💼', '🏠', '🛒', '✈️', '🧳', '🍳', '💪', '🧘', '🎨', '🎵', '🎬', '📷', '💻', '🧠', '❤️', '⭐', '🔥', '🌱', '☕', '🗓️', '💰', '🛠️', '📈', '✅', '❓', '🎉'];
-
-export function EmojiPicker({ value, onChange, children, label = 'Іконка' }: { value?: string; onChange: (v: string | undefined) => void; children: ReactNode; label?: string }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button type="button" aria-label={label} className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-          {children}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-[264px] p-2">
-        <div className="grid grid-cols-8 gap-0.5">
-          {EMOJIS.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => {
-                onChange(e);
-                setOpen(false);
-              }}
-              className={cn('flex h-8 w-8 items-center justify-center rounded-lg text-[18px] hover:bg-surface-2', value === e && 'bg-surface-2 ring-1 ring-line')}
-            >
-              {e}
-            </button>
-          ))}
-        </div>
-        {value && (
-          <button
-            type="button"
-            onClick={() => {
-              onChange(undefined);
-              setOpen(false);
-            }}
-            className="mt-2 w-full rounded-lg py-1.5 text-[12.5px] text-muted hover:bg-surface-2 hover:text-ink"
-          >
-            Прибрати іконку
-          </button>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 export function CoverPicker({ value, onChange, children, label = 'Обкладинка' }: { value?: ColorKey; onChange: (v: ColorKey | undefined) => void; children?: ReactNode; label?: string }) {
   const [open, setOpen] = useState(false);
   return (

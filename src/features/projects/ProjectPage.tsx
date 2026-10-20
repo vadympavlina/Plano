@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, FolderKanban, ImageIcon, Pencil, Plus, Target, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, FileText, FolderKanban, ImageIcon, Pencil, Plus, Target, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Progress, Segmented } from '@/components/ui/misc';
@@ -250,9 +250,9 @@ export default function ProjectPage() {
             ) : (
               related.notes.slice(0, 5).map((n) => (
                 <Link key={n.id} to={`/notes/${n.id}`} className="-mx-2 block rounded-lg px-2 py-2 hover:bg-surface-2">
-                  <p className="truncate text-[13.5px] font-medium">
-                    {n.icon && `${n.icon} `}
-                    {n.title || 'Без назви'}
+                  <p className="flex items-center gap-1.5 text-[13.5px] font-medium">
+                    {n.icon && <LineIcon icon={n.icon} fallback={FileText} className="h-3.5 w-3.5 shrink-0 text-muted" />}
+                    <span className="truncate">{n.title || 'Без назви'}</span>
                   </p>
                   <p className="truncate text-xs text-muted">{markdownExcerpt(n.content, 80) || 'Порожня'}</p>
                 </Link>

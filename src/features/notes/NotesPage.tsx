@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { NotebookPen, Plus, Search } from 'lucide-react';
+import { FileText, NotebookPen, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { colorOf } from '@/lib/utils/colors';
@@ -9,6 +9,7 @@ import { useCollections } from '@/hooks/useCollections';
 import { useCreateNote } from '@/components/layout/CreateMenu';
 import { markdownExcerpt } from '@/lib/utils/markdown';
 import { Progressive } from '@/components/common/Progressive';
+import { LineIcon } from '@/components/common/CategoryMark';
 import { cn } from '@/lib/utils/cn';
 import { NoteEditor } from './NoteEditor';
 
@@ -52,9 +53,13 @@ export default function NotesPage() {
         className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]', active ? 'bg-surface shadow-soft ring-1 ring-line' : 'hover:bg-surface/70')}
       >
         {n.icon ? (
-          <span className="mt-px w-4 shrink-0 text-center text-[14px] leading-5">{n.icon}</span>
+          <span className="mt-0.5 flex w-4 shrink-0 justify-center" style={{ color: dot }}>
+            <LineIcon icon={n.icon} fallback={FileText} className="h-4 w-4" />
+          </span>
         ) : (
-          <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: dot ?? 'rgb(var(--line))' }} />
+          <span className="mt-[7px] flex w-4 shrink-0 justify-center">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: dot ?? 'rgb(var(--line))' }} />
+          </span>
         )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[13.5px] font-semibold">{n.title || 'Без назви'}</span>

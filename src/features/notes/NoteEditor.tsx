@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FolderKanban, Bold, Check, Clock, Eye, Hash, Heading2, ImageIcon, Italic, Link2, List, ListChecks, Loader2, Pencil, Pin, PinOff, Smile, Target, Trash2 } from 'lucide-react';
-import { CoverPicker, EmojiPicker, coverGradient } from '@/components/common/Pickers';
+import { ArrowLeft, FolderKanban, Bold, Check, Clock, Eye, FileText, Hash, Heading2, ImageIcon, Italic, Link2, List, ListChecks, Loader2, Pencil, Pin, PinOff, Smile, Target, Trash2 } from 'lucide-react';
+import { CoverPicker, coverGradient } from '@/components/common/Pickers';
+import { LineIcon, LineIconPicker } from '@/components/common/CategoryMark';
 import { useUI } from '@/app/providers/UIProvider';
 import { colorOf } from '@/lib/utils/colors';
 import { Button } from '@/components/ui/button';
@@ -151,6 +152,7 @@ export function NoteEditor({ note }: { note: Note }) {
     [content],
   );
   const coverColor = note.cover ? colorOf(note.cover) : undefined;
+  const setIcon = (icon: string | undefined) => void actions.notes.update(note.id, { icon }).catch(() => undefined);
   const updatedAt = new Date(note.updatedAt);
   const projectId = note.projectId;
   const relatedTasks = projectId ? tasks.filter((t) => t.projectId === projectId && (t.status === 'todo' || t.status === 'in_progress')).slice(0, 5) : [];
@@ -216,17 +218,19 @@ export function NoteEditor({ note }: { note: Note }) {
             ) : null}
             <div className={cn('group/head flex items-end gap-2', coverColor && note.icon ? '-mt-12 ml-3' : 'mt-4')}>
               {note.icon && (
-                <EmojiPicker value={note.icon} onChange={(icon) => void actions.notes.update(note.id, { icon }).catch(() => undefined)}>
-                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface text-[34px] shadow-pop ring-1 ring-line/60">{note.icon}</span>
-                </EmojiPicker>
+                <LineIconPicker label="Іконка нотатки" value={note.icon} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
+                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface shadow-pop ring-1 ring-line/60" style={{ color: coverColor }}>
+                    <LineIcon icon={note.icon} fallback={FileText} className="h-7 w-7" />
+                  </span>
+                </LineIconPicker>
               )}
               <div className={cn('flex gap-1 pb-1 text-[12.5px] text-subtle opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100', !note.icon && !coverColor && 'opacity-100 sm:opacity-0')}>
                 {!note.icon && (
-                  <EmojiPicker value={undefined} onChange={(icon) => void actions.notes.update(note.id, { icon }).catch(() => undefined)}>
+                  <LineIconPicker label="Іконка нотатки" value={undefined} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
                     <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
                       <Smile className="h-3.5 w-3.5" /> Іконка
                     </span>
-                  </EmojiPicker>
+                  </LineIconPicker>
                 )}
                 {!coverColor && (
                   <CoverPicker value={undefined} onChange={(cover) => void actions.notes.update(note.id, { cover }).catch(() => undefined)}>
