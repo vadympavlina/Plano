@@ -36,7 +36,7 @@ export default function ProjectPage() {
   const navigate = useNavigate();
   const { openTaskForm, openEvent } = useUI();
   const createNote = useCreateNote();
-  const now = useNow();
+  const now = useNow(60_000);
   const today = todayKey(now);
   const [editing, setEditing] = useState(false);
   const [showDone, setShowDone] = useState(false);

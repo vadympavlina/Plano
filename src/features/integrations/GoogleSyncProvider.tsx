@@ -267,7 +267,8 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!connected || !canSync || backendKind !== 'firebase') return;
     void runSync();
-    const id = setInterval(() => void runSync(), SYNC_INTERVAL_MS);
+    // Background tabs don't poll; returning to the app syncs at once (below).
+    const id = setInterval(() => document.visibilityState === 'visible' && void runSync(), SYNC_INTERVAL_MS);
     const onVisible = () => document.visibilityState === 'visible' && void runSync();
     document.addEventListener('visibilitychange', onVisible);
     return () => {

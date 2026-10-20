@@ -97,7 +97,7 @@ function Ring({
 }
 
 export default function DashboardPage() {
-  const now = useNow();
+  const now = useNow(60_000);
   const today = todayKey(now);
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const { data } = useData();

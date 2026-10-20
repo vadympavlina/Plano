@@ -131,7 +131,7 @@ export function QuickAdd({ className }: { className?: string }) {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={kind === 'note' ? 'Почати нотатку…' : 'Напр. «Зустріч завтра о 15 на годину #робота»'}
+          placeholder={kind === 'note' ? 'Почати нотатку…' : 'Напр. «Зустріч завтра о 15 #робота»'}
           aria-label="Назва для швидкого додавання"
           maxLength={300}
           className="h-10 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"

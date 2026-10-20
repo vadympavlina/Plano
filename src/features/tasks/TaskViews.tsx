@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
+import { memo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
 import { CategoryChip } from '@/components/common/CategoryMark';
 import { Check, ChevronDown, Clock, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
@@ -145,7 +145,8 @@ function useSwipe(onRight: () => void, onLeft: () => void) {
   };
 }
 
-export function TaskRow({ task, today, showDate = true, showProject = true }: { task: Task; today: DateKey; showDate?: boolean; showProject?: boolean }) {
+/** Memoised: records keep their identity until they change, so a list only redraws the rows that did. */
+export const TaskRow = memo(function TaskRow({ task, today, showDate = true, showProject = true }: { task: Task; today: DateKey; showDate?: boolean; showProject?: boolean }) {
   const { openTask } = useUI();
   const actions = useActions();
   const [open, setOpen] = useState(false);
@@ -221,7 +222,7 @@ export function TaskRow({ task, today, showDate = true, showProject = true }: { 
       )}
     </div>
   );
-}
+});
 
 function TaskCard({ task, today, onDragStart }: { task: Task; today: DateKey; onDragStart: (e: DragEvent, t: Task) => void }) {
   const { openTask } = useUI();

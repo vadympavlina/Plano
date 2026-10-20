@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useData } from '@/app/providers/DataProvider';
+import { useRepos } from '@/app/providers/DataProvider';
 import { nowIso, type NewEntity } from '@/services/repositories';
 import { addDaysKey, diffDaysKey } from '@/lib/date';
 import { stripUndefined } from '@/lib/validation/parse';
@@ -11,7 +11,9 @@ import type { CalendarEvent, Category, DateKey, Goal, Habit, Note, Project, Task
  * unlinks, atomic multi-path writes) live here, not in components.
  */
 export function useActions() {
-  const { repos, data } = useData();
+  // Stable across data changes: actions read the latest data when called, so rows
+  // that only need actions don't re-render on every change.
+  const { repos, dataRef } = useRepos();
 
   return useMemo(() => {
     const t = (id: string, field: string) => `tasks/${id}/${field}`;
@@ -30,7 +32,7 @@ export function useActions() {
           [t(task.id, 'updatedAt')]: now,
         };
         if (done) {
-          const next = nextRecurringInstance(task, new Set(Object.keys(data.tasks)), now);
+          const next = nextRecurringInstance(task, new Set(Object.keys(dataRef.current.tasks)), now);
           if (next) values[`tasks/${next.id}`] = stripUndefined(next);
         }
         return repos.batch(done ? 'Виконання задачі' : 'Повернення задачі', values);
@@ -48,12 +50,12 @@ export function useActions() {
     };
 
     // Google Calendar: changes are flagged here and sent by the sync engine.
-    const gcal = data.integrations.google_calendar;
-    const gcalOn = gcal?.status === 'connected';
+    const gcal = () => dataRef.current.integrations.google_calendar;
+    const gcalOn = () => gcal()?.status === 'connected';
     const syncsToGoogle = (e: Pick<CalendarEvent, 'external' | 'source'>) =>
-      gcalOn && (!!e.external || (e.source === 'plano' && !!gcal?.targetCalendarId));
+      gcalOn() && (!!e.external || (e.source === 'plano' && !!gcal()?.targetCalendarId));
     const updateEvent = (id: string, patch: Partial<CalendarEvent>) => {
-      const current = data.events[id];
+      const current = dataRef.current.events[id];
       return repos.events.update(id, current && syncsToGoogle(current) ? { ...patch, syncPending: true } : patch);
     };
 
@@ -62,8 +64,8 @@ export function useActions() {
         repos.events.create(syncsToGoogle(input) ? { ...input, syncPending: true } : input),
       update: updateEvent,
       remove(id: string) {
-        const current = data.events[id];
-        if (current?.external && gcalOn) {
+        const current = dataRef.current.events[id];
+        if (current?.external && gcalOn()) {
           return repos.batch('Видалення події', {
             [`events/${id}`]: null,
             [`integrations/google_calendar/pendingDeletes/${id}`]: {
@@ -92,10 +94,10 @@ export function useActions() {
       /** Deletes a project and unlinks its tasks, events, notes and goals (they are kept). */
       remove(id: string) {
         const values: Record<string, unknown> = { [`projects/${id}`]: null };
-        for (const task of Object.values(data.tasks)) if (task.projectId === id) values[t(task.id, 'projectId')] = null;
-        for (const ev of Object.values(data.events)) if (ev.projectId === id) values[`events/${ev.id}/projectId`] = null;
-        for (const note of Object.values(data.notes)) if (note.projectId === id) values[`notes/${note.id}/projectId`] = null;
-        for (const goal of Object.values(data.goals))
+        for (const task of Object.values(dataRef.current.tasks)) if (task.projectId === id) values[t(task.id, 'projectId')] = null;
+        for (const ev of Object.values(dataRef.current.events)) if (ev.projectId === id) values[`events/${ev.id}/projectId`] = null;
+        for (const note of Object.values(dataRef.current.notes)) if (note.projectId === id) values[`notes/${note.id}/projectId`] = null;
+        for (const goal of Object.values(dataRef.current.goals))
           if (goal.projectIds.includes(id)) values[`goals/${goal.id}/projectIds`] = goal.projectIds.filter((p) => p !== id);
         return repos.batch('Видалення проєкту', values);
       },
@@ -106,9 +108,9 @@ export function useActions() {
       update: (id: string, patch: Partial<Category>) => repos.categories.update(id, patch),
       remove(id: string) {
         const values: Record<string, unknown> = { [`categories/${id}`]: null };
-        for (const task of Object.values(data.tasks)) if (task.categoryId === id) values[t(task.id, 'categoryId')] = null;
-        for (const ev of Object.values(data.events)) if (ev.categoryId === id) values[`events/${ev.id}/categoryId`] = null;
-        for (const goal of Object.values(data.goals)) if (goal.categoryId === id) values[`goals/${goal.id}/categoryId`] = null;
+        for (const task of Object.values(dataRef.current.tasks)) if (task.categoryId === id) values[t(task.id, 'categoryId')] = null;
+        for (const ev of Object.values(dataRef.current.events)) if (ev.categoryId === id) values[`events/${ev.id}/categoryId`] = null;
+        for (const goal of Object.values(dataRef.current.goals)) if (goal.categoryId === id) values[`goals/${goal.id}/categoryId`] = null;
         return repos.batch('Видалення категорії', values);
       },
     };
@@ -152,5 +154,5 @@ export function useActions() {
     };
 
     return { tasks, events, projects, categories, habits, goals, notes, repos };
-  }, [repos, data]);
+  }, [repos, dataRef]);
 }

@@ -65,7 +65,7 @@ function titleFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1, comp
 export default function CalendarPage() {
   const settings = useSettings();
   const isDesktop = useIsDesktop();
-  const now = useNow();
+  const now = useNow(60_000);
   const today = todayKey(now);
   const [params, setParams] = useSearchParams();
   const { events, tasks, categoryById } = useCollections();

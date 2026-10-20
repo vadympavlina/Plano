@@ -85,7 +85,10 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (!id.includes('node_modules')) return;
             if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase';
-            if (/\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return 'react';
+            if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+            // Everything else from node_modules changes only with dependency updates:
+            // a separate chunk stays cached across app releases.
+            return 'vendor';
           },
         },
       },
