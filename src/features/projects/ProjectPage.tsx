@@ -25,7 +25,8 @@ import { upcomingOccurrences } from '@/features/calendar/logic';
 import { goalPercent } from '@/features/goals/logic';
 import { deadlineHint, projectProgress } from './logic';
 import { ProjectForm } from './ProjectForm';
-import { CoverPicker, EmojiPicker, coverGradient } from '@/components/common/Pickers';
+import { CoverPicker, coverGradient } from '@/components/common/Pickers';
+import { LineIcon, LineIconPicker } from '@/components/common/CategoryMark';
 import type { Project } from '@/types';
 
 export default function ProjectPage() {
@@ -126,14 +127,14 @@ export default function ProjectPage() {
         <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-start gap-4">
           <div className={cn(project.cover && '-mt-12 sm:-mt-14')}>
-            <EmojiPicker label="Іконка проєкту" value={project.icon} onChange={(icon) => void actions.projects.update(project.id, { icon }).catch(() => undefined)}>
+            <LineIconPicker label="Іконка проєкту" value={project.icon} color={color} onChange={(icon) => void actions.projects.update(project.id, { icon }).catch(() => undefined)}>
               <span
-                className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-[28px]', project.cover && 'h-16 w-16 bg-surface text-[32px] shadow-pop ring-1 ring-line/60')}
+                className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', project.cover && 'h-16 w-16 bg-surface shadow-pop ring-1 ring-line/60')}
                 style={project.cover ? { color } : { backgroundColor: `${color}1f`, color }}
               >
-                {project.icon ?? <FolderKanban className="h-6 w-6" />}
+                <LineIcon icon={project.icon} fallback={FolderKanban} className={project.cover ? 'h-7 w-7' : 'h-6 w-6'} />
               </span>
-            </EmojiPicker>
+            </LineIconPicker>
           </div>
           <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
             <h1 className="truncate text-[22px] font-bold tracking-tight sm:text-[26px]">{project.name}</h1>

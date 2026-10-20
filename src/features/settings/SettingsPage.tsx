@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { CategoryIcon, CategoryIconPicker, categoryIcon } from '@/components/common/CategoryMark';
+import { CategoryIcon, LineIconPicker, categoryIcon } from '@/components/common/CategoryMark';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Bell, Check, Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, SmilePlus, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
@@ -358,11 +358,11 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
           <ColorPicker value={category.color} onChange={(color) => void actions.categories.update(category.id, { color }).catch(() => undefined)} />
         </PopoverContent>
       </Popover>
-      <CategoryIconPicker category={category} onChange={(icon) => void actions.categories.update(category.id, { icon }).catch(() => undefined)}>
+      <LineIconPicker label={`Іконка «${category.name}»`} value={category.icon} color={colorOf(category.color)} onChange={(icon) => void actions.categories.update(category.id, { icon }).catch(() => undefined)}>
         <span className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-surface-2" title="Іконка" style={{ color: colorOf(category.color) }}>
           {categoryIcon(category) ? <CategoryIcon category={category} className="h-[18px] w-[18px]" /> : <SmilePlus className="h-4 w-4 text-subtle" />}
         </span>
-      </CategoryIconPicker>
+      </LineIconPicker>
       <input
         className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-none hover:bg-surface-2 focus:bg-surface-2"
         aria-label="Назва категорії"

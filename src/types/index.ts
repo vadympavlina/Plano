@@ -32,7 +32,7 @@ export interface Category extends Timestamps {
   name: string;
   color: ColorKey;
   order: number;
-  /** Line icon key (see CATEGORY_ICONS) shown before the name in lists and on calendar items. */
+  /** Line icon key (see LINE_ICONS) shown before the name in lists and on calendar items. */
   icon?: string;
 }
 
@@ -126,7 +126,7 @@ export interface Project extends Timestamps {
   status: ProjectStatus;
   startDate?: DateKey;
   targetDate?: DateKey;
-  /** Emoji shown instead of the folder icon. */
+  /** Line icon key (see LINE_ICONS) shown instead of the folder icon. */
   icon?: string;
   /** Colour of the cover band on the project page; none when empty. */
   cover?: ColorKey;

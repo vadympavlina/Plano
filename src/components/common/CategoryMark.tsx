@@ -46,8 +46,8 @@ import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Category } from '@/types';
 
-/** Line icons a category can have (stored by key), in the same style as the rest of the UI. */
-export const CATEGORY_ICONS: Record<string, LucideIcon> = {
+/** Line icons a category or project can have (stored by key), in the same style as the rest of the UI. */
+export const LINE_ICONS: Record<string, LucideIcon> = {
   briefcase: Briefcase,
   house: House,
   'heart-pulse': HeartPulse,
@@ -89,7 +89,7 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'party-popper': PartyPopper,
 };
 
-// Categories saved with an emoji before icons became line icons.
+// Categories and projects saved with an emoji before icons became line icons.
 const FROM_EMOJI: Record<string, string> = {
   '💼': 'briefcase', '🏠': 'house', '💪': 'dumbbell', '📚': 'book-open', '💡': 'lightbulb', '📝': 'notebook-pen', '📌': 'pin',
   '🎯': 'target', '🚀': 'rocket', '🛒': 'shopping-cart', '✈️': 'plane', '🧳': 'luggage', '🍳': 'utensils', '🧘': 'flower-2',
@@ -98,9 +98,15 @@ const FROM_EMOJI: Record<string, string> = {
   '✅': 'circle-check', '🎉': 'party-popper',
 };
 
-export function categoryIcon(category?: Category): LucideIcon | undefined {
-  const k = category?.icon;
-  return k ? (CATEGORY_ICONS[k] ?? CATEGORY_ICONS[FROM_EMOJI[k]]) : undefined;
+/** Icon for a stored key (or a legacy emoji). */
+export const lineIcon = (key?: string): LucideIcon | undefined => (key ? (LINE_ICONS[key] ?? LINE_ICONS[FROM_EMOJI[key]]) : undefined);
+
+export const categoryIcon = (category?: Category) => lineIcon(category?.icon);
+
+/** Icon for a stored key, or `fallback` when there is none. */
+export function LineIcon({ icon, fallback: Fallback, className }: { icon?: string; fallback: LucideIcon; className?: string }) {
+  const Icon = lineIcon(icon) ?? Fallback;
+  return <Icon className={className} aria-hidden />;
 }
 
 /** The category's line icon (in `color`, else the text colour), or nothing. */
@@ -131,11 +137,10 @@ export function CategoryChip({ category, compact, className }: { category: Categ
   );
 }
 
-/** Grid of line icons to pick from (Settings → Категорії). */
-export function CategoryIconPicker({ category, onChange, children }: { category: Category; onChange: (icon: string | undefined) => void; children: ReactNode }) {
+/** Grid of line icons to pick from (categories in Settings, the project page). */
+export function LineIconPicker({ value, color, label, onChange, children }: { value?: string; color: string; label: string; onChange: (icon: string | undefined) => void; children: ReactNode }) {
   const [open, setOpen] = useState(false);
-  const color = colorOf(category.color);
-  const current = categoryIcon(category);
+  const current = lineIcon(value);
   const pick = (icon: string | undefined) => {
     onChange(icon);
     setOpen(false);
@@ -143,13 +148,13 @@ export function CategoryIconPicker({ category, onChange, children }: { category:
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label={`Іконка «${category.name}»`} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+        <button type="button" aria-label={label} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
           {children}
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[284px] p-2">
         <div className="grid grid-cols-8 gap-0.5">
-          {Object.entries(CATEGORY_ICONS).map(([key, Icon]) => (
+          {Object.entries(LINE_ICONS).map(([key, Icon]) => (
             <button
               key={key}
               type="button"

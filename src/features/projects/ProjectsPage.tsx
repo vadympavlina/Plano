@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FolderKanban, Plus } from 'lucide-react';
 import { coverGradient } from '@/components/common/Pickers';
+import { LineIcon } from '@/components/common/CategoryMark';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/misc';
 import { EmptyState } from '@/components/common/States';
@@ -44,10 +45,10 @@ function ProjectRow({ project, today }: { project: Project; today: DateKey }) {
     >
       <div className="flex min-w-0 items-center gap-3">
         <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[20px]"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
           style={{ background: project.cover ? coverGradient(project.cover, 0.4, 0.16) : `${color}1f`, color }}
         >
-          {project.icon ?? <FolderKanban className="h-[18px] w-[18px]" />}
+          <LineIcon icon={project.icon} fallback={FolderKanban} className="h-[18px] w-[18px]" />
         </span>
         <div className="min-w-0">
           <p className="truncate text-[14.5px] font-semibold">{project.name}</p>
