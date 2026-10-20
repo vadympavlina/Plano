@@ -10,6 +10,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Plano" />
+    <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%icons/apple-touch-icon.png" />
     <title>Plano</title>
@@ -36,6 +38,8 @@
   <body>
     <div id="root">
       <div id="boot" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;color:#7B8497">
+        <img src="%BASE_URL%favicon.svg" width="56" height="56" alt="" style="border-radius:14px;animation:boot 1.2s ease-in-out infinite alternate" />
+        <style>@keyframes boot{from{opacity:.55;transform:scale(.96)}to{opacity:1;transform:scale(1)}}</style>
         <noscript>Для роботи Plano потрібен JavaScript.</noscript>
       </div>
     </div>

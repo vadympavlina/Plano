@@ -9,7 +9,7 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import { uk } from 'date-fns/locale';
+import { uk } from 'date-fns/locale/uk';
 import type { DateKey, Settings, TimeString } from '@/types';
 
 export const DATE_KEY_FORMAT = 'yyyy-MM-dd';

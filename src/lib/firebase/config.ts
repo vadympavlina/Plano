@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth, type Auth } from 'firebase/auth';
+import { browserLocalPersistence, indexedDBLocalPersistence, initializeAuth, type Auth } from 'firebase/auth';
 import { getDatabase, type Database } from 'firebase/database';
 
 const env = import.meta.env;
@@ -30,7 +30,8 @@ function ensureApp(): FirebaseApp {
 }
 
 export function getFirebaseAuth(): Auth {
-  if (!auth) auth = getAuth(ensureApp());
+  // Email + password only, so no popup/redirect resolver (keeps the bundle smaller than getAuth).
+  if (!auth) auth = initializeAuth(ensureApp(), { persistence: [indexedDBLocalPersistence, browserLocalPersistence] });
   return auth;
 }
 

@@ -26,6 +26,12 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      {
+        // Open the connection to the Realtime Database while the app JS is still loading.
+        name: 'preconnect-database',
+        transformIndexHtml: () =>
+          env.VITE_FIREBASE_DATABASE_URL ? [{ tag: 'link', attrs: { rel: 'preconnect', href: new URL(env.VITE_FIREBASE_DATABASE_URL).origin }, injectTo: 'head' }] : [],
+      },
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
@@ -65,9 +71,10 @@ export default defineConfig(({ mode }) => {
     build: {
       rollupOptions: {
         output: {
-          manualChunks: {
-            firebase: ['firebase/app', 'firebase/auth', 'firebase/database'],
-            react: ['react', 'react-dom', 'react-router-dom'],
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase';
+            if (/\/(react|react-dom|scheduler|react-router|react-router-dom)\//.test(id)) return 'react';
           },
         },
       },
