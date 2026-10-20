@@ -40,7 +40,10 @@ function HabitCard({ habit }: { habit: Habit }) {
   return (
     <Link
       to={`/habits/${habit.id}`}
-      className={cn('group flex min-w-0 flex-col rounded-[20px] border border-line/60 bg-surface p-4 shadow-soft transition-shadow hover:shadow-pop sm:p-5', habit.archived && 'opacity-60')}
+      className={cn(
+        'group flex min-w-0 flex-col rounded-[20px] border border-line/60 bg-surface p-4 shadow-soft transition-shadow hover:shadow-pop sm:p-5',
+        habit.archived && 'opacity-60',
+      )}
     >
       <div className="flex items-start gap-3">
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-[24px]" style={{ backgroundColor: tint(color, 0.13) }}>
@@ -49,7 +52,11 @@ function HabitCard({ habit }: { habit: Habit }) {
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[16px] font-bold tracking-tight">{habit.name}</h3>
           <p className="truncate text-[12.5px] text-muted">
-            {bad ? (habit.goalType === 'count' ? `Шкідлива · не більше ${habit.target} ${habit.unit ?? ''} на день` : 'Шкідлива · без зривів') : describeSchedule(habit.schedule)}
+            {bad
+              ? habit.goalType === 'count'
+                ? `Шкідлива · не більше ${habit.target} ${habit.unit ?? ''} на день`
+                : 'Шкідлива · без зривів'
+              : describeSchedule(habit.schedule)}
             {!bad && habit.goalType === 'count' && ` · ${scheduledToday ? `${value}/` : ''}${habit.target} ${habit.unit ?? ''}`}
             {bad && habit.goalType === 'count' && value > 0 && ` · сьогодні ${value}`}
           </p>
@@ -65,7 +72,7 @@ function HabitCard({ habit }: { habit: Habit }) {
       >
         {days.map((d) => {
           const done = d <= today && isDone(habit, logs, d);
-          const partial = !done && habit.goalType === 'count' && habitValue(logs, habit.id, d) > 0;
+          const partial = !bad && !done && habit.goalType === 'count' && habitValue(logs, habit.id, d) > 0;
           const scheduled = isScheduled(habit, d);
           return (
             <span
@@ -73,7 +80,20 @@ function HabitCard({ habit }: { habit: Habit }) {
               title={`${formatDateKey(d, 'd MMM')}: ${bad && d <= today && scheduled ? (done ? 'без зривів' : 'зрив') : done ? 'виконано' : d > today ? 'попереду' : scheduled ? (partial ? 'частково' : 'пропущено') : 'не заплановано'}`}
               className={cn('aspect-square w-full rounded-[3px]', d === today && 'ring-1 ring-ink/40')}
               style={{
-                backgroundColor: d > today ? 'transparent' : bad && scheduled && !done ? 'rgb(var(--danger))' : done ? (bad ? 'rgb(var(--success))' : color) : partial ? tint(color, 0.45) : scheduled ? 'rgb(var(--surface-2))' : 'rgb(var(--line) / 0.35)',
+                backgroundColor:
+                  d > today
+                    ? 'transparent'
+                    : bad && scheduled && !done
+                      ? 'rgb(var(--danger))'
+                      : done
+                        ? bad
+                          ? 'rgb(var(--success))'
+                          : color
+                        : partial
+                          ? tint(color, 0.45)
+                          : scheduled
+                            ? 'rgb(var(--surface-2))'
+                            : 'rgb(var(--line) / 0.35)',
               }}
             />
           );
@@ -84,7 +104,7 @@ function HabitCard({ habit }: { habit: Habit }) {
         {[
           [String(streak), bad ? 'днів без зриву' : 'серія'],
           [String(best), 'рекорд'],
-          [`${month.rate}%`, bad ? 'чистих за 30 днів' : 'за 30 днів'],
+          [month.scheduled ? `${month.rate}%` : '—', bad ? 'чистих за 30 днів' : 'за 30 днів'],
         ].map(([v, l]) => (
           <div key={l} className="rounded-xl bg-surface-2 py-2">
             <p className="text-[16px] font-bold tabular-nums">{v}</p>

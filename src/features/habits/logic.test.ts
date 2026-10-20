@@ -80,9 +80,10 @@ describe('bad habits', () => {
   });
   it('streak is the run of clean days since the last slip', () => {
     const logs: HabitLogs = { smoke: { '2025-04-03': 1 } };
-    expect(currentStreak(smoke, logs, '2025-04-08')).toBe(5);
-    expect(currentStreak(smoke, {}, '2025-04-08')).toBe(8);
-    expect(longestStreak(smoke, logs, '2025-04-08')).toBe(5);
+    expect(currentStreak(smoke, logs, '2025-04-08')).toBe(4); // today is still open
+    expect(currentStreak(smoke, {}, '2025-04-08')).toBe(7);
+    expect(currentStreak(smoke, { smoke: { '2025-04-08': 1 } }, '2025-04-08')).toBe(0); // a slip today breaks it
+    expect(longestStreak(smoke, logs, '2025-04-08')).toBe(4);
   });
   it('a tap logs a slip; toggle flips the day', () => {
     expect(nextHabitValue(smoke, 0)).toBe(1);
@@ -99,7 +100,8 @@ describe('bad habit tracking window', () => {
   it('days before tracking started are not clean days', () => {
     expect(isScheduled(sweets, '2025-04-04')).toBe(false);
     expect(isScheduled(sweets, '2025-04-05')).toBe(true);
-    expect(currentStreak(sweets, {}, '2025-04-08')).toBe(4);
+    expect(currentStreak(sweets, {}, '2025-04-08')).toBe(3);
+    expect(isDone(sweets, {}, '2025-04-04')).toBe(false); // before tracking: no data, not clean
   });
   it('falls back to the creation day', () => {
     expect(isScheduled({ ...sweets, trackFrom: undefined }, '2025-03-31')).toBe(false);

@@ -20,7 +20,8 @@ export const slipLimit = (habit: Habit) => (habit.goalType === 'count' ? Math.ma
 /** Good habits: target reached. Bad habits: the day stayed within the limit. */
 export function isDone(habit: Habit, logs: HabitLogs, date: DateKey): boolean {
   const value = habitValue(logs, habit.id, date);
-  if (isBad(habit)) return value <= slipLimit(habit);
+  // Bad habits: a day outside tracking is "no data", never clean.
+  if (isBad(habit)) return isScheduled(habit, date) && value <= slipLimit(habit);
   return value >= (habit.goalType === 'check' ? 1 : Math.max(1, habit.target));
 }
 
@@ -43,15 +44,25 @@ export function nextHabitValue(habit: Habit, value: number, mode: 'tap' | 'toggl
  * today. Unscheduled days are skipped (they never break a streak) and today
  * does not break the streak while it is still open.
  */
+/**
+ * How a day counts: true = done/clean, false = missed/slip, null = doesn't count.
+ * Today is still open — a good habit counts once done, a bad one only once it slipped.
+ */
+export function dayResult(habit: Habit, logs: HabitLogs, date: DateKey, today: DateKey): boolean | null {
+  if (date > today || !isScheduled(habit, date)) return null;
+  const done = isDone(habit, logs, date);
+  if (date === today) return isBad(habit) ? (done ? null : false) : done || null;
+  return done;
+}
+
 export function currentStreak(habit: Habit, logs: HabitLogs, today: DateKey): number {
   let streak = 0;
   let cur = today;
   for (let i = 0; i < 3660; i++) {
     if (cur < habit.startDate) break;
-    if (isScheduled(habit, cur)) {
-      if (isDone(habit, logs, cur)) streak++;
-      else if (cur !== today) break;
-    }
+    const r = dayResult(habit, logs, cur, today);
+    if (r === false) break;
+    if (r) streak++;
     cur = addDaysKey(cur, -1);
   }
   return streak;
@@ -62,11 +73,9 @@ export function longestStreak(habit: Habit, logs: HabitLogs, today: DateKey): nu
   let best = 0;
   let run = 0;
   for (const date of eachDateKey(habit.startDate, today)) {
-    if (!isScheduled(habit, date)) continue;
-    if (isDone(habit, logs, date)) {
-      run++;
-      best = Math.max(best, run);
-    } else if (date !== today) run = 0;
+    const r = dayResult(habit, logs, date, today);
+    if (r) best = Math.max(best, ++run);
+    else if (r === false) run = 0;
   }
   return best;
 }
@@ -84,12 +93,10 @@ export function completionStats(habit: Habit, logs: HabitLogs, start: DateKey, e
   let scheduled = 0;
   let done = 0;
   for (const date of eachDateKey(start, last)) {
-    if (!isScheduled(habit, date)) continue;
-    const completed = isDone(habit, logs, date);
-    // Today counts only once it is done — it is not "missed" yet.
-    if (date === today && !completed) continue;
+    const r = dayResult(habit, logs, date, today);
+    if (r === null) continue;
     scheduled++;
-    if (completed) done++;
+    if (r) done++;
   }
   return { scheduled, done, rate: scheduled ? Math.round((done / scheduled) * 100) : 0 };
 }

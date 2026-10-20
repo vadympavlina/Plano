@@ -188,7 +188,7 @@ export default function HabitPage() {
           {[
             [bad ? 'Без зривів' : 'Поточна серія', `${bad ? '🛡️' : '🔥'} ${days(streak)}`],
             ['Рекорд', `🏆 ${days(best)}`],
-            ['За 30 днів', `${month30.rate}%`],
+            ['За 30 днів', month30.scheduled ? `${month30.rate}%` : '—'],
             [bad ? 'Зривів усього' : 'Усього', `${total} ${plural(total, ['раз', 'рази', 'разів'])}`],
           ].map(([l, v]) => (
             <div key={l} className="rounded-2xl bg-surface-2 p-4">
