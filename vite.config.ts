@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         registerType: 'prompt',
         injectRegister: false,
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/apple-touch-icon.png'],
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/apple-touch-icon.png', 'logo-duck.png'],
         manifest: {
           id: base,
           name: 'Plano',

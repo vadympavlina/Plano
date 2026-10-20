@@ -30,7 +30,7 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
     >
       <div className="flex h-full flex-col rounded-[22px] bg-sidebar p-3 text-sidebar-fg shadow-pop">
         <div className={cn('mb-4 flex h-11 items-center justify-between pl-2', collapsed && 'justify-center pl-0')}>
-          {collapsed ? <LogoMark className="h-[22px] w-[22px]" tone="light" /> : <Logo tone="light" className="text-white" />}
+          {collapsed ? <LogoMark className="h-[26px] w-[26px]" tone="light" /> : <Logo tone="light" className="text-white" />}
           {!collapsed && (
             <button
               type="button"

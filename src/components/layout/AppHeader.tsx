@@ -23,7 +23,7 @@ export function AppHeader() {
     <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/85 pt-safe backdrop-blur-md lg:border-none lg:bg-bg/70">
       <div className="flex h-14 items-center gap-2 px-4 sm:px-6 lg:h-[72px] lg:px-8">
         <div className="flex min-w-0 items-center gap-2.5 lg:hidden">
-          <LogoMark className="h-5 w-5 text-ink" />
+          <LogoMark className="h-7 w-7" />
           <h1 className="truncate text-[17px] font-semibold tracking-tight">{title}</h1>
         </div>
         <span className="sr-only">{title}</span>
