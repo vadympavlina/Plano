@@ -2,8 +2,9 @@
 self.addEventListener('push', (event) => {
   const d = event.data ? event.data.json() : {};
   const tag = d.tag || '';
-  // Tasks and habits can be ticked off from the notification; anything with a token can be snoozed.
-  const canDo = /^(task|habit):/.test(tag);
+  // Tasks and habits can be ticked off from the notification, the evening summary moves the rest
+  // to tomorrow; anything with a token can be snoozed.
+  const canDo = /^(task|habit|evening):/.test(tag);
   const canSnooze = !!d.snooze && /^(task|habit|ev):/.test(tag);
   event.waitUntil(
     self.registration.showNotification(d.title || 'Plano', {
@@ -12,7 +13,7 @@ self.addEventListener('push', (event) => {
       icon: 'icons/icon-192.png',
       badge: 'icons/icon-192.png',
       actions: [
-        ...(canDo ? [{ action: 'done', title: tag.startsWith('habit:') ? '✓ Відмітити' : '✓ Виконано' }] : []),
+        ...(canDo ? [{ action: 'done', title: tag.startsWith('evening:') ? '➡️ Перенести на завтра' : tag.startsWith('habit:') ? '✓ Відмітити' : '✓ Виконано' }] : []),
         ...(canSnooze ? [{ action: 'snooze', title: '⏰ Через 10 хв' }] : []),
       ],
       data: { url: d.url || './', tag, title: d.title, body: d.body, snooze: d.snooze },

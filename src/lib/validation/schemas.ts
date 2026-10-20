@@ -193,6 +193,7 @@ export const settingsSchema = z.object({
   remindTasks: z.boolean().catch(true),
   habitsReminderAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
   digestAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('08:00'),
+  eveningAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
   accent: z.enum(ACCENT_COLORS).catch('blue'),
 });
 

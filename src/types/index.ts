@@ -223,6 +223,8 @@ export interface Settings {
   habitsReminderAt: string;
   /** "HH:mm" for the morning summary, '' = off. */
   digestAt: string;
+  /** "HH:mm" for the evening summary (done / left, move the rest to tomorrow), '' = off. */
+  eveningAt: string;
   /** Accent colour of buttons, links, today markers. */
   accent: AccentColor;
 }

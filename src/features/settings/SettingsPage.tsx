@@ -518,6 +518,9 @@ function NotificationsSection() {
       <Row label="Ранковий підсумок" hint="Скільки задач і подій сьогодні.">
         <Select aria-label="Ранковий підсумок" className="w-[170px]" value={s.digestAt} onChange={(digestAt) => set({ digestAt })} options={times('Вимкнено')} />
       </Row>
+      <Row label="Вечірній підсумок" hint="Скільки зроблено, і кнопка перенести решту на завтра.">
+        <Select aria-label="Вечірній підсумок" className="w-[170px]" value={s.eveningAt} onChange={(eveningAt) => set({ eveningAt })} options={times('Вимкнено')} />
+      </Row>
       <Row label="Звички" hint="Якщо щось ще не відмічено.">
         <Select aria-label="Нагадування про звички" className="w-[170px]" value={s.habitsReminderAt} onChange={(habitsReminderAt) => set({ habitsReminderAt })} options={times('Вимкнено')} />
       </Row>

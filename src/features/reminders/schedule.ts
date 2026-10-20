@@ -76,6 +76,23 @@ export function buildReminders(data: UserData, now: Date): Reminder[] {
           tag: `digest:${day}`,
         });
     }
+    if (s.eveningAt) {
+      // Open tasks of the day (and older ones still open) against what got done that day.
+      // `tasks` holds open tasks only.
+      const left = tasks.filter((k) => {
+        const d = taskDate(k);
+        return !!d && d <= day;
+      }).length;
+      const done = Object.values(data.tasks).filter((k) => k.status === 'completed' && taskDate(k) === day).length;
+      if (left)
+        add({
+          at: combineDateTime(day, s.eveningAt).getTime(),
+          title: '🌙 Підсумок дня',
+          body: `Зроблено ${done} з ${done + left}. ${left === 1 ? 'Лишилась 1 задача' : `Лишилось ${left} ${plural(left, ['задача', 'задачі', 'задач'])}`} — перенести на завтра?`,
+          url: '#/tasks?list=today',
+          tag: `evening:${day}`,
+        });
+    }
     // Habit's own reminder times (e.g. water at 10, 14, 18) while it isn't done that day.
     for (const h of Object.values(data.habits)) {
       if (h.archived || isBad(h) || !h.remindAt?.length || !isScheduled(h, day) || isDone(h, data.habitLogs, day)) continue;

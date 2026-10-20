@@ -1,4 +1,5 @@
 import type { Backend } from './types';
+import { toast } from '@/components/ui/toast';
 
 /**
  * Browser-storage backend for the local preview mode (used only when Firebase
@@ -57,14 +58,26 @@ export function createLocalBackend(): Backend {
   }
   const listeners = new Set<Listener>();
 
-  function persist() {
+  // Writing the whole tree on every change is the slow part: batch writes made in
+  // quick succession into one, and write at once when the page is hidden or closed.
+  let saveTimer: ReturnType<typeof setTimeout> | undefined;
+  function flush() {
+    if (saveTimer === undefined) return;
+    clearTimeout(saveTimer);
+    saveTimer = undefined;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(tree));
     } catch (e) {
       console.error('Plano preview: could not persist data', e);
-      throw new Error('Сховище браузера переповнене або недоступне.');
+      toast.error('Не вдалося зберегти зміни', { description: 'Сховище браузера переповнене або недоступне.' });
     }
   }
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(flush, 400);
+  }
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'hidden' && flush());
 
   function notify(changed: string[]) {
     for (const l of listeners) {
@@ -75,7 +88,9 @@ export function createLocalBackend(): Backend {
         for (let i = 0; i < n; i++) if (lp[i] !== cp[i]) return false;
         return true;
       });
-      if (related) l.cb(clone(readAt(tree, lp)));
+      // The tree is never mutated (writeAt copies the changed path), so listeners can
+      // share it instead of getting a deep copy of a whole collection each time.
+      if (related) l.cb(readAt(tree, lp));
     }
   }
 
@@ -83,6 +98,8 @@ export function createLocalBackend(): Backend {
   window.addEventListener('storage', (e) => {
     if (e.key !== STORAGE_KEY) return;
     try {
+      clearTimeout(saveTimer);
+      saveTimer = undefined;
       tree = JSON.parse(e.newValue || '{}') as Tree;
       notify(['']);
     } catch {
@@ -96,7 +113,7 @@ export function createLocalBackend(): Backend {
       const l: Listener = { path, cb };
       listeners.add(l);
       queueMicrotask(() => {
-        if (listeners.has(l)) cb(clone(readAt(tree, split(path))));
+        if (listeners.has(l)) cb(readAt(tree, split(path)));
       });
       return () => listeners.delete(l);
     },

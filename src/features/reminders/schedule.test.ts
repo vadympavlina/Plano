@@ -18,12 +18,13 @@ describe('buildReminders', () => {
       [8 * 60, 'digest:2025-04-07'],
       [9 * 60 + 45, 'ev:e@2025-04-07'],
       [15 * 60, 'task:t'],
+      [21 * 60, 'evening:2025-04-07'],
       [21 * 60, 'habits:2025-04-07'],
     ]);
     expect(today[0].body).toBe('1 задача · 1 подія, перша о 10:00');
   });
   it('respects switches and done habits, and never schedules the past', () => {
-    const r = buildReminders(data({ remindEventsMin: 0, remindTasks: false, digestAt: '' }, { h: { '2025-04-07': 1 } }), new Date(2025, 3, 7, 22, 0));
+    const r = buildReminders(data({ remindEventsMin: 0, remindTasks: false, digestAt: '', eveningAt: '' }, { h: { '2025-04-07': 1 } }), new Date(2025, 3, 7, 22, 0));
     expect(r.every((x) => x.tag?.startsWith('habits:') && x.at > new Date(2025, 3, 7, 22, 0).getTime())).toBe(true);
     expect(r.some((x) => x.tag === 'habits:2025-04-07')).toBe(false);
   });
@@ -49,5 +50,17 @@ describe('habit reminder times', () => {
     expect(today.map((r) => r.body)).toEqual(['3 з 8 склянок — час відмітити', '3 з 8 склянок — час відмітити']);
     const done = { ...d, habitLogs: { w: { '2025-04-07': 8 } } } as unknown as UserData;
     expect(buildReminders(done, now).some((r) => r.tag?.startsWith('habit:w:2025-04-07'))).toBe(false);
+  });
+});
+
+describe('evening summary', () => {
+  it('counts done and left (with older open tasks) and is skipped when nothing is left', () => {
+    const older = { ...task, id: 'o', dueDate: '2025-04-05', startTime: undefined } as Task;
+    const done = { ...task, id: 'd', status: 'completed', startTime: undefined } as Task;
+    const d = { ...data({ habitsReminderAt: '' }), tasks: { t: task, o: older, d: done } } as unknown as UserData;
+    const evening = buildReminders(d, now).find((r) => r.tag === 'evening:2025-04-07');
+    expect(evening?.body).toBe('Зроблено 1 з 3. Лишилось 2 задачі — перенести на завтра?');
+    const allDone = { ...d, tasks: { d: done } } as unknown as UserData;
+    expect(buildReminders(allDone, now).some((r) => r.tag?.startsWith('evening:'))).toBe(false);
   });
 });

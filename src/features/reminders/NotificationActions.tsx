@@ -3,10 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useData } from '@/app/providers/DataProvider';
 import { useActions } from '@/hooks/useActions';
 import { toast } from '@/components/ui/toast';
-import { todayKey } from '@/lib/date';
+import { addDaysKey, plural, todayKey } from '@/lib/date';
+import { isOpen, taskDate } from '@/features/tasks/logic';
 import { habitValue } from '@/features/habits/logic';
 
-/** «Виконано» from a notification: sent by the service worker, or as ?done= when it had to open the app. */
+/**
+ * Notification buttons: «Виконано» / «Відмітити», and «Перенести на завтра» on the evening
+ * summary. Sent by the service worker, or as ?done= when it had to open the app.
+ */
 export function NotificationActions() {
   const { data, ready } = useData();
   const actions = useActions();
@@ -36,7 +40,19 @@ export function NotificationActions() {
       const [kind, id, day = todayKey()] = tag.split(':');
       const task = kind === 'task' ? data.tasks[id] : undefined;
       const habit = kind === 'habit' ? data.habits[id] : undefined;
-      if (task && task.status !== 'completed') {
+      if (kind === 'evening') {
+        // Tag is evening:<day>: move that day's open tasks (and older ones) to the next day.
+        const tomorrow = addDaysKey(id, 1);
+        const left = Object.values(data.tasks).filter((t) => {
+          const d = taskDate(t);
+          return isOpen(t) && !!d && d <= id;
+        });
+        if (left.length)
+          void Promise.all(left.map((t) => actions.tasks.reschedule(t, tomorrow))).then(
+            () => toast.success(`Перенесено на завтра: ${left.length} ${plural(left.length, ['задача', 'задачі', 'задач'])}`),
+            () => undefined,
+          );
+      } else if (task && task.status !== 'completed') {
         void actions.tasks.setDone(task, true).then(() => toast.success(`«${task.title}» виконано`), () => undefined);
       } else if (habit) {
         const v = habitValue(data.habitLogs, habit.id, day);
