@@ -48,6 +48,15 @@ jobs:
           workingDirectory: worker
           secrets: |
             GOOGLE_CLIENT_SECRET
+      - name: Push key (created once)
+        if: steps.check.outputs.ready == 'true'
+        working-directory: worker
+        run: |
+          # The private VAPID key only ever lives as a Worker secret.
+          if ! npx -y wrangler@3 secret list 2>/dev/null | grep -q VAPID_JWK; then
+            node -e "crypto.subtle.generateKey({name:'ECDSA',namedCurve:'P-256'},true,['sign']).then(k=>crypto.subtle.exportKey('jwk',k.privateKey)).then(j=>process.stdout.write(JSON.stringify(j)))" \
+              | npx -y wrangler@3 secret put VAPID_JWK
+          fi
       - name: Worker URL
         id: url
         if: steps.check.outputs.ready == 'true'

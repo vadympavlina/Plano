@@ -7,6 +7,10 @@ export const DEFAULT_SETTINGS: Settings = {
   dateFormat: 'd MMM yyyy',
   defaultCalendarView: 'week',
   showHabitStreakOnDashboard: true,
+  remindEventsMin: 15,
+  remindTasks: true,
+  habitsReminderAt: '21:00',
+  digestAt: '08:00',
 };
 
 const STARTER: [string, string, ColorKey][] = [

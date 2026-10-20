@@ -199,6 +199,14 @@ export interface Settings {
   /** Overrides the device time zone for display of "now"; empty = device. */
   timezone?: string;
   showHabitStreakOnDashboard: boolean;
+  /** Push reminders: minutes before timed events (0 = off). */
+  remindEventsMin: number;
+  /** Push reminders at the start time of timed tasks. */
+  remindTasks: boolean;
+  /** "HH:mm" for the evening habits nudge, '' = off. */
+  habitsReminderAt: string;
+  /** "HH:mm" for the morning summary, '' = off. */
+  digestAt: string;
 }
 
 export interface Profile {

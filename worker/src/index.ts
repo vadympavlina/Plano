@@ -10,12 +10,17 @@
  * Every call needs the caller's Firebase ID token (Authorization: Bearer …).
  */
 import { AuthError, openGrant, sealGrant, verifyFirebaseToken } from './crypto';
+import { vapidPublicKey } from './push';
+export { Reminders } from './reminders';
 
 export interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   FIREBASE_PROJECT_ID: string;
   ALLOWED_ORIGINS: string;
+  /** Private VAPID key (JWK JSON), created once by the deploy workflow. */
+  VAPID_JWK?: string;
+  REMINDERS?: DurableObjectNamespace;
 }
 
 interface GoogleTokenResponse {
@@ -45,7 +50,7 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
   const cors: Record<string, string> = allowed
     ? {
         'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Authorization, Content-Type',
         'Access-Control-Max-Age': '86400',
         Vary: 'Origin',
@@ -55,6 +60,10 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
 
   if (!allowed) return json(403, { error: 'origin' });
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
+  const path = new URL(req.url).pathname;
+  if (req.method === 'GET' && path === '/push/key') {
+    return env.VAPID_JWK ? json(200, { key: vapidPublicKey(JSON.parse(env.VAPID_JWK)) }) : json(503, { error: 'not_configured' });
+  }
   if (req.method !== 'POST') return json(405, { error: 'method' });
   if (!env.GOOGLE_CLIENT_SECRET) return json(500, { error: 'not_configured' });
 
@@ -67,6 +76,13 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
     return json(401, { error: 'unauthenticated' });
   }
 
+  // Reminders live in the user's own Durable Object.
+  if (path.startsWith('/push/')) {
+    if (!env.REMINDERS) return json(503, { error: 'not_configured' });
+    const res = await env.REMINDERS.get(env.REMINDERS.idFromName(uid)).fetch(new Request(`https://do${path}`, { method: 'POST', body: req.body }));
+    return json(res.status, await res.json());
+  }
+
   let body: { code?: unknown; grant?: unknown };
   try {
     body = await req.json();
@@ -75,7 +91,7 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
   }
   const str = (v: unknown) => (typeof v === 'string' && v.length > 0 && v.length < 4096 ? v : null);
 
-  switch (new URL(req.url).pathname) {
+  switch (path) {
     case '/exchange': {
       const code = str(body.code);
       if (!code) return json(400, { error: 'bad_request' });

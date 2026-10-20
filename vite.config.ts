@@ -63,6 +63,8 @@ export default defineConfig(({ mode }) => {
           navigateFallback: 'index.html',
           navigateFallbackDenylist: [/^\/__/],
           cleanupOutdatedCaches: true,
+          // Push + notification click handlers (public/push-sw.js).
+          importScripts: ['push-sw.js'],
           maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         },
         devOptions: { enabled: false },
@@ -82,6 +84,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'node',
       include: ['src/**/*.test.ts', 'worker/src/**/*.test.ts'],
+      alias: { 'cloudflare:workers': fileURLToPath(new URL('./worker/src/cf-stub.ts', import.meta.url)) },
     },
   };
 });

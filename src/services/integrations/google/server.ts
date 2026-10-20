@@ -18,7 +18,7 @@ export class TokenServerError extends Error {
   }
 }
 
-async function call<T>(path: string, body: unknown): Promise<T> {
+export async function call<T>(path: string, body: unknown): Promise<T> {
   const user = getFirebaseAuth().currentUser;
   if (!user) throw new TokenServerError('Увійдіть у Plano, щоб синхронізувати Google Calendar.', 'unauthenticated');
   const idToken = await user.getIdToken();

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
+import { ReminderSync } from '@/features/reminders/ReminderSync';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { MobileNav } from './MobileNav';
@@ -16,6 +17,7 @@ export function AppLayout() {
   return (
     <UIProvider>
       <GoogleSyncProvider>
+        <ReminderSync />
         <LayoutInner />
       </GoogleSyncProvider>
     </UIProvider>

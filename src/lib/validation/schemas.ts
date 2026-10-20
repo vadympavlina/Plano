@@ -180,6 +180,10 @@ export const settingsSchema = z.object({
   defaultCalendarView: z.enum(['day', 'week', 'month']).catch('week'),
   timezone: optionalString,
   showHabitStreakOnDashboard: z.boolean().catch(true),
+  remindEventsMin: z.number().int().min(0).max(1440).catch(15),
+  remindTasks: z.boolean().catch(true),
+  habitsReminderAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
+  digestAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('08:00'),
 });
 
 export const profileSchema = z.object({

@@ -12,6 +12,10 @@ const data: UserData = {
     dateFormat: 'd MMM yyyy',
     defaultCalendarView: 'week',
     showHabitStreakOnDashboard: true,
+    remindEventsMin: 15,
+    remindTasks: true,
+    habitsReminderAt: '21:00',
+    digestAt: '08:00',
   },
   categories: { work: { id: 'work', name: 'Work', color: 'blue', order: 0, createdAt: T0, updatedAt: T0 } },
   tasks: {

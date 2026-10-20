@@ -10,3 +10,12 @@ workers_dev = true
 GOOGLE_CLIENT_ID = "859267264757-1ej08g30ubf0pna7oq30hrou3k59812l.apps.googleusercontent.com"
 FIREBASE_PROJECT_ID = "plano-ea1b1"
 ALLOWED_ORIGINS = "https://plano.edvault.online,http://localhost:5173,http://localhost:4173"
+
+# Reminders: one Durable Object per user (free plan: SQLite-backed).
+[[durable_objects.bindings]]
+name = "REMINDERS"
+class_name = "Reminders"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Reminders"]
