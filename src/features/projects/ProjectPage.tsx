@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, NotebookPen, Pencil, Plus, Target, Trash2 } from 'lucide-react';
+import { ArrowLeft, CalendarDays, CheckSquare, ChevronDown, FolderKanban, Pencil, Plus, Target, Trash2 } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, Progress } from '@/components/ui/misc';
+import { Progress, Segmented } from '@/components/ui/misc';
 import { Select } from '@/components/ui/select';
 import { projectStatusOptions } from '@/components/common/options';
 import { EmptyState } from '@/components/common/States';
@@ -18,11 +18,12 @@ import { colorOf } from '@/lib/utils/colors';
 import { formatDateKey, formatTimeRange, relativeDayLabel, todayKey } from '@/lib/date';
 import { markdownExcerpt } from '@/lib/utils/markdown';
 import { cn } from '@/lib/utils/cn';
-import { TaskItem } from '@/features/tasks/TaskItem';
+import { TaskBoard, TaskRow } from '@/features/tasks/TaskViews';
+import { boardColumns } from '@/features/tasks/lists';
 import { isOpen, sortTasks } from '@/features/tasks/logic';
 import { upcomingOccurrences } from '@/features/calendar/logic';
 import { goalPercent } from '@/features/goals/logic';
-import { projectProgress } from './logic';
+import { deadlineHint, projectProgress } from './logic';
 import { ProjectForm } from './ProjectForm';
 
 export default function ProjectPage() {
@@ -37,6 +38,7 @@ export default function ProjectPage() {
   const today = todayKey(now);
   const [editing, setEditing] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  const [mode, setMode] = useState<'list' | 'board'>('list');
   const project = projects.find((p) => p.id === projectId);
 
   const related = useMemo(() => {
@@ -95,130 +97,153 @@ export default function ProjectPage() {
     }
   };
 
+  const side = 'rounded-[20px] border border-line/60 bg-surface p-5 shadow-soft';
+  const hint = project.targetDate && project.status !== 'completed' && project.status !== 'archived' ? deadlineHint(project.targetDate, today) : undefined;
+  const stats: [string, string, boolean?][] = [
+    ['Виконано', `${prog.done} з ${prog.total}`],
+    ['Відкриті', String(prog.total - prog.done)],
+    ['Прострочені', String(prog.overdue), prog.overdue > 0],
+    ['Найближчий дедлайн', prog.nextDeadline ? relativeDayLabel(prog.nextDeadline, today) : '—'],
+  ];
+
   return (
-    <PageContainer>
+    <PageContainer className="pb-8">
       <Link to="/projects" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Проєкти
       </Link>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex items-center gap-3">
-            <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color }} />
-            <h2 className="truncate text-[24px] font-semibold tracking-tight">{project.name}</h2>
-          </div>
-          {project.description && <p className="mt-2 max-w-2xl whitespace-pre-wrap text-sm leading-relaxed text-muted">{project.description}</p>}
-          <p className="mt-2 text-xs text-muted">
-            {project.startDate && `Початок: ${formatDateKey(project.startDate, settings.dateFormat)}`}
-            {project.startDate && project.targetDate && ' · '}
-            {project.targetDate && `Мета: ${formatDateKey(project.targetDate, settings.dateFormat)}`}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
-            variant="chip"
-            className="h-9"
-            aria-label="Статус проєкту"
-            value={project.status}
-            onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
-            options={projectStatusOptions}
-          />
-          <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(true)}>
-            <Pencil className="h-3.5 w-3.5" /> Редагувати
-          </Button>
-          <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Видалити проєкт" onClick={() => void remove()}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-5 lg:col-span-3">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs font-medium text-muted">Прогрес</p>
-              <p className="mt-1 text-3xl font-semibold tabular-nums tracking-tight">{prog.percent}%</p>
-            </div>
-            <div className="flex gap-6 text-sm">
-              <div>
-                <p className="text-xs text-muted">Виконано</p>
-                <p className="font-semibold tabular-nums">{prog.done}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted">Відкриті</p>
-                <p className="font-semibold tabular-nums">{prog.total - prog.done}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted">Прострочені</p>
-                <p className={cn('font-semibold tabular-nums', prog.overdue && 'text-danger')}>{prog.overdue}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted">Найближчий дедлайн</p>
-                <p className="font-semibold">{prog.nextDeadline ? relativeDayLabel(prog.nextDeadline, today) : '—'}</p>
-              </div>
-            </div>
+      <section className="rounded-[20px] border border-line/60 bg-surface p-5 shadow-soft sm:p-6">
+        <div className="flex flex-wrap items-start gap-4">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: `${color}1f`, color }}>
+            <FolderKanban className="h-6 w-6" />
+          </span>
+          <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
+            <h1 className="truncate text-[22px] font-bold tracking-tight sm:text-[26px]">{project.name}</h1>
+            <p className="mt-0.5 text-[13.5px] text-muted">
+              {project.startDate && `з ${formatDateKey(project.startDate, 'd MMMM')}`}
+              {project.startDate && project.targetDate && ' · '}
+              {project.targetDate && `до ${formatDateKey(project.targetDate, 'd MMMM yyyy')}`}
+              {hint && <span className={cn(' font-semibold', hint.tone === 'danger' ? 'text-danger' : hint.tone === 'warning' ? 'text-warning' : '')}> · {hint.text}</span>}
+            </p>
           </div>
-          <Progress value={prog.percent} color={color} className="mt-4 h-2" label="Прогрес проєкту" />
-          <p className="mt-2 text-[11px] text-subtle">Обчислюється за задачами проєкту (скасовані не враховуються).</p>
-        </Card>
-
-        <Card className="lg:col-span-2">
-          <CardHeader
-            title="Задачі"
-            subtitle={`Відкритих: ${related.open.length}`}
-            action={
-              <Button size="sm" variant="outline" onClick={() => openTaskForm({ defaults: { projectId: project.id } })}>
-                <Plus className="h-3.5 w-3.5" /> Додати задачу
-              </Button>
-            }
-          />
-          <div className="p-2 sm:p-3">
-            {related.open.length === 0 ? (
-              <EmptyState compact icon={<CheckSquare />} title="Відкритих задач немає" />
-            ) : (
-              related.open.map((t) => <TaskItem key={t.id} task={t} />)
-            )}
-            {related.done.length > 0 && (
-              <>
-                <button type="button" onClick={() => setShowDone((s) => !s)} className="mt-2 flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted hover:text-ink" aria-expanded={showDone}>
-                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', !showDone && '-rotate-90')} />
-                  Виконані ({related.done.length})
-                </button>
-                {showDone && related.done.map((t) => <TaskItem key={t.id} task={t} />)}
-              </>
-            )}
-          </div>
-        </Card>
-
-        <div className="flex flex-col gap-4">
-          <Card>
-            <CardHeader
-              title="Нотатки"
-              action={
-                <Button size="sm" variant="ghost" onClick={() => createNote({ projectId: project.id })}>
-                  <Plus className="h-3.5 w-3.5" /> Нова
-                </Button>
-              }
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <Select
+              variant="chip"
+              className="h-9 flex-1 sm:flex-none"
+              aria-label="Статус проєкту"
+              value={project.status}
+              onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
+              options={projectStatusOptions}
             />
-            <div className="space-y-1 p-3">
-              {related.notes.length === 0 ? (
-                <EmptyState compact icon={<NotebookPen />} title="Нотаток немає" className="!py-4" />
+            <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(true)}>
+              <Pencil className="h-3.5 w-3.5" /> Редагувати
+            </Button>
+            <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Видалити проєкт" onClick={() => void remove()}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        {project.description && <p className="mt-4 max-w-3xl whitespace-pre-wrap text-[14px] leading-relaxed text-muted">{project.description}</p>}
+
+        <div className="mt-5">
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <span className="text-[13px] font-semibold">Прогрес</span>
+            <span className="text-[22px] font-bold tabular-nums">{prog.percent}%</span>
+          </div>
+          <Progress value={prog.percent} color={color} className="h-2.5" label="Прогрес проєкту" />
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          {stats.map(([l, v, bad]) => (
+            <div key={l} className="rounded-2xl bg-surface-2 px-4 py-3">
+              <p className="text-[12px] text-muted">{l}</p>
+              <p className={cn('mt-0.5 truncate text-[18px] font-bold tabular-nums', bad && 'text-danger')}>{v}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className={cn(side, 'min-w-0 p-0')}>
+          <div className="flex flex-wrap items-center gap-2 px-5 pb-3 pt-5">
+            <h2 className="mr-auto text-[15px] font-semibold">
+              Задачі <span className="font-normal text-muted">{related.open.length}</span>
+            </h2>
+            <Segmented
+              size="sm"
+              ariaLabel="Вигляд задач"
+              value={mode}
+              onChange={setMode}
+              options={[
+                { value: 'list', label: 'Список' },
+                { value: 'board', label: 'Дошка' },
+              ]}
+            />
+            <Button size="sm" variant="dark" onClick={() => openTaskForm({ defaults: { projectId: project.id } })}>
+              <Plus className="h-3.5 w-3.5" /> Задача
+            </Button>
+          </div>
+          {mode === 'board' ? (
+            <div className="px-3 pb-4">
+              <TaskBoard
+                columns={boardColumns({ open: related.open, done: related.done })}
+                today={today}
+                onAdd={(status) => openTaskForm({ defaults: { projectId: project.id, status } })}
+              />
+            </div>
+          ) : (
+            <div className="px-2 pb-3">
+              {related.open.length === 0 ? (
+                <EmptyState compact icon={<CheckSquare />} title="Відкритих задач немає" description="Додайте першу задачу цього проєкту." />
               ) : (
-                related.notes.slice(0, 5).map((n) => (
-                  <Link key={n.id} to={`/notes/${n.id}`} className="block rounded-lg px-2 py-2 hover:bg-surface-2">
-                    <p className="truncate text-[13px] font-medium">{n.title || 'Без назви'}</p>
-                    <p className="truncate text-xs text-muted">{markdownExcerpt(n.content, 80) || 'Порожня'}</p>
-                  </Link>
-                ))
+                related.open.map((t) => <TaskRow key={t.id} task={t} today={today} showProject={false} />)
+              )}
+              {related.done.length > 0 && (
+                <>
+                  <button type="button" onClick={() => setShowDone((s) => !s)} className="mt-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted hover:text-ink" aria-expanded={showDone}>
+                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', !showDone && '-rotate-90')} />
+                    Виконані ({related.done.length})
+                  </button>
+                  {showDone && related.done.map((t) => <TaskRow key={t.id} task={t} today={today} showProject={false} />)}
+                </>
               )}
             </div>
-          </Card>
-          <Card>
-            <CardHeader title="Цілі" />
-            <div className="space-y-3 p-5 pt-3">
-              {related.goals.length === 0 ? (
-                <p className="text-xs text-muted">Немає пов’язаних цілей. Пов’яжіть ціль із цим проєктом на сторінці «Цілі».</p>
-              ) : (
-                related.goals.map((g) => (
+          )}
+        </section>
+
+        <div className="flex min-w-0 flex-col gap-4">
+          <section className={side}>
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-[15px] font-semibold">Нотатки</h2>
+              <Button size="sm" variant="ghost" onClick={() => createNote({ projectId: project.id })}>
+                <Plus className="h-3.5 w-3.5" /> Нова
+              </Button>
+            </div>
+            {related.notes.length === 0 ? (
+              <p className="text-[13px] text-muted">Нотаток поки немає.</p>
+            ) : (
+              related.notes.slice(0, 5).map((n) => (
+                <Link key={n.id} to={`/notes/${n.id}`} className="-mx-2 block rounded-lg px-2 py-2 hover:bg-surface-2">
+                  <p className="truncate text-[13.5px] font-medium">
+                    {n.icon && `${n.icon} `}
+                    {n.title || 'Без назви'}
+                  </p>
+                  <p className="truncate text-xs text-muted">{markdownExcerpt(n.content, 80) || 'Порожня'}</p>
+                </Link>
+              ))
+            )}
+          </section>
+          <section className={side}>
+            <h2 className="mb-3 text-[15px] font-semibold">Цілі</h2>
+            {related.goals.length === 0 ? (
+              <p className="text-[13px] text-muted">
+                Немає пов’язаних цілей.{' '}
+                <Link to="/goals" className="font-medium text-ink hover:underline">
+                  <Target className="mb-0.5 inline h-3.5 w-3.5" /> До цілей
+                </Link>
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {related.goals.map((g) => (
                   <Link key={g.id} to="/goals" className="block">
                     <div className="mb-1 flex justify-between text-[13px]">
                       <span className="truncate font-medium">{g.title}</span>
@@ -226,32 +251,26 @@ export default function ProjectPage() {
                     </div>
                     <Progress value={goalPercent(g)} color={color} label={g.title} />
                   </Link>
-                ))
-              )}
-            </div>
-          </Card>
-          <Card>
-            <CardHeader title="Найближчі події" />
-            <div className="p-3">
-              {related.events.length === 0 ? (
-                <EmptyState compact icon={<CalendarDays />} title="Найближчих подій немає" className="!py-4" />
-              ) : (
-                related.events.map((o) => (
-                  <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full justify-between gap-2 rounded-lg px-2 py-2 text-left hover:bg-surface-2">
-                    <span className="truncate text-[13px] font-medium">{o.event.title}</span>
-                    <span className="shrink-0 text-xs text-muted">
-                      {relativeDayLabel(o.date, today)} {o.event.allDay ? '' : formatTimeRange(o.event.startTime, undefined, settings.timeFormat)}
-                    </span>
-                  </button>
-                ))
-              )}
-            </div>
-          </Card>
-          {related.goals.length === 0 && goals.length === 0 && (
-            <Link to="/goals?new=1" className="inline-flex items-center gap-1 px-1 text-xs text-muted hover:text-ink">
-              <Target className="h-3.5 w-3.5" /> Створити ціль
-            </Link>
-          )}
+                ))}
+              </div>
+            )}
+          </section>
+          <section className={side}>
+            <h2 className="mb-2 text-[15px] font-semibold">Найближчі події</h2>
+            {related.events.length === 0 ? (
+              <p className="text-[13px] text-muted">Подій у найближчі 60 днів немає.</p>
+            ) : (
+              related.events.map((o) => (
+                <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-surface-2">
+                  <CalendarDays className="h-4 w-4 shrink-0 text-muted" />
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{o.event.title}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {relativeDayLabel(o.date, today)} {o.event.allDay ? '' : formatTimeRange(o.event.startTime, undefined, settings.timeFormat)}
+                  </span>
+                </button>
+              ))
+            )}
+          </section>
         </div>
       </div>
       {editing && <ProjectForm project={project} onClose={() => setEditing(false)} />}

@@ -20,11 +20,15 @@ export function EmptyState({
 }) {
   return (
     <div className={cn('flex flex-col items-center justify-center text-center', compact ? 'px-4 py-8' : 'px-6 py-14', className)}>
-      {icon && (
-        <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-2 text-muted [&_svg]:h-5 [&_svg]:w-5">
-          {icon}
-        </div>
-      )}
+      {/* The Plano duck, with the section's icon as a small badge. */}
+      <div className={cn('relative', compact ? 'mb-3' : 'mb-4')}>
+        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" aria-hidden className={cn('rounded-[22%] shadow-soft', compact ? 'h-12 w-12' : 'h-16 w-16')} />
+        {icon && (
+          <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-muted [&_svg]:h-3.5 [&_svg]:w-3.5">
+            {icon}
+          </span>
+        )}
+      </div>
       <p className="text-sm font-semibold text-ink">{title}</p>
       {description && <p className="mt-1 max-w-sm text-[13px] leading-relaxed text-muted">{description}</p>}
       {action && <div className="mt-4">{action}</div>}

@@ -8,10 +8,10 @@ import { useCollections } from '@/hooks/useCollections';
 import { useToday } from '@/hooks/useNow';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 import { colorOf } from '@/lib/utils/colors';
-import { diffDaysKey, formatDateKey, plural } from '@/lib/date';
+import { formatDateKey, plural } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey, Project, ProjectStatus } from '@/types';
-import { PROJECT_STATUS_LABEL, projectProgress } from './logic';
+import { PROJECT_STATUS_LABEL, deadlineHint, projectProgress } from './logic';
 import { ProjectForm } from './ProjectForm';
 
 type Filter = ProjectStatus | 'all';
@@ -26,16 +26,6 @@ const STATUS_PILL: Record<ProjectStatus, string> = {
   archived: 'bg-surface-2 text-subtle',
 };
 
-/** "через 5 днів", "сьогодні", "прострочено на 3 дні". */
-function deadlineHint(target: DateKey, today: DateKey): { text: string; tone: 'danger' | 'warning' | 'muted' } {
-  const d = diffDaysKey(target, today);
-  if (d < 0) return { text: `прострочено на ${-d} ${plural(-d, ['день', 'дні', 'днів'])}`, tone: 'danger' };
-  if (d === 0) return { text: 'сьогодні', tone: 'warning' };
-  if (d <= 7) return { text: `через ${d} ${plural(d, ['день', 'дні', 'днів'])}`, tone: 'warning' };
-  if (d < 60) return { text: `через ${d} ${plural(d, ['день', 'дні', 'днів'])}`, tone: 'muted' };
-  const m = Math.round(d / 30);
-  return { text: `через ${m} ${plural(m, ['місяць', 'місяці', 'місяців'])}`, tone: 'muted' };
-}
 
 function ProjectRow({ project, today }: { project: Project; today: DateKey }) {
   const { tasks } = useCollections();

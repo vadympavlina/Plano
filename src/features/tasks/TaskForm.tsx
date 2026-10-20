@@ -16,6 +16,7 @@ import { useFormDialog } from '@/hooks/useFormDialog';
 import { minutesToTime, timeToMinutes } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { Subtask, Task } from '@/types';
+import { ReminderSelect } from '@/features/reminders/ReminderSelect';
 
 type Draft = Omit<Task, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -170,6 +171,7 @@ export default function TaskFormDialog({
               onChange={(priority) => patch({ priority })}
               options={priorityOptions}
             />
+            <ReminderSelect value={draft.remindMin} onChange={(remindMin) => patch({ remindMin })} fallback={settings.remindTasks && draft.startTime ? 'на початку' : 'вимкнено'} />
             <Select
               variant="chip"
               aria-label="Категорія"

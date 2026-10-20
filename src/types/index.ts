@@ -60,6 +60,8 @@ export interface Task extends Timestamps {
   startDate?: DateKey;
   startTime?: TimeString;
   endTime?: TimeString;
+  /** Push reminder minutes before the start (0 = none, missing = settings default). */
+  remindMin?: number;
   subtasks: Subtask[];
   notes?: string;
   tags: string[];
@@ -98,6 +100,8 @@ export interface CalendarEvent extends Timestamps {
   projectId?: ID;
   location?: string;
   url?: string;
+  /** Push reminder minutes before (0 = none, missing = settings default). */
+  remindMin?: number;
   recurrence?: RecurrenceRule;
   /** Occurrence dates removed from a recurring series. */
   exdates: DateKey[];

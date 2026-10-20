@@ -28,3 +28,15 @@ describe('buildReminders', () => {
     expect(r.some((x) => x.tag === 'habits:2025-04-07')).toBe(false);
   });
 });
+
+describe('per-item reminders', () => {
+  it('uses the item reminder, turns it off with 0, and reminds all-day events only when asked', () => {
+    const allDay = { ...ev, id: 'b', title: 'ДН', allDay: true, startTime: undefined, endTime: undefined, date: '2025-04-08', remindMin: 1440 } as CalendarEvent;
+    const d = { ...data(), events: { e: { ...ev, remindMin: 60 }, b: allDay }, tasks: { t: { ...task, remindMin: 0 } } } as unknown as UserData;
+    const r = buildReminders(d, now);
+    const at = (tag: string) => r.find((x) => x.tag === tag)?.at;
+    expect(at('ev:e@2025-04-07')).toBe(new Date(2025, 3, 7, 9, 0).getTime());
+    expect(at('ev:b@2025-04-08')).toBe(new Date(2025, 3, 7, 9, 0).getTime());
+    expect(at('task:t')).toBeUndefined();
+  });
+});

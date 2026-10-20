@@ -23,26 +23,39 @@ export function buildReminders(data: UserData, now: Date): Reminder[] {
   const out: Reminder[] = [];
   const add = (r: Reminder) => r.at > now.getTime() && out.push(r);
   const tasks = Object.values(data.tasks).filter((x) => x.status === 'todo' || x.status === 'in_progress');
-  const occ = expandEvents(Object.values(data.events), today, end).filter((o) => !o.event.allDay && o.event.startTime);
+  // A reminder window reaches a day further, so "1 day before" for the last day still fires.
+  const all = expandEvents(Object.values(data.events), today, addDaysKey(end, 1));
+  const occ = all.filter((o) => !o.event.allDay && o.event.startTime && o.date <= end);
+  const ahead = (m: number) => (m >= 1440 && m % 1440 === 0 ? `${m / 1440} д` : m >= 60 && m % 60 === 0 ? `${m / 60} год` : `${m} хв`);
 
-  if (s.remindEventsMin > 0)
-    for (const o of occ) {
-      const m = s.remindEventsMin;
-      add({
-        at: combineDateTime(o.date, o.event.startTime!).getTime() - m * 60_000,
-        title: o.event.title,
-        body: `О ${t(o.event.startTime)} · через ${m >= 60 && m % 60 === 0 ? `${m / 60} год` : `${m} хв`}${o.event.location ? ` · ${o.event.location}` : ''}`,
-        url: `#/calendar?date=${o.date}&view=day`,
-        tag: `ev:${o.key}`,
-      });
-    }
+  // Events: own reminder or the default; all-day ones only when set on the event (from 09:00).
+  for (const o of all) {
+    const m = o.event.remindMin ?? (o.event.allDay ? 0 : s.remindEventsMin);
+    if (!m) continue;
+    const start = combineDateTime(o.date, o.event.allDay ? '09:00' : o.event.startTime!);
+    add({
+      at: start.getTime() - m * 60_000,
+      title: o.event.title,
+      body: `${o.event.allDay ? 'Весь день' : `О ${t(o.event.startTime)}`} · через ${ahead(m)}${o.event.location ? ` · ${o.event.location}` : ''}`,
+      url: `#/calendar?date=${o.date}&view=day`,
+      tag: `ev:${o.key}`,
+    });
+  }
 
-  if (s.remindTasks)
-    for (const k of tasks) {
-      const d = taskDate(k);
-      if (!d || !k.startTime || d < today || d > end) continue;
-      add({ at: combineDateTime(d, k.startTime).getTime(), title: k.title, body: `Задача на ${t(k.startTime)}`, url: '#/tasks?list=today', tag: `task:${k.id}` });
-    }
+  // Tasks: own reminder (from the start time, or 09:00 without one), else at the start if enabled.
+  for (const k of tasks) {
+    const d = taskDate(k);
+    if (!d || d < today || d > addDaysKey(end, 1)) continue;
+    const m = k.remindMin ?? (s.remindTasks && k.startTime ? 0 : undefined);
+    if (m === undefined || (k.remindMin === 0)) continue;
+    add({
+      at: combineDateTime(d, k.startTime ?? '09:00').getTime() - m * 60_000,
+      title: k.title,
+      body: k.startTime ? `Задача на ${t(k.startTime)}${m ? ` · через ${ahead(m)}` : ''}` : `Задача на ${d === today ? 'сьогодні' : 'день'}${m ? ` · через ${ahead(m)}` : ''}`,
+      url: '#/tasks?list=today',
+      tag: `task:${k.id}`,
+    });
+  }
 
   for (let i = 0; i < DAYS; i++) {
     const day = addDaysKey(today, i);

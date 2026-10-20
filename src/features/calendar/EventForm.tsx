@@ -11,6 +11,7 @@ import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
+import { ReminderSelect, reminderLabel } from '@/features/reminders/ReminderSelect';
 import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
 import { useData } from '@/app/providers/DataProvider';
@@ -312,6 +313,7 @@ export default function EventFormDialog({
                 options={projectOptions(projects, draft.projectId)}
               />
             )}
+            <ReminderSelect value={draft.remindMin} onChange={(remindMin) => patch({ remindMin })} fallback={draft.allDay ? 'вимкнено' : reminderLabel(settings.remindEventsMin)} />
           </div>
 
           {/* Details */}

@@ -41,10 +41,10 @@ export function TaskCheck({ task }: { task: Task }) {
 }
 
 /** Small line under the title: time or date, project, subtasks, repeat. */
-function TaskMeta({ task, today, showDate }: { task: Task; today: DateKey; showDate: boolean }) {
+function TaskMeta({ task, today, showDate, showProject = true }: { task: Task; today: DateKey; showDate: boolean; showProject?: boolean }) {
   const { projectById } = useCollections();
   const settings = useSettings();
-  const project = task.projectId ? projectById(task.projectId) : undefined;
+  const project = showProject && task.projectId ? projectById(task.projectId) : undefined;
   const d = taskDate(task);
   const overdue = d && d < today && task.status !== 'completed';
   const subDone = task.subtasks.filter((s) => s.done).length;
@@ -88,7 +88,7 @@ function CategoryDot({ task }: { task: Task }) {
   return <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colorOf(c.color) }} title={c.name} />;
 }
 
-export function TaskRow({ task, today, showDate = true }: { task: Task; today: DateKey; showDate?: boolean }) {
+export function TaskRow({ task, today, showDate = true, showProject = true }: { task: Task; today: DateKey; showDate?: boolean; showProject?: boolean }) {
   const { openTask } = useUI();
   const done = task.status === 'completed';
   return (
@@ -98,7 +98,7 @@ export function TaskRow({ task, today, showDate = true }: { task: Task; today: D
       </span>
       <button type="button" onClick={() => openTask(task.id)} className="min-w-0 flex-1 text-left">
         <span className={cn('block truncate text-[14.5px]', done && 'line-through')}>{task.title}</span>
-        <TaskMeta task={task} today={today} showDate={showDate} />
+        <TaskMeta task={task} today={today} showDate={showDate} showProject={showProject} />
       </button>
       {task.status === 'in_progress' && <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11.5px] font-medium text-primary">В роботі</span>}
       <CategoryDot task={task} />

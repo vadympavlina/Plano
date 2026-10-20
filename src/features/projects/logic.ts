@@ -1,4 +1,5 @@
 import type { DateKey, Project, ProjectStatus, Task } from '@/types';
+import { diffDaysKey, plural } from '@/lib/date';
 
 export const PROJECT_STATUS_LABEL: Record<ProjectStatus, string> = {
   active: 'Активний',
@@ -28,4 +29,15 @@ export function projectProgress(project: Project, tasks: Task[], today: DateKey)
     overdue: deadlines.filter((d) => d < today).length,
     nextDeadline: deadlines.find((d) => d >= today),
   };
+}
+
+/** "через 5 днів", "сьогодні", "прострочено на 3 дні". */
+export function deadlineHint(target: DateKey, today: DateKey): { text: string; tone: 'danger' | 'warning' | 'muted' } {
+  const d = diffDaysKey(target, today);
+  if (d < 0) return { text: `прострочено на ${-d} ${plural(-d, ['день', 'дні', 'днів'])}`, tone: 'danger' };
+  if (d === 0) return { text: 'сьогодні', tone: 'warning' };
+  if (d <= 7) return { text: `через ${d} ${plural(d, ['день', 'дні', 'днів'])}`, tone: 'warning' };
+  if (d < 60) return { text: `через ${d} ${plural(d, ['день', 'дні', 'днів'])}`, tone: 'muted' };
+  const m = Math.round(d / 30);
+  return { text: `через ${m} ${plural(m, ['місяць', 'місяці', 'місяців'])}`, tone: 'muted' };
 }
