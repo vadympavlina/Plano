@@ -12,6 +12,7 @@ import { DEFAULT_SETTINGS, starterCategories } from '@/lib/defaults';
 import { createRepositories, nowIso, type Repositories } from '@/services/repositories';
 import { setConnected } from '@/services/sync';
 import type { UserData } from '@/types';
+import { applyOps, clearOutbox, readOutbox } from '@/lib/backend/outbox';
 
 type NodeKey = keyof UserData;
 const NODES: NodeKey[] = [
@@ -88,6 +89,7 @@ function readCache(uid: string): Partial<Record<NodeKey, unknown>> | null {
 }
 export function clearDataCache() {
   cacheBlocked = true;
+  clearOutbox();
   try {
     Object.keys(localStorage)
       .filter((k) => k.startsWith(CACHE_PREFIX))
@@ -118,13 +120,19 @@ export function DataProvider({ backend, uid, children }: { backend: Backend; uid
     cacheBlocked = false;
     const persist = backend.kind === 'firebase';
     const cache: Partial<Record<NodeKey, unknown>> = (persist && readCache(uid)) || {};
+    // Show edits made offline in an earlier session, and send them again.
+    const base = `users/${uid}`;
+    if (persist) {
+      const pending = readOutbox().filter((o) => o.path === base || o.path.startsWith(`${base}/`));
+      if (pending.length) Object.assign(cache, (applyOps({ users: { [uid]: cache } }, pending).users as Record<string, typeof cache>)[uid]);
+      backend.flushPending?.(base);
+    }
     if (NODES.every((k) => k in cache)) {
       setData(Object.fromEntries(NODES.map((k) => [k, parseNode(k, cache[k])])) as unknown as UserData);
       setLoaded(new Set(NODES));
     }
     const fromServer = new Set<NodeKey>();
     let saveTimer: ReturnType<typeof setTimeout> | undefined;
-    const base = `users/${uid}`;
     const unsubs = NODES.map((key) =>
       backend.subscribe(
         `${base}/${key}`,

@@ -14,6 +14,7 @@ import type { Task } from '@/types';
 import { isOverdue, taskDate } from './logic';
 import { boardColumns, listContent, listCounts, listFromParam, type BoardColumn, type TaskListId } from './lists';
 import { TaskBoard, TaskRow } from './TaskViews';
+import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 
 const LISTS: { id: TaskListId; label: string; icon: typeof Inbox; tint: string }[] = [
   { id: 'inbox', label: 'Вхідні', icon: Inbox, tint: 'bg-subtle/15 text-muted' },
@@ -52,6 +53,7 @@ export default function TasksPage() {
   const [mode, setModeState] = useState<ViewMode>(loadMode);
   const { tasks, projects, categories, projectById, categoryById } = useCollections();
   const { openTaskForm } = useUI();
+  useOpenFromQuery(() => openTaskForm());
   const today = useToday();
 
   const setMode = (m: ViewMode) => {

@@ -17,4 +17,6 @@ export interface Backend {
   newId(): string;
   /** Subscribes to connection state (true = connected to the server). */
   onConnectionChange(cb: (connected: boolean) => void): () => void;
+  /** Re-sends writes saved from an earlier session for paths under `prefix` (Firebase only). */
+  flushPending?(prefix: string): void;
 }

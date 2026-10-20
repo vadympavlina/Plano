@@ -49,6 +49,12 @@ export default defineConfig(({ mode }) => {
           start_url: base,
           scope: base,
           categories: ['productivity', 'lifestyle'],
+          // Long-press on the app icon.
+          shortcuts: [
+            { name: 'Нова задача', short_name: 'Задача', url: `${base}#/tasks?new=1`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+            { name: 'Нова подія', short_name: 'Подія', url: `${base}#/calendar?new=1`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+            { name: 'Звички', short_name: 'Звички', url: `${base}#/habits`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
+          ],
           icons: [
             { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
             { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },

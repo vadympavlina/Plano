@@ -46,3 +46,10 @@ test('offline: the installed app still opens', async ({ page, context }) => {
   await page.reload();
   await expect(page.getByText(/Доброго (ранку|дня|вечора|ночі)/)).toBeVisible();
 });
+
+test('app icon shortcut: «Нова задача» opens the task form', async ({ page }) => {
+  await start(page);
+  await page.goto('/#/tasks?new=1');
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page).not.toHaveURL(/new=1/);
+});

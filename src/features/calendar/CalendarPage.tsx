@@ -36,6 +36,7 @@ import { MonthView } from './MonthView';
 import { MiniCalendar } from '@/components/ui/calendar';
 import { EmptyState } from '@/components/common/States';
 import { cn } from '@/lib/utils/cn';
+import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 
 function rangeFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
   if (view === 'day') return { start: anchor, end: anchor };
@@ -68,6 +69,7 @@ export default function CalendarPage() {
   const [params, setParams] = useSearchParams();
   const { events, tasks, categoryById } = useCollections();
   const { openEventForm, openEvent, openTask } = useUI();
+  useOpenFromQuery(() => openEventForm());
   const actions = useActions();
 
   const paramView = params.get('view');
