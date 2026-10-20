@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { iconTitle } from '@/components/common/CategoryMark';
+import { CategoryIcon } from '@/components/common/CategoryMark';
 import { Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
@@ -489,11 +489,12 @@ export function TimeGrid({
                       key={o.key}
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
-                      className="block w-full truncate rounded-md px-1.5 py-1 text-left text-[11px] font-semibold"
+                      className="flex w-full items-center gap-1 rounded-md px-1.5 py-1 text-left text-[11px] font-semibold"
                       style={{ backgroundColor: solidTint(color, 0.18), color }}
                       title={o.event.title}
                     >
-                      {iconTitle(o.event.title, categoryById(o.event.categoryId))}
+                      <CategoryIcon category={categoryById(o.event.categoryId)} className="h-3 w-3" />
+                      <span className="truncate">{o.event.title}</span>
                     </button>
                   );
                 })}
@@ -512,7 +513,8 @@ export function TimeGrid({
                     title={`Задача: ${t.title}`}
                   >
                     <TaskTick task={t} color={taskColor(t)} size={12} />
-                    <span className="truncate">{iconTitle(t.title, categoryById(t.categoryId))}</span>
+                    <CategoryIcon category={categoryById(t.categoryId)} className="h-3 w-3" color={taskColor(t)} />
+                    <span className="truncate">{t.title}</span>
                   </button>
                 ))}
                 {selected && c.allDay.length === 0 && c.untimedTasks.length === 0 && (
@@ -652,6 +654,7 @@ export function TimeGrid({
                         style={item.kind === 'event' ? { color: item.color } : undefined}
                       >
                         {item.kind === 'task' && <TaskTick task={item.task} color={item.color} size={13} />}
+                        <CategoryIcon category={item.category} className="h-3 w-3" color={item.kind === 'task' ? item.color : undefined} />
                         <span className="truncate">{item.title}</span>
                         {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-60" />}
                       </p>

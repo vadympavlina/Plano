@@ -60,8 +60,8 @@ export function QuickAdd({ className }: { className?: string }) {
     parsed.date && relativeDayLabel(parsed.date, today, 'EEEEEE, d MMM'),
     parsed.time && formatTimeRange(parsed.time, parsed.duration ? minutesToTime(Math.min(timeToMinutes(parsed.time) + parsed.duration, 23 * 60 + 59)) : undefined, settings.timeFormat),
     !parsed.time && parsed.duration && formatDuration(parsed.duration),
-    parsed.category && `🏷 ${parsed.category.name}`,
-    parsed.project && `📁 ${parsed.project.name}`,
+    parsed.category && parsed.category.name,
+    parsed.project && `Проєкт ${parsed.project.name}`,
     ...parsed.tags.map((t) => `#${t}`),
     parsed.priority && (parsed.priority === 'urgent' ? 'Терміново' : 'Важливо'),
   ].filter(Boolean) as string[];

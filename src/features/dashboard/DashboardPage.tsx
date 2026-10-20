@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { CategoryChip, iconTitle } from '@/components/common/CategoryMark';
+import { CategoryChip, CategoryIcon } from '@/components/common/CategoryMark';
 import { Link } from 'react-router-dom';
 import { ArrowRight, CalendarDays, Flame, MapPin, Plus, Repeat } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
@@ -348,7 +348,8 @@ export default function DashboardPage() {
                   }}
                 >
                   <span className="flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{iconTitle(item.occurrence.event.title, categoryById(item.occurrence.event.categoryId))}</span>
+                    <CategoryIcon category={categoryById(item.occurrence.event.categoryId)} color={eventColor(item.occurrence.event, categoryById)} />
+                    <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.occurrence.event.title}</span>
                     {item.occurrence.event.recurrence && <Repeat className="h-3.5 w-3.5 shrink-0 text-muted" />}
                     <span className="shrink-0 text-[11px] font-medium text-muted">Подія</span>
                   </span>

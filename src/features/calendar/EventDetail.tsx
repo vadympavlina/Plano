@@ -1,5 +1,5 @@
 import { CalendarDays, Clock, ExternalLink, FolderKanban, MapPin, Pencil, Repeat, Trash2 } from 'lucide-react';
-import { iconTitle } from '@/components/common/CategoryMark';
+import { CategoryIcon } from '@/components/common/CategoryMark';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/misc';
@@ -102,7 +102,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             </p>
           )}
           <div className="flex flex-wrap gap-1.5">
-            {category && <Badge color={color}>{iconTitle(category.name, category)}</Badge>}
+            {category && <Badge color={color}><CategoryIcon category={category} />{category.name}</Badge>}
             {event.external && <Badge color={googleCalendar?.color}>Google Calendar{googleCalendar ? ` · ${googleCalendar.name}` : ''}</Badge>}
             {readOnly && <Badge>Лише перегляд</Badge>}
             {event.syncPending && gcal?.status === 'connected' && <Badge>Очікує синхронізації</Badge>}

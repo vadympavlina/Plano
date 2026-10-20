@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { iconTitle } from '@/components/common/CategoryMark';
+import { CategoryIcon } from '@/components/common/CategoryMark';
+import type { Category } from '@/types';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
@@ -14,7 +15,7 @@ import { taskDate } from '@/features/tasks/logic';
 
 const MAX_ITEMS = 4;
 
-type BoardItem = { key: string; kind: 'event' | 'task'; title: string; time?: string; color?: string; done?: boolean };
+type BoardItem = { key: string; kind: 'event' | 'task'; title: string; category?: Category; time?: string; color?: string; done?: boolean };
 
 /** Seven day columns with the events and tasks of each day; a day opens it in the calendar. */
 export function WeekBoard({ today, className }: { today: DateKey; className?: string }) {
@@ -31,13 +32,14 @@ export function WeekBoard({ today, className }: { today: DateKey; className?: st
       const items: BoardItem[] = occurrencesOnDay(occ, d).map((o) => ({
         key: o.key,
         kind: 'event',
-        title: iconTitle(o.event.title, categoryById(o.event.categoryId)),
+        title: o.event.title,
+        category: categoryById(o.event.categoryId),
         time: o.event.allDay || !o.event.startTime ? undefined : formatTime(o.event.startTime, settings.timeFormat),
         color: eventColor(o.event, categoryById),
       }));
       for (const t of tasks) {
         if (taskDate(t) !== d || t.status === 'cancelled') continue;
-        items.push({ key: `task:${t.id}`, kind: 'task', title: iconTitle(t.title, categoryById(t.categoryId)), done: t.status === 'completed' });
+        items.push({ key: `task:${t.id}`, kind: 'task', title: t.title, category: categoryById(t.categoryId), done: t.status === 'completed' });
       }
       return { day: d, items };
     });
@@ -110,13 +112,17 @@ export function WeekBoard({ today, className }: { today: DateKey; className?: st
                 {shown.map((it) =>
                   it.kind === 'event' ? (
                     <div key={it.key} className="rounded-md px-1.5 py-1 lg:rounded-lg lg:px-2.5 lg:py-1.5" style={{ backgroundColor: tint(it.color!, 0.14) }}>
-                      <p className="truncate text-[11px] font-semibold text-ink lg:text-[12px]">{it.title}</p>
+                      <p className="flex items-center gap-1 text-[11px] font-semibold text-ink lg:text-[12px]">
+                        <CategoryIcon category={it.category} className="h-3 w-3" color={it.color} />
+                        <span className="truncate">{it.title}</span>
+                      </p>
                       {it.time && <p className="hidden text-[11px] tabular-nums text-muted lg:block">{it.time}</p>}
                     </div>
                   ) : (
                     <p key={it.key} className={cn('flex items-center gap-1.5 px-1 py-0.5 text-[11px] text-muted', it.done && 'line-through')}>
                       <span className={cn('h-2.5 w-2.5 shrink-0 rounded-full border border-subtle', it.done && 'border-transparent bg-subtle')} />
                       <span className="truncate">{it.title}</span>
+                      <CategoryIcon category={it.category} className="h-3 w-3 opacity-80" />
                     </p>
                   ),
                 )}

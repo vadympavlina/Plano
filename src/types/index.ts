@@ -32,7 +32,7 @@ export interface Category extends Timestamps {
   name: string;
   color: ColorKey;
   order: number;
-  /** Emoji shown before the name in lists and on calendar items. */
+  /** Line icon key (see CATEGORY_ICONS) shown before the name in lists and on calendar items. */
   icon?: string;
 }
 

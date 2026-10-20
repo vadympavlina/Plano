@@ -1,5 +1,5 @@
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
-import { iconTitle } from '@/components/common/CategoryMark';
+import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
@@ -136,13 +136,15 @@ export function MonthView({
                           : undefined
                       }
                     >
-                      {!it.o.event.allDay && (
-                        <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: eventColor(it.o.event, categoryById) }} />
+                      {categoryIcon(categoryById(it.o.event.categoryId)) ? (
+                        <CategoryIcon category={categoryById(it.o.event.categoryId)} className="h-3 w-3" color={eventColor(it.o.event, categoryById)} />
+                      ) : (
+                        !it.o.event.allDay && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: eventColor(it.o.event, categoryById) }} />
                       )}
                       {!it.o.event.allDay && it.o.event.startTime && (
                         <span className="shrink-0 tabular-nums text-muted">{formatTime(it.o.event.startTime, settings.timeFormat)}</span>
                       )}
-                      <span className="truncate font-medium text-ink">{iconTitle(it.o.event.title, categoryById(it.o.event.categoryId))}</span>
+                      <span className="truncate font-medium text-ink">{it.o.event.title}</span>
                     </button>
                   ) : (
                     <button
@@ -154,7 +156,8 @@ export function MonthView({
                       title={`Задача: ${it.t.title}`}
                     >
                       <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />
-                      <span className="truncate">{iconTitle(it.t.title, categoryById(it.t.categoryId))}</span>
+                      <CategoryIcon category={categoryById(it.t.categoryId)} className="h-3 w-3" color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} />
+                      <span className="truncate">{it.t.title}</span>
                     </button>
                   ),
                 )}

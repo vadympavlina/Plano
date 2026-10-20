@@ -16,10 +16,10 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 const STARTER: [string, string, ColorKey, string][] = [
-  ['cat_work', 'Робота', 'blue', '💼'],
-  ['cat_personal', 'Особисте', 'purple', '🏠'],
-  ['cat_health', 'Здоров’я', 'green', '💪'],
-  ['cat_study', 'Навчання', 'orange', '📚'],
+  ['cat_work', 'Робота', 'blue', 'briefcase'],
+  ['cat_personal', 'Особисте', 'purple', 'house'],
+  ['cat_health', 'Здоров’я', 'green', 'heart-pulse'],
+  ['cat_study', 'Навчання', 'orange', 'book-open'],
 ];
 
 /** Starter categories, written once on first sign-in. Fixed ids keep it idempotent. */

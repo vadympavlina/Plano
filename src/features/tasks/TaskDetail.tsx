@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { iconTitle } from '@/components/common/CategoryMark';
+import { CategoryIcon } from '@/components/common/CategoryMark';
 import { CalendarDays, Clock, Flag, FolderKanban, Pencil, Repeat, Tag, Target, Trash2, CircleDot } from 'lucide-react';
 import { Dialog, SheetContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -111,7 +111,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
           <div className="min-w-0 flex-1">
             <h2 className={cn('text-xl font-semibold leading-snug tracking-tight', done && 'text-subtle line-through')}>{task.title}</h2>
             <div className="mt-2 flex flex-wrap gap-1.5">
-              {category && <Badge color={colorOf(category.color)}>{iconTitle(category.name, category)}</Badge>}
+              {category && <Badge color={colorOf(category.color)}><CategoryIcon category={category} />{category.name}</Badge>}
               {isOverdue(task, today) && <Badge color="#E5484D">Прострочено</Badge>}
               {task.tags.map((t) => (
                 <Badge key={t}>#{t}</Badge>

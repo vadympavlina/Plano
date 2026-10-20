@@ -1,12 +1,11 @@
 import type { CalendarEvent, Category, DateKey, IntegrationState, Task } from '@/types';
-import { iconTitle } from '@/components/common/CategoryMark';
 import { colorOf } from '@/lib/utils/colors';
 import { eventMinutes, taskMinutes, type EventOccurrence, type TimedItem } from './logic';
 
 export type GridItem = TimedItem &
   (
-    | { kind: 'event'; occurrence: EventOccurrence; title: string; color: string; draggable: boolean }
-    | { kind: 'task'; task: Task; title: string; color: string; draggable: false }
+    | { kind: 'event'; occurrence: EventOccurrence; title: string; category?: Category; color: string; draggable: boolean }
+    | { kind: 'task'; task: Task; title: string; category?: Category; color: string; draggable: false }
   );
 
 /** Events from Google calendars we may only read (no edits, no drag, nothing sent back). */
@@ -31,7 +30,8 @@ export function buildTimedItems(
       start: m.start,
       end: m.end,
       occurrence: o,
-      title: iconTitle(o.event.title, categoryById(o.event.categoryId)),
+      title: o.event.title,
+      category: categoryById(o.event.categoryId),
       color: eventColor(o.event, categoryById),
       draggable: !o.event.recurrence && !isReadOnly(o.event, gcal),
     });
@@ -46,7 +46,8 @@ export function buildTimedItems(
       start: m.start,
       end: m.end,
       task: t,
-      title: iconTitle(t.title, categoryById(t.categoryId)),
+      title: t.title,
+      category: categoryById(t.categoryId),
       color: colorOf(categoryById(t.categoryId)?.color ?? 'slate'),
       draggable: false,
     });
