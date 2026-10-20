@@ -6,6 +6,7 @@ import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey, Habit } from '@/types';
 import { habitValue, isBad, isDone, nextHabitValue } from './logic';
+import { haptic } from '@/lib/utils/haptic';
 
 export function Ring({ value, size, stroke, color, children }: { value: number; size: number; stroke: number; color: string; children?: ReactNode }) {
   const r = (size - stroke) / 2;
@@ -37,6 +38,7 @@ export function useHabitToggle() {
   const { data } = useData();
   const actions = useActions();
   return (habit: Habit, date: DateKey, mode: 'tap' | 'toggle' = 'tap') => {
+    haptic();
     const next = nextHabitValue(habit, habitValue(data.habitLogs, habit.id, date), mode);
     return actions.habits.setValue(habit.id, date, next).catch(() => undefined);
   };

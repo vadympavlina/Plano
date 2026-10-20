@@ -210,6 +210,8 @@ export const integrationSchema = z.object({
   lastSyncAt: optionalString,
   lastError: optionalString,
   grant: optionalString,
+  syncTokens: arrayish(z.object({ calendarId: z.string(), token: z.string() })).optional(),
+  fullSyncAt: optionalString,
 });
 
 export const collectionSchemas = {

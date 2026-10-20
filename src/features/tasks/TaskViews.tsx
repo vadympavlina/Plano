@@ -10,6 +10,7 @@ import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
 import { taskDate } from './logic';
 import { BOARD_COLUMNS, type BoardColumn } from './lists';
+import { haptic } from '@/lib/utils/haptic';
 
 const RING: Partial<Record<Task['priority'], string>> = { urgent: '#E5484D', high: '#E09232' };
 
@@ -25,6 +26,7 @@ export function TaskCheck({ task }: { task: Task }) {
       aria-label={done ? `Повернути «${task.title}»` : `Виконати «${task.title}»`}
       onClick={(e) => {
         e.stopPropagation();
+        haptic();
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
       className={cn(

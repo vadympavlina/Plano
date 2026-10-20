@@ -68,23 +68,40 @@ export async function listCalendars(token: string): Promise<GCalendar[]> {
 
 const cal = (id: string) => `/calendars/${encodeURIComponent(id)}`;
 
-/** All event instances (recurring series expanded) between two instants. */
-export async function listEvents(token: string, calendarId: string, timeMin: string, timeMax: string): Promise<GEvent[]> {
+/**
+ * Event instances (recurring series expanded). With `syncToken` only what changed
+ * since the last call comes back (deletions as status "cancelled"); otherwise the
+ * whole [timeMin, timeMax] window. Either way the next sync token is returned.
+ * An expired token (410) falls back to a full fetch.
+ */
+export async function listEvents(
+  token: string,
+  calendarId: string,
+  timeMin: string,
+  timeMax: string,
+  syncToken?: string,
+): Promise<{ events: GEvent[]; nextSyncToken?: string; incremental: boolean }> {
   const out: GEvent[] = [];
   let pageToken: string | undefined;
-  do {
-    const q = new URLSearchParams({
-      singleEvents: 'true',
-      timeMin,
-      timeMax,
-      maxResults: '2500',
-      ...(pageToken ? { pageToken } : {}),
-    });
-    const r = await request<{ items?: GEvent[]; nextPageToken?: string }>(token, 'GET', `${cal(calendarId)}/events?${q}`);
-    out.push(...(r.items ?? []));
-    pageToken = r.nextPageToken;
-  } while (pageToken);
-  return out;
+  let nextSyncToken: string | undefined;
+  try {
+    do {
+      const q = new URLSearchParams({
+        singleEvents: 'true',
+        maxResults: '2500',
+        ...(syncToken ? { syncToken } : { timeMin, timeMax }),
+        ...(pageToken ? { pageToken } : {}),
+      });
+      const r = await request<{ items?: GEvent[]; nextPageToken?: string; nextSyncToken?: string }>(token, 'GET', `${cal(calendarId)}/events?${q}`);
+      out.push(...(r.items ?? []));
+      pageToken = r.nextPageToken;
+      nextSyncToken = r.nextSyncToken ?? nextSyncToken;
+    } while (pageToken);
+  } catch (e) {
+    if (syncToken && e instanceof GoogleApiError && e.status === 410) return listEvents(token, calendarId, timeMin, timeMax);
+    throw e;
+  }
+  return { events: out, nextSyncToken, incremental: !!syncToken };
 }
 
 export const insertEvent = (token: string, calendarId: string, body: GEventInput) =>

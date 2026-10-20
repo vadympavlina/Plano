@@ -13,6 +13,7 @@ import { useActions } from '@/hooks/useActions';
 import { eachDateKey, formatDateKey, formatDuration, formatTime, greetingFor, minutesToTime, plural, relativeDayLabel, todayKey, weekRange } from '@/lib/date';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
+import { haptic } from '@/lib/utils/haptic';
 import type { Habit } from '@/types';
 import { isOverdue, percent, sortTasks, taskDate, weekProgress } from '@/features/tasks/logic';
 import { expandEvents, occurrencesOnDay, upcomingOccurrences } from '@/features/calendar/logic';
@@ -166,6 +167,7 @@ export default function DashboardPage() {
   const activeGoals = goals.filter((g) => g.status === 'active').slice(0, 4);
 
   const tapHabit = (h: Habit) => {
+    haptic();
     void actions.habits.setValue(h.id, today, nextHabitValue(h, habitValue(data.habitLogs, h.id, today))).catch(() => undefined);
   };
 

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { createHashRouter, Navigate, type RouteObject } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { LoadingState } from '@/components/common/States';
+import { PageSkeleton } from '@/components/common/States';
 
 const Dashboard = lazy(() => import('@/features/dashboard/DashboardPage'));
 const CalendarPage = lazy(() => import('@/features/calendar/CalendarPage'));
@@ -14,7 +14,7 @@ const GoalsPage = lazy(() => import('@/features/goals/GoalsPage'));
 const NotesPage = lazy(() => import('@/features/notes/NotesPage'));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
 
-const page = (el: React.ReactNode) => <Suspense fallback={<LoadingState />}>{el}</Suspense>;
+const page = (el: React.ReactNode) => <Suspense fallback={<PageSkeleton />}>{el}</Suspense>;
 
 const routes: RouteObject[] = [
   {

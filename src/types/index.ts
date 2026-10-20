@@ -244,6 +244,10 @@ export interface IntegrationState {
   pendingDeletes?: Record<string, PendingExternalDelete>;
   lastSyncAt?: ISODateTime;
   lastError?: string;
+  /** Google sync tokens per calendar (incremental fetches). */
+  syncTokens?: { calendarId: string; token: string }[];
+  /** Last full fetch of the window. */
+  fullSyncAt?: ISODateTime;
   /** Google refresh token encrypted by the Plano token server; only that server can use it. */
   grant?: string;
 }

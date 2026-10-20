@@ -1,7 +1,7 @@
 // Generates every app icon from the duck artwork in assets-src/logo-duck.webp.
 // Usage: npm run icons
 import sharp from 'sharp';
-import { writeFile, copyFile } from 'node:fs/promises';
+import { writeFile, copyFile, mkdir, readFile } from 'node:fs/promises';
 
 const SRC = 'assets-src/logo-duck.webp';
 const BG = '#000000';
@@ -49,4 +49,25 @@ await copyFile(`${out}/apple-touch-icon.png`, 'public/apple-touch-icon.png');
 await writeFile('public/logo-duck.png', await sharp(duck).resize(128, 128).png().toBuffer());
 const fav = (await icon(64, 0.8, 0.22)).toString('base64');
 await writeFile('public/favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><image width="64" height="64" href="data:image/png;base64,${fav}"/></svg>\n`);
+
+// iPhone launch screens (iOS shows a white screen without them): duck on the dark app background.
+const SPLASH = [
+  [440, 956, 3], [430, 932, 3], [428, 926, 3], [414, 896, 3], [414, 896, 2], [414, 736, 3],
+  [402, 874, 3], [393, 852, 3], [390, 844, 3], [375, 812, 3], [375, 667, 2],
+];
+await mkdir('public/splash', { recursive: true });
+const links = [];
+for (const [w, h, r] of SPLASH) {
+  const [W, H] = [w * r, h * r];
+  const d = Math.round(W * 0.34);
+  const name = `splash/${W}x${H}.png`;
+  const png = await sharp({ create: { width: W, height: H, channels: 4, background: '#0E1117' } })
+    .composite([{ input: await sharp(duck).resize(d, d).toBuffer(), left: (W - d) >> 1, top: (H - d) >> 1 }])
+    .png({ compressionLevel: 9, palette: true })
+    .toBuffer();
+  await writeFile(`public/${name}`, png);
+  links.push(`    <link rel="apple-touch-startup-image" media="(device-width: ${w}px) and (device-height: ${h}px) and (-webkit-device-pixel-ratio: ${r}) and (orientation: portrait)" href="%BASE_URL%${name}" />`);
+}
+const html = await readFile('index.html', 'utf8');
+await writeFile('index.html', html.replace(/ *<!-- splash:start -->[\s\S]*<!-- splash:end -->/, `    <!-- splash:start -->\n${links.join('\n')}\n    <!-- splash:end -->`));
 console.log('icons written');

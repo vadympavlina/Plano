@@ -31,6 +31,7 @@ export const GCAL_KEY = 'google_calendar';
 const SYNC_INTERVAL_MS = 5 * 60_000;
 const PAST_DAYS = 60;
 const FUTURE_DAYS = 400;
+const FULL_SYNC_MS = 24 * 3600_000;
 
 export type GoogleSyncPhase = 'unavailable' | 'off' | 'needs_auth' | 'syncing' | 'idle' | 'error';
 
@@ -197,9 +198,17 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
       const window = { start: addDaysKey(today, -PAST_DAYS), end: addDaysKey(today, FUTURE_DAYS) };
       const timeMin = fromDateKey(window.start).toISOString();
       const timeMax = fromDateKey(addDaysKey(window.end, 1)).toISOString();
+      // Only changes since the last sync; a full fetch once a day keeps the 400-day window rolling.
+      const full = !st.fullSyncAt || Date.now() - Date.parse(st.fullSyncAt) > FULL_SYNC_MS;
+      const tokens = new Map(full ? [] : (st.syncTokens ?? []).map((t) => [t.calendarId, t.token]));
       const remote = [];
+      const incremental = new Set<string>();
+      const syncTokens: { calendarId: string; token: string }[] = [];
       for (const calendarId of selected) {
-        remote.push({ calendarId, color: calById.get(calendarId)?.color, events: await listEvents(token, calendarId, timeMin, timeMax) });
+        const r = await listEvents(token, calendarId, timeMin, timeMax, tokens.get(calendarId));
+        if (r.incremental) incremental.add(calendarId);
+        if (r.nextSyncToken) syncTokens.push({ calendarId, token: r.nextSyncToken });
+        remote.push({ calendarId, color: calById.get(calendarId)?.color, events: r.events });
       }
       const plan = planPull({
         local: Object.values(dataRef.current.events)
@@ -209,6 +218,7 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
         selected,
         window,
         pendingDeleteKeys: new Set(Object.values(pendingDeletes).map((r) => externalKey(r.calendarId, r.eventId))),
+        incremental,
         now,
       });
       if (plan.upserts.length || plan.deletes.length) {
@@ -218,7 +228,16 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
         await repos.batch('Google Calendar', values);
       }
 
-      await writeState({ calendars, calendarIds: selected, targetCalendarId: target, lastSyncAt: nowIso(), lastError: undefined, status: 'connected' });
+      await writeState({
+        calendars,
+        calendarIds: selected,
+        targetCalendarId: target,
+        lastSyncAt: nowIso(),
+        lastError: undefined,
+        status: 'connected',
+        syncTokens,
+        fullSyncAt: full ? nowIso() : st.fullSyncAt,
+      });
     } catch (err) {
       if (err instanceof GoogleApiError && err.needsAuth) {
         clearStoredToken();

@@ -71,3 +71,24 @@ export function ErrorState({
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('animate-pulse rounded-lg bg-line/60', className)} />;
 }
+
+/** Grey silhouettes of a page (title + cards) while data or code is loading. */
+export function PageSkeleton({ label = 'Завантаження…' }: { label?: string }) {
+  const bar = 'rounded-lg bg-line/60 dark:bg-line/40';
+  return (
+    <div role="status" aria-label={label} className="w-full animate-pulse px-4 pb-8 pt-2 sm:px-6 lg:pt-0">
+      <div className={`h-3.5 w-36 ${bar}`} />
+      <div className={`mt-2.5 h-8 w-64 max-w-full ${bar}`} />
+      <div className={`mt-5 h-14 rounded-[20px] ${bar}`} />
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className={`h-40 rounded-[20px] ${bar}`} />
+        ))}
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className={`h-64 rounded-[20px] ${bar}`} />
+        <div className={`h-64 rounded-[20px] ${bar}`} />
+      </div>
+    </div>
+  );
+}

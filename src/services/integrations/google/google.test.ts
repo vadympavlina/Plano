@@ -94,6 +94,15 @@ describe('planPull', () => {
   });
   const base = { selected: ['primary'], window: W, pendingDeleteKeys: new Set<string>(), now: T0 };
 
+  it('incremental fetch: only listed changes apply, cancelled ones are deleted', () => {
+    const local = planPull({ ...base, local: [], remote: [{ calendarId: 'primary', events: [g('e1'), g('e2')] }] }).upserts;
+    const inc = { ...base, incremental: new Set(['primary']) };
+    expect(planPull({ ...inc, local, remote: [{ calendarId: 'primary', events: [] }] }).deletes).toEqual([]);
+    const plan = planPull({ ...inc, local, remote: [{ calendarId: 'primary', events: [g('e1', { status: 'cancelled' })] }] });
+    expect(plan.deletes).toEqual([local[0].id]);
+    expect(plan.upserts).toEqual([]);
+  });
+
   it('imports new events once (idempotent)', () => {
     const first = planPull({ ...base, local: [], remote: [{ calendarId: 'primary', events: [g('e1')] }] });
     expect(first.upserts).toHaveLength(1);

@@ -9,7 +9,7 @@ import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { UIProvider, useUI } from '@/app/providers/UIProvider';
 import { GoogleSyncProvider } from '@/features/integrations/GoogleSyncProvider';
 import { useData } from '@/app/providers/DataProvider';
-import { LoadingState, ErrorState } from '@/components/common/States';
+import { PageSkeleton, ErrorState } from '@/components/common/States';
 
 const COLLAPSE_KEY = 'plano:sidebar-collapsed';
 
@@ -81,10 +81,13 @@ function LayoutInner() {
           {error && !ready ? (
             <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
           ) : !ready ? (
-            <LoadingState label="Завантажуємо ваші дані…" className="py-32" />
+            <PageSkeleton label="Завантажуємо ваші дані…" />
           ) : (
             <ErrorBoundary resetKey={pathname}>
-              <Outlet />
+              {/* Soft fade between sections (not between views of one section). */}
+              <div key={pathname.split('/')[1]} className="motion-safe:animate-page-in">
+                <Outlet />
+              </div>
             </ErrorBoundary>
           )}
         </main>

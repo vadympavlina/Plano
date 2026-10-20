@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { tint } from '@/lib/utils/colors';
+import { haptic } from '@/lib/utils/haptic';
 
 export function Badge({
   color,
@@ -83,6 +84,7 @@ export function CheckCircle({
       disabled={disabled}
       onClick={(e) => {
         e.stopPropagation();
+        haptic();
         onChange(!checked);
       }}
       className={cn(

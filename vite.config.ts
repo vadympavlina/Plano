@@ -60,6 +60,8 @@ export default defineConfig(({ mode }) => {
           // database) is never cached by the service worker, so private data is
           // not served from a cache after sign-out.
           globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+          // iOS fetches launch screens itself when the app is added to the Home Screen.
+          globIgnores: ['splash/**'],
           navigateFallback: 'index.html',
           navigateFallbackDenylist: [/^\/__/],
           cleanupOutdatedCaches: true,

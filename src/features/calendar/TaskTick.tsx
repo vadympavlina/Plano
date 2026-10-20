@@ -2,6 +2,7 @@ import { Check } from 'lucide-react';
 import { useActions } from '@/hooks/useActions';
 import { cn } from '@/lib/utils/cn';
 import type { Task } from '@/types';
+import { haptic } from '@/lib/utils/haptic';
 
 /** Round checkbox for a task inside the calendar: ticks the task without opening it. */
 export function TaskTick({ task, color, size = 14 }: { task: Task; color: string; size?: number }) {
@@ -17,6 +18,7 @@ export function TaskTick({ task, color, size = 14 }: { task: Task; color: string
       onClick={(e) => {
         e.stopPropagation();
         e.preventDefault();
+        haptic();
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
       onKeyDown={(e) => {
