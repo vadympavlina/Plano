@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
-import { DatePicker } from '@/components/ui/date-time';
+import { DatePicker, TimePicker } from '@/components/ui/date-time';
+import { Bell, X } from 'lucide-react';
 import { Stepper } from '@/components/ui/controls';
 import { ColorPicker } from '@/components/ui/color-picker';
 import { useActions } from '@/hooks/useActions';
@@ -159,6 +160,34 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
               <Field label="Одиниця">
                 {(p) => <Input {...p} placeholder={draft.kind === 'bad' ? 'сигарети, чашки…' : 'склянки, сторінки…'} value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
               </Field>
+            </div>
+          )}
+          {draft.kind !== 'bad' && (
+            <div>
+              <p className="mb-1.5 text-[13px] font-medium">Нагадування</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {(draft.remindAt ?? []).map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    aria-label={`Прибрати нагадування о ${t}`}
+                    onClick={() => patch({ remindAt: draft.remindAt!.filter((x) => x !== t) })}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg bg-surface-2 px-2.5 text-[13px] font-medium hover:bg-line/60"
+                  >
+                    <Bell className="h-3.5 w-3.5 text-muted" /> {t} <X className="h-3 w-3 text-subtle" />
+                  </button>
+                ))}
+                {(draft.remindAt?.length ?? 0) < 6 && (
+                  <TimePicker
+                    variant="chip"
+                    aria-label="Додати час нагадування"
+                    placeholder="+ Час"
+                    value={undefined}
+                    onChange={(t) => t && patch({ remindAt: [...new Set([...(draft.remindAt ?? []), t])].sort() })}
+                  />
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-muted">Прийде у вибраний час, якщо звичку ще не виконано. Потрібні сповіщення в налаштуваннях.</p>
             </div>
           )}
           {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}

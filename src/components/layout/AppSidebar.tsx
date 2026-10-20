@@ -28,7 +28,7 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
       className={cn('sticky top-0 hidden h-dvh shrink-0 p-3 pl-[max(0.75rem,env(safe-area-inset-left))] transition-[width] duration-200 lg:block', collapsed ? 'w-[92px]' : 'w-[252px]')}
       aria-label="Головна навігація"
     >
-      <div className="flex h-full flex-col rounded-[22px] bg-sidebar p-3 text-sidebar-fg shadow-pop">
+      <div className="flex h-full flex-col rounded-[22px] bg-sidebar p-3 text-sidebar-fg shadow-pop dark:ring-1 dark:ring-white/5">
         <div className={cn('mb-4 flex h-11 items-center justify-between pl-2', collapsed && 'justify-center pl-0')}>
           {collapsed ? <LogoMark className="h-[26px] w-[26px]" tone="light" /> : <Logo tone="light" className="text-white" />}
           {!collapsed && (

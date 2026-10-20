@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS: Settings = {
   remindTasks: true,
   habitsReminderAt: '21:00',
   digestAt: '08:00',
+  accent: 'blue',
 };
 
 const STARTER: [string, string, ColorKey][] = [

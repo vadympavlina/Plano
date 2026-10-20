@@ -22,21 +22,25 @@
     --danger: 229 72 77;
     --purple: 146 117 239;
     --accent: 23 27 36;
+    /* Pastel strength of tinted event backgrounds (see solidTint). */
+    --tint-k: 1;
+    --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
+    --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / 0.18), 0 4px 8px -4px rgb(16 24 40 / 0.08);
     color-scheme: light;
   }
 
   .dark {
-    --bg: 14 17 23;
-    --surface: 23 27 36;
-    --surface-2: 29 34 45;
-    --sidebar: 10 12 17;
+    --bg: 11 13 18;
+    --surface: 22 26 35;
+    --surface-2: 30 35 46;
+    --sidebar: 18 21 29;
     --sidebar-fg: 236 239 245;
     --sidebar-muted: 128 137 156;
     --sidebar-active: 32 37 49;
     --ink: 232 235 242;
-    --muted: 150 159 178;
-    --subtle: 108 117 137;
-    --line: 40 46 60;
+    --muted: 160 168 186;
+    --subtle: 114 123 143;
+    --line: 45 52 67;
     --primary: 102 145 255;
     --primary-fg: 255 255 255;
     --success: 64 199 150;
@@ -44,8 +48,22 @@
     --danger: 240 98 102;
     --purple: 166 141 247;
     --accent: 236 239 245;
+    --tint-k: 1.7;
+    /* Shadows vanish on dark: a faint top highlight and a deeper drop instead. */
+    --shadow-soft: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 1px 3px rgb(0 0 0 / 0.35);
+    --shadow-pop: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 16px 40px -8px rgb(0 0 0 / 0.6);
     color-scheme: dark;
   }
+
+  /* Accent colour (Settings → Вигляд); blue is the default above. */
+  [data-accent='violet'] { --primary: 132 94 247; }
+  [data-accent='green'] { --primary: 22 163 110; }
+  [data-accent='orange'] { --primary: 232 118 30; }
+  [data-accent='pink'] { --primary: 219 68 133; }
+  .dark[data-accent='violet'] { --primary: 162 134 255; }
+  .dark[data-accent='green'] { --primary: 52 199 140; }
+  .dark[data-accent='orange'] { --primary: 250 148 72; }
+  .dark[data-accent='pink'] { --primary: 240 108 162; }
 
   html {
     -webkit-text-size-adjust: 100%;

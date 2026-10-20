@@ -30,5 +30,5 @@ export function tint(hex: string, alpha: number): string {
 
 /** Opaque pastel: `hex` mixed into the surface colour, so grid lines and overlaps don't show through. */
 export function solidTint(hex: string, amount: number): string {
-  return `color-mix(in srgb, ${hex} ${Math.round(amount * 100)}%, rgb(var(--surface)))`;
+  return `color-mix(in srgb, ${hex} calc(${Math.round(amount * 100)}% * var(--tint-k, 1)), rgb(var(--surface)))`;
 }

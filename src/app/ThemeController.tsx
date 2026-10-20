@@ -19,7 +19,15 @@ export function applyTheme(theme: ThemePreference) {
 
 /** Keeps the <html> class in sync with the saved theme preference. */
 export function ThemeController() {
-  const { theme } = useSettings();
+  const { theme, accent } = useSettings();
+  useEffect(() => {
+    document.documentElement.dataset.accent = accent;
+    try {
+      localStorage.setItem('plano:accent', accent);
+    } catch {
+      /* ignore */
+    }
+  }, [accent]);
   useEffect(() => {
     applyTheme(theme);
     if (theme !== 'system') return;

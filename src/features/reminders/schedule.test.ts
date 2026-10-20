@@ -40,3 +40,14 @@ describe('per-item reminders', () => {
     expect(at('task:t')).toBeUndefined();
   });
 });
+
+describe('habit reminder times', () => {
+  it('reminds at each time on scheduled days until the habit is done', () => {
+    const water = { ...habit, id: 'w', name: 'Вода', goalType: 'count', target: 8, unit: 'склянок', remindAt: ['10:00', '18:00'] } as Habit;
+    const d = { ...data({ habitsReminderAt: '' }, { w: { '2025-04-07': 3 } }), habits: { w: water } } as unknown as UserData;
+    const today = buildReminders(d, now).filter((r) => r.tag?.startsWith('habit:w:2025-04-07'));
+    expect(today.map((r) => r.body)).toEqual(['3 з 8 склянок — час відмітити', '3 з 8 склянок — час відмітити']);
+    const done = { ...d, habitLogs: { w: { '2025-04-07': 8 } } } as unknown as UserData;
+    expect(buildReminders(done, now).some((r) => r.tag?.startsWith('habit:w:2025-04-07'))).toBe(false);
+  });
+});

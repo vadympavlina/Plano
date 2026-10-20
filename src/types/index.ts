@@ -146,6 +146,8 @@ export interface Habit extends Timestamps {
    * the limit (0 for check habits, `target` for count habits). Missing = "good".
    */
   kind?: 'good' | 'bad';
+  /** Push reminder times ("HH:mm") on scheduled days while the habit isn't done. */
+  remindAt?: string[];
   /** Bad habits: first day actually tracked (days before it are "no data", not clean). */
   trackFrom?: DateKey;
 }
@@ -211,7 +213,12 @@ export interface Settings {
   habitsReminderAt: string;
   /** "HH:mm" for the morning summary, '' = off. */
   digestAt: string;
+  /** Accent colour of buttons, links, today markers. */
+  accent: AccentColor;
 }
+
+export const ACCENT_COLORS = ['blue', 'violet', 'green', 'orange', 'pink'] as const;
+export type AccentColor = (typeof ACCENT_COLORS)[number];
 
 export interface Profile {
   displayName?: string;

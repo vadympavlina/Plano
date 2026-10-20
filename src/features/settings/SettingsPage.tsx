@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Bell, Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
+import { Bell, Check, Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge, Segmented } from '@/components/ui/misc';
@@ -28,7 +28,7 @@ import { deviceTimeZone, formatDateKey, plural, todayKey } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
-import type { Category, Settings, ThemePreference } from '@/types';
+import type { AccentColor, Category, Settings, ThemePreference } from '@/types';
 import { buildExport, validateImport, type ImportResult } from './dataTransfer';
 
 const SECTIONS = [
@@ -193,6 +193,14 @@ function ProfileCard() {
   );
 }
 
+const ACCENTS: [AccentColor, string, string][] = [
+  ['blue', 'Синій', '71 120 245'],
+  ['violet', 'Фіолетовий', '132 94 247'],
+  ['green', 'Зелений', '22 163 110'],
+  ['orange', 'Помаранчевий', '232 118 30'],
+  ['pink', 'Рожевий', '219 68 133'],
+];
+
 const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Світла', icon: Sun },
   { value: 'dark', label: 'Темна', icon: Moon },
@@ -214,7 +222,7 @@ function ThemePreview({ theme }: { theme: ThemePreference }) {
 function AppearanceSection() {
   const { data, repos } = useData();
   return (
-    <Group id="appearance" title="Вигляд" keywords="тема світла темна системна">
+    <Group id="appearance" title="Вигляд" keywords="тема світла темна системна колір акцент">
       <Row label="Тема" hint="Системна повторює налаштування пристрою." keywords="світла темна системна">
         <div className="grid grid-cols-3 gap-2 sm:w-[400px]" role="radiogroup" aria-label="Тема">
           {THEMES.map(({ value, label, icon: Icon }) => (
@@ -233,6 +241,25 @@ function AppearanceSection() {
               <span className="mt-1.5 flex items-center gap-1.5 px-1 pb-0.5 text-[12.5px] font-medium">
                 <Icon className="h-3.5 w-3.5" /> {label}
               </span>
+            </button>
+          ))}
+        </div>
+      </Row>
+      <Row label="Акцентний колір" hint="Кнопки, посилання, позначка «сьогодні»." keywords="колір акцент синій фіолетовий зелений помаранчевий рожевий">
+        <div className="flex gap-2" role="radiogroup" aria-label="Акцентний колір">
+          {ACCENTS.map(([value, label, rgb]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={data.settings.accent === value}
+              aria-label={label}
+              title={label}
+              onClick={() => void repos.settings.update({ accent: value }).catch(() => undefined)}
+              className={cn('flex h-8 w-8 items-center justify-center rounded-full ring-offset-2 ring-offset-surface transition-shadow', data.settings.accent === value ? 'ring-2 ring-ink' : 'hover:ring-2 hover:ring-line')}
+              style={{ backgroundColor: `rgb(${rgb})` }}
+            >
+              {data.settings.accent === value && <Check className="h-4 w-4 text-white" />}
             </button>
           ))}
         </div>

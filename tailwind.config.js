@@ -33,8 +33,8 @@ export default {
         card: '16px',
       },
       boxShadow: {
-        soft: '0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04)',
-        pop: '0 12px 32px -8px rgb(16 24 40 / 0.18), 0 4px 8px -4px rgb(16 24 40 / 0.08)',
+        soft: 'var(--shadow-soft)',
+        pop: 'var(--shadow-pop)',
       },
       keyframes: {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },

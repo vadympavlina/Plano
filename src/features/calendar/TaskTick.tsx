@@ -39,5 +39,5 @@ export function TaskTick({ task, color, size = 14 }: { task: Task; color: string
 export function taskChipStyle(color: string, done: boolean) {
   return done
     ? { borderColor: 'rgb(var(--line))', backgroundColor: 'rgb(var(--surface-2))' }
-    : { borderColor: `color-mix(in srgb, ${color} 70%, rgb(var(--surface)))`, backgroundColor: `color-mix(in srgb, ${color} 7%, rgb(var(--surface)))` };
+    : { borderColor: `color-mix(in srgb, ${color} 70%, rgb(var(--surface)))`, backgroundColor: `color-mix(in srgb, ${color} calc(7% * var(--tint-k, 1)), rgb(var(--surface)))` };
 }

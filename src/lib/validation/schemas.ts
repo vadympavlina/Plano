@@ -5,6 +5,7 @@ import {
   PRIORITIES,
   PROJECT_STATUSES,
   TASK_STATUSES,
+  ACCENT_COLORS,
 } from '@/types';
 
 // Firebase Realtime Database does not store empty arrays and may return arrays
@@ -132,6 +133,7 @@ export const habitSchema = z.object({
   target: z.number().min(1).default(1),
   kind: z.enum(['good', 'bad']).optional().catch(undefined),
   trackFrom: dateKeySchema.optional().catch(undefined),
+  remindAt: arrayish(z.string().regex(/^\d\d:\d\d$/)).optional().catch(undefined),
   unit: optionalString,
   archived: z.boolean().default(false),
   ...timestamps,
@@ -186,6 +188,7 @@ export const settingsSchema = z.object({
   remindTasks: z.boolean().catch(true),
   habitsReminderAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
   digestAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('08:00'),
+  accent: z.enum(ACCENT_COLORS).catch('blue'),
 });
 
 export const profileSchema = z.object({

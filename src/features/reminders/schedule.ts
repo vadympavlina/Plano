@@ -1,7 +1,7 @@
 import { addDaysKey, combineDateTime, formatTime, plural, todayKey } from '@/lib/date';
 import { expandEvents } from '@/features/calendar/logic';
 import { taskDate } from '@/features/tasks/logic';
-import { isBad, isDone, isScheduled } from '@/features/habits/logic';
+import { habitValue, isBad, isDone, isScheduled } from '@/features/habits/logic';
 import type { UserData } from '@/types';
 
 export interface Reminder {
@@ -74,6 +74,19 @@ export function buildReminders(data: UserData, now: Date): Reminder[] {
             .join(' · '),
           url: '#/',
           tag: `digest:${day}`,
+        });
+    }
+    // Habit's own reminder times (e.g. water at 10, 14, 18) while it isn't done that day.
+    for (const h of Object.values(data.habits)) {
+      if (h.archived || isBad(h) || !h.remindAt?.length || !isScheduled(h, day) || isDone(h, data.habitLogs, day)) continue;
+      const v = habitValue(data.habitLogs, h.id, day);
+      for (const time of h.remindAt)
+        add({
+          at: combineDateTime(day, time).getTime(),
+          title: `${h.icon} ${h.name}`,
+          body: h.goalType === 'count' ? `${v} з ${h.target}${h.unit ? ` ${h.unit}` : ''} — час відмітити` : 'Час відмітити звичку',
+          url: `#/habits/${h.id}`,
+          tag: `habit:${h.id}:${day}:${time}`,
         });
     }
     if (s.habitsReminderAt) {
