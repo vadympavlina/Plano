@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useData } from '@/app/providers/DataProvider';
-import { pushEnabledHere, syncReminders } from '@/services/push';
+import { syncReminders } from '@/services/push';
+import { usesTokenServer } from '@/services/integrations/google/server';
 import { buildReminders } from './schedule';
 
-/** Keeps the server's reminder list in step with the data (only on devices with push turned on). */
+/** Keeps the server's reminder list in step with the data — from any device, so an event added on the PC reaches the phone. */
 export function ReminderSync() {
   const { data, ready, backendKind } = useData();
   useEffect(() => {
-    if (!ready || backendKind !== 'firebase' || !pushEnabledHere()) return;
+    if (!ready || backendKind !== 'firebase' || !usesTokenServer) return;
     const run = () => void syncReminders(buildReminders(data, new Date())).catch(() => undefined);
     const t = setTimeout(run, 3000);
     const onVisible = () => document.visibilityState === 'visible' && run();
