@@ -35,7 +35,7 @@ function LayoutInner() {
     }
   });
   const { pathname } = useLocation();
-  const { openSearch } = useUI();
+  const { openSearch, openQuickAdd } = useUI();
   const { ready, error, backendKind } = useData();
 
   useEffect(() => {
@@ -46,17 +46,24 @@ function LayoutInner() {
     }
   }, [collapsed]);
 
-  // ⌘K / Ctrl+K opens global search.
+  // ⌘K / Ctrl+K opens global search; N (outside text fields and dialogs) opens quick capture.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         openSearch();
+        return;
+      }
+      const t = e.target as HTMLElement;
+      const typing = t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || !!t.closest('[role="dialog"],[role="menu"]');
+      if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'n' || e.key === 'т' || e.key === 'N' || e.key === 'Т')) {
+        e.preventDefault();
+        openQuickAdd();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [openSearch]);
+  }, [openSearch, openQuickAdd]);
 
   // Scroll to top on navigation between pages (not between sections of one page, e.g. /settings/data).
   const lastPage = useRef(pathname.split('/')[1]);

@@ -4,7 +4,7 @@ import { LogOut, MoreHorizontal, Plus } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils/cn';
 import { NAV_ITEMS } from './nav';
-import { CreateMenu } from './CreateMenu';
+import { useUI } from '@/app/providers/UIProvider';
 import { useSignOut } from './UserMenu';
 import { SyncIndicator } from './SyncIndicator';
 import { useProfile } from '@/hooks/useProfile';
@@ -33,6 +33,7 @@ function Tab({ to, label, icon: Icon }: (typeof NAV_ITEMS)[number]) {
 
 export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
+  const { openQuickAdd } = useUI();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const signOut = useSignOut();
@@ -49,18 +50,14 @@ export function MobileNav() {
           <Tab {...PRIMARY[0]} />
           <Tab {...PRIMARY[1]} />
           <div className="flex flex-1 items-center justify-center">
-            <CreateMenu
-              align="center"
-              trigger={
-                <button
-                  type="button"
-                  aria-label="Створити"
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-surface shadow-pop transition-transform active:scale-95"
-                >
-                  <Plus className="h-6 w-6" />
-                </button>
-              }
-            />
+            <button
+              type="button"
+              aria-label="Швидко додати"
+              onClick={openQuickAdd}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-surface shadow-pop transition-transform active:scale-95"
+            >
+              <Plus className="h-6 w-6" />
+            </button>
           </div>
           <Tab {...PRIMARY[2]} />
           <button

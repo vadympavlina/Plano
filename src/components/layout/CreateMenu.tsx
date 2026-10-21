@@ -22,7 +22,7 @@ export function useCreateNote() {
   };
 }
 
-export function CreateMenu({ trigger, align = 'end' }: { trigger: ReactNode; align?: 'start' | 'end' | 'center' }) {
+export function CreateMenu({ trigger, align = 'end', onPick }: { trigger: ReactNode; align?: 'start' | 'end' | 'center'; onPick?: () => void }) {
   const { openTaskForm, openEventForm } = useUI();
   const navigate = useNavigate();
   const createNote = useCreateNote();
@@ -30,23 +30,23 @@ export function CreateMenu({ trigger, align = 'end' }: { trigger: ReactNode; ali
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align={align} className="w-56">
-        <DropdownMenuItem icon={<CheckSquare />} onSelect={() => openTaskForm()}>
+        <DropdownMenuItem icon={<CheckSquare />} onSelect={() => (onPick?.(), openTaskForm())}>
           Нова задача
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<CalendarPlus />} onSelect={() => openEventForm()}>
+        <DropdownMenuItem icon={<CalendarPlus />} onSelect={() => (onPick?.(), openEventForm())}>
           Нова подія
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<NotebookPen />} onSelect={() => createNote()}>
+        <DropdownMenuItem icon={<NotebookPen />} onSelect={() => (onPick?.(), createNote())}>
           Нова нотатка
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem icon={<FolderPlus />} onSelect={() => navigate('/projects?new=1')}>
+        <DropdownMenuItem icon={<FolderPlus />} onSelect={() => (onPick?.(), navigate('/projects?new=1'))}>
           Новий проєкт
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<Heart />} onSelect={() => navigate('/habits?new=1')}>
+        <DropdownMenuItem icon={<Heart />} onSelect={() => (onPick?.(), navigate('/habits?new=1'))}>
           Нова звичка
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<Target />} onSelect={() => navigate('/goals?new=1')}>
+        <DropdownMenuItem icon={<Target />} onSelect={() => (onPick?.(), navigate('/goals?new=1'))}>
           Нова ціль
         </DropdownMenuItem>
       </DropdownMenuContent>

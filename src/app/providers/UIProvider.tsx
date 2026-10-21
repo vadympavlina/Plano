@@ -6,6 +6,7 @@ const TaskDetailSheet = lazy(() => import('@/features/tasks/TaskDetail'));
 const EventFormDialog = lazy(() => import('@/features/calendar/EventForm'));
 const EventDetailDialog = lazy(() => import('@/features/calendar/EventDetail'));
 const SearchCommand = lazy(() => import('@/features/search/SearchCommand'));
+const QuickAddSheet = lazy(() => import('@/features/capture/QuickAddSheet'));
 
 type TaskEditor = { task?: Task; defaults?: Partial<Task> } | null;
 type EventEditor = { event?: CalendarEvent; defaults?: Partial<CalendarEvent> } | null;
@@ -16,6 +17,7 @@ interface UIContextValue {
   openEventForm: (opts?: { event?: CalendarEvent; defaults?: Partial<CalendarEvent> }) => void;
   openEvent: (eventId: string, date?: DateKey) => void;
   openSearch: () => void;
+  openQuickAdd: () => void;
 }
 
 const UIContext = createContext<UIContextValue | null>(null);
@@ -26,6 +28,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [eventEditor, setEventEditor] = useState<EventEditor>(null);
   const [eventDetail, setEventDetail] = useState<{ id: string; date?: DateKey } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
 
   const openTaskForm = useCallback((opts?: { task?: Task; defaults?: Partial<Task> }) => setTaskEditor(opts ?? {}), []);
   const openTask = useCallback((id: string) => setTaskId(id), []);
@@ -35,10 +38,11 @@ export function UIProvider({ children }: { children: ReactNode }) {
   );
   const openEvent = useCallback((id: string, date?: DateKey) => setEventDetail({ id, date }), []);
   const openSearch = useCallback(() => setSearchOpen(true), []);
+  const openQuickAdd = useCallback(() => setQuickOpen(true), []);
 
   const value = useMemo(
-    () => ({ openTaskForm, openTask, openEventForm, openEvent, openSearch }),
-    [openTaskForm, openTask, openEventForm, openEvent, openSearch],
+    () => ({ openTaskForm, openTask, openEventForm, openEvent, openSearch, openQuickAdd }),
+    [openTaskForm, openTask, openEventForm, openEvent, openSearch, openQuickAdd],
   );
 
   return (
@@ -56,6 +60,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
           <EventDetailDialog eventId={eventDetail.id} date={eventDetail.date} onClose={() => setEventDetail(null)} />
         )}
         {searchOpen && <SearchCommand onClose={() => setSearchOpen(false)} />}
+        {quickOpen && <QuickAddSheet onClose={() => setQuickOpen(false)} />}
       </Suspense>
     </UIContext.Provider>
   );

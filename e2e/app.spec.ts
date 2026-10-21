@@ -65,3 +65,16 @@ test('calendar: tapping my own event opens its details (phone too)', async ({ pa
   else await block.click();
   await expect(page.getByRole('dialog')).toContainText('Нарада');
 });
+
+test('quick capture: «+» / N reads date, time and category, then adds a task', async ({ page, isMobile }) => {
+  await start(page);
+  if (isMobile) await page.getByRole('button', { name: 'Швидко додати' }).click();
+  else await page.keyboard.press('n');
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Назва для швидкого додавання').fill('купити ліки завтра ввечері #Особисте');
+  await expect(dialog.getByRole('button', { name: 'Прибрати «Особисте»' })).toBeVisible();
+  await dialog.getByLabel('Назва для швидкого додавання').press('Enter');
+  await expect(dialog).toBeHidden();
+  await page.goto('/#/tasks?list=all');
+  await expect(page.getByText('Купити ліки', { exact: true })).toBeVisible();
+});
