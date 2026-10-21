@@ -20,8 +20,20 @@ import { addDaysKey, formatDateKey, formatTimeRange } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { Task } from '@/types';
 import { isOverdue } from './logic';
-import { deleteTaskWithConfirm } from './TaskItem';
 import { toast } from '@/components/ui/toast';
+import { confirm } from '@/components/common/ConfirmDialog';
+
+async function deleteTaskWithConfirm(task: Task, remove: (id: string) => Promise<void>) {
+  const ok = await confirm({ title: 'Видалити задачу?', description: `«${task.title}» буде видалено назавжди.`, confirmLabel: 'Видалити', danger: true });
+  if (!ok) return false;
+  try {
+    await remove(task.id);
+    toast.success('Задачу видалено');
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function Row({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (

@@ -131,7 +131,7 @@ export default function DashboardPage() {
     [events, now, today],
   );
 
-  const weekCounts = weekProgress(tasks, today, settings.weekStartsOn);
+  const weekCounts = useMemo(() => weekProgress(tasks, today, settings.weekStartsOn), [tasks, today, settings.weekStartsOn]);
   const ahead = useMemo(() => {
     const groups: {
       day: string;
@@ -146,20 +146,34 @@ export default function DashboardPage() {
     return groups.slice(0, 3);
   }, [events, now, today]);
 
-  const week = useMemo(() => {
-    const range = weekRange(today, settings.weekStartsOn);
-    const days = eachDateKey(range.start, range.end);
-    const occ = expandEvents(events, range.start, range.end);
-    const perDay = days.map((d) => occurrencesOnDay(occ, d).length + tasks.filter((t) => taskDate(t) === d && t.status !== 'cancelled').length);
-    const eventCount = days.reduce((n, d) => n + occurrencesOnDay(occ, d).length, 0);
-    const habitChecks = Object.values(data.habitLogs ?? {}).reduce(
-      (n, byDate) => n + Object.entries(byDate).filter(([d, v]) => d >= range.start && d <= range.end && v > 0).length,
-      0,
-    );
-    const freeDays = perDay.filter((n) => n === 0).length;
+  const weekRangeNow = useMemo(() => weekRange(today, settings.weekStartsOn), [today, settings.weekStartsOn]);
+  // Events and tasks of the week — not redone when only a habit is ticked.
+  const weekLoad = useMemo(() => {
+    const days = eachDateKey(weekRangeNow.start, weekRangeNow.end);
+    const occ = expandEvents(events, weekRangeNow.start, weekRangeNow.end);
+    const tasksPerDay = new Map<string, number>();
+    for (const t of tasks) {
+      const d = taskDate(t);
+      if (d && d >= weekRangeNow.start && d <= weekRangeNow.end && t.status !== 'cancelled') tasksPerDay.set(d, (tasksPerDay.get(d) ?? 0) + 1);
+    }
+    const eventsPerDay = days.map((d) => occurrencesOnDay(occ, d).length);
+    const perDay = days.map((d, i) => eventsPerDay[i] + (tasksPerDay.get(d) ?? 0));
     const busy = busiestDay(perDay);
-    return { eventCount, habitChecks, freeDays, busiest: busy >= 0 && perDay[busy] > 1 ? days[busy] : undefined };
-  }, [events, tasks, data.habitLogs, today, settings.weekStartsOn]);
+    return {
+      eventCount: eventsPerDay.reduce((a, b) => a + b, 0),
+      freeDays: perDay.filter((n) => n === 0).length,
+      busiest: busy >= 0 && perDay[busy] > 1 ? days[busy] : undefined,
+    };
+  }, [events, tasks, weekRangeNow]);
+  const habitChecks = useMemo(
+    () =>
+      Object.values(data.habitLogs ?? {}).reduce(
+        (n, byDate) => n + Object.entries(byDate).filter(([d, v]) => d >= weekRangeNow.start && d <= weekRangeNow.end && v > 0).length,
+        0,
+      ),
+    [data.habitLogs, weekRangeNow],
+  );
+  const week = { ...weekLoad, habitChecks };
 
   const activeHabits = habits.filter((h) => !h.archived);
   const habitsToday = activeHabits.filter((h) => isScheduled(h, today));

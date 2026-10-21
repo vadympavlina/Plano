@@ -39,43 +39,6 @@ export function Checkbox({
   );
 }
 
-export function Switch({
-  checked,
-  onChange,
-  label,
-  description,
-  className,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  label: ReactNode;
-  description?: ReactNode;
-  className?: string;
-}) {
-  return (
-    <label className={cn('flex cursor-pointer select-none items-center justify-between gap-4', className)}>
-      <span className="min-w-0">
-        <span className="block text-sm text-ink">{label}</span>
-        {description && <span className="block text-xs text-muted">{description}</span>}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={cn('relative h-6 w-10 shrink-0 rounded-full transition-colors', checked ? 'bg-accent' : 'bg-line')}
-      >
-        <span
-          className={cn(
-            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200',
-            checked ? 'translate-x-[18px]' : 'translate-x-0.5',
-          )}
-        />
-      </button>
-    </label>
-  );
-}
-
 /** Numeric field with − / + buttons. */
 export function Stepper({
   value,
@@ -146,42 +109,3 @@ export function Stepper({
   );
 }
 
-/** Single-choice row of chips (priority, status, type…). */
-export function ChipGroup<T extends string>({
-  value,
-  onChange,
-  options,
-  ariaLabel,
-  className,
-}: {
-  value: T;
-  onChange: (v: T) => void;
-  options: { value: T; label: string; color?: string; icon?: ReactNode }[];
-  ariaLabel: string;
-  className?: string;
-}) {
-  return (
-    <div role="radiogroup" aria-label={ariaLabel} className={cn('flex flex-wrap gap-1.5', className)}>
-      {options.map((o) => {
-        const on = o.value === value;
-        return (
-          <button
-            key={o.value}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => onChange(o.value)}
-            className={cn(
-              'inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[13px] font-medium transition-colors [&_svg]:h-3.5 [&_svg]:w-3.5',
-              on ? 'border-accent bg-accent text-surface' : 'border-line bg-surface text-muted hover:text-ink',
-            )}
-          >
-            {o.color && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: o.color }} />}
-            {o.icon}
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}

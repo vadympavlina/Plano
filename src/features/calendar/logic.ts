@@ -1,5 +1,5 @@
 import { occurrencesInRange } from '@/lib/date/recurrence';
-import { addDaysKey, diffDaysKey, eachDateKey, timeToMinutes } from '@/lib/date';
+import { addDaysKey, diffDaysKey, timeToMinutes } from '@/lib/date';
 import type { CalendarEvent, DateKey, Task } from '@/types';
 
 export interface EventOccurrence {
@@ -125,20 +125,6 @@ export function findConflicts(
       const m = eventMinutes(ev);
       return !!m && m.start < e && s < m.end;
     });
-}
-
-/** Number of events + tasks per day, used for the weekly load chart. */
-export function loadByDay(
-  occurrences: EventOccurrence[],
-  tasks: Task[],
-  start: DateKey,
-  end: DateKey,
-): { date: DateKey; events: number; tasks: number }[] {
-  return eachDateKey(start, end).map((date) => ({
-    date,
-    events: occurrencesOnDay(occurrences, date).length,
-    tasks: tasks.filter((t) => (t.dueDate ?? t.startDate) === date && t.status !== 'cancelled').length,
-  }));
 }
 
 /** Next upcoming occurrences from now. */

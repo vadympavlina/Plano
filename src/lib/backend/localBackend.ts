@@ -154,6 +154,3 @@ export function createLocalBackend(): Backend {
   };
 }
 
-export function clearLocalPreviewData() {
-  localStorage.removeItem(STORAGE_KEY);
-}

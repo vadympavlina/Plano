@@ -3,6 +3,8 @@ import type { z } from 'zod';
 /** What the last parse of a collection produced, to reuse unchanged records. */
 export interface ParseMemo<T> {
   json: Map<string, string>;
+  /** Raw objects seen last time: the same object means unchanged without serialising it. */
+  raw: Map<string, unknown>;
   result: Record<string, T>;
 }
 
@@ -18,11 +20,18 @@ export function parseCollectionShared<T>(
   onInvalid?: (id: string, error: z.ZodError) => void,
 ): ParseMemo<T> {
   const json = new Map<string, string>();
+  const rawSeen = new Map<string, unknown>();
   const result: Record<string, T> = {};
   let same = !!memo;
   if (raw && typeof raw === 'object') {
     for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
       if (!value || typeof value !== 'object') continue;
+      rawSeen.set(id, value);
+      if (memo && memo.raw.get(id) === value && id in memo.result) {
+        json.set(id, memo.json.get(id)!);
+        result[id] = memo.result[id];
+        continue;
+      }
       const j = JSON.stringify(value);
       json.set(id, j);
       if (memo && memo.json.get(id) === j && id in memo.result) {
@@ -35,8 +44,9 @@ export function parseCollectionShared<T>(
       else onInvalid?.(id, parsed.error);
     }
   }
-  if (same && memo && json.size === memo.json.size && Object.keys(result).length === Object.keys(memo.result).length) return memo;
-  return { json, result };
+  // Nothing changed: keep the same result object (views skip work), remember the new raw objects.
+  if (same && memo && json.size === memo.json.size && Object.keys(result).length === Object.keys(memo.result).length) return { ...memo, raw: rawSeen };
+  return { json, raw: rawSeen, result };
 }
 
 /** Removes `undefined` values recursively — Firebase rejects them. */

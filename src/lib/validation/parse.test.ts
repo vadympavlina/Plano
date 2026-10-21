@@ -27,7 +27,7 @@ describe('parseCollectionShared', () => {
   it('keeps unchanged records (and the whole map) from the previous parse', () => {
     const t = (title: string) => ({ title, status: 'todo', priority: 'low', createdAt: 't', updatedAt: 't' });
     const first = parseCollectionShared({ a: t('A'), b: t('B') }, taskSchema, undefined);
-    expect(parseCollectionShared({ a: t('A'), b: t('B') }, taskSchema, first)).toBe(first);
+    expect(parseCollectionShared({ a: t('A'), b: t('B') }, taskSchema, first).result).toBe(first.result);
     const second = parseCollectionShared({ a: t('A'), b: t('B2') }, taskSchema, first);
     expect(second.result.a).toBe(first.result.a);
     expect(second.result.b.title).toBe('B2');

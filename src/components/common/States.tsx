@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Button } from '@/components/ui/button';
 
@@ -36,15 +36,6 @@ export function EmptyState({
   );
 }
 
-export function LoadingState({ label = 'Завантаження…', className }: { label?: string; className?: string }) {
-  return (
-    <div role="status" className={cn('flex items-center justify-center gap-2 py-16 text-sm text-muted', className)}>
-      <Loader2 className="h-4 w-4 animate-spin" />
-      {label}
-    </div>
-  );
-}
-
 export function ErrorState({
   title = 'Щось пішло не так',
   message,
@@ -70,10 +61,6 @@ export function ErrorState({
       )}
     </div>
   );
-}
-
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-lg bg-line/60', className)} />;
 }
 
 /** Grey silhouettes of a page (title + cards) while data or code is loading. */

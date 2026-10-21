@@ -55,10 +55,6 @@ export function buildTimedItems(
   return items;
 }
 
-export function isAllDayOn(o: EventOccurrence, day: DateKey): boolean {
-  return o.event.allDay && o.date <= day && o.endDate >= day;
-}
-
 /** Category colour, else the colour of the source Google calendar, else blue. */
 export function eventColor(event: CalendarEvent, categoryById: (id?: string) => Category | undefined) {
   const category = categoryById(event.categoryId);

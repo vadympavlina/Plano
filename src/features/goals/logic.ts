@@ -30,15 +30,6 @@ export function goalPace(goal: Goal, today: DateKey): Pace {
   return 'behind';
 }
 
-export const PACE_LABEL: Record<Pace, string> = {
-  done: 'Досягнуто',
-  ahead: 'Випереджаєте',
-  on_track: 'За планом',
-  behind: 'Відстаєте',
-  overdue: 'Термін минув',
-  no_deadline: 'Без дедлайну',
-};
-
 /** Where the goal should be today on a straight line from start to deadline; undefined without a deadline. */
 export function expectedValue(goal: Goal, today: DateKey): number | undefined {
   if (!goal.targetDate) return undefined;
