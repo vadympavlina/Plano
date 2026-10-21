@@ -134,7 +134,8 @@ export const SmartField = forwardRef<SmartFieldHandle, {
   }
   mirror.push(value.slice(at) + '​');
 
-  const text = big ? 'text-[19px] leading-[1.5]' : 'text-[15px] leading-[1.6]';
+  // 16px on phones: iOS zooms into smaller inputs.
+  const text = big ? 'text-[19px] leading-[1.5]' : 'text-[16px] leading-[1.5] sm:text-[15px] sm:leading-[1.6]';
   return (
     <div className={cn('relative min-w-0 flex-1', className)}>
       <div aria-hidden className={cn('pointer-events-none absolute inset-0 whitespace-pre-wrap break-words py-2 text-ink', text)}>

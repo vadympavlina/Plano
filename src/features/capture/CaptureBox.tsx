@@ -1,5 +1,5 @@
 import { useRef, type FormEvent, type ReactNode } from 'react';
-import { AlignLeft, ArrowLeftRight, Bell, HelpCircle, ListChecks, ListPlus, CalendarDays, CalendarPlus, CheckSquare, Clock, Flag, FolderKanban, Hash, Mic, NotebookPen, Plus, Repeat, Sun, X } from 'lucide-react';
+import { AlignLeft, ArrowLeftRight, ArrowUp, Bell, HelpCircle, ListChecks, ListPlus, CalendarDays, CalendarPlus, CheckSquare, Clock, Flag, FolderKanban, Hash, Mic, NotebookPen, Plus, Repeat, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePicker } from '@/components/ui/date-time';
@@ -7,6 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CategoryIcon } from '@/components/common/CategoryMark';
 import { toast } from '@/components/ui/toast';
 import { useDictation } from '@/hooks/useDictation';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CreateMenu } from '@/components/layout/CreateMenu';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
@@ -46,7 +47,7 @@ function Help() {
   );
 }
 
-const chip = 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold transition-colors';
+const chip = 'inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-[12px] font-semibold transition-colors sm:h-8 sm:px-2.5 sm:text-[12.5px]';
 
 /**
  * The quick-capture box: a smart field that reads dates, times, repeats and
@@ -55,6 +56,7 @@ const chip = 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5p
  */
 export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDone?: () => void; className?: string }) {
   const c = useCapture();
+  const wide = useMediaQuery('(min-width: 640px)');
   const field = useRef<SmartFieldHandle>(null);
   const before = useRef('');
   const voice = useDictation(
@@ -83,15 +85,17 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
   const empty = !c.text.trim();
 
   // The first date is the picker chip; a range's end («по 30 жовт») stays a chip.
+  // Card on phones: chips in one line that scrolls sideways; the sheet and wider screens wrap.
+  const rowCls = cn('flex items-center gap-1.5', sheet ? 'flex-wrap' : 'no-scrollbar -mr-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]');
   const chips = c.chips.filter((x) => x.type !== 'kind' && !(x.type === 'date' && !x.label.startsWith('по ')));
   const row = c.lines ? (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className={rowCls}>
       <span className={cn(chip, 'bg-primary/10 text-primary')}>
         <ListPlus className="h-3.5 w-3.5" /> {c.lines} {plural(c.lines, ['запис', 'записи', 'записів'])} — кожен рядок окремо
       </span>
     </div>
   ) : (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className={rowCls}>
       {!empty && (
         <DropdownMenu>
           <DropdownMenuTrigger className={cn(chip, 'bg-surface-2 text-ink hover:bg-line/60')} aria-label="Тип">
@@ -112,7 +116,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
         </DropdownMenu>
       )}
       {c.kind !== 'note' && (!empty || !sheet) && (
-        <DatePicker variant="chip" aria-label="Дата" placeholder="Дата" value={c.date} onChange={c.setDate} className="h-8" />
+        <DatePicker variant="chip" aria-label="Дата" placeholder="Дата" value={c.date} onChange={c.setDate} className="h-7 shrink-0 text-[12px] sm:h-8 sm:text-[12.5px]" />
       )}
       {chips.map((x) => {
         const I = CHIP_ICON[x.type];
@@ -193,7 +197,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
       projects={c.projects}
       big={sheet}
       autoFocus={sheet}
-      placeholder={sheet ? 'Що додати?' : 'Додати… напр. «Зустріч завтра о 15 #робота»'}
+      placeholder={sheet ? 'Що додати?' : wide ? 'Додати… напр. «Зустріч завтра о 15 #робота»' : 'Що додати? «завтра о 15»'}
     />
   );
 
@@ -222,21 +226,30 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
     );
 
   return (
-    <form onSubmit={submit} className={cn('card p-2 transition-colors focus-within:border-subtle/60', className)}>
-      <div className="flex items-start gap-2 pl-2">
-        <Plus className="mt-[13px] h-4 w-4 shrink-0 text-subtle" aria-hidden />
+    <form onSubmit={submit} className={cn('card p-1.5 transition-colors focus-within:border-subtle/60 sm:p-2', className)}>
+      <div className="flex items-start gap-1 pl-2.5 sm:gap-2 sm:pl-2">
+        <Plus className="mt-[13px] hidden h-4 w-4 shrink-0 text-subtle sm:block" aria-hidden />
         {fieldEl}
-        <div className="flex shrink-0 items-center gap-1 pt-0.5">
+        <div className="flex shrink-0 items-center gap-0.5 pt-0.5 sm:gap-1">
           <span className="hidden sm:inline-flex">
             <Help />
           </span>
           {mic}
-          <Button type="submit" variant="dark" size="sm" className="h-9 px-4" loading={c.busy} disabled={empty}>
+          <Button type="submit" variant="dark" size="sm" className="hidden h-9 px-4 sm:inline-flex" loading={c.busy} disabled={empty}>
             Додати
           </Button>
+          {/* Phones: a round send button keeps the field wide. */}
+          <button
+            type="submit"
+            aria-label="Додати"
+            disabled={empty || c.busy}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-surface transition-opacity active:scale-95 disabled:opacity-25 sm:hidden"
+          >
+            <ArrowUp className="h-[18px] w-[18px] stroke-[2.5]" />
+          </button>
         </div>
       </div>
-      {!empty && <div className="pb-1 pl-8 pt-1">{row}</div>}
+      {!empty && <div className="pb-1 pl-2.5 pt-0.5 sm:pl-8 sm:pt-1">{row}</div>}
     </form>
   );
 }
