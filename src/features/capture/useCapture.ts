@@ -79,7 +79,8 @@ export function useCapture() {
     if (text.trim()) add({ type: 'kind', label: kind === 'event' ? 'Подія' : kind === 'note' ? 'Нотатка' : 'Задача', spans: of('kind') });
     if (kind !== 'note') {
       if (date && (of('date').length || dateOverride)) add({ type: 'date', label: relativeDayLabel(date, today, 'EEEEEE, d MMM'), spans: of('date') });
-      if (p.allDay) add({ type: 'time', label: 'Весь день', spans: of('time') });
+      if (p.endDate) add({ type: 'date', label: `по ${relativeDayLabel(p.endDate, today, 'EEEEEE, d MMM')}`, spans: of('date') });
+      if (p.allDay) add({ type: 'time', label: p.endDate ? 'Кілька днів' : 'Весь день', spans: of('time') });
       else if (p.time) add({ type: 'time', label: formatTimeRange(p.time, end, settings.timeFormat), spans: [...of('time'), ...of('duration')] });
       else if (p.duration) add({ type: 'time', label: formatDuration(p.duration), spans: of('duration') });
       if (p.recurrence) add({ type: 'repeat', label: describeRecurrence(p.recurrence), spans: of('repeat') });
@@ -164,6 +165,7 @@ export function useCapture() {
           allDay: !start,
           startTime: start,
           endTime: start ? (end ?? endOf(start, 60)) : undefined,
+          endDate: p.endDate,
           recurrence: p.recurrence,
           remindMin: p.remindMin,
           description: p.description,
@@ -200,7 +202,7 @@ export function useCapture() {
         const links = { categoryId: cat?.id, projectId: proj?.id };
         const end = p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined);
         if (p.kind === 'event') {
-          const { id, write } = actions.events.create({ title, date: p.date ?? today, allDay: !p.time, startTime: p.time, endTime: p.time ? (end ?? endOf(p.time, 60)) : undefined, recurrence: p.recurrence, remindMin: p.remindMin, description: p.description, ...links, exdates: [], source: 'plano', timezone: deviceTimeZone() });
+          const { id, write } = actions.events.create({ title, date: p.date ?? today, endDate: p.endDate, allDay: !p.time, startTime: p.time, endTime: p.time ? (end ?? endOf(p.time, 60)) : undefined, recurrence: p.recurrence, remindMin: p.remindMin, description: p.description, ...links, exdates: [], source: 'plano', timezone: deviceTimeZone() });
           await settleWrite(write);
           ids.push({ kind: 'event', id });
         } else {

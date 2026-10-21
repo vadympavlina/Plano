@@ -15,7 +15,7 @@ import { SmartField, type SmartFieldHandle } from './SmartField';
 import { useCapture, type CaptureChip, type CaptureKind } from './useCapture';
 
 const KIND_ICON = { task: CheckSquare, event: CalendarPlus, note: NotebookPen };
-const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = { time: Clock, repeat: Repeat, priority: Flag, reminder: Bell, project: FolderKanban, tag: Hash, note: AlignLeft, subtasks: ListChecks };
+const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = { date: CalendarDays, time: Clock, repeat: Repeat, priority: Flag, reminder: Bell, project: FolderKanban, tag: Hash, note: AlignLeft, subtasks: ListChecks };
 const EXAMPLES: [string, string][] = [
   ['Коли', 'завтра, у пʼятницю, наступного вівторка, через 3 дні, 5 листопада, 25.10, до кінця тижня'],
   ['Час', 'о 15, о 9:30, о 7 вечора, ввечері, з 10 до 12, на годину, через 30 хв, цілий день'],
@@ -82,7 +82,8 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
   const KindIcon = KIND_ICON[c.kind];
   const empty = !c.text.trim();
 
-  const chips = c.chips.filter((x) => x.type !== 'kind' && x.type !== 'date');
+  // The first date is the picker chip; a range's end («по 30 жовт») stays a chip.
+  const chips = c.chips.filter((x) => x.type !== 'kind' && !(x.type === 'date' && !x.label.startsWith('по ')));
   const row = c.lines ? (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className={cn(chip, 'bg-primary/10 text-primary')}>

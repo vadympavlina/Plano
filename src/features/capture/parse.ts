@@ -23,6 +23,8 @@ export interface ParsedQuick {
   endTime?: TimeString;
   /** «цілий день»: an all-day event. */
   allDay?: boolean;
+  /** Last day of a several-day event («з 15 по 20 жовтня», «15.10–20.10»). */
+  endDate?: DateKey;
   /** Minutes («на годину», «на 30 хв»); events only. */
   duration?: number;
   recurrence?: RecurrenceRule;
@@ -89,6 +91,10 @@ const monthIndex = (word: string) => MONTHS.findIndex((forms) => forms.includes(
 // Spoken hours: «о третій», «о пів на восьму».
 const HOURS_LOC = ['першій', 'другій', 'третій', 'четвертій', "п'ятій", 'шостій', 'сьомій', 'восьмій', "дев'ятій", 'десятій', 'одинадцятій', 'дванадцятій'];
 const HOURS_ACC = ['першу', 'другу', 'третю', 'четверту', "п'яту", 'шосту', 'сьому', 'восьму', "дев'яту", 'десяту', 'одинадцяту', 'дванадцяту'];
+const HOURS_GEN = ['першої', 'другої', 'третьої', 'четвертої', "п'ятої", 'шостої', 'сьомої', 'восьмої', "дев'ятої", 'десятої', 'одинадцятої', 'дванадцятої'];
+/** An hour as digits or a spoken word («третьої», «третій»). */
+const hourOf = (w: string) => (/^\d/.test(w) ? Number(w) : Math.max(HOURS_GEN.indexOf(w.toLowerCase()), HOURS_LOC.indexOf(w.toLowerCase())) + 1);
+const RT = `(\\d{1,2}|${[...HOURS_GEN, ...HOURS_LOC].join('|')})(?:[:.](\\d{2}))?`;
 const WORD_NUM: Record<string, number> = {
   один: 1, одну: 1, одна: 1, два: 2, дві: 2, двох: 2, три: 3, трьох: 3, чотири: 4, "п'ять": 5, шість: 6, сім: 7, вісім: 8, "дев'ять": 9, десять: 10,
   пару: 2, кілька: 3, декілька: 3, пять: 5, шесть: 6, семь: 7, восемь: 8, девять: 9, две: 2, четыре: 4,
@@ -278,21 +284,53 @@ export function parseQuick(input: string, today: DateKey, now: Date = new Date()
     o.time = minutesToTime(at.getHours() * 60 + at.getMinutes());
   });
 
-  // Time ranges: «з 10 до 12», «з 9:30 по 11», «10:00-11:30», «о 15–16 год», «10-12 год».
-  const range = (m: RegExpExecArray, a: number, b: number, part1?: string, part2?: string) => {
-    const p = part2 ?? part1;
-    if (setTime(c, ...hm(m[a], m[a + 1], m[a + 2]), part1 ?? p) === false) return false;
-    const start = o.time!;
-    if (setTime(c, ...hm(m[b], m[b + 1], m[b + 2]), p) === false) return false;
-    if (o.time! <= start && !p) return false;
-    o.endTime = o.time;
-    o.time = start;
+  // Several days: «з 15 по 20 жовтня», «з 28 жовтня до 2 листопада», «15.10–20.10», «з 15.10 до 20.10».
+  const span = (from?: DateKey, to?: DateKey) => {
+    if (!from || !to || to <= from) return false;
+    o.date = from;
+    o.endDate = to;
+    o.allDay = true;
   };
-  claim(c, `${B}(?:з|с|from)\\s+${T}${PART}\\s+(?:до|по|to)\\s+${T}${PART}${E}`, 'time', (m) => range(m, 1, 5, m[4], m[8]));
-  claim(c, `(?:${B}(?:о|об|з|с|в|у)\\s+)?${NUM}(?:[:.](\\d{2}))?()\\s*[-–—]\\s*${T}(?:\\s*(?:год(?:ини)?|h))?${E}`, 'time', (m) => {
-    // Bare «3-5» without minutes or «год» stays text («3-5 сторінок»).
-    if (!m[2] && !m[5] && !/год|h$/i.test(m[0]) && !/^\s*(о|об|з|с)\s/i.test(m[0])) return false;
-    return range(m, 1, 4);
+  claim(c, `${B}(?:(?:з|с|від|от)\\s+)?${NUM}(?:\\s+${MONTH_RX})?\\s*(?:до|по|[-–—])\\s*${NUM}\\s+${MONTH_RX}${E}`, 'date', (m) => {
+    const m2 = monthIndex(m[4]) + 1;
+    const m1 = m[2] ? monthIndex(m[2]) + 1 : m2;
+    const from = dayMonth(today, Number(m[1]), m1);
+    let to = from && dayMonth(from, Number(m[3]), m2);
+    if (from && to && to < from) to = dayMonth(addDaysKey(from, 1), Number(m[3]), m2);
+    return span(from, to);
+  });
+  claim(c, `${B}(?:(?:з|с|від|от)\\s+)?${NUM}\\.${NUM}\\s*(?:до|по|[-–—])\\s*${NUM}\\.${NUM}${E}`, 'date', (m) => {
+    if (Number(m[2]) > 12 || Number(m[4]) > 12) return false;
+    const from = dayMonth(today, Number(m[1]), Number(m[2]));
+    return span(from, from && dayMonth(from, Number(m[3]), Number(m[4])));
+  });
+
+  // Time ranges: «з 10 до 12», «на 15:00 до 16:30», «о 15 до 16:30», «від 9 до 18», «15:00-16:30»,
+  // «з 9 ранку до 6 вечора», «з третьої до пʼятої», «10-12 год».
+  claim(c, `${B}(?:(з|с|від|от|о|об|в|у|на|from|at)\\s+)?${RT}${PART}\\s*(?:до|по|to|[-–—])\\s*${RT}${PART}(\\s*(?:год(?:ини)?|h))?${E}`, 'time', (m) => {
+    const pre = m[1]?.toLowerCase();
+    const strong = /^(з|с|від|от|from|о|об|at)$/.test(pre ?? '');
+    // Bare «5 до 10», «3-5», «у 2-3 етапи» stay text: needs «з/від/о», minutes, a part of the day or «год».
+    if (!strong && !m[3] && !m[6] && !m[4] && !m[7] && !m[8]) return false;
+    // «15.10 до 20.10» are dates, not times.
+    if (/\d\.\d/.test(m[0]) && Number(m[3] ?? 99) <= 12 && Number(m[6] ?? 99) <= 12 && !m[8]) return false;
+    const toMin = (h: string, mm: string | undefined, part?: string) => {
+      let hh = hourOf(h);
+      if (part && /веч|дня|pm/i.test(part) && hh < 12) hh += 12;
+      if (part && /ноч|am/i.test(part) && hh === 12) hh = 0;
+      const mi = Number(mm ?? 0);
+      return hh > 23 || mi > 59 ? NaN : hh * 60 + mi;
+    };
+    let start = toMin(m[2], m[3], m[4] ?? m[7]);
+    let end = toMin(m[5], m[6], m[7] ?? m[4]);
+    if (Number.isNaN(start) || Number.isNaN(end)) return false;
+    // «з 9 до 6 вечора»: the part belongs to the end only.
+    if (!m[4] && m[7] && start >= end) start = toMin(m[2], m[3]);
+    // «з 11 до 1»: afternoon; past midnight ends the day.
+    if (end <= start && !m[4] && !m[7] && end + 720 > start && end < 720) end += 720;
+    if (end <= start) end = 23 * 60 + 59;
+    o.time = minutesToTime(start);
+    o.endTime = minutesToTime(end);
   });
 
   // Length: «на годину», «на 2 години», «на 1.5 год», «на півтори години», «на 45 хв», «на 1 год 30 хв», ru «на час».
@@ -376,7 +414,10 @@ export function parseQuick(input: string, today: DateKey, now: Date = new Date()
   // «о 15», «о 9:30», «о 15 00», «о 9-й», «о 9 годині», «at 5pm».
   claim(c, `${B}(?:о|об|at)\\s+${T}(?:-?й|\\s*(?:год(?:ині)?|h))?${PART}${E}`, 'time', (m) => setTime(c, ...hm(m[1], m[2], m[3]), m[4]));
   // «в/у/на/к/до» only with minutes, «год» or a part of the day, so «у 2 етапи» and «до 5 разів» stay text.
-  claim(c, `${B}(?:в|у|на|к|до)\\s+${NUM}(?:[:.](\\d{2})|\\s*(?:год(?:ині)?|час(?:ов|а)?)|(?=\\s+(?:ранку|вечора|дня|ночі|утра|вечера|ночи)))${PART}${E}`, 'time', (m) => setTime(c, ...hm(m[1], m[2]), m[3]));
+  claim(c, `${B}(?:в|у|на|к|до)\\s+${NUM}(?:[:.](\\d{2})|\\s*(?:год(?:ині)?|час(?:ов|а)?)|(?=\\s+(?:ранку|вечора|дня|ночі|утра|вечера|ночи)))${PART}${E}`, 'time', (m) =>
+    // «до 20.10» is a date (minutes ≤ 12 after a dot), «до 20:10» a time.
+    /\d\.\d/.test(m[0]) && Number(m[2]) <= 12 ? false : setTime(c, ...hm(m[1], m[2]), m[3]),
+  );
   // «в 15» / «у 9» only at the end or before other recognised words: «у 2 етапи» stays text.
   claim(c, `${B}(?:в|у|к)\\s+${NUM}(?=\\s*$|\\s*[,.;!]|\\s+(?:завтра|сьогодні|сегодня|післязавтра|#|@|!|на\\s|до\\s|щ|кожн|по\\s))`, 'time', (m) => setTime(c, Number(m[1]), 0));
   claim(c, `${B}${NUM}:(\\d{2})${PART}${E}`, 'time', (m) => setTime(c, ...hm(m[1], m[2]), m[3]));

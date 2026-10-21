@@ -239,3 +239,45 @@ describe('more ways to say it', () => {
     expect((performance.now() - t0) / 500).toBeLessThan(2);
   });
 });
+
+describe('time ranges, every way', () => {
+  it.each([
+    ['Завтра в зал на 15:00 до 16:30', { title: 'В зал', date: '2026-10-21', time: '15:00', endTime: '16:30', kind: 'event' }],
+    ['Зал о 15:00 до 16:30', { title: 'Зал', time: '15:00', endTime: '16:30' }],
+    ['Зал о 15 до 16:30', { title: 'Зал', time: '15:00', endTime: '16:30' }],
+    ['Зал в 15:00 до 16:30', { title: 'Зал', time: '15:00', endTime: '16:30' }],
+    ['Зал у 15:00-16:30', { title: 'Зал', time: '15:00', endTime: '16:30' }],
+    ['Зал 15:00 до 16:30', { title: 'Зал', time: '15:00', endTime: '16:30' }],
+    ['Зал 15:00 - 16:30', { title: 'Зал', time: '15:00', endTime: '16:30' }],
+    ['Зал 15:00–16:30 завтра', { title: 'Зал', date: '2026-10-21', time: '15:00', endTime: '16:30' }],
+    ['Робота від 9 до 18', { title: 'Робота', time: '09:00', endTime: '18:00' }],
+    ['Робота з 9 ранку до 6 вечора', { title: 'Робота', time: '09:00', endTime: '18:00' }],
+    ['Робота з 9 до 6 вечора', { title: 'Робота', time: '09:00', endTime: '18:00' }],
+    ['Обід з 11 до 1', { title: 'Обід', time: '11:00', endTime: '13:00' }],
+    ['Вечірка з 7 до 11 вечора', { title: 'Вечірка', time: '19:00', endTime: '23:00' }],
+    ['Вечірка з 22 до 2', { title: 'Вечірка', time: '22:00', endTime: '23:59' }],
+    ['Нарада з третьої до пʼятої дня', { title: 'Нарада', time: '15:00', endTime: '17:00' }],
+    ['Нарада о 15–16', { title: 'Нарада', time: '15:00', endTime: '16:00' }],
+    ['Нарада 10-12 год', { title: 'Нарада', time: '10:00', endTime: '12:00' }],
+    ['Нарада 10:00-11:30 у вівторок #робота', { title: 'Нарада', date: T, time: '10:00', endTime: '11:30', tags: ['робота'] }],
+    ['Встреча с 15 до 16:30', { title: 'Встреча', time: '15:00', endTime: '16:30' }],
+    ['Gym from 7 to 8:30am', { title: 'Gym', time: '07:00', endTime: '08:30' }],
+  ])('%s', (text, expected) => {
+    expect(p(text)).toMatchObject(expected);
+  });
+  it('a deadline time alone is not a range', () => {
+    expect(p('Відправити звіт до 16:30')).toMatchObject({ title: 'Відправити звіт', time: '16:30' });
+    expect(p('Відправити звіт до 16:30').endTime).toBeUndefined();
+  });
+  it('several days', () => {
+    expect(p('Відпустка 15.10 до 20.10')).toMatchObject({ title: 'Відпустка', date: '2027-10-15', endDate: '2027-10-20', allDay: true, kind: 'event' });
+    expect(p('Відпустка з 25 по 30 жовтня')).toMatchObject({ title: 'Відпустка', date: '2026-10-25', endDate: '2026-10-30', kind: 'event' });
+    expect(p('Поїздка з 28 жовтня до 2 листопада')).toMatchObject({ title: 'Поїздка', date: '2026-10-28', endDate: '2026-11-02' });
+    expect(p('Конференція 24-26 жовтня')).toMatchObject({ title: 'Конференція', date: '2026-10-24', endDate: '2026-10-26' });
+  });
+  it('numbers that are not times stay text', () => {
+    for (const t of ['Прочитати 5 до 10 сторінок', 'Зробити 3-5 підходів', 'Вага від 70 до 75 кг', 'Відпустка 15.10 до 20.10']) {
+      expect(p(t).time).toBeUndefined();
+    }
+  });
+});
