@@ -54,3 +54,14 @@ test('app icon shortcut: «Нова задача» opens the task form', async (
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page).not.toHaveURL(/new=1/);
 });
+
+test('calendar: tapping my own event opens its details (phone too)', async ({ page, isMobile }) => {
+  await start(page);
+  await page.getByLabel('Назва для швидкого додавання').fill('Нарада сьогодні о 9 на годину');
+  await page.getByLabel('Назва для швидкого додавання').press('Enter');
+  await page.goto('/#/calendar?view=day');
+  const block = page.getByRole('button', { name: /^Нарада, / });
+  if (isMobile) await block.tap();
+  else await block.click();
+  await expect(page.getByRole('dialog')).toContainText('Нарада');
+});

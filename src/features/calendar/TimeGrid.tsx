@@ -91,6 +91,8 @@ export function TimeGrid({
   const [draftSlot, setDraftSlot] = useState<{ dayIndex: number; start: number; end: number; at: number } | null>(null);
   const longPress = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blockScroll = useRef(false);
+  /** Set when a mouse drag ends, so the click that follows doesn't open the event. */
+  const suppressClick = useRef(false);
   const single = days.length === 1;
   const fmt = (m: number) => formatTime(minutesToTime(Math.min(m, DAY_END - 1)), settings.timeFormat);
 
@@ -355,10 +357,9 @@ export function TimeGrid({
     const { mode, item, deltaMin, deltaDays, moved } = drag;
     setDrag(null);
     const ev = item.occurrence.event;
-    if (!moved) {
-      openEvent(ev.id, item.occurrence.date);
-      return;
-    }
+    // A plain click opens the event (onClick); only a real drag swallows that click.
+    if (!moved) return;
+    suppressClick.current = true;
     if (deltaMin === 0 && deltaDays === 0) return;
     if (mode === 'resize') {
       const end = minutesToTime(Math.min(item.end + deltaMin, DAY_END - 1));
@@ -623,8 +624,9 @@ export function TimeGrid({
                       onPointerDown={(e) => onItemPointerDown(e, item, dayIndex, 'move')}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (suppressClick.current) return void (suppressClick.current = false);
                         if (item.kind === 'task') openTask(item.task.id);
-                        else if (!item.draggable) openEvent(item.occurrence.event.id, item.occurrence.date);
+                        else openEvent(item.occurrence.event.id, item.occurrence.date);
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -637,7 +639,7 @@ export function TimeGrid({
                         'group/ev absolute z-[1] overflow-hidden rounded-lg px-1.5 text-left transition-shadow',
                         item.kind === 'event' ? 'border-l-[3px]' : 'border border-dashed hover:shadow-soft',
                         short ? 'py-0.5' : 'py-1',
-                        item.draggable ? 'cursor-grab touch-none active:cursor-grabbing' : 'cursor-pointer',
+                        item.draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                         isDragging && drag.moved && 'z-20 opacity-90 shadow-pop',
                       )}
                       style={{
@@ -674,7 +676,7 @@ export function TimeGrid({
                         <div
                           aria-hidden
                           onPointerDown={(e) => onItemPointerDown(e, item, dayIndex, 'resize')}
-                          className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize touch-none items-end justify-center pb-0.5 opacity-0 transition-opacity group-hover/ev:opacity-100"
+                          className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize touch-none [@media(pointer:coarse)]:hidden items-end justify-center pb-0.5 opacity-0 transition-opacity group-hover/ev:opacity-100"
                         >
                           <span className="h-[3px] w-6 rounded-full bg-ink/25" />
                         </div>
