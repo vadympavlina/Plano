@@ -5,7 +5,7 @@ import { useToday } from '@/hooks/useNow';
 import { useCreateNote } from '@/components/layout/CreateMenu';
 import { settleWrite } from '@/services/sync';
 import { toast } from '@/components/ui/toast';
-import { deviceTimeZone, formatDuration, formatTimeRange, minutesToTime, relativeDayLabel, timeToMinutes } from '@/lib/date';
+import { deviceTimeZone, formatDuration, formatTimeRange, minutesToTime, plural, relativeDayLabel, timeToMinutes } from '@/lib/date';
 import { describeRecurrence } from '@/lib/date/recurrence';
 import type { Category, DateKey, Project } from '@/types';
 import { parseQuick, removeSpans, sameName, type Span } from './parse';
@@ -14,7 +14,7 @@ export type CaptureKind = 'task' | 'event' | 'note';
 
 export interface CaptureChip {
   key: string;
-  type: 'kind' | 'date' | 'time' | 'repeat' | 'category' | 'project' | 'tag' | 'priority' | 'reminder';
+  type: 'kind' | 'date' | 'time' | 'repeat' | 'category' | 'project' | 'tag' | 'priority' | 'reminder' | 'note' | 'subtasks';
   label: string;
   category?: Category;
   project?: Project;
@@ -33,7 +33,7 @@ export function useCapture() {
   const actions = useActions();
   const createNote = useCreateNote();
   const settings = useSettings();
-  const { categories, projects } = useCollections();
+  const { categories, projects, tasks, events } = useCollections();
   const [text, setText] = useState('');
   const [kindOverride, setKindOverride] = useState<CaptureKind>();
   const [dateOverride, setDateOverride] = useState<DateKey>();
@@ -57,6 +57,20 @@ export function useCapture() {
     const tags = p.tags.filter((t) => !used.includes(t));
     const date = dateOverride ?? p.date;
     const kind: CaptureKind = kindOverride ?? p.kind ?? 'task';
+    // No #category given: suggest the one used last time for a title starting with the same word.
+    const first = p.title.toLowerCase().match(/^[\p{L}']{4,}/u)?.[0];
+    let suggested: Category | undefined;
+    if (!category && first && kind !== 'note') {
+      let best = '';
+      for (const x of [...tasks, ...events]) {
+        if (!x.categoryId || x.updatedAt <= best || !x.title.toLowerCase().startsWith(first)) continue;
+        const cat = categories.find((k) => k.id === x.categoryId);
+        if (cat) {
+          suggested = cat;
+          best = x.updatedAt;
+        }
+      }
+    }
     const end = p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined);
     const of = (type: Span['type']) => p.spans.filter((s) => s.type === type);
 
@@ -65,17 +79,32 @@ export function useCapture() {
     if (text.trim()) add({ type: 'kind', label: kind === 'event' ? 'Подія' : kind === 'note' ? 'Нотатка' : 'Задача', spans: of('kind') });
     if (kind !== 'note') {
       if (date && (of('date').length || dateOverride)) add({ type: 'date', label: relativeDayLabel(date, today, 'EEEEEE, d MMM'), spans: of('date') });
-      if (p.time) add({ type: 'time', label: formatTimeRange(p.time, end, settings.timeFormat), spans: [...of('time'), ...of('duration')] });
+      if (p.allDay) add({ type: 'time', label: 'Весь день', spans: of('time') });
+      else if (p.time) add({ type: 'time', label: formatTimeRange(p.time, end, settings.timeFormat), spans: [...of('time'), ...of('duration')] });
       else if (p.duration) add({ type: 'time', label: formatDuration(p.duration), spans: of('duration') });
       if (p.recurrence) add({ type: 'repeat', label: describeRecurrence(p.recurrence), spans: of('repeat') });
       if (p.priority && p.priority !== 'medium') add({ type: 'priority', label: p.priority === 'urgent' ? 'Терміново' : p.priority === 'high' ? 'Важливо' : 'Не терміново', spans: of('priority') });
-      if (p.remindMin) add({ type: 'reminder', label: `Нагадати за ${formatDuration(p.remindMin)}`, spans: of('reminder') });
+      if (p.remindMin != null) add({ type: 'reminder', label: p.remindMin ? `Нагадати за ${formatDuration(p.remindMin)}` : 'Нагадати вчасно', spans: of('reminder') });
+      if (p.subtasks) add({ type: 'subtasks', label: `${p.subtasks.length} ${plural(p.subtasks.length, ['підзадача', 'підзадачі', 'підзадач'])}`, spans: [] });
       if (category) add({ type: 'category', label: category.name, category, spans: tagSpan(used.find((t) => sameName(t, category!.name))!) });
     }
     if (project) add({ type: 'project', label: project.name, project, spans: p.project ? of('project') : tagSpan(used.find((t) => sameName(t, project!.name)) ?? '') });
     if (kind !== 'note') for (const t of tags) add({ type: 'tag', label: `#${t}`, spans: tagSpan(t) });
-    return { p, kind, date, end, category, project, tags, chips };
-  }, [text, today, categories, projects, kindOverride, dateOverride, settings.timeFormat]);
+    if (p.description) add({ type: 'note', label: p.description, spans: of('note') });
+    // Several lines: each becomes its own item.
+    const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    // Highlights: each line parsed on its own, so every line shows what it means.
+    let spans = p.spans;
+    if (lines.length > 1) {
+      spans = [];
+      let at = 0;
+      for (const line of text.split('\n')) {
+        spans.push(...parseQuick(line, today).spans.map((x) => ({ ...x, start: x.start + at, end: x.end + at })));
+        at += line.length + 1;
+      }
+    }
+    return { p, kind, date, end, category, project, tags, chips, suggested, spans, lines: lines.length > 1 ? lines.length : 0 };
+  }, [text, today, categories, projects, tasks, events, kindOverride, dateOverride, settings.timeFormat]);
 
   const reset = () => {
     setText('');
@@ -94,11 +123,13 @@ export function useCapture() {
     setDateOverride(d);
   };
 
-  /** Creates the item; returns false when there's nothing to add. */
+  /** Creates the item(s); returns false when there's nothing to add. */
   const save = async (): Promise<boolean> => {
+    if (busy) return false;
+    if (r.lines) return saveLines();
     const { p, kind, date, end, category, project, tags } = r;
     const title = p.title || text.trim();
-    if (!title || busy) return false;
+    if (!title) return false;
     if (kind === 'note') {
       createNote({ title, projectId: project?.id });
       reset();
@@ -112,13 +143,14 @@ export function useCapture() {
           title,
           status: 'todo',
           priority: p.priority ?? 'medium',
-          subtasks: [],
           tags,
           dueDate: date ?? (p.time || p.recurrence ? today : undefined),
           startTime: p.time,
           endTime: end,
           recurrence: p.recurrence,
           remindMin: p.remindMin,
+          description: p.description,
+          subtasks: (p.subtasks ?? []).map((t, order) => ({ id: `st_${Date.now().toString(36)}${order}`, title: t, done: false, order })),
           ...links,
         });
         await settleWrite(write);
@@ -134,6 +166,7 @@ export function useCapture() {
           endTime: start ? (end ?? endOf(start, 60)) : undefined,
           recurrence: p.recurrence,
           remindMin: p.remindMin,
+          description: p.description,
           ...links,
           exdates: [],
           source: 'plano',
@@ -154,5 +187,48 @@ export function useCapture() {
     }
   };
 
-  return { text, setText, ...r, busy, save, reset, removeChip, setDate, setKind: setKindOverride, categories, projects };
+  /** A pasted list: every line is parsed on its own (its own date, #category…) and added. */
+  const saveLines = async () => {
+    setBusy(true);
+    try {
+      const ids: { kind: 'task' | 'event'; id: string }[] = [];
+      for (const line of text.split(/\n+/).map((l) => l.trim()).filter(Boolean)) {
+        const p = parseQuick(line, today);
+        const cat = p.tags.map((t) => categories.find((x) => sameName(x.name, t))).find(Boolean);
+        const proj = projects.find((x) => sameName(x.name, p.project ?? '') || p.tags.some((t) => sameName(x.name, t)));
+        const title = p.title || line;
+        const links = { categoryId: cat?.id, projectId: proj?.id };
+        const end = p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined);
+        if (p.kind === 'event') {
+          const { id, write } = actions.events.create({ title, date: p.date ?? today, allDay: !p.time, startTime: p.time, endTime: p.time ? (end ?? endOf(p.time, 60)) : undefined, recurrence: p.recurrence, remindMin: p.remindMin, description: p.description, ...links, exdates: [], source: 'plano', timezone: deviceTimeZone() });
+          await settleWrite(write);
+          ids.push({ kind: 'event', id });
+        } else {
+          const { id, write } = actions.tasks.create({ title, status: 'todo', priority: p.priority ?? 'medium', subtasks: [], tags: [], dueDate: p.date ?? (p.time || p.recurrence ? today : undefined), startTime: p.time, endTime: end, recurrence: p.recurrence, remindMin: p.remindMin, description: p.description, ...links });
+          await settleWrite(write);
+          ids.push({ kind: 'task', id });
+        }
+      }
+      toast.success(`Додано: ${ids.length}`, {
+        action: { label: 'Скасувати', onClick: () => ids.forEach((x) => void (x.kind === 'task' ? actions.tasks.remove(x.id) : actions.events.remove(x.id)).catch(() => undefined)) },
+      });
+      reset();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Accept the suggested category: add «#Назва» to the line. */
+  const acceptSuggestion = () => {
+    if (!r.suggested) return;
+    const tag = `#${r.suggested.name.replace(/\s+/g, '_')}`;
+    // Before « // опис», not inside it.
+    const note = r.p.spans.find((x) => x.type === 'note');
+    setText((t) => (note ? `${t.slice(0, note.start).trimEnd()} ${tag} ${t.slice(note.start)}` : `${t.trimEnd()} ${tag} `));
+  };
+
+  return { text, setText, ...r, busy, save, reset, removeChip, setDate, setKind: setKindOverride, acceptSuggestion, categories, projects };
 }

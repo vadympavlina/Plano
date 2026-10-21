@@ -16,6 +16,7 @@ const TONE: Record<Span['type'], string> = {
   priority: 'bg-warning/20',
   reminder: 'bg-success/15',
   kind: 'bg-line',
+  note: 'bg-surface-2',
 };
 
 type Suggestion = { kind: 'category'; item: Category } | { kind: 'project'; item: Project };

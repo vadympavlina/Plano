@@ -1,6 +1,7 @@
 import { useRef, type FormEvent, type ReactNode } from 'react';
-import { ArrowLeftRight, Bell, CalendarDays, CalendarPlus, CheckSquare, Clock, Flag, FolderKanban, Hash, Mic, NotebookPen, Plus, Repeat, Sun, X } from 'lucide-react';
+import { AlignLeft, ArrowLeftRight, Bell, HelpCircle, ListChecks, ListPlus, CalendarDays, CalendarPlus, CheckSquare, Clock, Flag, FolderKanban, Hash, Mic, NotebookPen, Plus, Repeat, Sun, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePicker } from '@/components/ui/date-time';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown';
 import { CategoryIcon } from '@/components/common/CategoryMark';
@@ -9,11 +10,42 @@ import { useDictation } from '@/hooks/useDictation';
 import { CreateMenu } from '@/components/layout/CreateMenu';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
+import { plural } from '@/lib/date';
 import { SmartField, type SmartFieldHandle } from './SmartField';
 import { useCapture, type CaptureChip, type CaptureKind } from './useCapture';
 
 const KIND_ICON = { task: CheckSquare, event: CalendarPlus, note: NotebookPen };
-const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = { time: Clock, repeat: Repeat, priority: Flag, reminder: Bell, project: FolderKanban, tag: Hash };
+const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = { time: Clock, repeat: Repeat, priority: Flag, reminder: Bell, project: FolderKanban, tag: Hash, note: AlignLeft, subtasks: ListChecks };
+const EXAMPLES: [string, string][] = [
+  ['Коли', 'завтра, у пʼятницю, наступного вівторка, через 3 дні, 5 листопада, 25.10, до кінця тижня'],
+  ['Час', 'о 15, о 9:30, о 7 вечора, ввечері, з 10 до 12, на годину, через 30 хв, цілий день'],
+  ['Повтор', 'щодня, по буднях, щопонеділка та пʼятниці, кожні 3 дні, кожного 5 числа, щодня до 31 грудня'],
+  ['Куди', '#категорія або #проєкт, @проєкт'],
+  ['Ще', '!! важливо, !!! терміново, нагадай за 30 хв, // опис, «Купити: молоко, хліб» — підзадачі'],
+  ['Кілька', 'вставте список — кожен рядок стане окремим записом'],
+];
+
+function Help() {
+  return (
+    <Popover>
+      <PopoverTrigger className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-subtle hover:bg-surface-2 hover:text-ink" aria-label="Що можна писати">
+        <HelpCircle className="h-4 w-4" />
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-[340px] p-3">
+        <p className="mb-2 text-[13px] font-semibold">Пишіть як звичайно — Plano зрозуміє</p>
+        <dl className="space-y-1.5 text-[12.5px]">
+          {EXAMPLES.map(([k, v]) => (
+            <div key={k} className="grid grid-cols-[64px_1fr] gap-2">
+              <dt className="font-medium text-muted">{k}</dt>
+              <dd>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 const chip = 'inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] font-semibold transition-colors';
 
 /**
@@ -51,7 +83,13 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
   const empty = !c.text.trim();
 
   const chips = c.chips.filter((x) => x.type !== 'kind' && x.type !== 'date');
-  const row = (
+  const row = c.lines ? (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className={cn(chip, 'bg-primary/10 text-primary')}>
+        <ListPlus className="h-3.5 w-3.5" /> {c.lines} {plural(c.lines, ['запис', 'записи', 'записів'])} — кожен рядок окремо
+      </span>
+    </div>
+  ) : (
     <div className="flex flex-wrap items-center gap-1.5">
       {!empty && (
         <DropdownMenu>
@@ -82,12 +120,25 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
           <span key={x.key} className={cn(chip, 'pr-1.5', color ? '' : 'bg-primary/10 text-primary')} style={color ? { backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)`, color } : undefined}>
             {x.category ? <CategoryIcon category={x.category} /> : I && <I className="h-3.5 w-3.5" />}
             <span className="max-w-[180px] truncate">{x.label}</span>
-            <button type="button" aria-label={`Прибрати «${x.label}»`} onClick={() => c.removeChip(x)} className="rounded p-0.5 opacity-60 hover:opacity-100">
-              <X className="h-3 w-3" />
-            </button>
+            {x.spans.length > 0 && (
+              <button type="button" aria-label={`Прибрати «${x.label}»`} onClick={() => c.removeChip(x)} className="rounded p-0.5 opacity-60 hover:opacity-100">
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </span>
         );
       })}
+      {c.suggested && (
+        <button
+          type="button"
+          onClick={c.acceptSuggestion}
+          title="Як минулого разу"
+          className={cn(chip, 'border border-dashed border-line text-muted hover:text-ink')}
+          style={{ color: colorOf(c.suggested.color) }}
+        >
+          <CategoryIcon category={c.suggested} /> {c.suggested.name}?
+        </button>
+      )}
     </div>
   );
 
@@ -135,7 +186,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
       ref={field}
       value={c.text}
       onChange={c.setText}
-      spans={c.p.spans}
+      spans={c.spans}
       onSubmit={() => void submit()}
       categories={c.categories}
       projects={c.projects}
@@ -152,6 +203,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
         {empty ? suggestions : row}
         <div className="flex items-center gap-2 pt-1">
           {mic}
+          <Help />
           <CreateMenu
             align="center"
             onPick={onDone}
@@ -174,6 +226,9 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
         <Plus className="mt-[13px] h-4 w-4 shrink-0 text-subtle" aria-hidden />
         {fieldEl}
         <div className="flex shrink-0 items-center gap-1 pt-0.5">
+          <span className="hidden sm:inline-flex">
+            <Help />
+          </span>
           {mic}
           <Button type="submit" variant="dark" size="sm" className="h-9 px-4" loading={c.busy} disabled={empty}>
             Додати

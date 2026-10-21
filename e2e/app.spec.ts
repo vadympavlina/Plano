@@ -78,3 +78,14 @@ test('quick capture: «+» / N reads date, time and category, then adds a task',
   await page.goto('/#/tasks?list=all');
   await expect(page.getByText('Купити ліки', { exact: true })).toBeVisible();
 });
+
+test('quick capture: a pasted list adds every line', async ({ page }) => {
+  await start(page);
+  const field = page.getByLabel('Назва для швидкого додавання');
+  await field.fill('Оплатити інтернет завтра\nКупити: молоко, хліб');
+  await expect(page.getByText(/2 записи/)).toBeVisible();
+  await field.press('Enter');
+  await page.goto('/#/tasks?list=all');
+  await expect(page.getByText('Оплатити інтернет', { exact: true })).toBeVisible();
+  await expect(page.getByText('Купити', { exact: true })).toBeVisible();
+});
