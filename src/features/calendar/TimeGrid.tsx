@@ -74,7 +74,7 @@ export function TimeGrid({
   const gcal = data.integrations.google_calendar;
   const taskColor = (t: Task) => colorOf(categoryById(t.categoryId)?.color ?? 'slate');
   const settings = useSettings();
-  const { openEvent, openEventForm, openTask } = useUI();
+  const { openEvent, openQuickAdd, openTask } = useUI();
   const actions = useActions();
   const now = useNow(60_000);
   const today = todayKey(now);
@@ -249,9 +249,8 @@ export function TimeGrid({
   };
   const openSlot = (dayIndex: number, range: { start: number; end: number }) => {
     setDraftSlot(null);
-    openEventForm({
-      defaults: { date: days[dayIndex], allDay: false, startTime: minutesToTime(range.start), endTime: minutesToTime(Math.min(range.end, DAY_END - 1)) },
-    });
+    // The quick box with the slot filled in: only the title is left to type.
+    openQuickAdd({ kind: 'event', date: days[dayIndex], time: minutesToTime(range.start), endTime: minutesToTime(Math.min(range.end, DAY_END - 1)) });
   };
 
   const finishSelection = (s: Selection) => {
@@ -285,7 +284,7 @@ export function TimeGrid({
     const a = Math.min(daySel.from, daySel.to);
     const b = Math.max(daySel.from, daySel.to);
     setDaySel(null);
-    openEventForm({ defaults: { date: days[a], endDate: b > a ? days[b] : undefined, allDay: true, startTime: undefined, endTime: undefined } });
+    openQuickAdd({ kind: 'event', date: days[a], endDate: b > a ? days[b] : undefined, allDay: true });
   };
 
   // ---- moving and resizing events ------------------------------------------

@@ -69,7 +69,7 @@ export default function CalendarPage() {
   const today = todayKey(now);
   const [params, setParams] = useSearchParams();
   const { events, tasks, categoryById } = useCollections();
-  const { openEventForm, openEvent, openTask } = useUI();
+  const { openEventForm, openEvent, openTask, openQuickAdd } = useUI();
   useOpenFromQuery(() => openEventForm());
   const actions = useActions();
 
@@ -112,7 +112,7 @@ export default function CalendarPage() {
 
   const selectDay = (d: DateKey) => navigate({ date: d, view: 'day' });
   const addEvent = () =>
-    openEventForm({ defaults: { date: view === 'month' && anchor.slice(0, 7) !== today.slice(0, 7) ? anchor : view === 'day' ? anchor : today } });
+    openQuickAdd({ kind: 'event', date: view === 'month' && anchor.slice(0, 7) !== today.slice(0, 7) ? anchor : view === 'day' ? anchor : today });
 
   // Right rail: what's left of today, and today's tasks without a time.
   const nowMinutes = now.getHours() * 60 + now.getMinutes();

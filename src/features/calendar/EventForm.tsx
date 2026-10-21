@@ -1,4 +1,6 @@
 import { useMemo, useState, type FormEvent, type ReactNode } from 'react';
+import { useSmartTitle } from '@/features/capture/useSmartTitle';
+import { SmartTitleHint } from '@/features/capture/SmartTitleHint';
 import { CategoryMark } from '@/components/common/CategoryMark';
 import { AlertTriangle, AlignLeft, FolderKanban, Link2, MapPin, Repeat, Sun } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -85,6 +87,20 @@ export default function EventFormDialog({
   const actions = useActions();
   const { draft, patch, dirty, saving, submitError, submit } = useFormDialog<Draft>(toDraft(event, defaults), onClose);
   const [showErrors, setShowErrors] = useState(false);
+  // New events: «Зал завтра на 15:00 до 16:30 #здоровʼя» in the title fills the fields.
+  const [smartOff, setSmartOff] = useState(!!event);
+  const [undo, setUndo] = useState<Draft | null>(null);
+  const smart = useSmartTitle(smartOff ? '' : draft.title);
+  const applySmart = () => {
+    if (!smart.found) return;
+    setUndo(draft);
+    patch(smart.event(draft));
+  };
+  const revertSmart = () => {
+    if (undo) patch(undo);
+    setUndo(null);
+    setSmartOff(true);
+  };
   const errors = validate(draft);
   const visible = showErrors ? errors : {};
   const fromGoogle = draft.source === 'google';
@@ -124,16 +140,18 @@ export default function EventFormDialog({
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setShowErrors(true);
-    if (Object.keys(errors).length) return;
+    const final: Draft = smart.found ? { ...draft, ...smart.event(draft) } : draft;
+    if (smart.found) applySmart();
+    if (Object.keys(validate(final)).length) return;
     const clean: Draft = {
-      ...draft,
-      title: draft.title.trim(),
-      description: draft.description?.trim() || undefined,
-      location: draft.location?.trim() || undefined,
-      url: draft.url?.trim() || undefined,
-      startTime: draft.allDay ? undefined : draft.startTime,
-      endTime: draft.allDay ? undefined : draft.endTime,
-      endDate: draft.allDay && draft.endDate && draft.endDate > draft.date ? draft.endDate : undefined,
+      ...final,
+      title: final.title.trim(),
+      description: final.description?.trim() || undefined,
+      location: final.location?.trim() || undefined,
+      url: final.url?.trim() || undefined,
+      startTime: final.allDay ? undefined : final.startTime,
+      endTime: final.allDay ? undefined : final.endTime,
+      endDate: final.allDay && final.endDate && final.endDate > final.date ? final.endDate : undefined,
     };
     if (event) void submit(() => actions.events.update(event.id, clean), 'Подію оновлено');
     else void submit(() => actions.events.create(clean).write, 'Подію створено');
@@ -168,10 +186,14 @@ export default function EventFormDialog({
               maxLength={300}
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
+              onBlur={applySmart}
               className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
           {visible.title && <p role="alert" className="ml-6 mt-1 text-[13px] text-danger">{visible.title}</p>}
+          <div className="ml-6">
+            <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
+          </div>
 
           {/* When */}
           <section aria-label="Час" className="mt-4 rounded-2xl bg-surface-2/70 p-3">

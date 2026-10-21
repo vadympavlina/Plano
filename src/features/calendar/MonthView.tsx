@@ -26,7 +26,7 @@ export function MonthView({
 }) {
   const settings = useSettings();
   const { categoryById } = useCollections();
-  const { openEvent, openEventForm, openTask } = useUI();
+  const { openEvent, openQuickAdd, openTask } = useUI();
   const today = useToday();
   const days = useMemo(() => monthGrid(anchor, settings.weekStartsOn), [anchor, settings.weekStartsOn]);
   const month = anchor.slice(0, 7);
@@ -54,8 +54,8 @@ export function MonthView({
     const a = Math.min(range.from, range.to);
     const b = Math.max(range.from, range.to);
     setRange(null);
-    if (a === b) openEventForm({ defaults: { date: days[a] } });
-    else openEventForm({ defaults: { date: days[a], endDate: days[b], allDay: true, startTime: undefined, endTime: undefined } });
+    if (a === b) openQuickAdd({ kind: 'event', date: days[a] });
+    else openQuickAdd({ kind: 'event', date: days[a], endDate: days[b], allDay: true });
   };
   const lo = range ? Math.min(range.from, range.to) : -1;
   const hi = range ? Math.max(range.from, range.to) : -1;

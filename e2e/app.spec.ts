@@ -89,3 +89,30 @@ test('quick capture: a pasted list adds every line', async ({ page }) => {
   await expect(page.getByText('Оплатити інтернет', { exact: true })).toBeVisible();
   await expect(page.getByText('Купити', { exact: true })).toBeVisible();
 });
+
+test('calendar: clicking an hour opens quick add with the time filled in', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'on phones a slot is picked with a long press');
+  await start(page);
+  await page.goto('/#/calendar?view=day');
+  const column = page.locator('[data-day-index="0"]');
+  await column.scrollIntoViewIfNeeded();
+  const box = (await column.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText('Нова подія');
+  await dialog.getByLabel('Назва для швидкого додавання').fill('Обід');
+  await dialog.getByLabel('Назва для швидкого додавання').press('Enter');
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: /^Обід, / })).toBeVisible();
+});
+
+test('task form: dates, time and category are read from the title', async ({ page }) => {
+  await start(page);
+  await page.goto('/#/tasks?new=1');
+  const title = page.getByRole('dialog').getByLabel('Назва', { exact: true });
+  await title.fill('Звіт завтра о 15 #Особисте');
+  await title.press('Tab');
+  await expect(title).toHaveValue('Звіт');
+  await expect(page.getByText('Заповнено з назви')).toBeVisible();
+  await expect(page.getByLabel('Час початку')).toContainText('15:00');
+});

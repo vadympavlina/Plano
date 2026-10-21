@@ -9,11 +9,12 @@ import { toast } from '@/components/ui/toast';
 import { useDictation } from '@/hooks/useDictation';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CreateMenu } from '@/components/layout/CreateMenu';
+import { useUI } from '@/app/providers/UIProvider';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { plural } from '@/lib/date';
 import { SmartField, type SmartFieldHandle } from './SmartField';
-import { useCapture, type CaptureChip, type CaptureKind } from './useCapture';
+import { useCapture, type CaptureChip, type CaptureKind, type CapturePreset } from './useCapture';
 
 const KIND_ICON = { task: CheckSquare, event: CalendarPlus, note: NotebookPen };
 const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = { date: CalendarDays, time: Clock, repeat: Repeat, priority: Flag, reminder: Bell, project: FolderKanban, tag: Hash, note: AlignLeft, subtasks: ListChecks };
@@ -54,16 +55,49 @@ const chip = 'inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap ro
  * #categories from the text, chips for what it understood, voice input.
  * `sheet` is the bigger version opened by «+» / N.
  */
-export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDone?: () => void; className?: string }) {
-  const c = useCapture();
+export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boolean; onDone?: () => void; className?: string; preset?: CapturePreset }) {
+  const c = useCapture(preset);
+  const { openTaskForm, openEventForm } = useUI();
+  const hasPreset = !!(preset?.date || preset?.time);
+  /** «Детальніше»: the full form with what was typed and picked so far. */
+  const openFull = () => {
+    const { p, kind, date, end, category, project } = c;
+    const title = p.title || undefined;
+    onDone?.();
+    if (kind === 'event')
+      openEventForm({
+        defaults: {
+          title,
+          date: date ?? undefined,
+          endDate: p.endDate,
+          allDay: !p.time,
+          startTime: p.time,
+          endTime: p.time ? end : undefined,
+          recurrence: p.recurrence,
+          categoryId: category?.id,
+          projectId: project?.id,
+          description: p.description,
+        },
+      });
+    else openTaskForm({ defaults: { title, dueDate: date, startTime: p.time, endTime: end, recurrence: p.recurrence, priority: p.priority, categoryId: category?.id, projectId: project?.id, description: p.description } });
+  };
   const wide = useMediaQuery('(min-width: 640px)');
   const field = useRef<SmartFieldHandle>(null);
   const before = useRef('');
   const voice = useDictation(
     (t) => c.setText(`${before.current} ${t}`.trim()),
-    (err) => toast.error(err === 'not-allowed' || err === 'service-not-allowed' ? 'Немає доступу до мікрофона' : 'Не вдалося розпізнати мову'),
+    (err) => {
+      if (err === 'keyboard') keyboardHint();
+      else toast.error(err === 'unavailable' ? 'Диктування тут недоступне — введіть текст' : 'Не вдалося розпізнати мову');
+    },
   );
+  // iPhone home-screen app: the keyboard's own microphone does the job.
+  const keyboardHint = () => {
+    field.current?.focus();
+    toast.info('Натисніть мікрофон на клавіатурі й говоріть — текст зʼявиться в полі');
+  };
   const toggleVoice = () => {
+    if (voice.mode === 'keyboard') return keyboardHint();
     if (voice.listening) return voice.stop();
     before.current = c.text.trim();
     voice.start();
@@ -115,7 +149,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      {c.kind !== 'note' && (!empty || !sheet) && (
+      {c.kind !== 'note' && (!empty || !sheet || hasPreset) && (
         <DatePicker variant="chip" aria-label="Дата" placeholder="Дата" value={c.date} onChange={c.setDate} className="h-7 shrink-0 text-[12px] sm:h-8 sm:text-[12.5px]" />
       )}
       {chips.map((x) => {
@@ -125,7 +159,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
           <span key={x.key} className={cn(chip, 'pr-1.5', color ? '' : 'bg-primary/10 text-primary')} style={color ? { backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)`, color } : undefined}>
             {x.category ? <CategoryIcon category={x.category} /> : I && <I className="h-3.5 w-3.5" />}
             <span className="max-w-[180px] truncate">{x.label}</span>
-            {x.spans.length > 0 && (
+            {(x.spans.length > 0 || x.type === 'time' || x.type === 'date') && (
               <button type="button" aria-label={`Прибрати «${x.label}»`} onClick={() => c.removeChip(x)} className="rounded p-0.5 opacity-60 hover:opacity-100">
                 <X className="h-3 w-3" />
               </button>
@@ -197,7 +231,7 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
       projects={c.projects}
       big={sheet}
       autoFocus={sheet}
-      placeholder={sheet ? 'Що додати?' : wide ? 'Додати… напр. «Зустріч завтра о 15 #робота»' : 'Що додати? «завтра о 15»'}
+      placeholder={hasPreset ? (c.kind === 'event' ? 'Назва події' : 'Що додати?') : sheet ? 'Що додати?' : wide ? 'Додати… напр. «Зустріч завтра о 15 #робота»' : 'Що додати? «завтра о 15»'}
     />
   );
 
@@ -205,19 +239,25 @@ export function CaptureBox({ sheet, onDone, className }: { sheet?: boolean; onDo
     return (
       <form onSubmit={submit} className={cn('space-y-3', className)}>
         {fieldEl}
-        {empty ? suggestions : row}
+        {empty && !hasPreset ? suggestions : row}
         <div className="flex items-center gap-2 pt-1">
           {mic}
           <Help />
-          <CreateMenu
-            align="center"
-            onPick={onDone}
-            trigger={
-              <button type="button" className="ml-auto rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
-                Повна форма…
-              </button>
-            }
-          />
+          {empty && !hasPreset ? (
+            <CreateMenu
+              align="center"
+              onPick={onDone}
+              trigger={
+                <button type="button" className="ml-auto rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
+                  Повна форма…
+                </button>
+              }
+            />
+          ) : (
+            <button type="button" onClick={openFull} className="ml-auto rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
+              Детальніше…
+            </button>
+          )}
           <Button type="submit" variant="dark" className="h-11 px-6 text-[15px]" loading={c.busy} disabled={empty}>
             Додати
           </Button>

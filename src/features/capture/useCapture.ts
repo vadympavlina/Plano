@@ -12,6 +12,16 @@ import { parseQuick, removeSpans, sameName, type Span } from './parse';
 
 export type CaptureKind = 'task' | 'event' | 'note';
 
+/** What the box starts with when opened from a calendar slot: the day, the hours, an event. */
+export interface CapturePreset {
+  date?: DateKey;
+  endDate?: DateKey;
+  time?: string;
+  endTime?: string;
+  allDay?: boolean;
+  kind?: CaptureKind;
+}
+
 export interface CaptureChip {
   key: string;
   type: 'kind' | 'date' | 'time' | 'repeat' | 'category' | 'project' | 'tag' | 'priority' | 'reminder' | 'note' | 'subtasks';
@@ -28,7 +38,7 @@ const endOf = (start: string, minutes: number) => minutesToTime(Math.min(timeToM
  * Quick capture: the typed line, what it means (with the user's own categories
  * and projects), the chips to show and the save itself.
  */
-export function useCapture() {
+export function useCapture(preset?: CapturePreset) {
   const today = useToday();
   const actions = useActions();
   const createNote = useCreateNote();
@@ -38,9 +48,16 @@ export function useCapture() {
   const [kindOverride, setKindOverride] = useState<CaptureKind>();
   const [dateOverride, setDateOverride] = useState<DateKey>();
   const [busy, setBusy] = useState(false);
+  const [pre, setPre] = useState<CapturePreset>(preset ?? {});
 
   const r = useMemo(() => {
-    const p = parseQuick(text, today);
+    // What the text says wins; the preset (calendar slot) fills what it doesn't.
+    const raw = parseQuick(text, today);
+    const p = { ...raw };
+    if (!raw.time && !raw.allDay && pre.time) Object.assign(p, { time: pre.time, endTime: raw.duration ? undefined : pre.endTime });
+    if (!raw.time && !raw.allDay && !pre.time && pre.allDay) p.allDay = true;
+    if (!raw.date && !raw.endDate && pre.endDate) p.endDate = pre.endDate;
+    p.date ??= pre.date;
     const tagSpan = (tag: string) => p.spans.filter((s) => s.type === 'tag' && sameName(text.slice(s.start, s.end).replace(/^#|^хештег\s+|^хеш тег\s+/i, ''), tag));
     let category: Category | undefined;
     let project: Project | undefined;
@@ -56,7 +73,7 @@ export function useCapture() {
     if (p.project) project = projects.find((x) => sameName(x.name, p.project!)) ?? project;
     const tags = p.tags.filter((t) => !used.includes(t));
     const date = dateOverride ?? p.date;
-    const kind: CaptureKind = kindOverride ?? p.kind ?? 'task';
+    const kind: CaptureKind = kindOverride ?? p.kind ?? pre.kind ?? 'task';
     // No #category given: suggest the one used last time for a title starting with the same word.
     const first = p.title.toLowerCase().match(/^[\p{L}']{4,}/u)?.[0];
     let suggested: Category | undefined;
@@ -105,7 +122,7 @@ export function useCapture() {
       }
     }
     return { p, kind, date, end, category, project, tags, chips, suggested, spans, lines: lines.length > 1 ? lines.length : 0 };
-  }, [text, today, categories, projects, tasks, events, kindOverride, dateOverride, settings.timeFormat]);
+  }, [text, today, categories, projects, tasks, events, kindOverride, dateOverride, pre, settings.timeFormat]);
 
   const reset = () => {
     setText('');
@@ -117,11 +134,15 @@ export function useCapture() {
   const removeChip = (chip: CaptureChip) => {
     if (chip.type === 'date') setDateOverride(undefined);
     if (chip.type === 'kind') setKindOverride(undefined);
+    // A preset time or day range has no words to remove: drop it from the preset.
+    if (chip.type === 'time') setPre((x) => ({ ...x, time: undefined, endTime: undefined, allDay: undefined }));
+    if (chip.type === 'date') setPre((x) => ({ ...x, endDate: undefined }));
     setText((t) => removeSpans(t, chip.spans, chip.spans.map((s) => s.type)).trimEnd() + ' ');
   };
   const setDate = (d: DateKey | undefined) => {
     setText((t) => removeSpans(t, r.p.spans, ['date']));
     setDateOverride(d);
+    if (!d) setPre((x) => ({ ...x, date: undefined }));
   };
 
   /** Creates the item(s); returns false when there's nothing to add. */
@@ -232,5 +253,5 @@ export function useCapture() {
     setText((t) => (note ? `${t.slice(0, note.start).trimEnd()} ${tag} ${t.slice(note.start)}` : `${t.trimEnd()} ${tag} `));
   };
 
-  return { text, setText, ...r, busy, save, reset, removeChip, setDate, setKind: setKindOverride, acceptSuggestion, categories, projects };
+  return { text, setText, ...r, preset: pre, busy, save, reset, removeChip, setDate, setKind: setKindOverride, acceptSuggestion, categories, projects };
 }

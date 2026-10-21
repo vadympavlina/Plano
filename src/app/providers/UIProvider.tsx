@@ -1,5 +1,6 @@
 import { createContext, lazy, Suspense, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { CalendarEvent, DateKey, Task } from '@/types';
+import type { CapturePreset } from '@/features/capture/useCapture';
 
 const TaskFormDialog = lazy(() => import('@/features/tasks/TaskForm'));
 const TaskDetailSheet = lazy(() => import('@/features/tasks/TaskDetail'));
@@ -17,7 +18,7 @@ interface UIContextValue {
   openEventForm: (opts?: { event?: CalendarEvent; defaults?: Partial<CalendarEvent> }) => void;
   openEvent: (eventId: string, date?: DateKey) => void;
   openSearch: () => void;
-  openQuickAdd: () => void;
+  openQuickAdd: (preset?: CapturePreset) => void;
 }
 
 const UIContext = createContext<UIContextValue | null>(null);
@@ -28,7 +29,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [eventEditor, setEventEditor] = useState<EventEditor>(null);
   const [eventDetail, setEventDetail] = useState<{ id: string; date?: DateKey } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [quickOpen, setQuickOpen] = useState(false);
+  const [quick, setQuick] = useState<{ preset?: CapturePreset } | null>(null);
 
   const openTaskForm = useCallback((opts?: { task?: Task; defaults?: Partial<Task> }) => setTaskEditor(opts ?? {}), []);
   const openTask = useCallback((id: string) => setTaskId(id), []);
@@ -38,7 +39,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   );
   const openEvent = useCallback((id: string, date?: DateKey) => setEventDetail({ id, date }), []);
   const openSearch = useCallback(() => setSearchOpen(true), []);
-  const openQuickAdd = useCallback(() => setQuickOpen(true), []);
+  const openQuickAdd = useCallback((preset?: CapturePreset) => setQuick({ preset }), []);
 
   const value = useMemo(
     () => ({ openTaskForm, openTask, openEventForm, openEvent, openSearch, openQuickAdd }),
@@ -60,7 +61,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
           <EventDetailDialog eventId={eventDetail.id} date={eventDetail.date} onClose={() => setEventDetail(null)} />
         )}
         {searchOpen && <SearchCommand onClose={() => setSearchOpen(false)} />}
-        {quickOpen && <QuickAddSheet onClose={() => setQuickOpen(false)} />}
+        {quick && <QuickAddSheet preset={quick.preset} onClose={() => setQuick(null)} />}
       </Suspense>
     </UIContext.Provider>
   );

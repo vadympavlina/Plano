@@ -17,6 +17,8 @@ import { minutesToTime, timeToMinutes } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { Subtask, Task } from '@/types';
 import { ReminderSelect } from '@/features/reminders/ReminderSelect';
+import { useSmartTitle } from '@/features/capture/useSmartTitle';
+import { SmartTitleHint } from '@/features/capture/SmartTitleHint';
 
 type Draft = Omit<Task, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -60,6 +62,21 @@ export default function TaskFormDialog({
   const [newSubtask, setNewSubtask] = useState('');
   const [showMore, setShowMore] = useState(!!(task && (task.startDate || task.notes || task.tags.length || task.goalId)));
   const subtaskInput = useRef<HTMLInputElement>(null);
+  // New tasks: «Звіт у пʼятницю о 15 #робота» in the title fills the fields (on leaving the title or saving).
+  const [smartOff, setSmartOff] = useState(!!task);
+  const [undo, setUndo] = useState<Draft | null>(null);
+  const smart = useSmartTitle(smartOff ? '' : draft.title);
+  const withSmart = (d: Draft): Draft => (smart.found ? { ...d, ...smart.task(d) } : d);
+  const applySmart = () => {
+    if (!smart.found) return;
+    setUndo(draft);
+    patch(smart.task(draft));
+  };
+  const revertSmart = () => {
+    if (undo) patch(undo);
+    setUndo(null);
+    setSmartOff(true);
+  };
   const errors = validate(draft);
   const visible = showErrors ? errors : {};
   const firstError = Object.values(visible)[0];
@@ -81,16 +98,18 @@ export default function TaskFormDialog({
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setShowErrors(true);
-    if (Object.keys(errors).length) return;
+    const final = withSmart(draft);
+    if (smart.found) applySmart();
+    if (Object.keys(validate(final)).length) return;
     const pending = newSubtask.trim();
-    const subtasks = pending ? [...draft.subtasks, { id: newSubtaskId(), title: pending, done: false, order: draft.subtasks.length }] : draft.subtasks;
+    const subtasks = pending ? [...final.subtasks, { id: newSubtaskId(), title: pending, done: false, order: final.subtasks.length }] : final.subtasks;
     const clean: Draft = {
-      ...draft,
-      title: draft.title.trim(),
-      description: draft.description?.trim() || undefined,
-      notes: draft.notes?.trim() || undefined,
+      ...final,
+      title: final.title.trim(),
+      description: final.description?.trim() || undefined,
+      notes: final.notes?.trim() || undefined,
       subtasks: subtasks.filter((s) => s.title.trim()).map((s, i) => ({ ...s, order: i })),
-      completedAt: draft.status === 'completed' ? (draft.completedAt ?? new Date().toISOString()) : undefined,
+      completedAt: final.status === 'completed' ? (final.completedAt ?? new Date().toISOString()) : undefined,
     };
     if (task) void submit(() => actions.tasks.update(task.id, clean), 'Задачу оновлено');
     else void submit(() => actions.tasks.create(clean).write, 'Задачу створено');
@@ -108,8 +127,10 @@ export default function TaskFormDialog({
             value={draft.title}
             maxLength={300}
             onChange={(e) => patch({ title: e.target.value })}
+            onBlur={applySmart}
             className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
           />
+          <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
           <Textarea
             aria-label="Опис"
             rows={2}

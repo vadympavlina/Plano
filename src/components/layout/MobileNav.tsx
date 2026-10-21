@@ -53,7 +53,7 @@ export function MobileNav() {
             <button
               type="button"
               aria-label="Швидко додати"
-              onClick={openQuickAdd}
+              onClick={() => openQuickAdd()}
               className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-surface shadow-pop transition-transform active:scale-95"
             >
               <Plus className="h-6 w-6" />
