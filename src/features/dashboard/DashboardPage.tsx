@@ -1,7 +1,8 @@
 import { useMemo, type ReactNode } from 'react';
 import { CategoryChip, CategoryIcon } from '@/components/common/CategoryMark';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, Flame, MapPin, Plus, Repeat } from 'lucide-react';
+import { ArrowRight, CalendarDays, Flame, MapPin, Plus, Repeat, X } from 'lucide-react';
+import { toast } from '@/components/ui/toast';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { CheckCircle, Progress } from '@/components/ui/misc';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import { haptic } from '@/lib/utils/haptic';
 import type { Habit } from '@/types';
 import { isOverdue, percent, sortTasks, taskDate, weekProgress } from '@/features/tasks/logic';
 import { expandEvents, occurrencesOnDay, upcomingOccurrences } from '@/features/calendar/logic';
-import { currentStreak, habitValue, isDone, isScheduled, nextHabitValue } from '@/features/habits/logic';
+import { currentStreak, habitValue, isBad, isDone, isScheduled, nextHabitValue, slipLimit } from '@/features/habits/logic';
 import { goalPercent } from '@/features/goals/logic';
 import { eventColor } from '@/features/calendar/items';
 import { QuickAdd } from './QuickAdd';
@@ -177,7 +178,6 @@ export default function DashboardPage() {
 
   const activeHabits = habits.filter((h) => !h.archived);
   const habitsToday = activeHabits.filter((h) => isScheduled(h, today));
-  const habitsDone = habitsToday.filter((h) => isDone(h, data.habitLogs, today)).length;
   const bestStreak = activeHabits.reduce((best, h) => Math.max(best, currentStreak(h, data.habitLogs, today)), 0);
   const activeGoals = goals.filter((g) => g.status === 'active').slice(0, 4);
 
@@ -461,46 +461,133 @@ export default function DashboardPage() {
     </Section>
   );
 
+  const goodToday = habitsToday.filter((h) => !isBad(h));
+  const badToday = habitsToday.filter(isBad);
+  const goodDone = goodToday.filter((h) => isDone(h, data.habitLogs, today)).length;
+  const badHolding = badToday.filter((h) => isDone(h, data.habitLogs, today)).length;
+
+  /** A bad habit today: clean, some slips but within the limit, or a slip past it. */
+  const badState = (h: Habit) => {
+    const value = habitValue(data.habitLogs, h.id, today);
+    const limit = slipLimit(h);
+    if (value > limit) return { tone: 'slip' as const, value, limit, label: 'Зрив' };
+    if (value > 0) return { tone: 'near' as const, value, limit, label: value === limit ? 'ліміт вичерпано' : `ще ${limit - value} до ліміту` };
+    const streak = currentStreak(h, data.habitLogs, today);
+    return { tone: 'clean' as const, value, limit, streak, label: streak > 0 ? `${streak} дн. без` : 'Сьогодні чисто' };
+  };
+  const BAD_TONE = {
+    clean: { box: 'border-solid border-success bg-success/10', badge: 'bg-success', text: 'text-success' },
+    near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning', text: 'text-warning' },
+    slip: { box: 'border-solid border-danger bg-danger/10', badge: 'bg-danger', text: 'text-danger' },
+  };
+  const tapBad = (h: Habit) => {
+    const before = habitValue(data.habitLogs, h.id, today);
+    const next = nextHabitValue(h, before);
+    tapHabit(h);
+    // A slip is easy to log by accident: offer a way back.
+    if (next > before)
+      toast.info(`Записано зрив: ${h.name}`, {
+        action: { label: 'Скасувати', onClick: () => void actions.habits.setValue(h.id, today, before).catch(() => undefined) },
+      });
+  };
+
   const habitsBlock = activeHabits.length > 0 && (
     <Section
       title="Звички"
       link={habitsToday.length ? undefined : { to: '/habits', label: 'Усі звички' }}
-      meta={habitsToday.length ? `${habitsDone} з ${habitsToday.length}` : undefined}
+      meta={goodToday.length ? `${goodDone} з ${goodToday.length}` : badToday.length ? `${badHolding} з ${badToday.length} тримаються` : undefined}
     >
       {habitsToday.length === 0 ? (
         <p className="text-[13px] text-muted">Сьогодні звичок не заплановано.</p>
       ) : (
-        <div className="grid grid-cols-4 gap-x-2 gap-y-3">
-          {habitsToday.slice(0, 8).map((h) => {
-            const value = habitValue(data.habitLogs, h.id, today);
-            const done = isDone(h, data.habitLogs, today);
-            const color = colorOf(h.color);
-            const ratio = h.goalType === 'count' && h.kind !== 'bad' ? value / Math.max(1, h.target) : done ? 1 : 0;
-            return (
-              <button
-                key={h.id}
-                type="button"
-                onClick={() => tapHabit(h)}
-                aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
-                className="group flex min-w-0 flex-col items-center gap-1.5"
-              >
-                <Ring value={ratio} size={52} stroke={4.5} color={color}>
-                  <span
-                    className={cn(
-                      'flex h-[38px] w-[38px] items-center justify-center rounded-full text-[18px] transition-colors',
-                      done ? '' : 'group-hover:bg-surface-2',
-                    )}
-                    style={done ? { backgroundColor: tint(color, 0.14) } : undefined}
+        <>
+          {goodToday.length > 0 && (
+            <div className="grid grid-cols-4 gap-x-2 gap-y-3">
+              {goodToday.slice(0, 8).map((h) => {
+                const value = habitValue(data.habitLogs, h.id, today);
+                const done = isDone(h, data.habitLogs, today);
+                const color = colorOf(h.color);
+                const ratio = h.goalType === 'count' ? value / Math.max(1, h.target) : done ? 1 : 0;
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => tapHabit(h)}
+                    aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
+                    className="group flex min-w-0 flex-col items-center gap-1.5"
                   >
-                    {h.icon}
+                    <Ring value={ratio} size={52} stroke={4.5} color={color}>
+                      <span
+                        className={cn(
+                          'flex h-[38px] w-[38px] items-center justify-center rounded-full text-[18px] transition-colors',
+                          done ? '' : 'group-hover:bg-surface-2',
+                        )}
+                        style={done ? { backgroundColor: tint(color, 0.14) } : undefined}
+                      >
+                        {h.icon}
+                      </span>
+                    </Ring>
+                    <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
+                    <span className={cn('-mt-1 text-[10.5px] tabular-nums', done ? 'text-success' : 'text-subtle')}>
+                      {h.goalType === 'count' ? `${value}/${h.target}` : done ? 'Готово' : '—'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {badToday.length > 0 && (
+            <div className={cn(goodToday.length > 0 && 'mt-4 border-t border-line pt-3')}>
+              {goodToday.length > 0 && (
+                <div className="mb-2.5 flex items-baseline justify-between gap-3">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-subtle">Без шкідливих</h3>
+                  <span className="text-[12px] text-muted">
+                    {badHolding} з {badToday.length} {plural(badHolding, ['тримається', 'тримаються', 'тримаються'])}
                   </span>
-                </Ring>
-                <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
-                <span className="-mt-1 text-[10.5px] tabular-nums text-subtle">{h.kind === 'bad' ? (done ? 'Без зривів' : 'Зрив') : h.goalType === 'count' ? `${value}/${h.target}` : done ? 'Готово' : '—'}</span>
-              </button>
-            );
-          })}
-        </div>
+                </div>
+              )}
+              <div className="grid grid-cols-4 gap-x-2 gap-y-3">
+                {badToday.slice(0, 8).map((h) => {
+                  const st = badState(h);
+                  const tone = BAD_TONE[st.tone];
+                  const badge = st.tone === 'slip' ? <X className="h-3 w-3" strokeWidth={3} /> : st.tone === 'near' ? `${st.value}/${st.limit}` : st.streak || null;
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => tapBad(h)}
+                      aria-label={`${h.name}: ${st.tone === 'slip' ? 'зрив сьогодні' : st.tone === 'near' ? `${st.value} з ${st.limit}, ${st.label}` : st.label}. Натисніть, щоб записати зрив`}
+                      title={h.goalType === 'count' ? 'Натисніть, щоб додати ще один' : st.tone === 'slip' ? 'Натисніть, щоб прибрати зрив' : 'Натисніть, якщо не втримались'}
+                      className="group flex min-w-0 flex-col items-center gap-1.5"
+                    >
+                      <span className={cn('relative flex h-[52px] w-[52px] items-center justify-center rounded-[16px] border-[2.5px] text-[18px] transition-transform group-active:scale-95', tone.box)}>
+                        {h.icon}
+                        {badge != null && (
+                          <span
+                            className={cn(
+                              'absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface px-1 text-[10px] font-bold tabular-nums text-white',
+                              tone.badge,
+                            )}
+                          >
+                            {badge}
+                          </span>
+                        )}
+                      </span>
+                      <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
+                      <span className={cn('-mt-1 w-full truncate text-center text-[10.5px]', tone.text)}>{st.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex items-center gap-3 border-t border-line pt-2.5 text-[11px] text-muted">
+                <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px] bg-success" />тримаюсь</span>
+                <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px] bg-warning" />біля ліміту</span>
+                <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px] bg-danger" />зрив</span>
+                <span className="ml-auto text-subtle">тап = зрив</span>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </Section>
   );
