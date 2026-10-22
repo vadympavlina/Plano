@@ -80,12 +80,3 @@ export function freeTime(items: ScheduleItem[], nowMinutes: number): FreeTime {
   if (lastEnd > nowMinutes && lastEnd <= DAY_END - 60) res.freeAfter = lastEnd;
   return res;
 }
-
-/** Index of the busiest day (most items), or -1 when every day is empty. Ties go to the earliest day. */
-export function busiestDay(counts: number[]): number {
-  let best = -1;
-  counts.forEach((c, i) => {
-    if (c > 0 && (best === -1 || c > counts[best])) best = i;
-  });
-  return best;
-}

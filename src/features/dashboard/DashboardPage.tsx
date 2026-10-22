@@ -12,7 +12,7 @@ import { useNow } from '@/hooks/useNow';
 import { useProfile } from '@/hooks/useProfile';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
-import { eachDateKey, formatDateKey, formatDuration, formatTime, greetingFor, minutesToTime, plural, relativeDayLabel, todayKey, weekRange } from '@/lib/date';
+import { formatDateKey, formatDuration, formatTime, greetingFor, minutesToTime, plural, relativeDayLabel, todayKey } from '@/lib/date';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { haptic } from '@/lib/utils/haptic';
@@ -24,7 +24,7 @@ import { goalPercent } from '@/features/goals/logic';
 import { eventColor } from '@/features/calendar/items';
 import { QuickAdd } from './QuickAdd';
 import { WeekBoard } from './WeekBoard';
-import { buildSchedule, busiestDay, freeTime, nextUpLabel, nowLineIndex } from './logic';
+import { buildSchedule, freeTime, nextUpLabel, nowLineIndex } from './logic';
 
 const panel = 'rounded-[20px] border border-line/60 bg-surface shadow-soft';
 
@@ -147,35 +147,6 @@ export default function DashboardPage() {
     return groups.slice(0, 3);
   }, [events, now, today]);
 
-  const weekRangeNow = useMemo(() => weekRange(today, settings.weekStartsOn), [today, settings.weekStartsOn]);
-  // Events and tasks of the week — not redone when only a habit is ticked.
-  const weekLoad = useMemo(() => {
-    const days = eachDateKey(weekRangeNow.start, weekRangeNow.end);
-    const occ = expandEvents(events, weekRangeNow.start, weekRangeNow.end);
-    const tasksPerDay = new Map<string, number>();
-    for (const t of tasks) {
-      const d = taskDate(t);
-      if (d && d >= weekRangeNow.start && d <= weekRangeNow.end && t.status !== 'cancelled') tasksPerDay.set(d, (tasksPerDay.get(d) ?? 0) + 1);
-    }
-    const eventsPerDay = days.map((d) => occurrencesOnDay(occ, d).length);
-    const perDay = days.map((d, i) => eventsPerDay[i] + (tasksPerDay.get(d) ?? 0));
-    const busy = busiestDay(perDay);
-    return {
-      eventCount: eventsPerDay.reduce((a, b) => a + b, 0),
-      freeDays: perDay.filter((n) => n === 0).length,
-      busiest: busy >= 0 && perDay[busy] > 1 ? days[busy] : undefined,
-    };
-  }, [events, tasks, weekRangeNow]);
-  const habitChecks = useMemo(
-    () =>
-      Object.values(data.habitLogs ?? {}).reduce(
-        (n, byDate) => n + Object.entries(byDate).filter(([d, v]) => d >= weekRangeNow.start && d <= weekRangeNow.end && v > 0).length,
-        0,
-      ),
-    [data.habitLogs, weekRangeNow],
-  );
-  const week = { ...weekLoad, habitChecks };
-
   const activeHabits = habits.filter((h) => !h.archived);
   const habitsToday = activeHabits.filter((h) => isScheduled(h, today));
   const bestStreak = activeHabits.reduce((best, h) => Math.max(best, currentStreak(h, data.habitLogs, today)), 0);
@@ -277,28 +248,6 @@ export default function DashboardPage() {
         </div>
         <Progress value={percent(weekCounts.done, weekCounts.total)} color="rgb(var(--primary))" label="Задачі цього тижня" />
       </div>
-    </Link>
-  );
-
-  const weekStats: [number, [string, string, string]][] = [
-    [week.eventCount, ['подія', 'події', 'подій']],
-    [weekCounts.done, ['задача виконана', 'задачі виконано', 'задач виконано']],
-    activeHabits.length > 0 ? [week.habitChecks, ['відмітка звичок', 'відмітки звичок', 'відміток звичок']] : [week.freeDays, ['вільний день', 'вільні дні', 'вільних днів']],
-  ];
-  const weekSummary = (
-    <Link to="/calendar?view=week" className={cn(panel, 'flex min-h-[120px] flex-col p-5 transition-colors hover:border-line')}>
-      <p className="text-[15px] font-semibold">Підсумок тижня</p>
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-        {weekStats.map(([v, forms]) => (
-          <div key={forms[2]} className="min-w-0 rounded-xl bg-surface-2 px-1 py-2.5">
-            <p className="text-[19px] font-bold leading-tight tabular-nums">{v}</p>
-            <p className="truncate text-[11.5px] text-muted">{plural(v, forms)}</p>
-          </div>
-        ))}
-      </div>
-      <p className="mt-auto truncate pt-3 text-[12.5px] text-muted">
-        {week.busiest ? `Найзавантаженіший день — ${formatDateKey(week.busiest, 'EEEE').toLowerCase()}` : 'Тиждень поки спокійний'}
-      </p>
     </Link>
   );
 
@@ -491,14 +440,16 @@ export default function DashboardPage() {
       });
   };
 
-  const habitsBlock = activeHabits.length > 0 && (
+  // Top row, where the week summary used to be: always there, with a way in when empty.
+  const habitsBlock = (
     <Section
       title="Звички"
-      link={habitsToday.length ? undefined : { to: '/habits', label: 'Усі звички' }}
+      className="flex-1"
+      link={habitsToday.length ? undefined : { to: '/habits', label: activeHabits.length ? 'Усі звички' : 'Створити' }}
       meta={goodToday.length ? `${goodDone} з ${goodToday.length}` : badToday.length ? `${badHolding} з ${badToday.length} тримаються` : undefined}
     >
       {habitsToday.length === 0 ? (
-        <p className="text-[13px] text-muted">Сьогодні звичок не заплановано.</p>
+        <p className="text-[13px] text-muted">{activeHabits.length ? 'Сьогодні звичок не заплановано.' : 'Додайте звичку, щоб бачити її тут щодня.'}</p>
       ) : (
         <>
           {goodToday.length > 0 && (
@@ -656,10 +607,13 @@ export default function DashboardPage() {
 
       <QuickAdd className="mb-4" />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        <div className="min-w-0 sm:col-span-2 lg:col-span-1">{nextUp}</div>
-        <div className="flex min-w-0 [&>a]:flex-1">{progress}</div>
-        <div className="flex min-w-0 [&>a]:flex-1">{weekSummary}</div>
+      {/* Wide screens: «next up» over today's tasks on the left, habits beside them at the same height. */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+          <div className="min-w-0">{nextUp}</div>
+          <div className="flex min-w-0 lg:flex-1 [&>a]:flex-1">{progress}</div>
+        </div>
+        <div className="flex min-w-0 sm:col-span-2 lg:col-span-1">{habitsBlock}</div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -667,7 +621,6 @@ export default function DashboardPage() {
         <div className="min-w-0 space-y-4 lg:col-span-5">
           {aheadBlock}
           {untimedBlock}
-          {habitsBlock}
           {goalsBlock}
         </div>
       </div>

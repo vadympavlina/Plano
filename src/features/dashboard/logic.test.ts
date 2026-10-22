@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CalendarEvent, Task } from '@/types';
 import type { EventOccurrence } from '@/features/calendar/logic';
-import { buildSchedule, busiestDay, freeTime, nextUpLabel, nowLineIndex } from './logic';
+import { buildSchedule, freeTime, nextUpLabel, nowLineIndex } from './logic';
 
 const ev = (id: string, startTime?: string, endTime?: string, allDay = false): CalendarEvent =>
   ({ id, title: id, date: '2026-10-15', allDay, startTime, endTime, exdates: [], source: 'plano', createdAt: '', updatedAt: '' }) as CalendarEvent;
@@ -54,12 +54,5 @@ describe('freeTime', () => {
     expect(freeTime(items, 19 * 60)).toEqual({});
     expect(freeTime(buildSchedule([occ(ev('late', '20:00', '21:30'))], []), 12 * 60).freeAfter).toBeUndefined();
     expect(freeTime([], 12 * 60)).toEqual({});
-  });
-});
-
-describe('busiestDay', () => {
-  it('picks the day with most items, earliest on ties', () => {
-    expect(busiestDay([1, 3, 0, 3])).toBe(1);
-    expect(busiestDay([0, 0])).toBe(-1);
   });
 });
