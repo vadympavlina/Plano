@@ -5,6 +5,8 @@ import type { ThemePreference } from '@/types';
 export function applyTheme(theme: ThemePreference) {
   const dark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', dark);
+  // The glass components read the theme from data-theme.
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
   // Status bar / browser chrome follows the app theme, not just the OS one.
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
     m.removeAttribute('media');

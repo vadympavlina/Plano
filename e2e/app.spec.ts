@@ -116,3 +116,22 @@ test('task form: dates, time and category are read from the title', async ({ pag
   await expect(page.getByText('Заповнено з назви')).toBeVisible();
   await expect(page.getByLabel('Час початку')).toContainText('15:00');
 });
+
+test('phone tab bar: tabs switch sections, «Більше» opens the sheet', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'the tab bar is for phones');
+  await start(page);
+  const nav = page.getByRole('navigation', { name: 'Головна навігація' });
+  await nav.getByRole('link', { name: 'Календар' }).tap();
+  await expect(page).toHaveURL(/#\/calendar/);
+  await nav.getByRole('link', { name: 'Задачі' }).tap();
+  await expect(page).toHaveURL(/#\/tasks/);
+  await nav.getByRole('tab', { name: 'Більше' }).tap();
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+test('calendar: the glass view switch changes the view', async ({ page }) => {
+  await start(page);
+  await page.goto('/#/calendar?view=week');
+  await page.getByRole('tablist', { name: 'Вигляд календаря' }).filter({ visible: true }).getByRole('tab', { name: 'Місяць' }).click();
+  await expect(page).toHaveURL(/view=month/);
+});

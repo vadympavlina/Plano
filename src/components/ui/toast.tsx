@@ -95,7 +95,7 @@ export function Toaster() {
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(80px+env(safe-area-inset-bottom))] z-[60] flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:right-6 lg:left-auto lg:items-end"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(84px+max(12px,env(safe-area-inset-bottom)))] z-[60] flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:right-6 lg:left-auto lg:items-end"
     >
       {list.map((t) => (
         <ToastView key={t.id} t={t} />

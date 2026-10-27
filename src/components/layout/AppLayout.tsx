@@ -86,7 +86,7 @@ function LayoutInner() {
           </div>
         )}
         <AppHeader />
-        <main className="min-w-0 flex-1 pb-[calc(84px+env(safe-area-inset-bottom))] pl-safe pr-safe lg:pb-10">
+        <main className="min-w-0 flex-1 pb-[calc(88px+max(12px,env(safe-area-inset-bottom)))] pl-safe pr-safe lg:pb-10">
           {error && !ready ? (
             <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
           ) : !ready ? (

@@ -1,3 +1,4 @@
+import { Glass } from '@/components/ui/glass';
 import { useLocation } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,16 +30,18 @@ export function AppHeader() {
         <span className="sr-only">{title}</span>
 
         <div className="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            onClick={openSearch}
-            className="hidden h-10 w-[280px] items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm text-subtle transition-colors hover:border-subtle/50 md:flex"
-            aria-label="Пошук"
-          >
-            <Search className="h-4 w-4" />
-            <span className="flex-1 text-left">Пошук…</span>
-            <Kbd>{isMac ? '⌘' : 'Ctrl'} K</Kbd>
-          </button>
+          <Glass className="hidden h-10 w-[280px] rounded-full md:block">
+            <button
+              type="button"
+              onClick={openSearch}
+              className="flex h-full w-full items-center gap-2 rounded-full px-3.5 text-sm text-subtle transition-colors hover:text-muted"
+              aria-label="Пошук"
+            >
+              <Search className="h-4 w-4" />
+              <span className="flex-1 text-left">Пошук…</span>
+              <Kbd>{isMac ? '⌘' : 'Ctrl'} K</Kbd>
+            </button>
+          </Glass>
           <Button variant="ghost" size="icon" className="md:hidden" aria-label="Пошук" onClick={openSearch}>
             <Search className="h-5 w-5" />
           </Button>

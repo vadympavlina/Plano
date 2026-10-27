@@ -1,9 +1,10 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CheckCircle, Segmented } from '@/components/ui/misc';
+import { Card, CheckCircle } from '@/components/ui/misc';
+import { GlassButton, GlassTabs } from '@/components/ui/glass';
 import { useActions } from '@/hooks/useActions';
 import { solidTint } from '@/lib/utils/colors';
 import { taskDate } from '@/features/tasks/logic';
@@ -129,14 +130,16 @@ export default function CalendarPage() {
   );
 
   const viewSwitch = (className?: string, stretch?: boolean) => (
-    <Segmented
-      ariaLabel="Вигляд календаря"
-      size="sm"
-      stretch={stretch}
-      className={className}
+    <GlassTabs
+      fill={stretch}
+      wrapperClassName={className}
+      className={stretch ? undefined : className}
+      tabHeight={32}
+      aria-label="Вигляд календаря"
       value={view}
-      onChange={(v) => navigate({ view: v })}
-      options={[
+      onValueChange={(v) => navigate({ view: v as CalendarView })}
+      style={stretch ? undefined : ({ '--lg-tab-width': '74px' } as CSSProperties)}
+      items={[
         { value: 'day', label: 'День' },
         { value: 'week', label: 'Тиждень' },
         { value: 'month', label: 'Місяць' },
@@ -161,13 +164,9 @@ export default function CalendarPage() {
     <div className="flex w-full flex-col px-4 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-6">
       {/* Desktop toolbar */}
       <div className="mb-3 hidden items-center gap-2 lg:flex">
-        <div className="flex items-center gap-1">
-          <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-1.5">
+          <GlassButton aria-label="Назад" onClick={() => step(-1)} icon={<ChevronLeft />} />
+          <GlassButton aria-label="Вперед" onClick={() => step(1)} icon={<ChevronRight />} />
         </div>
         {datePicker(
           titleFor(view, anchor, settings.weekStartsOn),
@@ -175,18 +174,18 @@ export default function CalendarPage() {
         )}
         <div className="ml-auto flex items-center gap-2">
           <GoogleSyncButton />
-          <Button variant="outline" size="sm" onClick={() => navigate({ date: today })} disabled={anchor === today}>
+          <GlassButton onClick={() => navigate({ date: today })} disabled={anchor === today}>
             Сьогодні
-          </Button>
+          </GlassButton>
           {viewSwitch()}
-          <Button variant="dark" size="sm" onClick={addEvent}>
-            <Plus className="h-4 w-4" /> Подія
-          </Button>
+          <GlassButton variant="filled" tint="rgb(var(--ink))" onClick={addEvent} icon={<Plus className="!h-4 !w-4" />} className="dark:!text-bg">
+            Подія
+          </GlassButton>
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 gap-4">
-        <Card className="flex h-[calc(100dvh-150px-env(safe-area-inset-bottom)-env(safe-area-inset-top))] min-h-[460px] min-w-0 flex-1 flex-col overflow-hidden lg:h-auto lg:min-h-0">
+        <Card className="flex h-[calc(100dvh-154px-max(12px,env(safe-area-inset-bottom))-env(safe-area-inset-top))] min-h-[460px] min-w-0 flex-1 flex-col overflow-hidden lg:h-auto lg:min-h-0">
           {/* Phone & tablet toolbar */}
           <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:px-4 lg:hidden">
             <div className="flex min-w-0 flex-1 basis-0 items-center sm:flex-none sm:basis-auto">

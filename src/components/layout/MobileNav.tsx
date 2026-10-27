@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useState, type CSSProperties } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, MoreHorizontal, Plus } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cn } from '@/lib/utils/cn';
+import { GlassButton, GlassTabs, RouterLink } from '@/components/ui/glass';
 import { NAV_ITEMS } from './nav';
 import { useUI } from '@/app/providers/UIProvider';
 import { useSignOut } from './UserMenu';
@@ -12,22 +13,12 @@ import { useProfile } from '@/hooks/useProfile';
 const PRIMARY = NAV_ITEMS.filter((i) => ['/', '/calendar', '/tasks'].includes(i.to));
 const MORE = NAV_ITEMS.filter((i) => !['/', '/calendar', '/tasks'].includes(i.to));
 
-function Tab({ to, label, icon: Icon }: (typeof NAV_ITEMS)[number]) {
+function TabLabel({ label, icon: Icon }: { label: string; icon: (typeof NAV_ITEMS)[number]['icon'] }) {
   return (
-    <NavLink
-      to={to}
-      end={to === '/'}
-      className={({ isActive }) =>
-        cn('flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-medium', isActive ? 'text-ink' : 'text-subtle')
-      }
-    >
-      {({ isActive }) => (
-        <>
-          <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.2 : 1.8} />
-          {label}
-        </>
-      )}
-    </NavLink>
+    <span className="flex flex-col items-center gap-0.5 text-[10.5px] font-semibold leading-none">
+      <Icon className="h-[21px] w-[21px]" strokeWidth={2} />
+      {label}
+    </span>
   );
 }
 
@@ -39,36 +30,35 @@ export function MobileNav() {
   const signOut = useSignOut();
   const profile = useProfile();
   const moreActive = MORE.some((i) => pathname.startsWith(i.to));
+  const current = moreActive ? 'more' : (PRIMARY.find((i) => (i.to === '/' ? pathname === '/' : pathname.startsWith(i.to)))?.to ?? null);
 
   return (
     <>
-      <nav
-        aria-label="Головна навігація"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 pb-safe backdrop-blur-md lg:hidden"
-      >
-        <div className="mx-auto flex h-[60px] max-w-lg items-stretch px-2">
-          <Tab {...PRIMARY[0]} />
-          <Tab {...PRIMARY[1]} />
-          <div className="flex flex-1 items-center justify-center">
-            <button
-              type="button"
-              aria-label="Швидко додати"
-              onClick={() => openQuickAdd()}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-surface shadow-pop transition-transform active:scale-95"
-            >
-              <Plus className="h-6 w-6" />
-            </button>
-          </div>
-          <Tab {...PRIMARY[2]} />
-          <button
-            type="button"
-            onClick={() => setMoreOpen(true)}
-            className={cn('flex flex-1 flex-col items-center justify-center gap-1 py-1.5 text-[10.5px] font-medium', moreActive ? 'text-ink' : 'text-subtle')}
-            aria-haspopup="dialog"
-          >
-            <MoreHorizontal className="h-[22px] w-[22px]" />
-            Більше
-          </button>
+      {/* A floating glass bar, with the add button beside it (as on iOS). */}
+      <nav aria-label="Головна навігація" className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(12px,env(safe-area-inset-bottom))] lg:hidden">
+        <div className="pointer-events-auto mx-auto flex max-w-lg items-center gap-2.5">
+          <GlassTabs
+            fill
+            wrapperClassName="flex-1"
+            tabHeight={54}
+            aria-label="Розділи"
+            link={RouterLink}
+            value={current}
+            onValueChange={(v) => v === 'more' && setMoreOpen(true)}
+            style={{ '--lg-lens-grow-x': '10px', '--lg-lens-grow-y': '8px' } as CSSProperties}
+            items={[
+              ...PRIMARY.map((i) => ({ value: i.to, href: i.to, label: <TabLabel label={i.label} icon={i.icon} /> })),
+              { value: 'more', label: <TabLabel label="Більше" icon={MoreHorizontal} /> },
+            ]}
+          />
+          <GlassButton
+            variant="filled"
+            tint="var(--glass-add)"
+            aria-label="Швидко додати"
+            onClick={() => openQuickAdd()}
+            icon={<Plus className="!h-6 !w-6" />}
+            className="!h-[62px] !w-[62px] shrink-0 !rounded-full shadow-pop"
+          />
         </div>
       </nav>
 

@@ -155,3 +155,14 @@
     background-repeat: no-repeat;
   }
 }
+
+/* Liquid Glass (glisse): its colours follow the app's accent and theme. Kept outside
+   @layer so they win over the library's own (unlayered) defaults. */
+:root {
+  --lg-fill: rgb(var(--primary));
+  --lg-on: rgb(var(--success));
+  --glass-add: rgb(var(--ink));
+}
+.dark {
+  --glass-add: rgb(var(--primary));
+}
