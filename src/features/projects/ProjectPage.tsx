@@ -169,7 +169,7 @@ export default function ProjectPage() {
             </Button>
           </div>
         </div>
-        {project.description && <p className="mt-4 max-w-3xl whitespace-pre-wrap text-[14px] leading-relaxed text-muted">{project.description}</p>}
+        {project.description && <p className="mt-4 max-w-3xl select-text whitespace-pre-wrap text-[14px] leading-relaxed text-muted">{project.description}</p>}
 
         <div className="mt-5">
           <div className="mb-1.5 flex items-baseline justify-between">

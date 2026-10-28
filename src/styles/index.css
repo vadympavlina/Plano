@@ -233,3 +233,25 @@
 .lg-tab-copy {
   font-size: 13.5px;
 }
+
+/* An app, not a page: long presses and drags don't select text or pick up links and
+   images by accident, and iOS shows no copy/share callout. Fields and longer texts
+   (notes, descriptions) stay selectable so they can still be copied. */
+html {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input,
+textarea,
+[contenteditable]:not([contenteditable='false']),
+.prose-note,
+.select-text {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+a:not([draggable='true']),
+img:not([draggable='true']) {
+  -webkit-user-drag: none;
+}

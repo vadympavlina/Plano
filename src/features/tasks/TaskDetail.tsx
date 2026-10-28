@@ -132,7 +132,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
           </div>
         </div>
 
-        {task.description && <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-muted">{task.description}</p>}
+        {task.description && <p className="mt-4 select-text whitespace-pre-wrap text-sm leading-relaxed text-muted">{task.description}</p>}
 
         <div className="mt-5 space-y-0.5 border-y border-line py-3">
           <Row icon={<CalendarDays />} label="Термін">
@@ -246,7 +246,7 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
         {task.notes && (
           <section className="mt-5">
             <h3 className="mb-2 text-sm font-semibold">Нотатки</h3>
-            <p className="whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">{task.notes}</p>
+            <p className="select-text whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">{task.notes}</p>
           </section>
         )}
 
