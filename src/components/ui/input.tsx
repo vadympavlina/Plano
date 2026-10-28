@@ -1,21 +1,45 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { forwardRef, useId, type FormEventHandler, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { GlassInput } from './glass';
 import { cn } from '@/lib/utils/cn';
 
-const fieldBase =
-  'w-full rounded-xl border border-line bg-surface px-3 text-sm text-ink placeholder:text-subtle transition-colors hover:border-subtle/60 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15';
-
-export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
-  { className, ...props },
+/**
+ * A glass field (glisse). It wraps the input in its own element, so `className` styles
+ * the field and the usual props (id, aria, value, onChange…) go to the input inside.
+ */
+export const Input = forwardRef<
+  HTMLInputElement,
+  InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode; onValueChange?: (value: string) => void }
+>(function Input(
+  { className, onChange, value, defaultValue, ...props },
   ref,
 ) {
-  return <input ref={ref} className={cn(fieldBase, 'h-10', className)} {...props} />;
+  return (
+    <GlassInput
+      ref={ref}
+      className={cn('ui-field h-10', className)}
+      value={value == null ? undefined : String(value)}
+      defaultValue={defaultValue == null ? undefined : String(defaultValue)}
+      // glisse keeps its own onChange for the field's state; ours listens to the same keystrokes.
+      onInput={onChange as unknown as FormEventHandler<HTMLInputElement>}
+      {...props}
+    />
+  );
 });
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
   { className, ...props },
   ref,
 ) {
-  return <textarea ref={ref} className={cn(fieldBase, 'min-h-[84px] resize-y py-2.5 leading-relaxed', className)} {...props} />;
+  return (
+    <textarea
+      ref={ref}
+      className={cn(
+        'glass-control w-full min-h-[84px] resize-y rounded-[18px] px-3.5 py-2.5 text-sm leading-relaxed text-ink placeholder:text-subtle focus:outline-none disabled:cursor-not-allowed disabled:opacity-60',
+        className,
+      )}
+      {...props}
+    />
+  );
 });
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {

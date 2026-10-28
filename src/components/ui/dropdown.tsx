@@ -13,7 +13,7 @@ export function DropdownMenuContent({ className, align = 'end', sideOffset = 6, 
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'z-50 min-w-[200px] overflow-hidden rounded-xl border border-line bg-surface p-1 text-sm text-ink shadow-pop data-[state=open]:animate-scale-in',
+          'glass-panel z-50 min-w-[200px] overflow-hidden rounded-[20px] p-1.5 text-sm text-ink data-[state=open]:animate-scale-in',
           className,
         )}
         {...props}
@@ -32,7 +32,7 @@ export function DropdownMenuItem({
   return (
     <DM.Item
       className={cn(
-        'flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-2.5 py-2 outline-none transition-colors data-[disabled]:pointer-events-none data-[highlighted]:bg-surface-2 data-[disabled]:opacity-50 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-muted',
+        'flex cursor-pointer select-none items-center gap-2.5 rounded-[14px] px-3 py-2 outline-none transition-colors data-[disabled]:pointer-events-none data-[highlighted]:bg-[var(--lg-highlight)] data-[disabled]:opacity-50 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-muted',
         danger && 'text-danger [&_svg]:text-danger',
         className,
       )}

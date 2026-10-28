@@ -28,12 +28,13 @@ export function resolveLinks(p: ParsedQuick, categories: Category[], projects: P
  * The same reading as quick capture, for the title field of the full task and event
  * forms: «Звіт у пʼятницю о 15 #робота» → what to fill in and a short summary.
  */
-export function useSmartTitle(title: string) {
+export function useSmartTitle(title: string | undefined) {
   const today = useToday();
   const settings = useSettings();
   const { categories, projects } = useCollections();
   return useMemo(() => {
-    const p = parseQuick(title, today);
+    // A draft from «Детальніше…» may have no title yet.
+    const p = parseQuick(title ?? '', today);
     const { category, project, tags } = resolveLinks(p, categories, projects);
     const end = p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined);
     const summary = [

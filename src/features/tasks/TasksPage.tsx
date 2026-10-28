@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { CategoryMark, categoryIcon } from '@/components/common/CategoryMark';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, Columns3, Inbox, Layers, List, Plus, Search, Sun, X } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Columns3, Inbox, Layers, List, Plus, Search, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/common/States';
@@ -177,15 +177,7 @@ export default function TasksPage() {
   );
 
   const searchBox = (
-    <div className="relative">
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
-      <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9 pl-9" />
-      {query && (
-        <button type="button" aria-label="Очистити пошук" className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-subtle hover:text-ink" onClick={() => setQuery('')}>
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
+    <Input type="search" icon={<Search />} value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9" />
   );
 
   const modeSwitch = boardAllowed && (

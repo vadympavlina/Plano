@@ -79,10 +79,7 @@ export default function NotesPage() {
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <div className="relative mb-2">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
-          <Input className="h-9 pl-9" placeholder="Пошук нотаток" aria-label="Пошук нотаток" value={query} onChange={(e) => setQuery(e.target.value)} />
-        </div>
+        <Input type="search" icon={<Search />} className="mb-2 h-9" placeholder="Пошук нотаток" aria-label="Пошук нотаток" value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} />
         {allTags.length > 0 && (
           <div className="no-scrollbar mb-1 flex gap-1.5 overflow-x-auto pb-1">
             {['', ...allTags].map((t) => (

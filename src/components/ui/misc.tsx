@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { GlassTabs } from './glass';
 import { tint } from '@/lib/utils/colors';
 import { haptic } from '@/lib/utils/haptic';
 
@@ -99,6 +100,7 @@ export function CheckCircle({
   );
 }
 
+/** Segmented control: glass tabs (glisse); with `stretch` the tabs share the full width. */
 export function Segmented<T extends string>({
   value,
   onChange,
@@ -118,30 +120,24 @@ export function Segmented<T extends string>({
   stretch?: boolean;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex items-center gap-0.5 rounded-xl bg-surface-2 p-1', className)}>
-      {options.map((o) => (
-        <button
-          key={o.value}
-          role="tab"
-          type="button"
-          aria-selected={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={cn(
-            'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-all',
-            stretch && 'flex-1',
-            size === 'sm' ? 'px-2.5 py-1 text-xs' : 'px-3 py-1.5 text-[13px]',
-            value === o.value ? 'bg-surface text-ink shadow-soft' : 'text-muted hover:text-ink',
-          )}
-        >
-          {o.label}
-          {o.count != null && (
-            <span className={cn('rounded px-1 text-[11px] tabular-nums', value === o.value ? 'bg-surface-2 text-muted' : 'text-subtle')}>
-              {o.count}
-            </span>
-          )}
-        </button>
-      ))}
-    </div>
+    <GlassTabs
+      fill={stretch}
+      fit={!stretch}
+      small={size === 'sm'}
+      wrapperClassName={className}
+      aria-label={ariaLabel}
+      value={value}
+      onValueChange={(v) => onChange(v as T)}
+      items={options.map((o) => ({
+        value: o.value,
+        label: (
+          <span className="inline-flex items-center gap-1.5 font-medium">
+            {o.label}
+            {o.count != null && <span className="text-[11px] tabular-nums opacity-60">{o.count}</span>}
+          </span>
+        ),
+      }))}
+    />
   );
 }
 

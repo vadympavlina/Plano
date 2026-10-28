@@ -137,7 +137,7 @@ export default function TaskFormDialog({
             placeholder="Додайте опис"
             value={draft.description ?? ''}
             onChange={(e) => patch({ description: e.target.value })}
-            className="mt-1 min-h-0 resize-none border-0 px-0 text-[14px] text-muted shadow-none hover:border-0 focus:ring-0"
+            className="mt-1 min-h-0 resize-none rounded-none bg-transparent px-0 text-[14px] text-muted shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
           />
 
           <div className="mt-3 flex flex-wrap items-center gap-1.5">

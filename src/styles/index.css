@@ -166,3 +166,70 @@
 .dark {
   --glass-add: rgb(var(--primary));
 }
+
+/* On solid cards and dialogs there is nothing to see through, so glass takes a soft grey
+   there (iOS does the same on sheets); over the page it stays clear. */
+.bg-surface {
+  --lg-glass: rgb(118 118 128 / 0.1);
+  --lg-glass-active: rgb(118 118 128 / 0.17);
+}
+.dark .bg-surface {
+  --lg-glass: rgb(118 118 128 / 0.22);
+  --lg-glass-active: rgb(118 118 128 / 0.32);
+}
+
+@layer components {
+/* Glass for our own controls (select/date/time triggers, chips, textareas): the same
+   fill, edge and blur as glisse's .lg-glass, without its refraction. */
+:where(.glass-control) {
+  background-color: var(--lg-glass);
+  box-shadow: inset 0 0 0 0.5px var(--lg-edge), 0 1px 3px var(--lg-drop);
+  -webkit-backdrop-filter: blur(3px) saturate(1.5);
+  backdrop-filter: blur(3px) saturate(1.5);
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+:where(.glass-control:hover, .glass-control[data-state='open']) {
+  background-color: var(--lg-glass-active);
+}
+:where(textarea.glass-control:focus),
+.ui-field:focus-within {
+  box-shadow: inset 0 0 0 1.5px rgb(var(--primary) / 0.55), 0 0 0 3px rgb(var(--primary) / 0.14);
+}
+
+/* Menus, popovers, select lists: glisse's frosted menu surface. */
+.glass-panel {
+  background: var(--lg-surface);
+  -webkit-backdrop-filter: blur(22px) saturate(1.9);
+  backdrop-filter: blur(22px) saturate(1.9);
+  box-shadow: inset 0 0 0 0.5px var(--lg-surface-edge), 0 12px 40px var(--lg-shadow);
+}
+
+/* glisse Input as our field: any width, our text size, errors in red. */
+.ui-field.lg-input {
+  max-width: none;
+  border-radius: 9999px;
+}
+.ui-field.lg-input input {
+  font-size: 14px;
+  color: rgb(var(--ink));
+}
+.ui-field.lg-input input::placeholder {
+  color: rgb(var(--subtle));
+}
+.ui-field.text-center input {
+  text-align: center;
+}
+.ui-field:has(input[aria-invalid='true']) {
+  box-shadow: inset 0 0 0 1.5px rgb(var(--danger) / 0.7), 0 0 0 3px rgb(var(--danger) / 0.12);
+}
+}
+
+/* Small segmented controls. */
+.glass-tabs-sm .lg-tab,
+.glass-tabs-sm .lg-tab-copy {
+  font-size: 12.5px;
+}
+.lg-tab,
+.lg-tab-copy {
+  font-size: 13.5px;
+}

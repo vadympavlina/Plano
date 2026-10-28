@@ -28,6 +28,7 @@ import { disablePush, enablePush, needsHomeScreen, pushEnabledHere, pushSupporte
 import { deviceTimeZone, formatDateKey, plural, todayKey } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
+import { GlassSwitch } from '@/components/ui/glass';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
 import type { AccentColor, Category, Settings, ThemePreference } from '@/types';
 import { buildExport, validateImport, type ImportResult } from './dataTransfer';
@@ -505,15 +506,7 @@ function NotificationsSection() {
         />
       </Row>
       <Row label="Задачі з часом" hint="У час початку задачі.">
-        <Segmented
-          ariaLabel="Нагадування про задачі"
-          value={s.remindTasks ? 'on' : 'off'}
-          onChange={(v) => set({ remindTasks: v === 'on' })}
-          options={[
-            { value: 'on', label: 'Так' },
-            { value: 'off', label: 'Ні' },
-          ]}
-        />
+        <GlassSwitch aria-label="Нагадування про задачі" checked={s.remindTasks} onCheckedChange={(remindTasks) => set({ remindTasks })} />
       </Row>
       <Row label="Ранковий підсумок" hint="Скільки задач і подій сьогодні.">
         <Select aria-label="Ранковий підсумок" className="w-[170px]" value={s.digestAt} onChange={(digestAt) => set({ digestAt })} options={times('Вимкнено')} />

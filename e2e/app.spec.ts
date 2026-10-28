@@ -135,3 +135,12 @@ test('calendar: the glass view switch changes the view', async ({ page }) => {
   await page.getByRole('tablist', { name: 'Вигляд календаря' }).filter({ visible: true }).getByRole('tab', { name: 'Місяць' }).click();
   await expect(page).toHaveURL(/view=month/);
 });
+
+test('quick add: «Детальніше…» with an empty title opens the full event form', async ({ page }) => {
+  await start(page);
+  await page.goto('/#/calendar?view=week');
+  await page.getByRole('button', { name: /поді[яю]/i }).filter({ visible: true }).first().click();
+  await page.getByRole('button', { name: 'Детальніше…' }).click();
+  await expect(page.getByRole('dialog')).toContainText('Нова подія');
+  await expect(page.getByRole('switch', { name: 'Весь день' })).toBeVisible();
+});

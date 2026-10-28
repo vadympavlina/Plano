@@ -62,7 +62,8 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
   /** «Детальніше»: the full form with what was typed and picked so far. */
   const openFull = () => {
     const { p, kind, date, end, category, project } = c;
-    const title = p.title || undefined;
+    // An empty string, not undefined: the forms spread these over their blank draft.
+    const title = p.title;
     onDone?.();
     if (kind === 'event')
       openEventForm({

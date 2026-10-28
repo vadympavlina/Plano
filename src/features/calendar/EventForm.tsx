@@ -12,6 +12,7 @@ import { RepeatChip } from '@/components/common/RepeatChip';
 import { projectOptions } from '@/components/common/options';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
+import { GlassSwitch } from '@/components/ui/glass';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { ReminderSelect, reminderLabel } from '@/features/reminders/ReminderSelect';
@@ -259,19 +260,11 @@ export default function EventFormDialog({
                   ))}
                 </>
               )}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={draft.allDay}
-                onClick={() => toggleAllDay(!draft.allDay)}
-                className={cn(
-                  'ml-auto inline-flex h-7 shrink-0 items-center gap-1.5 rounded-lg border px-2 text-[12.5px] font-medium transition-colors',
-                  draft.allDay ? 'border-accent bg-accent text-surface' : 'border-line bg-surface text-muted hover:text-ink',
-                )}
-              >
+              <label className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-2 text-[12.5px] font-medium text-muted">
                 <Sun className="h-3.5 w-3.5" />
                 Весь день
-              </button>
+                <GlassSwitch aria-label="Весь день" checked={draft.allDay} onCheckedChange={toggleAllDay} />
+              </label>
             </div>
 
             <div className="mt-2 border-t border-line/70 pt-2">
@@ -364,7 +357,7 @@ export default function EventFormDialog({
                 placeholder="Нотатки"
                 value={draft.description ?? ''}
                 onChange={(e) => patch({ description: e.target.value })}
-                className="min-h-[60px] resize-none border-transparent bg-transparent px-0 py-2 shadow-none hover:border-transparent focus:border-transparent focus:ring-0"
+                className="min-h-[60px] resize-none rounded-none bg-transparent px-0 py-2 shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
               />
             </Row>
           </div>
