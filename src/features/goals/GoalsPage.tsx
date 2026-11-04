@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Pencil, Plus, Target, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Target, Trash2 } from 'lucide-react';
+import { Ring } from '@/features/habits/parts';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/misc';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
@@ -65,17 +66,17 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
   );
 }
 
-const COLS = 'md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.4fr)_190px_120px_auto]';
 const PACE_PILL: Record<Pace, string> = {
-  done: 'bg-success/10 text-success',
-  ahead: 'bg-success/10 text-success',
+  done: 'bg-success/12 text-success',
+  ahead: 'bg-success/12 text-success',
   on_track: 'bg-primary/10 text-primary',
   behind: 'bg-warning/15 text-warning',
   overdue: 'bg-danger/10 text-danger',
   no_deadline: 'bg-surface text-muted',
 };
 
-function GoalRow({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void; onProgress: () => void }) {
+/** A goal as a card: a progress ring, the pace against the plan, the deadline, a quick «Додати». */
+function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void; onProgress: () => void }) {
   const { categoryById, projectById } = useCollections();
   const actions = useActions();
   const today = useToday();
@@ -90,6 +91,7 @@ function GoalRow({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void;
   const daysLeft = goal.targetDate ? diffDaysKey(goal.targetDate, today) : null;
   const finished = goal.status !== 'active';
   const fmt = (n: number) => n.toLocaleString('uk-UA');
+  const deadlineTone = daysLeft == null || finished ? 'bg-surface text-muted' : daysLeft < 0 ? 'bg-danger/10 text-danger' : daysLeft <= 14 ? 'bg-warning/15 text-warning' : 'bg-surface text-muted';
 
   const remove = async () => {
     const ok = await confirm({ title: 'Видалити ціль?', description: `«${goal.title}» та історію прогресу буде видалено.`, confirmLabel: 'Видалити', danger: true });
@@ -97,94 +99,61 @@ function GoalRow({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void;
   };
 
   return (
-    <div className={cn(finished && 'opacity-70')}>
+    <div className={cn('flex min-w-0 flex-col rounded-[24px] bg-surface-2/70 p-4 transition-colors', finished && 'opacity-70')}>
       <div
         role="button"
         tabIndex={0}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setOpen((o) => !o))}
-        className={cn('grid cursor-pointer grid-cols-1 items-center gap-x-5 gap-y-3 px-5 py-4 transition-colors hover:bg-surface-2/60', COLS)}
+        className="flex cursor-pointer items-center gap-4"
       >
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: `${color}1f`, color }}>
-            <Target className="h-5 w-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="truncate text-[14.5px] font-semibold">{goal.title}</p>
-            <p className="truncate text-[12px] text-muted">
-              {projects.length ? `Проєкт ${projects.map((p) => p.name).join(', ')}` : category?.name ?? 'Особиста ціль'}
-            </p>
-          </div>
+        <Ring value={pct / 100} size={68} stroke={7} color={color}>
+          <span className="text-[14px] font-bold tabular-nums">{pct}%</span>
+        </Ring>
+        <div className="min-w-0 flex-1">
+          <h3 className="line-clamp-2 text-[16px] font-bold leading-snug tracking-tight">{goal.title}</h3>
+          <p className="mt-0.5 truncate text-[12.5px] text-muted">{projects.length ? `Проєкт ${projects.map((p) => p.name).join(', ')}` : (category?.name ?? 'Особиста ціль')}</p>
+          <p className="mt-1 text-[13px] text-muted">
+            <b className="font-bold text-ink">{fmt(goal.currentValue)}</b> з {fmt(goal.targetValue)} {goal.unit}
+          </p>
         </div>
+        <ChevronDown className={cn('h-4 w-4 shrink-0 self-start text-subtle transition-transform', open && 'rotate-180')} aria-hidden />
+      </div>
 
-        <div className="min-w-0">
-          <div className="mb-1.5 flex justify-between gap-2 text-[12px]">
-            <span className="text-muted">
-              <b className="text-ink">{fmt(goal.currentValue)}</b> з {fmt(goal.targetValue)} {goal.unit}
-            </span>
-            <span className="font-semibold tabular-nums">{pct}%</span>
-          </div>
-          <div className="relative h-2.5 rounded-full bg-line" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={goal.title}>
-            <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
-            {expectedPct != null && pace !== 'done' && (
-              <span
-                className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded bg-ink/45"
-                style={{ left: `${expectedPct}%` }}
-                title={`Де треба бути сьогодні: ${fmt(Math.round(expected!))} ${goal.unit ?? ''}`}
-              />
-            )}
-          </div>
-        </div>
+      <div className="relative mt-4 h-2.5 rounded-full bg-surface" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={goal.title}>
+        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+        {expectedPct != null && pace !== 'done' && (
+          <span className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded bg-ink/45" style={{ left: `${expectedPct}%` }} title={`Де треба бути сьогодні: ${fmt(Math.round(expected!))} ${goal.unit ?? ''}`} />
+        )}
+      </div>
 
-        {/* Pace, deadline, action: columns on wide screens, one line on phones. */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:contents">
-          <span className="md:block">
-            <span className={cn('inline-block rounded-full px-2 py-0.5 text-[11.5px] font-semibold', finished && goal.status !== 'completed' ? 'bg-surface-2 text-muted' : PACE_PILL[pace])}>
-              {finished && goal.status !== 'completed' ? GOAL_STATUS_LABEL[goal.status] : paceText(goal, today)}
-            </span>
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', finished && goal.status !== 'completed' ? 'bg-surface text-muted' : PACE_PILL[pace])}>
+          {finished && goal.status !== 'completed' ? GOAL_STATUS_LABEL[goal.status] : paceText(goal, today)}
+        </span>
+        {goal.targetDate && (
+          <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', deadlineTone)}>
+            {formatDateKey(goal.targetDate, goal.targetDate.slice(0, 4) === today.slice(0, 4) ? 'd MMM' : 'd MMM yyyy')}
+            {daysLeft != null && !finished && ` · ${daysLeft < 0 ? 'минув' : daysLeft === 0 ? 'сьогодні' : `${daysLeft} ${plural(daysLeft, ['день', 'дні', 'днів'])}`}`}
           </span>
-          <span className="text-[13px] md:block">
-            {goal.targetDate ? (
-              <>
-                <span className="font-medium">{formatDateKey(goal.targetDate, goal.targetDate.slice(0, 4) === today.slice(0, 4) ? 'd MMMM' : 'd MMM yyyy')}</span>
-                {daysLeft != null && !finished && (
-                  <span className={cn('text-[12px] md:block', daysLeft < 0 ? 'font-semibold text-danger' : daysLeft <= 14 ? 'font-semibold text-warning' : 'text-muted')}>
-                    <span className="md:hidden"> · </span>
-                    {daysLeft < 0 ? 'минув' : daysLeft === 0 ? 'сьогодні' : `${daysLeft} ${plural(daysLeft, ['день', 'дні', 'днів'])}`}
-                  </span>
-                )}
-              </>
-            ) : (
-              <span className="hidden text-subtle md:inline">—</span>
-            )}
-          </span>
-          <span className="ml-auto md:ml-0 md:justify-self-end">
-            {goal.status === 'active' && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onProgress();
-                }}
-              >
-                <Plus className="h-3.5 w-3.5" /> Додати
-              </Button>
-            )}
-          </span>
-        </div>
+        )}
+        {goal.status === 'active' && (
+          <Button size="sm" variant="dark" className="ml-auto" onClick={onProgress}>
+            <Plus className="h-3.5 w-3.5" /> Додати
+          </Button>
+        )}
       </div>
 
       {open && (
-        <div className="border-t border-line bg-surface-2 px-5 py-4 animate-fade-in">
+        <div className="mt-4 rounded-2xl bg-surface px-4 py-3.5 animate-fade-in">
           {goal.description && <p className="mb-3 text-[13px] text-muted">{goal.description}</p>}
           {goal.history.length > 0 ? (
             <ul className="scrollbar-thin mb-3 max-h-48 space-y-1.5 overflow-y-auto text-[13px]">
               {[...goal.history].reverse().map((h) => (
-                <li key={h.id} className="flex items-baseline gap-4">
-                  <span className="w-28 shrink-0 text-muted">{new Date(h.date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                  <span className="w-24 shrink-0 font-semibold tabular-nums" style={{ color }}>
+                <li key={h.id} className="flex items-baseline gap-3">
+                  <span className="w-[5.5rem] shrink-0 text-muted">{new Date(h.date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })}</span>
+                  <span className="shrink-0 font-semibold tabular-nums" style={{ color }}>
                     {fmt(h.value)} {goal.unit}
                   </span>
                   <span className="min-w-0 truncate text-muted">{h.note}</span>
@@ -223,42 +192,62 @@ export default function GoalsPage() {
   useOpenFromQuery(() => setEditing('new'));
 
   const year = new Date().getFullYear().toString();
-  const activeCount = goals.filter((g) => g.status === 'active').length;
+  const active = goals.filter((g) => g.status === 'active');
+  const activeCount = active.length;
   const doneThisYear = goals.filter((g) => g.status === 'completed' && g.updatedAt.startsWith(year)).length;
+  const avg = active.length ? Math.round(active.reduce((n, g) => n + goalPercent(g), 0) / active.length) : 0;
   const groups = GROUPS.filter((g) => filter === 'all' || filter === g.key)
     .map((g) => ({ ...g, list: goals.filter(g.match).sort((a, b) => (a.targetDate ?? '9999').localeCompare(b.targetDate ?? '9999')) }))
     .filter((g) => g.list.length > 0);
 
   return (
     <div className="w-full px-2 pb-8">
-      <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-3">
-        <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Цілі</h1>
-        {goals.length > 0 && (
-          <span className="text-[13.5px] text-muted">
-            {activeCount} {plural(activeCount, ['активна', 'активні', 'активних'])}
-            {doneThisYear > 0 && ` · ${doneThisYear} ${plural(doneThisYear, ['досягнута', 'досягнуті', 'досягнутих'])} цього року`}
-          </span>
-        )}
-        <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
-          <div className="no-scrollbar min-w-0 flex-1 overflow-x-auto sm:flex-none">
-            <Segmented
-              size="sm"
-              value={filter}
-              onChange={setFilter}
-              options={[
-                { value: 'all' as Filter, label: 'Усі', count: goals.length },
-                ...GROUPS.filter((g) => g.key === 'active' || goals.some(g.match)).map((g) => ({ value: g.key as Filter, label: g.label, count: goals.filter(g.match).length })),
-              ]}
-            />
-          </div>
-          <Button variant="dark" size="sm" onClick={() => setEditing('new')}>
-            <Plus className="h-4 w-4" /> Ціль
-          </Button>
+      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Цілі</h1>
+          <p className="mt-1.5 text-[13px] text-muted">
+            {goals.length
+              ? `${activeCount} ${plural(activeCount, ['активна', 'активні', 'активних'])}${doneThisYear > 0 ? ` · ${doneThisYear} ${plural(doneThisYear, ['досягнута', 'досягнуті', 'досягнутих'])} цього року` : ''}`
+              : 'Чого ви хочете досягти'}
+          </p>
         </div>
+        <Button variant="dark" size="sm" className="mt-1" onClick={() => setEditing('new')}>
+          <Plus className="h-4 w-4" /> Ціль
+        </Button>
+      </header>
+
+      {goals.length > 0 && (
+        <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+          {(
+            [
+              ['Активні', String(activeCount)],
+              ['Досягнуто', String(doneThisYear)],
+              ['Прогрес', `${avg}%`],
+            ] as const
+          ).map(([label, value]) => (
+            <div key={label} className="rounded-2xl bg-surface-2/70 px-3.5 py-3">
+              <p className="truncate text-[11.5px] font-medium text-muted">{label}</p>
+              <p className="mt-0.5 text-[22px] font-extrabold leading-none tracking-tight tabular-nums">{value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="no-scrollbar mt-4 overflow-x-auto">
+        <Segmented
+          size="sm"
+          ariaLabel="Фільтр цілей"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all' as Filter, label: 'Усі', count: goals.length },
+            ...GROUPS.filter((g) => g.key === 'active' || goals.some(g.match)).map((g) => ({ value: g.key as Filter, label: g.label, count: goals.filter(g.match).length })),
+          ]}
+        />
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-[22px] bg-surface-2/70">
+        <div className="mt-4 rounded-[24px] bg-surface-2/70">
           <EmptyState
             icon={<Target />}
             title={goals.length ? 'Тут цілей немає' : 'Цілей поки немає'}
@@ -271,29 +260,18 @@ export default function GoalsPage() {
           />
         </div>
       ) : (
-        <>
-          <div className={cn('hidden gap-5 px-5 pb-2 text-[11.5px] font-semibold uppercase tracking-wide text-subtle md:grid', COLS)}>
-            <span>Ціль</span>
-            <span>
-              Прогрес <span className="font-normal normal-case">· риска — де треба бути сьогодні</span>
-            </span>
-            <span>Темп</span>
-            <span>Дедлайн</span>
-            <span />
-          </div>
-          {groups.map((g) => (
-            <section key={g.key} className="mt-6 first-of-type:mt-3">
-              <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">
-                {g.label} <span className="font-normal">{g.list.length}</span>
-              </h2>
-              <div className="divide-y divide-line overflow-hidden rounded-[22px] bg-surface-2/70">
-                {g.list.map((goal) => (
-                  <GoalRow key={goal.id} goal={goal} onEdit={() => setEditing(goal)} onProgress={() => setProgressGoal(goal)} />
-                ))}
-              </div>
-            </section>
-          ))}
-        </>
+        groups.map((g) => (
+          <section key={g.key} className="mt-6">
+            <h2 className="mb-3 px-1 text-[13px] font-bold">
+              {g.label} <span className="ml-1 font-medium text-subtle">{g.list.length}</span>
+            </h2>
+            <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+              {g.list.map((goal) => (
+                <GoalCard key={goal.id} goal={goal} onEdit={() => setEditing(goal)} onProgress={() => setProgressGoal(goal)} />
+              ))}
+            </div>
+          </section>
+        ))
       )}
       {editing && <GoalForm goal={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />}
       {progressGoal && <ProgressDialog goal={progressGoal} onClose={() => setProgressGoal(null)} />}

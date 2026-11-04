@@ -1,5 +1,6 @@
+import { useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { CalendarDays, NotebookPen, Plus, SquareCheck, Sun, X } from 'lucide-react';
+import { CalendarDays, NotebookPen, Plus, Search, SquareCheck, Sun, X } from 'lucide-react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useUI } from '@/app/providers/UIProvider';
 import { GlassButton, GlassTabs, RouterLink } from '@/components/ui/glass';
@@ -61,22 +62,68 @@ export function MobileNav() {
   );
 }
 
-/** Phone: the full menu (sections, projects, categories) from the top bar's menu button. */
+/** Phone: the full menu from the top bar's menu button — sections with counters, projects, categories, the account. */
 export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { openQuickAdd, openSearch } = useUI();
+  const close = () => onOpenChange(false);
+  // Drag the drawer left to close it.
+  const [dx, setDx] = useState(0);
+  const start = useRef<{ x: number; y: number; on: boolean } | null>(null);
+  const handlers = {
+    onTouchStart: (e: React.TouchEvent) => {
+      start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, on: false };
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      const s = start.current;
+      if (!s) return;
+      const x = e.touches[0].clientX - s.x;
+      if (!s.on) {
+        if (Math.abs(e.touches[0].clientY - s.y) > 12) return void (start.current = null);
+        if (x > -12) return;
+        s.on = true;
+      }
+      setDx(Math.min(0, x));
+    },
+    onTouchEnd: () => {
+      if (start.current?.on && dx < -90) close();
+      start.current = null;
+      setDx(0);
+    },
+  };
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/55 data-[state=open]:animate-fade-in" />
-        <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 flex w-[min(310px,86vw)] flex-col bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-none data-[state=open]:animate-slide-in-left">
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
+        <DialogPrimitive.Content
+          {...handlers}
+          style={dx ? { transform: `translateX(${dx}px)`, transition: 'none' } : undefined}
+          className="fixed inset-y-0 left-0 z-50 flex w-[min(330px,88vw)] flex-col rounded-r-[30px] bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-none data-[state=open]:animate-slide-in-left"
+        >
           <DialogPrimitive.Title className="sr-only">Меню</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">Розділи, проєкти та категорії</DialogPrimitive.Description>
           <div className="mb-3 flex h-11 items-center justify-between pl-2">
             <Logo tone="light" className="text-white" />
-            <DialogPrimitive.Close className="flex h-9 w-9 items-center justify-center rounded-full text-sidebar-muted hover:bg-white/[0.06] hover:text-white" aria-label="Закрити">
+            <DialogPrimitive.Close className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-active text-[#cfcfd4] hover:text-white" aria-label="Закрити меню">
               <X className="h-5 w-5" />
             </DialogPrimitive.Close>
           </div>
-          <SidebarNav onNavigate={() => onOpenChange(false)} />
+          <div className="mb-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => (close(), openSearch())}
+              className="flex h-11 items-center gap-2 rounded-full bg-sidebar-active px-4 text-[14px] text-sidebar-muted transition-colors hover:text-white"
+            >
+              <Search className="h-4 w-4" /> Пошук
+            </button>
+            <button
+              type="button"
+              onClick={() => (close(), openQuickAdd())}
+              className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f4f3f1] px-4 text-[14px] font-semibold text-[#161618] transition-colors hover:bg-white"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.4} /> Створити
+            </button>
+          </div>
+          <SidebarNav big onNavigate={close} />
           <SidebarFooter />
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>

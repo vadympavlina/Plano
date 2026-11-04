@@ -19,72 +19,53 @@ import { ProjectForm } from './ProjectForm';
 type Filter = ProjectStatus | 'all';
 const ORDER: ProjectStatus[] = ['active', 'on_hold', 'completed', 'archived'];
 const GROUP_LABEL: Record<ProjectStatus, string> = { active: 'Активні', on_hold: 'На паузі', completed: 'Завершені', archived: 'В архіві' };
-const COLS = 'md:grid-cols-[minmax(0,1.7fr)_minmax(0,1.2fr)_120px_140px_110px]';
-
 const STATUS_PILL: Record<ProjectStatus, string> = {
-  active: 'bg-success/10 text-success',
+  active: 'bg-success/12 text-success',
   on_hold: 'bg-warning/15 text-warning',
   completed: 'bg-surface text-muted',
   archived: 'bg-surface text-subtle',
 };
 
-
-function ProjectRow({ project, today }: { project: Project; today: DateKey }) {
+/** A project as a card: cover band, icon, name, progress and the facts that matter. */
+function ProjectCard({ project, today }: { project: Project; today: DateKey }) {
   const { tasks } = useCollections();
   const prog = projectProgress(project, tasks, today);
   const color = colorOf(project.color);
   const open = prog.total - prog.done;
   const finished = project.status === 'completed' || project.status === 'archived';
   const hint = project.targetDate && !finished ? deadlineHint(project.targetDate, today) : undefined;
-  const toneClass = hint?.tone === 'danger' ? 'font-semibold text-danger' : hint?.tone === 'warning' ? 'font-semibold text-warning' : 'text-muted';
+  const toneClass = hint?.tone === 'danger' ? 'bg-danger/10 text-danger' : hint?.tone === 'warning' ? 'bg-warning/15 text-warning' : 'bg-surface text-muted';
 
   return (
     <Link
       to={`/projects/${project.id}`}
-      className={cn('grid grid-cols-1 items-center gap-x-5 gap-y-3 px-5 py-4 transition-colors hover:bg-surface-2/60', COLS, finished && 'opacity-60')}
+      className={cn('group flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-surface-2/70 transition-all hover:-translate-y-0.5 hover:bg-surface-2', finished && 'opacity-65')}
     >
-      <div className="flex min-w-0 items-center gap-3">
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: project.cover ? coverGradient(project.cover, 0.4, 0.16) : `${color}1f`, color }}
-        >
-          <LineIcon icon={project.icon} fallback={FolderKanban} className="h-[18px] w-[18px]" />
+      <div className="h-[72px] sm:h-20" style={{ background: project.cover ? coverGradient(project.cover, 0.5, 0.2) : `linear-gradient(120deg, ${color}2e, ${color}0f)` }} />
+      <div className="flex flex-1 flex-col px-4 pb-4">
+        <span className="-mt-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface shadow-soft" style={{ color }}>
+          <LineIcon icon={project.icon} fallback={FolderKanban} className="h-[22px] w-[22px]" />
         </span>
-        <div className="min-w-0">
-          <p className="truncate text-[14.5px] font-semibold">{project.name}</p>
-          <p className="truncate text-[12px] text-muted">{project.description || 'Без опису'}</p>
-        </div>
-      </div>
+        <h3 className="mt-3 truncate text-[17px] font-bold leading-tight tracking-tight">{project.name}</h3>
+        <p className="mt-1 line-clamp-2 min-h-[2.6em] text-[12.5px] leading-snug text-muted">{project.description || 'Без опису'}</p>
 
-      <div className="min-w-0">
-        <div className="mb-1.5 flex justify-between gap-2 text-[12px]">
-          <span className="text-muted">
-            {prog.total ? `${prog.done} з ${prog.total} ${plural(prog.total, ['задачі', 'задач', 'задач'])}` : 'Задач поки немає'}
-            {prog.overdue > 0 && <span className="text-danger"> · прострочено {prog.overdue}</span>}
-          </span>
-          <span className="font-semibold tabular-nums">{prog.percent}%</span>
+        <div className="mt-3">
+          <div className="mb-1.5 flex items-baseline justify-between gap-2 text-[12px]">
+            <span className="text-muted">{prog.total ? `${prog.done} з ${prog.total} ${plural(prog.total, ['задачі', 'задач', 'задач'])}` : 'Задач поки немає'}</span>
+            <span className="font-bold tabular-nums">{prog.percent}%</span>
+          </div>
+          <div className="h-2 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuenow={prog.percent} aria-valuemin={0} aria-valuemax={100} aria-label={`Прогрес: ${project.name}`}>
+            <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${prog.percent}%`, backgroundColor: color }} />
+          </div>
         </div>
-        <div className="h-2 overflow-hidden rounded-full bg-line" role="progressbar" aria-valuenow={prog.percent} aria-valuemin={0} aria-valuemax={100} aria-label={`Прогрес: ${project.name}`}>
-          <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${prog.percent}%`, backgroundColor: color }} />
-        </div>
-      </div>
 
-      {/* Status, deadline and open tasks: separate columns on wide screens, one line on phones. */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] md:contents">
-        <span className="md:block">
-          <span className={cn('inline-block rounded-full px-2 py-0.5 text-[11.5px] font-medium', STATUS_PILL[project.status])}>{PROJECT_STATUS_LABEL[project.status]}</span>
-        </span>
-        <span className="text-[13px] md:block">
-          {project.targetDate ? (
-            <>
-              <span className="font-medium">{formatDateKey(project.targetDate, 'd MMM')}</span>
-              {hint && <span className={cn('text-[12px] md:block', toneClass)}><span className="md:hidden"> · </span>{hint.text}</span>}
-            </>
-          ) : (
-            <span className="text-subtle">Без дедлайну</span>
-          )}
-        </span>
-        <span className="text-[13px] text-muted md:block">{open > 0 ? `${open} ${plural(open, ['відкрита', 'відкриті', 'відкритих'])}` : '—'}</span>
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', STATUS_PILL[project.status])}>{PROJECT_STATUS_LABEL[project.status]}</span>
+          {hint && <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', toneClass)}>{hint.text}</span>}
+          {!hint && project.targetDate && <span className="rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted">до {formatDateKey(project.targetDate, 'd MMM')}</span>}
+          {prog.overdue > 0 && <span className="rounded-full bg-danger/10 px-2.5 py-1 text-[11.5px] font-semibold text-danger">прострочено {prog.overdue}</span>}
+          {open > 0 && <span className="rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted">{open} {plural(open, ['відкрита', 'відкриті', 'відкритих'])}</span>}
+        </div>
       </div>
     </Link>
   );
@@ -142,7 +123,7 @@ export default function ProjectsPage() {
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-[22px] bg-surface-2/70">
+        <div className="rounded-[24px] bg-surface-2/70">
           <EmptyState
             icon={<FolderKanban />}
             title={projects.length ? 'Немає проєктів із цим статусом' : 'Проєктів поки немає'}
@@ -155,34 +136,30 @@ export default function ProjectsPage() {
           />
         </div>
       ) : (
-        <>
-          <div className={cn('hidden gap-5 px-5 pb-2 text-[11.5px] font-semibold uppercase tracking-wide text-subtle md:grid', COLS)}>
-            <span>Проєкт</span>
-            <span>Прогрес</span>
-            <span>Статус</span>
-            <span>Дедлайн</span>
-            <span>Задачі</span>
-          </div>
-          {groups.map((g) => (
-            <section key={g.status} className="mt-6 first-of-type:mt-3">
-              <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">
-                {GROUP_LABEL[g.status]} <span className="font-normal">{g.list.length}</span>
-              </h2>
-              <div className="divide-y divide-line overflow-hidden rounded-[22px] bg-surface-2/70">
-                {g.list.map((p) => (
-                  <ProjectRow key={p.id} project={p} today={today} />
-                ))}
-              </div>
-            </section>
-          ))}
-          <button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="mt-4 flex w-full items-center gap-2 rounded-[20px] border-2 border-dashed border-line px-5 py-3.5 text-[13.5px] text-subtle transition-colors hover:border-subtle hover:text-ink"
-          >
-            <Plus className="h-4 w-4" /> Новий проєкт
-          </button>
-        </>
+        groups.map((g) => (
+          <section key={g.status} className="mt-6 first-of-type:mt-2">
+            <h2 className="mb-3 px-1 text-[13px] font-bold">
+              {GROUP_LABEL[g.status]} <span className="ml-1 font-medium text-subtle">{g.list.length}</span>
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {g.list.map((p) => (
+                <ProjectCard key={p.id} project={p} today={today} />
+              ))}
+              {g.status === 'active' && (
+                <button
+                  type="button"
+                  onClick={() => setCreating(true)}
+                  className="flex min-h-[120px] flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-line text-[13.5px] font-medium text-subtle transition-colors hover:border-subtle hover:text-ink"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2">
+                    <Plus className="h-5 w-5" />
+                  </span>
+                  Новий проєкт
+                </button>
+              )}
+            </div>
+          </section>
+        ))
       )}
       {creating && <ProjectForm onClose={() => setCreating(false)} />}
     </div>
