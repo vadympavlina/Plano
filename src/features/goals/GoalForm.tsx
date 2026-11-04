@@ -59,14 +59,14 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
           <Field label="Опис">
             {(p) => <Textarea {...p} rows={2} value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />}
           </Field>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Field label="Зараз" error={visible.current}>
               {(p) => <Stepper {...p} min={0} value={draft.currentValue} onChange={(currentValue) => patch({ currentValue })} />}
             </Field>
             <Field label="Мета" error={visible.target}>
               {(p) => <Stepper {...p} min={0} value={draft.targetValue} onChange={(targetValue) => patch({ targetValue })} />}
             </Field>
-            <Field label="Одиниця">
+            <Field label="Одиниця" className="col-span-2 sm:col-span-1">
               {(p) => <Input {...p} placeholder="книжки, км, %" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
             </Field>
           </div>

@@ -80,7 +80,8 @@
 
   body {
     @apply bg-bg font-sans antialiased;
-    color: rgb(var(--sidebar-fg));
+    /* Dialogs, sheets and menus render outside the cards, so the default is the card's ink; the dark frame sets its own. */
+    color: rgb(var(--ink));
     overscroll-behavior-y: none;
   }
 

@@ -94,7 +94,7 @@ function LayoutInner() {
 
   return (
     <PanelSlot.Provider value={{ el: panelEl, mount }}>
-      <div className="flex min-h-dvh flex-col pt-safe lg:h-dvh lg:overflow-hidden" style={{ '--page-h': pageH } as React.CSSProperties}>
+      <div className="flex min-h-dvh flex-col pt-safe text-sidebar-fg lg:h-dvh lg:overflow-hidden" style={{ '--page-h': pageH } as React.CSSProperties}>
         {banner && (
           <div className="flex h-9 shrink-0 items-center gap-2 bg-sidebar-active px-4 text-xs text-sidebar-fg sm:px-8">
             <Info className="h-3.5 w-3.5 shrink-0 text-primary" />

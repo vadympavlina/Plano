@@ -249,13 +249,13 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
               align="center"
               onPick={onDone}
               trigger={
-                <button type="button" className="ml-auto rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
+                <button type="button" className="ml-auto whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
                   Повна форма…
                 </button>
               }
             />
           ) : (
-            <button type="button" onClick={openFull} className="ml-auto rounded-lg px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
+            <button type="button" onClick={openFull} className="ml-auto whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
               Детальніше…
             </button>
           )}
