@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { CategoryIcon } from '@/components/common/CategoryMark';
+import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
 import { Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { useData } from '@/app/providers/DataProvider';
-import { TASK_DRAG, TaskTick, startTaskDrag, taskChipStyle } from './TaskTick';
+import { TASK_DRAG, TaskTick, startTaskDrag } from './TaskTick';
 import { useNow } from '@/hooks/useNow';
-import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, fromDateKey, minutesToTime, todayKey, weekRange } from '@/lib/date';
-import { solidTint, colorOf } from '@/lib/utils/colors';
+import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, minutesToTime, todayKey, weekRange } from '@/lib/date';
+import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
@@ -55,6 +55,28 @@ interface DaySelection {
   to: number;
 }
 
+/** Leading mark of an event: its category icon, or a dot in the category colour. */
+function Marker({ category, color }: { category?: import('@/types').Category; color: string }) {
+  return categoryIcon(category) ? (
+    <CategoryIcon category={category} className="h-3.5 w-3.5" color={color} />
+  ) : (
+    <span className="mx-[3px] block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden />
+  );
+}
+
+/** A small ring of a day's finished tasks. */
+function DayRing({ done, total }: { done: number; total: number }) {
+  const r = 7;
+  const c = 2 * Math.PI * r;
+  const share = total ? done / total : 0;
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" className="shrink-0" role="img" aria-label={total ? `Виконано ${done} з ${total}` : 'Задач немає'}>
+      <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.4" className="stroke-line" />
+      {share > 0 && <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.4" strokeLinecap="round" strokeDasharray={`${c * share} ${c}`} transform="rotate(-90 10 10)" className={share === 1 ? 'stroke-success' : 'stroke-primary'} />}
+    </svg>
+  );
+}
+
 export function TimeGrid({
   days,
   occurrences,
@@ -95,6 +117,20 @@ export function TimeGrid({
   const suppressClick = useRef(false);
   const single = days.length === 1;
   const fmt = (m: number) => formatTime(minutesToTime(Math.min(m, DAY_END - 1)), settings.timeFormat);
+
+  /** Share of each day's tasks that are done: the small ring in the day header. */
+  const dayProgress = useMemo(() => {
+    const m = new Map<DateKey, { done: number; total: number }>();
+    for (const t of tasks) {
+      const d = t.dueDate ?? t.startDate;
+      if (!d || t.status === 'cancelled') continue;
+      const v = m.get(d) ?? { done: 0, total: 0 };
+      v.total++;
+      if (t.status === 'completed') v.done++;
+      m.set(d, v);
+    }
+    return m;
+  }, [tasks]);
 
   const columns = useMemo(
     () =>
@@ -389,8 +425,6 @@ export function TimeGrid({
 
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const gridCols = { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` };
-  // Weekends are shaded in multi-day views.
-  const weekend = (d: DateKey) => !single && [0, 6].includes(fromDateKey(d).getDay());
   const showsToday = days.includes(today);
   const selRange = sel?.active ? (sel.moved ? selectionRange(sel.anchor, sel.pointer, SNAP) : null) : null;
   const daySelRange = daySel ? { a: Math.min(daySel.from, daySel.to), b: Math.max(daySel.from, daySel.to) } : null;
@@ -427,28 +461,29 @@ export function TimeGrid({
           })}
         </div>
       ) : (
-      <div className="flex border-b border-line">
+      <div className="flex">
         <div className="w-12 shrink-0 sm:w-14" />
         <div className="grid flex-1" style={gridCols}>
           {days.map((d) => {
             const isToday = d === today;
+            const p = dayProgress.get(d);
             return (
               <button
                 key={d}
                 type="button"
                 onClick={() => onSelectDay(d)}
-                className={cn('flex flex-col items-center justify-center gap-0.5 py-2 transition-colors hover:bg-surface-2 lg:flex-row lg:gap-1.5 lg:py-3', weekend(d) && 'bg-surface-2/70')}
+                className={cn('flex items-center justify-between gap-1.5 px-2.5 py-3 text-left transition-colors hover:bg-surface-2/60 lg:px-3', days.length > 3 && 'justify-center px-1 py-2.5')}
                 aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
               >
-                <span className={cn('text-[12.5px] font-medium', isToday ? 'text-danger' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
-                <span
-                  className={cn(
-                    'flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-[14px] font-semibold tabular-nums',
-                    isToday ? 'bg-danger text-white' : d < today ? 'text-subtle' : 'text-ink',
-                  )}
-                >
-                  {Number(d.slice(8))}
+                <span className={cn('min-w-0 truncate text-[13.5px] font-bold', days.length > 3 && 'flex w-full flex-col items-center gap-0.5 text-[12px] leading-none')}>
+                  <span className={cn('capitalize', isToday && 'text-primary')}>{isToday && days.length <= 3 ? 'Сьогодні' : formatDateKey(d, 'EEEEEE')}</span>
+                  <span className={cn('font-medium', days.length <= 3 && 'ml-1.5', isToday ? 'text-primary' : 'text-muted', days.length > 3 && 'text-[15px] font-bold')}>{Number(d.slice(8))}</span>
                 </span>
+                {days.length <= 3 && (
+                  <span className="hidden sm:block">
+                    <DayRing done={p?.done ?? 0} total={p?.total ?? 0} />
+                  </span>
+                )}
               </button>
             );
           })}
@@ -457,7 +492,7 @@ export function TimeGrid({
       )}
 
       {/* All-day row: always present so all-day events can be drawn here */}
-      <div className="flex border-b border-line">
+      <div className="flex border-b border-line/70">
         <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[10px] leading-[1.1] text-subtle sm:w-14">
           <span>
             весь
@@ -481,8 +516,8 @@ export function TimeGrid({
                 onPointerDown={(e) => onAllDayPointerDown(e, index)}
                 title="Натисніть або протягніть, щоб додати подію на весь день"
                 className={cn(
-                  'scrollbar-thin max-h-[108px] min-h-[30px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line p-1 transition-colors',
-                  selected ? 'bg-primary/10' : weekend(c.day) ? 'bg-surface-2/70 hover:bg-surface-2' : 'hover:bg-surface-2/60',
+                  'scrollbar-thin max-h-[116px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line/60 p-1 transition-colors',
+                  selected ? 'bg-primary/10' : 'hover:bg-surface-2/50',
                 )}
               >
                 {c.allDay.map((o) => {
@@ -492,11 +527,10 @@ export function TimeGrid({
                       key={o.key}
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
-                      className="flex w-full items-center gap-1 rounded-md px-1.5 py-1 text-left text-[11px] font-semibold"
-                      style={{ backgroundColor: solidTint(color, 0.18), color }}
+                      className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold"
                       title={o.event.title}
                     >
-                      <CategoryIcon category={categoryById(o.event.categoryId)} className="h-3 w-3" />
+                      <Marker category={categoryById(o.event.categoryId)} color={color} />
                       <span className="truncate">{o.event.title}</span>
                     </button>
                   );
@@ -508,15 +542,10 @@ export function TimeGrid({
                     draggable={t.status !== 'completed'}
                     onDragStart={(e) => startTaskDrag(e, t.id)}
                     onClick={() => openTask(t.id)}
-                    className={cn(
-                      'flex w-full items-center gap-1.5 truncate rounded-md border border-dashed px-1.5 py-1 text-left text-[11px] font-medium text-ink',
-                      t.status === 'completed' && 'text-subtle line-through',
-                    )}
-                    style={taskChipStyle(taskColor(t), t.status === 'completed')}
+                    className={cn('flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink', t.status === 'completed' && 'text-subtle line-through')}
                     title={`Задача: ${t.title}`}
                   >
-                    <TaskTick task={t} color={taskColor(t)} size={12} />
-                    <CategoryIcon category={categoryById(t.categoryId)} className="h-3 w-3" color={taskColor(t)} />
+                    <TaskTick task={t} color={taskColor(t)} size={14} />
                     <span className="truncate">{t.title}</span>
                   </button>
                 ))}
@@ -569,8 +598,8 @@ export function TimeGrid({
             <div className="pointer-events-none absolute inset-0" aria-hidden>
               {HOURS.map((h) => (
                 <div key={h}>
-                  <div className="absolute inset-x-0 border-t border-line/80" style={{ top: h * HOUR_PX }} />
-                  <div className="absolute inset-x-0 border-t border-dashed border-line/45" style={{ top: h * HOUR_PX + HOUR_PX / 2 }} />
+                  <div className="absolute inset-x-0 border-t border-line/70" style={{ top: h * HOUR_PX }} />
+                  <div className="absolute inset-x-0 border-t border-dashed border-line/35" style={{ top: h * HOUR_PX + HOUR_PX / 2 }} />
                 </div>
               ))}
             </div>
@@ -578,7 +607,7 @@ export function TimeGrid({
               <div
                 key={c.day}
                 data-day-index={dayIndex}
-                className={cn('relative cursor-cell border-l border-line', weekend(c.day) && 'bg-surface-2/70')}
+                className="relative cursor-cell border-l border-line/60"
                 onPointerDown={(e) => onColumnPointerDown(e, dayIndex)}
                 onDragOver={(e) => onTaskDragOver(e, dayIndex)}
                 onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDropAt(null)}
@@ -638,9 +667,8 @@ export function TimeGrid({
                         }
                       }}
                       className={cn(
-                        'group/ev absolute z-[1] overflow-hidden rounded-lg px-1.5 text-left transition-shadow',
-                        item.kind === 'event' ? 'border-l-[3px]' : 'border border-dashed hover:shadow-soft',
-                        short ? 'py-0.5' : 'py-1',
+                        'group/ev absolute z-[1] overflow-hidden rounded-xl bg-surface-2 text-left transition-shadow hover:shadow-soft',
+                        short ? 'px-2 py-0.5' : 'px-2.5 py-2',
                         item.draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                         isDragging && drag.moved && 'z-20 opacity-90 shadow-pop',
                       )}
@@ -650,30 +678,27 @@ export function TimeGrid({
                         left: `calc(${(column / cols) * 100}% + 2px)`,
                         width: `calc(${100 / cols}% - 4px)`,
                         transform: dayShift ? `translateX(${dayShift}px)` : undefined,
-                        ...(item.kind === 'event' ? { borderLeftColor: item.color, backgroundColor: solidTint(item.color, 0.17) } : taskChipStyle(item.color, done)),
                       }}
                     >
-                      <p
-                        className={cn('flex items-center gap-1 truncate text-[11.5px] font-semibold leading-tight text-ink', done && 'text-subtle line-through')}
-                        style={item.kind === 'event' ? { color: item.color } : undefined}
-                      >
-                        {item.kind === 'task' && <TaskTick task={item.task} color={item.color} size={13} />}
-                        <CategoryIcon category={item.category} className="h-3 w-3" color={item.kind === 'task' ? item.color : undefined} />
-                        <span className="truncate">{item.title}</span>
-                        {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-60" />}
-                      </p>
-                      {!short && (
-                        <p className="truncate text-[10.5px] tabular-nums text-muted" style={item.kind === 'event' ? { color: item.color, opacity: 0.75 } : undefined}>
-                          {item.kind === 'task' && 'Задача · '}
-                          {fmt(start)} – {fmt(end)}
-                          {item.kind === 'task' && item.task.subtasks.length > 0 && ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}
-                        </p>
-                      )}
-                      {!short && single && item.kind === 'event' && item.occurrence.event.location && (
-                        <p className="truncate text-[10.5px]" style={{ color: item.color, opacity: 0.75 }}>
-                          {item.occurrence.event.location}
-                        </p>
-                      )}
+                      <div className={cn('flex gap-2', short ? 'items-center' : 'items-start')}>
+                        <span className={cn(!short && 'pt-px')}>
+                          {item.kind === 'task' ? <TaskTick task={item.task} color={item.color} size={short ? 13 : 15} /> : <Marker category={item.category} color={item.color} />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className={cn('flex items-center gap-1 truncate text-[12.5px] font-semibold leading-tight', done && 'text-subtle line-through')}>
+                            <span className="truncate">{item.title}</span>
+                            {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-50" />}
+                            {short && <span className="ml-auto shrink-0 pl-1 text-[11px] font-medium tabular-nums text-muted">{fmt(start)}</span>}
+                          </p>
+                          {!short && (
+                            <p className="mt-0.5 truncate text-[11.5px] tabular-nums text-muted">
+                              {fmt(start)} – {fmt(end)}
+                              {item.kind === 'task' && item.task.subtasks.length > 0 && ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}
+                            </p>
+                          )}
+                          {!short && single && item.kind === 'event' && item.occurrence.event.location && <p className="truncate text-[11.5px] text-muted">{item.occurrence.event.location}</p>}
+                        </div>
+                      </div>
                       {item.kind === 'event' && item.draggable && (
                         <div
                           aria-hidden

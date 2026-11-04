@@ -94,10 +94,8 @@ test('calendar: clicking an hour opens quick add with the time filled in', async
   test.skip(isMobile, 'on phones a slot is picked with a long press');
   await start(page);
   await page.goto('/#/calendar?view=day');
-  const column = page.locator('[data-day-index="0"]');
-  await column.scrollIntoViewIfNeeded();
-  const box = (await column.boundingBox())!;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  // 12:00 in the first column (Playwright scrolls the grid to it).
+  await page.locator('[data-day-index="0"]').click({ position: { x: 60, y: 12 * 52 + 20 } });
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Нова подія');
   await dialog.getByLabel('Назва для швидкого додавання').fill('Обід');
@@ -174,7 +172,8 @@ test('tasks: a task opens in the side card and closes again', async ({ page, isM
 test('calendar: the view switch changes the view', async ({ page }) => {
   await start(page);
   await page.goto('/#/calendar?view=week');
-  await page.getByRole('tablist', { name: 'Вигляд календаря' }).filter({ visible: true }).getByRole('tab', { name: 'Місяць' }).click();
+  await page.getByRole('combobox', { name: 'Вигляд календаря' }).click();
+  await page.getByRole('option', { name: 'Місяць' }).click();
   await expect(page).toHaveURL(/view=month/);
 });
 

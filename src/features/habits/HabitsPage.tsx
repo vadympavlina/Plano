@@ -41,7 +41,7 @@ function HabitCard({ habit }: { habit: Habit }) {
     <Link
       to={`/habits/${habit.id}`}
       className={cn(
-        'group flex min-w-0 flex-col rounded-[20px] border border-line/60 bg-surface p-4 shadow-soft transition-shadow hover:shadow-pop sm:p-5',
+        'group flex min-w-0 flex-col rounded-[22px] bg-surface-2/70 p-4 transition-colors hover:bg-surface-2 sm:p-5',
         habit.archived && 'opacity-60',
       )}
     >
@@ -107,7 +107,7 @@ function HabitCard({ habit }: { habit: Habit }) {
           [String(best), 'рекорд'],
           [month.scheduled ? `${month.rate}%` : '—', bad ? 'чистих за 30 днів' : 'за 30 днів'],
         ].map(([v, l]) => (
-          <div key={l} className="rounded-xl bg-surface-2 py-2">
+          <div key={l} className="rounded-xl bg-surface py-2">
             <p className="text-[16px] font-bold tabular-nums">{v}</p>
             <p className="text-[11px] text-muted">{l}</p>
           </div>
@@ -160,7 +160,7 @@ export default function HabitsPage() {
       </div>
 
       {list.length === 0 ? (
-        <div className="rounded-[20px] border border-line/60 bg-surface shadow-soft">
+        <div className="rounded-[22px] bg-surface-2/70">
           <EmptyState
             icon={<Heart />}
             title={filter === 'archived' ? 'В архіві порожньо' : 'Звичок поки немає'}

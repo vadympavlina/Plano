@@ -204,7 +204,7 @@ export interface Note extends Timestamps {
 }
 
 export type ThemePreference = 'light' | 'dark' | 'system';
-export type CalendarView = 'day' | 'week' | 'month';
+export type CalendarView = 'day' | '3days' | 'week' | 'month';
 
 export interface Settings {
   theme: ThemePreference;

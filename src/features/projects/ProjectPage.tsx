@@ -101,7 +101,7 @@ export default function ProjectPage() {
     }
   };
 
-  const side = 'rounded-[20px] border border-line/60 bg-surface p-5 shadow-soft';
+  const side = 'rounded-[22px] bg-surface-2/70 p-5';
   const hint = project.targetDate && project.status !== 'completed' && project.status !== 'archived' ? deadlineHint(project.targetDate, today) : undefined;
   const stats: [string, string, boolean?][] = [
     ['Виконано', `${prog.done} з ${prog.total}`],
@@ -116,7 +116,7 @@ export default function ProjectPage() {
         <ArrowLeft className="h-4 w-4" /> Проєкти
       </Link>
 
-      <section className="overflow-hidden rounded-[20px] border border-line/60 bg-surface shadow-soft">
+      <section className="overflow-hidden rounded-[22px] bg-surface-2/70">
         {project.cover && (
           <div className="group relative h-24 sm:h-28" style={{ background: coverGradient(project.cover) }}>
             <div className="absolute bottom-2 right-2 transition-opacity sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover:opacity-100">
@@ -180,7 +180,7 @@ export default function ProjectPage() {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
           {stats.map(([l, v, bad]) => (
-            <div key={l} className="rounded-2xl bg-surface-2 px-4 py-3">
+            <div key={l} className="rounded-2xl bg-surface px-4 py-3">
               <p className="text-[12px] text-muted">{l}</p>
               <p className={cn('mt-0.5 truncate text-[18px] font-bold tabular-nums', bad && 'text-danger')}>{v}</p>
             </div>

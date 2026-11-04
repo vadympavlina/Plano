@@ -108,6 +108,7 @@ export function Segmented<T extends string>({
   size = 'md',
   ariaLabel,
   stretch,
+  wrap,
 }: {
   value: T;
   onChange: (v: T) => void;
@@ -117,9 +118,11 @@ export function Segmented<T extends string>({
   ariaLabel?: string;
   /** Buttons share the full width. */
   stretch?: boolean;
+  /** Many options on a narrow screen: let them wrap onto a second line instead of running off. */
+  wrap?: boolean;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex items-center gap-0.5 rounded-full bg-surface-2 p-1', stretch && 'flex w-full', className)}>
+    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex max-w-full items-center gap-0.5 rounded-full bg-surface-2 p-1', stretch && 'flex w-full', wrap && 'flex-wrap rounded-3xl', className)}>
       {options.map((o) => {
         const on = value === o.value;
         return (

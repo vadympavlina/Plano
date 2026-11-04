@@ -54,7 +54,7 @@ const SUMMARY_LABEL: Record<string, string> = {
   notes: 'Нотатки',
 };
 
-const panel = 'rounded-[20px] border border-line/60 bg-surface shadow-soft';
+const panel = 'rounded-[22px] border border-line bg-surface';
 
 /** Current search text; empty means "show everything". */
 const SearchCtx = createContext('');
@@ -332,6 +332,7 @@ function PreferencesSection() {
           onChange={(defaultCalendarView) => set({ defaultCalendarView })}
           options={[
             { value: 'day', label: 'День' },
+            { value: '3days', label: '3 дні' },
             { value: 'week', label: 'Тиждень' },
             { value: 'month', label: 'Місяць' },
           ]}
@@ -757,20 +758,26 @@ export default function SettingsPage() {
     const onScroll = () => {
       const pick = picked.current;
       if (pick && pick.until > Date.now()) return setActive(pick.id);
-      const atBottom = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      // The page scrolls inside the main card on wide screens, with the window elsewhere.
+      const card = document.querySelector('main');
+      const inCard = !!card && card.scrollHeight > card.clientHeight + 1 && getComputedStyle(card).overflowY !== 'visible';
+      const viewTop = inCard ? card!.getBoundingClientRect().top : 0;
+      const viewHeight = inCard ? card!.clientHeight : window.innerHeight;
+      const atBottom = inCard ? card!.scrollTop + card!.clientHeight >= card!.scrollHeight - 4 : window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
       // At the very bottom keep a picked section (e.g. "Дані"), otherwise follow the scroll position.
       if (atBottom && pick) return setActive(pick.id);
       picked.current = null;
       let current: SectionId | null = null;
       for (const { id } of SECTIONS) {
         const el = document.getElementById(`settings-${id}`);
-        if (el && (atBottom || el.getBoundingClientRect().top <= window.innerHeight * 0.25)) current = id;
+        if (el && (atBottom || el.getBoundingClientRect().top <= viewTop + viewHeight * 0.25)) current = id;
       }
       if (current) setActive(current);
     };
     onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    // Capture: scroll events don't bubble, and the scroller may be the main card or the window.
+    document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+    return () => document.removeEventListener('scroll', onScroll, { capture: true });
   }, [q]);
 
   const go = (id: SectionId) => {
@@ -784,7 +791,7 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         <aside className="lg:sticky lg:top-4 lg:w-56 lg:shrink-0 lg:self-start">
           <h1 className="mb-4 text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Налаштування</h1>
-          <label className="mb-3 flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-[13px] focus-within:border-subtle">
+          <label className="mb-3 flex h-10 items-center gap-2 rounded-full bg-surface-2 px-3.5 text-[13px] focus-within:ring-2 focus-within:ring-primary/20">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
             <input
               value={query}
@@ -802,8 +809,8 @@ export default function SettingsPage() {
                 onClick={() => go(id)}
                 aria-current={active === id && !q ? 'true' : undefined}
                 className={cn(
-                  'flex shrink-0 items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] transition-colors',
-                  active === id && !q ? 'bg-surface font-semibold text-ink shadow-soft' : 'text-muted hover:text-ink',
+                  'flex shrink-0 items-center gap-3 rounded-full px-3.5 py-2 text-[13.5px] transition-colors',
+                  active === id && !q ? 'bg-accent font-semibold text-surface' : 'text-muted hover:bg-surface-2 hover:text-ink',
                 )}
               >
                 <Icon className="h-[18px] w-[18px]" />

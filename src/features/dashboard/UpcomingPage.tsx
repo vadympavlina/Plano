@@ -131,9 +131,9 @@ export default function UpcomingPage() {
       {view === 'list' ? (
         <div className="mt-6 space-y-7 px-2">
           {plan.overdue.length > 0 && (
-            <section className="grid gap-x-8 gap-y-2 sm:grid-cols-[110px_1fr]">
+            <section className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-[110px_minmax(0,1fr)]">
               <h2 className="text-[15px] font-bold text-danger">Прострочено</h2>
-              <div className="space-y-2">
+              <div className="min-w-0 space-y-2">
                 {plan.overdue.map((t) => (
                   <div key={t.id} className="rounded-2xl bg-surface-2">
                     <TaskRow task={t} today={today} />
@@ -146,12 +146,12 @@ export default function UpcomingPage() {
             const g = plan.byDay.get(d)!;
             const isToday = d === today;
             return (
-              <section key={d} className="grid gap-x-8 gap-y-2 sm:grid-cols-[110px_1fr]">
+              <section key={d} className="grid grid-cols-1 gap-x-8 gap-y-2 sm:grid-cols-[110px_minmax(0,1fr)]">
                 <h2 className="sm:pt-2.5">
                   <span className={cn('block text-[17px] font-bold capitalize', isToday && 'text-primary')}>{dayName(d)}</span>
                   <span className="text-[12px] font-medium text-muted">{formatDateKey(d, 'd MMM')}</span>
                 </h2>
-                <div className="space-y-2">
+                <div className="min-w-0 space-y-2">
                   {g.events.map(eventCard)}
                   {g.tasks.map((t) => (
                     <div key={t.id} className="rounded-2xl bg-surface-2">

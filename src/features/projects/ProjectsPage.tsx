@@ -24,8 +24,8 @@ const COLS = 'md:grid-cols-[minmax(0,1.7fr)_minmax(0,1.2fr)_120px_140px_110px]';
 const STATUS_PILL: Record<ProjectStatus, string> = {
   active: 'bg-success/10 text-success',
   on_hold: 'bg-warning/15 text-warning',
-  completed: 'bg-surface-2 text-muted',
-  archived: 'bg-surface-2 text-subtle',
+  completed: 'bg-surface text-muted',
+  archived: 'bg-surface text-subtle',
 };
 
 
@@ -142,7 +142,7 @@ export default function ProjectsPage() {
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-[20px] border border-line/60 bg-surface shadow-soft">
+        <div className="rounded-[22px] bg-surface-2/70">
           <EmptyState
             icon={<FolderKanban />}
             title={projects.length ? 'Немає проєктів із цим статусом' : 'Проєктів поки немає'}
@@ -168,7 +168,7 @@ export default function ProjectsPage() {
               <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">
                 {GROUP_LABEL[g.status]} <span className="font-normal">{g.list.length}</span>
               </h2>
-              <div className="divide-y divide-line/70 overflow-hidden rounded-[20px] border border-line/60 bg-surface shadow-soft">
+              <div className="divide-y divide-line overflow-hidden rounded-[22px] bg-surface-2/70">
                 {g.list.map((p) => (
                   <ProjectRow key={p.id} project={p} today={today} />
                 ))}

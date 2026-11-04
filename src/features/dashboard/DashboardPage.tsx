@@ -217,10 +217,13 @@ export default function DashboardPage() {
       <header className="flex items-start justify-between gap-3 px-2">
         <div className="min-w-0">
           <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight first-letter:uppercase sm:text-[38px]">{dayLabel}</h1>
-          <p className="mt-1.5 text-[13px] text-muted first-letter:uppercase">{formatDateKey(day, 'EEEE, d MMMM yyyy')}</p>
+          <p className="mt-1.5 text-[13px] text-muted first-letter:uppercase">
+            <span className="sm:hidden">{formatDateKey(day, 'EEEE, d MMMM')}</span>
+            <span className="hidden sm:inline">{formatDateKey(day, 'EEEE, d MMMM yyyy')}</span>
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 pt-1">
-          <button type="button" onClick={goToday} disabled={isToday} className="h-8 rounded-full bg-surface-2 px-3.5 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-60">
+          <button type="button" onClick={goToday} disabled={isToday} className={cn('h-8 rounded-full bg-surface-2 px-3.5 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-60', isToday && 'max-sm:hidden')}>
             Сьогодні
           </button>
           <button type="button" aria-label="Попередній день" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink">

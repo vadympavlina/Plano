@@ -72,7 +72,7 @@ const PACE_PILL: Record<Pace, string> = {
   on_track: 'bg-primary/10 text-primary',
   behind: 'bg-warning/15 text-warning',
   overdue: 'bg-danger/10 text-danger',
-  no_deadline: 'bg-surface-2 text-muted',
+  no_deadline: 'bg-surface text-muted',
 };
 
 function GoalRow({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void; onProgress: () => void }) {
@@ -177,7 +177,7 @@ function GoalRow({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void;
       </div>
 
       {open && (
-        <div className="border-t border-line/70 bg-surface-2/50 px-5 py-4 animate-fade-in">
+        <div className="border-t border-line bg-surface-2 px-5 py-4 animate-fade-in">
           {goal.description && <p className="mb-3 text-[13px] text-muted">{goal.description}</p>}
           {goal.history.length > 0 ? (
             <ul className="scrollbar-thin mb-3 max-h-48 space-y-1.5 overflow-y-auto text-[13px]">
@@ -258,7 +258,7 @@ export default function GoalsPage() {
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-[20px] border border-line/60 bg-surface shadow-soft">
+        <div className="rounded-[22px] bg-surface-2/70">
           <EmptyState
             icon={<Target />}
             title={goals.length ? 'Тут цілей немає' : 'Цілей поки немає'}
@@ -286,7 +286,7 @@ export default function GoalsPage() {
               <h2 className="mb-2 px-1 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">
                 {g.label} <span className="font-normal">{g.list.length}</span>
               </h2>
-              <div className="divide-y divide-line/70 overflow-hidden rounded-[20px] border border-line/60 bg-surface shadow-soft">
+              <div className="divide-y divide-line overflow-hidden rounded-[22px] bg-surface-2/70">
                 {g.list.map((goal) => (
                   <GoalRow key={goal.id} goal={goal} onEdit={() => setEditing(goal)} onProgress={() => setProgressGoal(goal)} />
                 ))}

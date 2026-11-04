@@ -186,7 +186,7 @@ export const settingsSchema = z.object({
   weekStartsOn: z.union([z.literal(0), z.literal(1)]).catch(1),
   timeFormat: z.enum(['12h', '24h']).catch('24h'),
   dateFormat: z.enum(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd']).catch('d MMM yyyy'),
-  defaultCalendarView: z.enum(['day', 'week', 'month']).catch('week'),
+  defaultCalendarView: z.enum(['day', '3days', 'week', 'month']).catch('week'),
   timezone: optionalString,
   showHabitStreakOnDashboard: z.boolean().catch(true),
   remindEventsMin: z.number().int().min(0).max(1440).catch(15),

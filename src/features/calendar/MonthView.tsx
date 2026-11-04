@@ -4,9 +4,9 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
 import { formatTime, monthGrid, weekdayLabels } from '@/lib/date';
-import { solidTint, colorOf } from '@/lib/utils/colors';
+import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
-import { TaskTick, taskChipStyle } from './TaskTick';
+import { TaskTick } from './TaskTick';
 import type { DateKey, Task } from '@/types';
 import { occurrencesOnDay, type EventOccurrence } from './logic';
 import { eventColor } from './items';
@@ -62,15 +62,15 @@ export function MonthView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="grid grid-cols-7 border-b border-line">
+      <div className="grid grid-cols-7 pb-1.5">
         {labels.map((l) => (
-          <div key={l} className="py-2 text-center text-[12px] font-medium text-subtle">
+          <div key={l} className="py-1.5 text-center text-[12px] font-semibold text-muted">
             {l}
           </div>
         ))}
       </div>
       <div
-        className="grid min-h-0 flex-1 select-none grid-cols-7"
+        className="grid min-h-0 flex-1 select-none grid-cols-7 gap-1 sm:gap-1.5"
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={() => setRange(null)}
@@ -91,9 +91,9 @@ export function MonthView({
               data-month-index={index}
               onPointerDown={(e) => onDown(e, index)}
               className={cn(
-                'relative min-w-0 cursor-cell border-b border-r border-line p-1 transition-colors sm:p-1.5',
-                !inMonth && 'bg-surface-2/50',
-                index >= lo && index <= hi ? 'bg-primary/10' : 'hover:bg-surface-2/40',
+                'relative min-w-0 cursor-cell rounded-xl p-1 transition-colors sm:rounded-2xl sm:p-2',
+                inMonth ? 'bg-surface-2/70' : 'opacity-40',
+                index >= lo && index <= hi ? 'bg-primary/10' : inMonth && 'hover:bg-surface-2',
               )}
             >
               <div className="pointer-events-none mb-1 flex items-center justify-between">
@@ -103,7 +103,7 @@ export function MonthView({
                   aria-label={`Відкрити ${d}`}
                   className={cn(
                     'pointer-events-auto flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
-                    isToday ? 'bg-danger font-semibold text-white hover:bg-danger' : inMonth ? 'text-ink' : 'text-subtle',
+                    isToday ? 'bg-primary font-bold text-white hover:bg-primary' : inMonth ? 'font-semibold text-ink' : 'text-subtle',
                   )}
                 >
                   {Number(d.slice(8))}
@@ -129,12 +129,7 @@ export function MonthView({
                       key={it.o.key}
                       type="button"
                       onClick={() => openEvent(it.o.event.id, it.o.date)}
-                      className="flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px]"
-                      style={
-                        it.o.event.allDay
-                          ? { backgroundColor: solidTint(eventColor(it.o.event, categoryById), 0.16) }
-                          : undefined
-                      }
+                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[11px]', it.o.event.allDay && 'bg-surface')}
                     >
                       {categoryIcon(categoryById(it.o.event.categoryId)) ? (
                         <CategoryIcon category={categoryById(it.o.event.categoryId)} className="h-3 w-3" color={eventColor(it.o.event, categoryById)} />
@@ -151,8 +146,7 @@ export function MonthView({
                       key={it.t.id}
                       type="button"
                       onClick={() => openTask(it.t.id)}
-                      className={cn('flex w-full items-center gap-1 truncate rounded border border-dashed px-1 py-0.5 text-left text-[11px] font-medium text-ink', it.t.status === 'completed' && 'text-subtle line-through')}
-                      style={taskChipStyle(colorOf(categoryById(it.t.categoryId)?.color ?? 'slate'), it.t.status === 'completed')}
+                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[11px] font-medium text-ink', it.t.status === 'completed' && 'text-subtle line-through')}
                       title={`Задача: ${it.t.title}`}
                     >
                       <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />

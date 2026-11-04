@@ -187,9 +187,9 @@ export function NoteEditor({ note }: { note: Note }) {
             {state === 'pending' ? 'Редагування…' : state === 'saving' ? 'Збереження…' : state === 'saved' ? 'Збережено' : <span className="text-danger">Не збережено</span>}
           </span>
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => (preview ? startEditing() : setPreview(true))} aria-pressed={!preview}>
+            <Button variant="ghost" size="sm" onClick={() => (preview ? startEditing() : setPreview(true))} aria-pressed={!preview} aria-label={preview ? 'Редагувати' : 'Перегляд'} className="max-sm:w-8 max-sm:px-0">
               {preview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              {preview ? 'Редагувати' : 'Перегляд'}
+              <span className="hidden sm:inline">{preview ? 'Редагувати' : 'Перегляд'}</span>
             </Button>
             <Button
               variant="ghost"

@@ -194,10 +194,11 @@ export default function TasksPage() {
         </div>
       </header>
 
-      <div className="no-scrollbar mt-5 flex items-center gap-3 overflow-x-auto px-2 pb-1">
+      <div className="mt-5 flex flex-wrap items-center gap-3 px-2">
         <Segmented<TaskListId>
           ariaLabel="Список задач"
           size="sm"
+          wrap
           value={projectId || categoryId ? (scopeList === 'done' ? 'done' : 'all') : list}
           onChange={setList}
           options={LISTS.map((l) => ({ value: l.id, label: l.label, count: l.id === 'done' || l.id === 'all' ? undefined : counts[l.id] || undefined }))}

@@ -53,7 +53,7 @@ function HabitListItem({ habit, active }: { habit: Habit; active: boolean }) {
     <Link
       to={`/habits/${habit.id}`}
       aria-current={active ? 'page' : undefined}
-      className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors', active ? 'bg-surface shadow-soft ring-1 ring-line' : 'hover:bg-surface/60')}
+      className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors', active ? 'bg-surface-2' : 'hover:bg-surface-2/60')}
     >
       <Ring value={ratio} size={40} stroke={4} color={color}>
         <span className="text-[17px]">{habit.icon}</span>
@@ -125,7 +125,7 @@ export default function HabitPage() {
       </nav>
 
       {/* Detail */}
-      <div className="scrollbar-thin flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto rounded-[20px] border border-line/60 bg-surface p-5 shadow-soft sm:p-6">
+      <div className="scrollbar-thin flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto rounded-[22px] bg-surface-2/70 p-5 sm:p-6">
         <Link to="/habits" className="mb-4 inline-flex items-center gap-1.5 self-start text-[13px] font-medium text-muted hover:text-ink lg:hidden">
           <ArrowLeft className="h-4 w-4" /> Усі звички
         </Link>
@@ -196,7 +196,7 @@ export default function HabitPage() {
         </div>
 
         {pause && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-[13.5px]">
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-surface px-4 py-3 text-[13.5px]">
             <Pause className="h-4 w-4 text-muted" />
             <span className="flex-1">
               {pause.from > today ? `Пауза з ${formatDateKey(pause.from, 'd MMMM')}` : 'На паузі'}
@@ -215,7 +215,7 @@ export default function HabitPage() {
             ['За 30 днів', month30.scheduled ? `${month30.rate}%` : '—'],
             [bad ? 'Зривів усього' : 'Усього', `${total} ${plural(total, ['раз', 'рази', 'разів'])}`],
           ].map(([l, v]) => (
-            <div key={l} className="rounded-2xl bg-surface-2 p-4">
+            <div key={l} className="rounded-2xl bg-surface p-4">
               <p className="text-[12px] text-muted">{l}</p>
               <p className="mt-1 text-[20px] font-bold tabular-nums sm:text-[22px]">{v}</p>
             </div>
@@ -292,7 +292,7 @@ export default function HabitPage() {
 
           <section aria-label="Статистика">
             <h2 className="mb-3 text-[14px] font-semibold">{bad ? 'Чисті дні по тижнях' : 'Виконання по тижнях'}</h2>
-            <div className="flex h-[180px] items-end gap-2 rounded-2xl bg-surface-2 p-4">
+            <div className="flex h-[180px] items-end gap-2 rounded-2xl bg-surface p-4">
               {weeks.map((w, i) => (
                 <div key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`Тиждень з ${formatDateKey(w.start, 'd MMM')}: ${w.rate}%`}>
                   <span className="text-[10.5px] tabular-nums text-muted">{w.scheduled ? `${w.rate}%` : ''}</span>
@@ -304,7 +304,7 @@ export default function HabitPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 rounded-2xl bg-surface-2 p-4 text-[13px] leading-relaxed text-muted">
+            <div className="mt-4 rounded-2xl bg-surface p-4 text-[13px] leading-relaxed text-muted">
               {insight ? (
                 <>
                   Найкраще виходить у <b className="text-ink">{joinDays(insight.best)}</b>. Найчастіше пропускаєте <b className="text-ink">{joinDays(insight.worst)}</b>.
@@ -356,7 +356,7 @@ function DayNotes({ habit, today }: { habit: Habit; today: string }) {
         <ul className="mt-2 space-y-1">
           {recent.map(([d, t]) => (
             <li key={d}>
-              <button type="button" onClick={() => setDay(d)} className="flex w-full gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-surface-2">
+              <button type="button" onClick={() => setDay(d)} className="flex w-full gap-2 rounded-lg px-2 py-1.5 text-left text-[12.5px] hover:bg-surface">
                 <span className="shrink-0 font-medium text-muted">{formatDateKey(d, 'd MMM')}</span>
                 <span className="truncate">{t}</span>
               </button>

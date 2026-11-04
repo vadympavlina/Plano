@@ -38,7 +38,7 @@ export function AppHeader({ onToggleSidebar, onOpenMenu }: { onToggleSidebar: ()
   const sync = useSyncSummary();
 
   return (
-    <header className="z-30 shrink-0 pt-safe lg:sticky lg:top-0">
+    <header className="z-30 shrink-0 lg:sticky lg:top-0">
       {/* Desktop */}
       <div className="relative hidden h-[72px] items-center gap-2.5 pl-[max(18px,env(safe-area-inset-left))] pr-[max(18px,env(safe-area-inset-right))] lg:flex">
         <button type="button" className={round} onClick={onToggleSidebar} aria-label="Показати чи сховати меню" title="Меню">

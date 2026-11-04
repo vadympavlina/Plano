@@ -236,7 +236,7 @@ export default function EventFormDialog({
               )}
             </div>
 
-            <div className="mt-2 flex items-center gap-1 text-[12.5px]">
+            <div className="mt-2 flex flex-wrap items-center gap-1 text-[12.5px]">
               {draft.allDay ? (
                 <span className="text-muted">{allDaySpan}</span>
               ) : (
@@ -251,8 +251,8 @@ export default function EventFormDialog({
                       onClick={() => setDuration(m)}
                       aria-pressed={duration === m}
                       className={cn(
-                        'h-7 shrink-0 rounded-md px-2 font-medium tabular-nums transition-colors',
-                        duration === m ? 'bg-surface text-ink shadow-soft ring-1 ring-line' : 'text-subtle hover:bg-surface hover:text-ink',
+                        'h-7 shrink-0 rounded-full px-2.5 font-medium tabular-nums transition-colors',
+                        duration === m ? 'bg-accent text-surface' : 'text-muted hover:bg-surface hover:text-ink',
                       )}
                     >
                       {formatDuration(m).replace(' год 30 хв', ',5 год')}
