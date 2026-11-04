@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import { ReminderSync } from '@/features/reminders/ReminderSync';
 import { NotificationActions } from '@/features/reminders/NotificationActions';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
-import { MobileNav } from './MobileNav';
+import { MobileDrawer, MobileNav } from './MobileNav';
+import { PanelSlot } from './RightPanel';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { UIProvider, useUI } from '@/app/providers/UIProvider';
 import { GoogleSyncProvider } from '@/features/integrations/GoogleSyncProvider';
 import { useData } from '@/app/providers/DataProvider';
 import { PageSkeleton, ErrorState } from '@/components/common/States';
+import { cn } from '@/lib/utils/cn';
 
 const COLLAPSE_KEY = 'plano:sidebar-collapsed';
 
@@ -34,9 +36,18 @@ function LayoutInner() {
       return false;
     }
   });
+  const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const { openSearch, openQuickAdd } = useUI();
   const { ready, error, backendKind } = useData();
+
+  // The page's side card (see RightPanel): a slot in the layout that pages fill through a portal.
+  const [panelEl, setPanelEl] = useState<HTMLElement | null>(null);
+  const [panels, setPanels] = useState(0);
+  const mount = useCallback(() => {
+    setPanels((n) => n + 1);
+    return () => setPanels((n) => n - 1);
+  }, []);
 
   useEffect(() => {
     try {
@@ -65,47 +76,73 @@ function LayoutInner() {
     return () => window.removeEventListener('keydown', onKey);
   }, [openSearch, openQuickAdd]);
 
-  // Scroll to top on navigation between pages (not between sections of one page, e.g. /settings/data).
+  // Back to the top on navigation between pages (not between sections of one page, e.g. /settings/data).
+  const scroller = useRef<HTMLElement>(null);
   const lastPage = useRef(pathname.split('/')[1]);
   useEffect(() => {
     const pageKey = pathname.split('/')[1];
-    if (pageKey !== lastPage.current) window.scrollTo({ top: 0 });
+    if (pageKey !== lastPage.current) {
+      window.scrollTo({ top: 0 });
+      scroller.current?.scrollTo({ top: 0 });
+    }
     lastPage.current = pageKey;
   }, [pathname]);
 
+  const banner = backendKind === 'local';
+  // Height of what is left for the page on wide screens: top bar, the preview banner, the frame below and the card's padding.
+  const pageH = `calc(100dvh - ${72 + (banner ? 36 : 0)}px - 14px - 2.5rem)`;
+
   return (
-    <div className="flex min-h-dvh">
-      <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        {backendKind === 'local' && (
-          <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] text-xs text-ink sm:px-8">
+    <PanelSlot.Provider value={{ el: panelEl, mount }}>
+      <div className="flex min-h-dvh flex-col lg:h-dvh lg:overflow-hidden" style={{ '--page-h': pageH } as React.CSSProperties}>
+        {banner && (
+          <div className="flex h-9 shrink-0 items-center gap-2 bg-sidebar-active px-4 pt-safe text-xs text-sidebar-fg sm:px-8">
             <Info className="h-3.5 w-3.5 shrink-0 text-primary" />
-            <span>
+            <span className="truncate">
               <strong className="font-semibold">Локальний перегляд.</strong> Дані зберігаються лише в цьому браузері й не синхронізуються. Налаштуйте Firebase, щоб користуватися Plano на всіх пристроях.
             </span>
           </div>
         )}
-        <AppHeader />
-        <main className="min-w-0 flex-1 pb-[calc(88px+max(12px,env(safe-area-inset-bottom)))] pl-safe pr-safe lg:pb-10">
-          {error && !ready ? (
-            <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
-          ) : !ready ? (
-            <PageSkeleton label="Завантажуємо ваші дані…" />
-          ) : (
-            <ErrorBoundary resetKey={pathname}>
-              {/* Soft fade between sections (not between views of one section). */}
-              <div key={pathname.split('/')[1]} className="motion-safe:animate-page-in">
-                <Outlet />
+        <AppHeader onToggleSidebar={() => setCollapsed((c) => !c)} onOpenMenu={() => setMenuOpen(true)} />
+        <div className="flex min-h-0 flex-1">
+          {!collapsed && <AppSidebar />}
+          <div className="flex min-w-0 flex-1 gap-2.5 px-2 pr-[max(8px,env(safe-area-inset-right))] lg:pb-3.5 lg:pl-2 lg:pr-[max(14px,env(safe-area-inset-right))]">
+            <main
+              ref={scroller}
+              className={cn(
+                'min-w-0 flex-1 rounded-t-[26px] bg-surface text-ink lg:overflow-y-auto lg:rounded-[24px]',
+                'pb-[calc(110px+max(12px,env(safe-area-inset-bottom)))] lg:pb-0',
+              )}
+            >
+              <div className="px-2 pt-4 sm:px-3 lg:px-3 lg:py-5">
+                {error && !ready ? (
+                  <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
+                ) : !ready ? (
+                  <PageSkeleton label="Завантажуємо ваші дані…" />
+                ) : (
+                  <ErrorBoundary resetKey={pathname}>
+                    {/* Soft fade between sections (not between views of one section). */}
+                    <div key={pathname.split('/')[1]} className="motion-safe:animate-page-in">
+                      <Outlet />
+                    </div>
+                  </ErrorBoundary>
+                )}
               </div>
-            </ErrorBoundary>
-          )}
-        </main>
+            </main>
+            <aside
+              ref={setPanelEl}
+              aria-label="Бічна панель"
+              className={cn('hidden w-[372px] shrink-0 overflow-y-auto rounded-[24px] bg-surface p-5 text-ink', panels > 0 && 'xl:block')}
+            />
+          </div>
+        </div>
       </div>
       <MobileNav />
-    </div>
+      <MobileDrawer open={menuOpen} onOpenChange={setMenuOpen} />
+    </PanelSlot.Provider>
   );
 }
 
 export function PageContainer({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={`w-full px-4 sm:px-6 ${className}`}>{children}</div>;
+  return <div className={`w-full px-2 sm:px-3 ${className}`}>{children}</div>;
 }

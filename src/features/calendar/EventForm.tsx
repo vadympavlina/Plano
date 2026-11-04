@@ -12,7 +12,7 @@ import { RepeatChip } from '@/components/common/RepeatChip';
 import { projectOptions } from '@/components/common/options';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
-import { GlassSwitch } from '@/components/ui/glass';
+import { Switch } from '@/components/ui/controls';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { ReminderSelect, reminderLabel } from '@/features/reminders/ReminderSelect';
@@ -263,7 +263,7 @@ export default function EventFormDialog({
               <label className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-2 text-[12.5px] font-medium text-muted">
                 <Sun className="h-3.5 w-3.5" />
                 Весь день
-                <GlassSwitch aria-label="Весь день" checked={draft.allDay} onCheckedChange={toggleAllDay} />
+                <Switch label="Весь день" checked={draft.allDay} onCheckedChange={toggleAllDay} />
               </label>
             </div>
 

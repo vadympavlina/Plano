@@ -19,7 +19,7 @@ function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col bg-bg pb-safe pt-safe">
       <div className="flex flex-1 items-center justify-center px-4 py-10">
-        <div className="w-full max-w-[400px]">{children}</div>
+        <div className="w-full max-w-[400px] rounded-[28px] bg-surface px-5 py-7 text-ink">{children}</div>
       </div>
       <p className="pb-6 text-center text-xs text-subtle">Plano · Плануй. Фокусуйся. Досягай.</p>
     </div>

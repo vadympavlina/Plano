@@ -1,4 +1,4 @@
-import { CalendarDays, CheckSquare, FolderKanban, Heart, Home, NotebookPen, Settings, Target, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, Heart, NotebookPen, Settings, SquareCheck, Sun, Target, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -7,18 +7,20 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { to: '/', label: 'Головна', icon: Home },
+  { to: '/', label: 'Сьогодні', icon: Sun },
+  { to: '/upcoming', label: 'Найближчі', icon: CalendarClock },
   { to: '/calendar', label: 'Календар', icon: CalendarDays },
-  { to: '/tasks', label: 'Задачі', icon: CheckSquare },
-  { to: '/projects', label: 'Проєкти', icon: FolderKanban },
+  { to: '/notes', label: 'Нотатки', icon: NotebookPen },
+  { to: '/tasks', label: 'Задачі', icon: SquareCheck },
   { to: '/habits', label: 'Звички', icon: Heart },
   { to: '/goals', label: 'Цілі', icon: Target },
-  { to: '/notes', label: 'Нотатки', icon: NotebookPen },
-  { to: '/settings', label: 'Налаштування', icon: Settings },
 ];
 
+export const SETTINGS_ITEM: NavItem = { to: '/settings', label: 'Налаштування', icon: Settings };
+
 export function titleForPath(pathname: string): string {
-  if (pathname === '/') return 'Головна';
-  const item = NAV_ITEMS.find((i) => i.to !== '/' && pathname.startsWith(i.to));
+  if (pathname === '/') return 'Сьогодні';
+  if (pathname.startsWith('/projects')) return 'Проєкти';
+  const item = [...NAV_ITEMS, SETTINGS_ITEM].find((i) => i.to !== '/' && pathname.startsWith(i.to));
   return item?.label ?? 'Plano';
 }

@@ -132,9 +132,9 @@ export default function HabitsPage() {
   const bestStreak = active.reduce((m, h) => Math.max(m, currentStreak(h, data.habitLogs, today)), 0);
 
   return (
-    <div className="w-full px-4 pb-8 sm:px-6">
+    <div className="w-full px-2 pb-8">
       <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-3">
-        <h1 className="text-[26px] font-bold tracking-tight sm:text-[28px]">Звички</h1>
+        <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Звички</h1>
         {active.length > 0 && (
           <span className="text-[13.5px] text-muted">
             Сьогодні {doneToday} з {dueToday.length}

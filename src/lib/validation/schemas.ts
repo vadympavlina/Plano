@@ -194,7 +194,7 @@ export const settingsSchema = z.object({
   habitsReminderAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
   digestAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('08:00'),
   eveningAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
-  accent: z.enum(ACCENT_COLORS).catch('blue'),
+  accent: z.enum(ACCENT_COLORS).catch('coral'),
 });
 
 export const profileSchema = z.object({

@@ -1,6 +1,6 @@
 import { memo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
 import { CategoryChip } from '@/components/common/CategoryMark';
-import { Check, ChevronDown, Clock, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
+import { Check, ChevronDown, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
@@ -12,12 +12,15 @@ import { taskDate } from './logic';
 import { BOARD_COLUMNS, type BoardColumn } from './lists';
 import { haptic } from '@/lib/utils/haptic';
 
-const RING: Partial<Record<Task['priority'], string>> = { urgent: '#E5484D', high: '#E09232' };
+/** Ring colour of the completion circle: orange for high priority, red for urgent. */
+const RING: Partial<Record<Task['priority'], string>> = { urgent: 'rgb(var(--danger))', high: 'rgb(var(--warning))' };
 
-/** Round completion toggle; the ring colour flags urgent and high priority. */
+/** Round completion toggle. The ring flags high/urgent priority; half-filled means "in progress". */
 export function TaskCheck({ task }: { task: Task }) {
   const actions = useActions();
   const done = task.status === 'completed';
+  const doing = task.status === 'in_progress';
+  const ring = RING[task.priority] ?? (doing ? 'rgb(var(--danger))' : undefined);
   return (
     <button
       type="button"
@@ -30,19 +33,27 @@ export function TaskCheck({ task }: { task: Task }) {
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
       className={cn(
-        'relative flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full border-[1.7px] transition-colors before:absolute before:-inset-2 before:content-[""]',
-        done ? 'border-transparent bg-accent text-surface' : 'border-subtle/80 hover:border-ink',
+        'relative flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition-colors before:absolute before:-inset-2 before:content-[""]',
+        done ? 'border-transparent bg-accent text-surface' : 'border-subtle/70 hover:border-ink',
       )}
-      style={!done && RING[task.priority] ? { borderColor: RING[task.priority] } : undefined}
+      style={
+        !done
+          ? {
+              ...(ring ? { borderColor: ring } : {}),
+              ...(doing ? { backgroundImage: `linear-gradient(90deg, ${ring ?? 'rgb(var(--danger))'} 50%, transparent 50%)` } : {}),
+            }
+          : undefined
+      }
     >
-      {done && <Check className="h-3 w-3 stroke-[3.2]" />}
+      {done && <Check className="h-3.5 w-3.5 stroke-[3.2]" />}
     </button>
   );
 }
 
 /** Small line under the title: time or date, project, subtasks, repeat. */
 function TaskMeta({ task, today, showDate, showProject = true, hideSubtasks }: { task: Task; today: DateKey; showDate: boolean; showProject?: boolean; hideSubtasks?: boolean }) {
-  const { projectById } = useCollections();
+  const { projectById, categoryById } = useCollections();
+  const category = task.categoryId ? categoryById(task.categoryId) : undefined;
   const settings = useSettings();
   const project = showProject && task.projectId ? projectById(task.projectId) : undefined;
   const d = taskDate(task);
@@ -51,14 +62,11 @@ function TaskMeta({ task, today, showDate, showProject = true, hideSubtasks }: {
   const parts: ReactNode[] = [];
   if (showDate && d && d !== today)
     parts.push(
-      <span key="d" className={cn(overdue && 'font-medium text-danger')}>
-        {relativeDayLabel(d, today, 'EEEEEE, d MMM')}
-      </span>,
+      <span key="d">{relativeDayLabel(d, today, 'EEEEEE, d MMM')}</span>,
     );
   if (task.startTime)
     parts.push(
-      <span key="t" className="inline-flex items-center gap-1">
-        <Clock className="h-3.5 w-3.5" />
+      <span key="t" className={cn('inline-flex items-center gap-1 tabular-nums', overdue && 'font-semibold text-danger')}>
         {formatTime(task.startTime, settings.timeFormat)}
       </span>,
     );
@@ -77,15 +85,9 @@ function TaskMeta({ task, today, showDate, showProject = true, hideSubtasks }: {
       </span>,
     );
   if (task.recurrence) parts.push(<Repeat key="r" className="h-3.5 w-3.5" aria-label="Повторюється" />);
+  if (category) parts.push(<CategoryChip key="c" category={category} />);
   if (!parts.length) return null;
-  return <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12px] text-muted">{parts}</p>;
-}
-
-function CategoryDot({ task }: { task: Task }) {
-  const { categoryById } = useCollections();
-  const c = task.categoryId ? categoryById(task.categoryId) : undefined;
-  if (!c) return null;
-  return <CategoryChip category={c} compact />;
+  return <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-[12px] text-muted">{parts}</p>;
 }
 
 /** Subtask progress as a small bar with "2 з 5". */
@@ -146,7 +148,23 @@ function useSwipe(onRight: () => void, onLeft: () => void) {
 }
 
 /** Memoised: records keep their identity until they change, so a list only redraws the rows that did. */
-export const TaskRow = memo(function TaskRow({ task, today, showDate = true, showProject = true }: { task: Task; today: DateKey; showDate?: boolean; showProject?: boolean }) {
+export const TaskRow = memo(function TaskRow({
+  task,
+  today,
+  showDate = true,
+  showProject = true,
+  selected,
+  onOpen,
+}: {
+  task: Task;
+  today: DateKey;
+  showDate?: boolean;
+  showProject?: boolean;
+  /** Outlined, when the task is open in the page's side card. */
+  selected?: boolean;
+  /** Replaces the default (details sheet); keep it stable so rows stay memoised. */
+  onOpen?: (id: string) => void;
+}) {
   const { openTask } = useUI();
   const actions = useActions();
   const [open, setOpen] = useState(false);
@@ -169,7 +187,7 @@ export const TaskRow = memo(function TaskRow({ task, today, showDate = true, sho
   );
   const reveal = swipe.dx > 0 ? (done ? 'Повернути' : 'Виконано') : 'Завтра';
   return (
-    <div className="relative overflow-hidden rounded-xl [contain-intrinsic-size:auto_52px] [content-visibility:auto]">
+    <div className="relative overflow-hidden rounded-2xl [contain-intrinsic-size:auto_58px] [content-visibility:auto]">
       {swipe.dx !== 0 && (
         <div
           aria-hidden
@@ -181,17 +199,16 @@ export const TaskRow = memo(function TaskRow({ task, today, showDate = true, sho
       )}
       <div
         {...swipe.handlers}
-        className={cn('group relative flex touch-pan-y items-start gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55', swipe.dx !== 0 && 'bg-surface')}
+        className={cn('group relative flex touch-pan-y items-start gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55', selected && 'ring-[1.8px] ring-inset ring-ink', swipe.dx !== 0 && 'bg-surface')}
         style={swipe.dx ? { transform: `translateX(${swipe.dx}px)` } : undefined}
       >
-        <span className="pt-0.5">
+        <span className="pt-px">
           <TaskCheck task={task} />
         </span>
-        <button type="button" onClick={() => !swipe.swallowClick() && openTask(task.id)} className="min-w-0 flex-1 text-left">
-          <span className={cn('block truncate text-[14.5px]', done && 'line-through')}>{task.title}</span>
+        <button type="button" onClick={() => !swipe.swallowClick() && (onOpen ?? openTask)(task.id)} className="min-w-0 flex-1 text-left">
+          <span className={cn('block truncate text-[15.5px] font-medium leading-snug', done && 'line-through')}>{task.title}</span>
           <TaskMeta task={task} today={today} showDate={showDate} showProject={showProject} hideSubtasks />
         </button>
-        {task.status === 'in_progress' && <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[11.5px] font-medium text-primary">В роботі</span>}
         {task.subtasks.length > 0 && (
           <button
             type="button"
@@ -204,7 +221,6 @@ export const TaskRow = memo(function TaskRow({ task, today, showDate = true, sho
             <ChevronDown className={cn('h-3.5 w-3.5 text-subtle transition-transform', open && 'rotate-180')} />
           </button>
         )}
-        <CategoryDot task={task} />
       </div>
       {open && (
         <ul className="relative mb-1 ml-[42px] mr-3 space-y-0.5">
@@ -246,7 +262,6 @@ function TaskCard({ task, today, onDragStart }: { task: Task; today: DateKey; on
           <p className={cn('text-[14px] leading-snug', done && 'line-through')}>{task.title}</p>
           <TaskMeta task={task} today={today} showDate hideSubtasks />
         </div>
-        <CategoryDot task={task} />
       </div>
       {task.subtasks.length > 0 && !done && (
         <div className="ml-[30px] mt-2">

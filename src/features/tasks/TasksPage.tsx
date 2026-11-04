@@ -1,29 +1,35 @@
-import { useMemo, useState, type ReactNode } from 'react';
-import { CategoryMark, categoryIcon } from '@/components/common/CategoryMark';
+import { useCallback, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, Columns3, Inbox, Layers, List, Plus, Search, Sun } from 'lucide-react';
+import { Columns3, Folder, Inbox, List, Plus, Search } from 'lucide-react';
+import { CategoryMark, categoryIcon } from '@/components/common/CategoryMark';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Segmented } from '@/components/ui/misc';
 import { EmptyState } from '@/components/common/States';
+import { RightPanel } from '@/components/layout/RightPanel';
+import { toast } from '@/components/ui/toast';
 import { useCollections } from '@/hooks/useCollections';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useActions } from '@/hooks/useActions';
 import { useUI } from '@/app/providers/UIProvider';
 import { useToday } from '@/hooks/useNow';
 import { plural, relativeDayLabel } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Task } from '@/types';
-import { isOverdue, taskDate } from './logic';
+import { taskDate } from './logic';
 import { boardColumns, listContent, listCounts, listFromParam, type BoardColumn, type TaskListId } from './lists';
 import { TaskBoard, TaskRow } from './TaskViews';
+import { TaskDetailPanel } from './TaskDetail';
 import { Progressive } from '@/components/common/Progressive';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 
-const LISTS: { id: TaskListId; label: string; icon: typeof Inbox; tint: string }[] = [
-  { id: 'inbox', label: 'Вхідні', icon: Inbox, tint: 'bg-subtle/15 text-muted' },
-  { id: 'today', label: 'Сьогодні', icon: Sun, tint: 'bg-warning/15 text-warning' },
-  { id: 'scheduled', label: 'Заплановано', icon: CalendarDays, tint: 'bg-primary/10 text-primary' },
-  { id: 'all', label: 'Усі задачі', icon: Layers, tint: 'bg-purple/10 text-purple' },
-  { id: 'done', label: 'Виконані', icon: CheckCircle2, tint: 'bg-success/10 text-success' },
+const LISTS: { id: TaskListId; label: string }[] = [
+  { id: 'all', label: 'Усі' },
+  { id: 'inbox', label: 'Вхідні' },
+  { id: 'today', label: 'Сьогодні' },
+  { id: 'scheduled', label: 'Заплановано' },
+  { id: 'done', label: 'Виконані' },
 ];
 
 type ViewMode = 'list' | 'board';
@@ -37,26 +43,66 @@ function loadMode(): ViewMode {
   }
 }
 
-function Group({ title, tone, children }: { title: string; tone?: 'danger'; children: ReactNode }) {
+interface TaskGroup {
+  key: string;
+  title: string;
+  tone?: 'danger';
+  items: Task[];
+}
+
+/** Open tasks as sections: no date (inbox), overdue, then one section per day. */
+function groupOpen(open: Task[], today: string, list: TaskListId): TaskGroup[] {
+  const inbox: Task[] = [];
+  const late: Task[] = [];
+  const byDay = new Map<string, Task[]>();
+  for (const t of open) {
+    const d = taskDate(t);
+    if (!d) inbox.push(t);
+    else if (d < today) late.push(t);
+    else byDay.set(d, [...(byDay.get(d) ?? []), t]);
+  }
+  const groups: TaskGroup[] = [];
+  if (inbox.length) groups.push({ key: 'inbox', title: 'Вхідні', items: inbox });
+  if (late.length) groups.push({ key: 'late', title: 'Прострочено', tone: 'danger', items: late });
+  for (const d of [...byDay.keys()].sort()) {
+    groups.push({ key: d, title: relativeDayLabel(d, today, 'EEEEEE, d MMMM'), items: byDay.get(d)! });
+  }
+  // A single section needs no label (the inbox and "today" lists).
+  if (list === 'inbox' && groups.length === 1) groups[0]!.title = '';
+  return groups;
+}
+
+function GroupSection({ title, count, tone, children }: { title: string; count: number; tone?: 'danger'; children: ReactNode }) {
   return (
-    <section className="mt-5 first:mt-0">
-      {title && <h3 className={cn('mb-0.5 px-3 text-[12px] font-semibold', tone === 'danger' ? 'text-danger' : 'text-subtle')}>{title}</h3>}
-      {children}
+    <section className={cn('grid gap-x-6 gap-y-1 border-t border-line py-4 first:border-t-0 first:pt-1', title && 'sm:grid-cols-[150px_1fr]')}>
+      {title && (
+        <h3 className="px-3 sm:pt-2.5">
+          <span className={cn('block text-[15px] font-bold capitalize', tone === 'danger' && 'text-danger')}>{title}</span>
+          <span className="mt-0.5 block text-[12px] font-medium text-muted">
+            {count} {plural(count, ['задача', 'задачі', 'задач'])}
+          </span>
+        </h3>
+      )}
+      <div className="min-w-0">{children}</div>
     </section>
   );
 }
 
 export default function TasksPage() {
   const [params, setParams] = useSearchParams();
-  const list = listFromParam(params.get('list') ?? params.get('filter'));
+  const list = listFromParam(params.get('list') ?? params.get('filter') ?? 'all');
   const projectId = params.get('project') ?? undefined;
   const categoryId = params.get('category') ?? undefined;
   const [query, setQuery] = useState('');
+  const [draft, setDraft] = useState('');
   const [mode, setModeState] = useState<ViewMode>(loadMode);
-  const { tasks, projects, categories, projectById, categoryById } = useCollections();
-  const { openTaskForm } = useUI();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { tasks, projectById, categoryById } = useCollections();
+  const { openTask, openTaskForm } = useUI();
+  const actions = useActions();
   useOpenFromQuery(() => openTaskForm());
   const today = useToday();
+  const wide = useMediaQuery('(min-width: 1280px)');
 
   const setMode = (m: ViewMode) => {
     setModeState(m);
@@ -66,34 +112,22 @@ export default function TasksPage() {
       /* ignore */
     }
   };
-  const go = (next: { list?: TaskListId; project?: string; category?: string }) => {
-    const p: Record<string, string> = {};
-    if (next.project) p.project = next.project;
-    else if (next.category) p.category = next.category;
-    else p.list = next.list ?? 'today';
-    if (next.project || next.category) p.list = 'all';
-    setParams(p, { replace: true });
-  };
+  const setList = (l: TaskListId) => setParams({ list: l }, { replace: true });
 
-  const scopeList: TaskListId = projectId || categoryId ? 'all' : list;
+  const scopeList: TaskListId = projectId || categoryId ? (list === 'done' ? 'done' : 'all') : list;
   const content = useMemo(() => listContent(tasks, { list: scopeList, projectId, categoryId }, today, query), [tasks, scopeList, projectId, categoryId, today, query]);
   const counts = useMemo(() => listCounts(tasks, today), [tasks, today]);
-  const projectCounts = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const t of tasks) if (t.projectId && (t.status === 'todo' || t.status === 'in_progress')) m.set(t.projectId, (m.get(t.projectId) ?? 0) + 1);
-    return m;
-  }, [tasks]);
-  const activeProjects = projects.filter((p) => p.status !== 'archived' && p.status !== 'completed');
 
-  // Header for the current scope.
+  // On wide screens a task opens in the side card; elsewhere in the details sheet.
+  const open = useCallback((id: string) => (wide ? setSelectedId(id) : openTask(id)), [wide, openTask]);
+
   const project = projectId ? projectById(projectId) : undefined;
   const category = categoryId ? categoryById(categoryId) : undefined;
-  const listMeta = LISTS.find((l) => l.id === list)!;
-  const title = project?.name ?? category?.name ?? listMeta.label;
+  const title = project?.name ?? category?.name ?? 'Задачі';
   const boardAllowed = scopeList !== 'done';
   const effectiveMode: ViewMode = boardAllowed ? mode : 'list';
   const doneCount = content.done.length;
-  const totalCount = content.open.length + (scopeList === 'today' ? doneCount : 0);
+  const empty = content.open.length === 0 && content.done.length === 0;
 
   const defaults = (status?: BoardColumn): Partial<Task> => ({
     ...(status && status !== 'completed' ? { status } : {}),
@@ -102,233 +136,138 @@ export default function TasksPage() {
     ...(categoryId && categoryId !== 'none' ? { categoryId } : {}),
   });
 
-  /* ---------- list view groups ---------- */
-  const listBody = () => {
-    const { open, done } = content;
-    if (scopeList === 'today') {
-      const late = open.filter((t) => isOverdue(t, today));
-      const now = open.filter((t) => !isOverdue(t, today));
-      return (
-        <>
-          {late.length > 0 && (
-            <Group title="Прострочено" tone="danger">
-              <Progressive items={late}>{(t) => <TaskRow key={t.id} task={t} today={today} />}</Progressive>
-            </Group>
-          )}
-          {now.length > 0 && (
-            <Group title={late.length ? 'Сьогодні' : ''}>
-              <Progressive items={now}>{(t) => <TaskRow key={t.id} task={t} today={today} showDate={false} />}</Progressive>
-            </Group>
-          )}
-          {done.length > 0 && (
-            <Group title={`Виконано · ${done.length}`}>
-              <Progressive items={done}>{(t) => <TaskRow key={t.id} task={t} today={today} showDate={false} />}</Progressive>
-            </Group>
-          )}
-        </>
-      );
-    }
-    if (scopeList === 'scheduled') {
-      const byDay = new Map<string, Task[]>();
-      for (const t of open) {
-        const d = taskDate(t)!;
-        const key = d < today ? 'late' : d;
-        byDay.set(key, [...(byDay.get(key) ?? []), t]);
-      }
-      return [...byDay.entries()].map(([key, items]) => (
-        <Group key={key} title={key === 'late' ? 'Прострочено' : relativeDayLabel(key, today, 'EEEE, d MMMM')} tone={key === 'late' ? 'danger' : undefined}>
-          <Progressive items={items}>{(t) => <TaskRow key={t.id} task={t} today={today} showDate={key === 'late'} />}</Progressive>
-        </Group>
-      ));
-    }
-    return (
-      <>
-        {open.length > 0 && (
-          <Group title="">
-            <Progressive items={open}>{(t) => <TaskRow key={t.id} task={t} today={today} />}</Progressive>
-          </Group>
-        )}
-        {done.length > 0 && (
-          <Group title={scopeList === 'done' ? '' : `Виконано за тиждень · ${done.length}`}>
-            <Progressive items={done}>{(t) => <TaskRow key={t.id} task={t} today={today} />}</Progressive>
-          </Group>
-        )}
-      </>
-    );
+  const addInline = (e: FormEvent) => {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text) return;
+    const d = defaults();
+    const { id, write } = actions.tasks.create({ title: text, status: 'todo', priority: 'medium', tags: [], subtasks: [], ...d });
+    write.catch(() => toast.error('Не вдалося додати задачу'));
+    toast.success(`Задачу «${text}» додано`, { action: { label: 'Скасувати', onClick: () => void actions.tasks.remove(id).catch(() => undefined) } });
+    setDraft('');
   };
 
-  const empty = content.open.length === 0 && content.done.length === 0;
+  const groups = useMemo(() => groupOpen(content.open, today, scopeList), [content.open, today, scopeList]);
+  const row = (t: Task, showDate = true) => <TaskRow key={t.id} task={t} today={today} showDate={showDate} selected={selectedId === t.id} onOpen={open} />;
 
-  const navItem = (active: boolean, onClick: () => void, icon: ReactNode, label: string, count?: number) => (
-    <button
-      key={label}
-      type="button"
-      onClick={onClick}
-      aria-current={active ? 'page' : undefined}
-      className={cn(
-        'flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13.5px] transition-colors',
-        active ? 'bg-primary/10 font-semibold text-primary' : 'text-ink hover:bg-surface',
-      )}
-    >
-      {icon}
-      <span className="min-w-0 flex-1 truncate">{label}</span>
-      {!!count && <span className={cn('text-[12px] tabular-nums', active ? '' : 'text-subtle')}>{count}</span>}
-    </button>
-  );
-
-  const searchBox = (
-    <Input type="search" icon={<Search />} value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9" />
-  );
-
-  const modeSwitch = boardAllowed && (
-    <div role="radiogroup" aria-label="Вигляд" className="flex rounded-xl bg-surface-2 p-1 ring-1 ring-line/70">
-      {(
-        [
-          ['list', 'Список', List],
-          ['board', 'Дошка', Columns3],
-        ] as const
-      ).map(([m, label, Icon]) => (
-        <button
-          key={m}
-          type="button"
-          role="radio"
-          aria-checked={effectiveMode === m}
-          onClick={() => setMode(m)}
-          className={cn(
-            'flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[13px] transition-colors',
-            effectiveMode === m ? 'bg-surface font-medium text-ink shadow-soft' : 'text-muted hover:text-ink',
-          )}
-        >
-          <Icon className="h-4 w-4" /> <span className="hidden sm:inline">{label}</span>
-        </button>
-      ))}
-    </div>
-  );
-
-  const HeadIcon = listMeta.icon;
+  const subtitle =
+    scopeList === 'done'
+      ? `${doneCount} ${plural(doneCount, ['задача', 'задачі', 'задач'])}`
+      : content.open.length
+        ? `${content.open.length} ${plural(content.open.length, ['відкрита', 'відкриті', 'відкритих'])}`
+        : 'Усе зроблено';
 
   return (
-    <div className="flex w-full gap-5 px-4 pb-6 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-6 lg:pb-0">
-      {/* Lists */}
-      <nav aria-label="Списки задач" className="hidden w-[232px] shrink-0 flex-col gap-0.5 overflow-y-auto pb-4 lg:flex">
-        <div className="mb-2">{searchBox}</div>
-        {LISTS.map((l) =>
-          navItem(!projectId && !categoryId && list === l.id, () => go({ list: l.id }), <l.icon className={cn('h-[18px] w-[18px]', !(!projectId && !categoryId && list === l.id) && 'text-muted')} />, l.label, l.id === 'done' ? undefined : counts[l.id]),
-        )}
-        {activeProjects.length > 0 && <p className="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Проєкти</p>}
-        {activeProjects.map((p) =>
-          navItem(
-            projectId === p.id,
-            () => go({ project: p.id }),
-            <span className="mx-[3px] h-3 w-3 shrink-0 rounded-full border-[3px]" style={{ borderColor: colorOf(p.color) }} />,
-            p.name,
-            projectCounts.get(p.id),
-          ),
-        )}
-        {categories.length > 0 && <p className="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Категорії</p>}
-        {categories.map((c) =>
-          navItem(categoryId === c.id, () => go({ category: c.id }), <span className="flex w-[18px] shrink-0 justify-center" style={{ color: colorOf(c.color) }}><CategoryMark category={c} className={categoryIcon(c) ? 'h-4 w-4' : undefined} /></span>, c.name),
-        )}
-      </nav>
-
-      {/* Content */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col rounded-[20px] border border-line/60 bg-surface p-4 shadow-soft sm:p-6">
-        {/* Phones & tablets: lists as chips */}
-        <div className="no-scrollbar -mx-4 mb-4 flex gap-1.5 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:hidden">
-          {LISTS.map((l) => {
-            const on = !projectId && !categoryId && list === l.id;
-            return (
-              <button
-                key={l.id}
-                type="button"
-                onClick={() => go({ list: l.id })}
-                className={cn('flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px]', on ? 'bg-accent font-semibold text-surface' : 'border border-line bg-surface text-muted')}
-              >
-                {l.label}
-                {l.id !== 'done' && counts[l.id] > 0 && <span className={cn('text-[11.5px]', on ? 'opacity-70' : 'text-subtle')}>{counts[l.id]}</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="mb-5 flex flex-wrap items-center gap-3">
+    <div className="pb-6">
+      <header className="flex flex-wrap items-start justify-between gap-3 px-2">
+        <div className="flex min-w-0 items-center gap-3">
           {project ? (
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${colorOf(project.color)}1f` }}>
-              <span className="h-3.5 w-3.5 rounded-full border-[3.5px]" style={{ borderColor: colorOf(project.color) }} />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: `${colorOf(project.color)}1f`, color: colorOf(project.color) }}>
+              <Folder className="h-5 w-5" />
             </span>
           ) : category ? (
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl" style={{ backgroundColor: `${colorOf(category.color)}1f` }}>
-              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: colorOf(category.color) }} />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: `${colorOf(category.color)}1f`, color: colorOf(category.color) }}>
+              <CategoryMark category={category} className={categoryIcon(category) ? 'h-5 w-5' : undefined} />
             </span>
-          ) : (
-            <span className={cn('flex h-10 w-10 items-center justify-center rounded-xl', listMeta.tint)}>
-              <HeadIcon className="h-5 w-5" />
-            </span>
-          )}
-          <h1 className="text-[24px] font-bold tracking-tight sm:text-[28px]">{title}</h1>
-          <span className="text-[13px] text-muted">
-            {scopeList === 'today' && totalCount > 0
-              ? `${doneCount} з ${totalCount} виконано`
-              : scopeList === 'done'
-                ? `${doneCount} ${plural(doneCount, ['задача', 'задачі', 'задач'])}`
-                : content.open.length
-                  ? `${content.open.length} відкритих`
-                  : ''}
-          </span>
-          <div className="ml-auto flex items-center gap-2">
-            {modeSwitch}
-            <Button variant="dark" size="sm" onClick={() => openTaskForm({ defaults: defaults() })}>
-              <Plus className="h-4 w-4" /> Задача
-            </Button>
+          ) : null}
+          <div className="min-w-0">
+            <h1 className="truncate text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">{title}</h1>
+            <p className="mt-1.5 text-[13px] text-muted">{subtitle}</p>
           </div>
         </div>
+        <div className="flex items-center gap-2 pt-1">
+          {boardAllowed && (
+            <Segmented<ViewMode>
+              ariaLabel="Вигляд"
+              size="sm"
+              value={effectiveMode}
+              onChange={setMode}
+              options={[
+                { value: 'list', label: <List className="h-4 w-4" aria-label="Список" />, title: 'Список' },
+                { value: 'board', label: <Columns3 className="h-4 w-4" aria-label="Дошка" />, title: 'Дошка' },
+              ]}
+            />
+          )}
+          <Button variant="dark" size="sm" onClick={() => openTaskForm({ defaults: defaults() })}>
+            <Plus className="h-4 w-4" /> Задача
+          </Button>
+        </div>
+      </header>
 
-        <div className="mb-4 lg:hidden">{searchBox}</div>
+      <div className="no-scrollbar mt-5 flex items-center gap-3 overflow-x-auto px-2 pb-1">
+        <Segmented<TaskListId>
+          ariaLabel="Список задач"
+          size="sm"
+          value={projectId || categoryId ? (scopeList === 'done' ? 'done' : 'all') : list}
+          onChange={setList}
+          options={LISTS.map((l) => ({ value: l.id, label: l.label, count: l.id === 'done' || l.id === 'all' ? undefined : counts[l.id] || undefined }))}
+        />
+        <div className="hidden min-w-[220px] flex-1 sm:block sm:max-w-[320px]">
+          <Input type="search" icon={<Search />} value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9 rounded-full" />
+        </div>
+      </div>
+      <div className="mt-3 px-2 sm:hidden">
+        <Input type="search" icon={<Search />} value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9 rounded-full" />
+      </div>
 
+      <div className="mt-4">
         {effectiveMode === 'board' ? (
-          <TaskBoard columns={boardColumns(content)} today={today} onAdd={(status) => openTaskForm({ defaults: defaults(status) })} />
-        ) : empty ? (
-          <EmptyState
-            className="flex-1"
-            icon={<HeadIcon />}
-            title={
-              query
-                ? 'Нічого не знайдено'
-                : scopeList === 'today'
-                  ? 'На сьогодні все чисто'
-                  : scopeList === 'inbox'
-                    ? 'Вхідні порожні'
-                    : scopeList === 'done'
-                      ? 'Виконаних задач поки немає'
-                      : 'Тут поки немає задач'
-            }
-            description={query ? 'Спробуйте інший запит.' : scopeList === 'inbox' ? 'Сюди потрапляють задачі без дати.' : undefined}
-            action={
-              !query &&
-              scopeList !== 'done' && (
-                <Button variant="outline" size="sm" onClick={() => openTaskForm({ defaults: defaults() })}>
-                  <Plus className="h-3.5 w-3.5" /> Додати задачу
-                </Button>
-              )
-            }
-          />
-        ) : (
-          <div className="scrollbar-thin -mx-2 min-h-0 flex-1 overflow-y-auto px-2">
-            <div className="w-full">
-              {scopeList !== 'done' && (
-                <button
-                  type="button"
-                  onClick={() => openTaskForm({ defaults: defaults() })}
-                  className="mb-4 flex w-full items-center gap-3 rounded-xl border border-dashed border-line px-3 py-2.5 text-left text-[14px] text-subtle transition-colors hover:border-subtle hover:text-ink"
-                >
-                  <Plus className="h-[18px] w-[18px]" /> {scopeList === 'today' ? 'Нова задача на сьогодні' : 'Нова задача'}
-                </button>
-              )}
-              {listBody()}
-            </div>
+          <div className="px-2">
+            <TaskBoard columns={boardColumns(content)} today={today} onAdd={(status) => openTaskForm({ defaults: defaults(status) })} />
           </div>
+        ) : (
+          <>
+            {scopeList !== 'done' && (
+              <form onSubmit={addInline} className="mx-1 mb-3 flex items-center gap-3 rounded-2xl px-3 py-2.5">
+                <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-subtle/70 text-subtle">
+                  <Plus className="h-3 w-3" strokeWidth={3} />
+                </span>
+                <input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  aria-label="Нова задача"
+                  placeholder={scopeList === 'today' ? 'Нова задача на сьогодні' : 'Нова задача'}
+                  className="min-w-0 flex-1 bg-transparent text-[15.5px] font-medium outline-none placeholder:font-normal placeholder:text-subtle"
+                />
+              </form>
+            )}
+            {empty ? (
+              <EmptyState
+                icon={<Inbox />}
+                title={query ? 'Нічого не знайдено' : scopeList === 'today' ? 'На сьогодні все чисто' : scopeList === 'inbox' ? 'Вхідні порожні' : scopeList === 'done' ? 'Виконаних задач поки немає' : 'Тут поки немає задач'}
+                description={query ? 'Спробуйте інший запит.' : scopeList === 'inbox' ? 'Сюди потрапляють задачі без дати.' : undefined}
+              />
+            ) : (
+              <div className="px-1">
+                {scopeList === 'done' ? (
+                  <GroupSection title="" count={doneCount}>
+                    <Progressive items={content.done}>{(t) => row(t)}</Progressive>
+                  </GroupSection>
+                ) : (
+                  <>
+                    {groups.map((g) => (
+                      <GroupSection key={g.key} title={g.title} count={g.items.length} tone={g.tone}>
+                        <Progressive items={g.items}>{(t) => row(t, g.key === 'late' || g.key === 'inbox' ? g.key === 'late' : false)}</Progressive>
+                      </GroupSection>
+                    ))}
+                    {doneCount > 0 && (
+                      <GroupSection title={scopeList === 'today' ? 'Виконано' : 'Виконано за тиждень'} count={doneCount}>
+                        <Progressive items={content.done}>{(t) => row(t, false)}</Progressive>
+                      </GroupSection>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      {wide && selectedId && (
+        <RightPanel>
+          <TaskDetailPanel taskId={selectedId} onClose={() => setSelectedId(null)} />
+        </RightPanel>
+      )}
     </div>
   );
 }

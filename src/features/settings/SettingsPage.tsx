@@ -28,7 +28,7 @@ import { disablePush, enablePush, needsHomeScreen, pushEnabledHere, pushSupporte
 import { deviceTimeZone, formatDateKey, plural, todayKey } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
-import { GlassSwitch } from '@/components/ui/glass';
+import { Switch } from '@/components/ui/controls';
 import { DEFAULT_SETTINGS } from '@/lib/defaults';
 import type { AccentColor, Category, Settings, ThemePreference } from '@/types';
 import { buildExport, validateImport, type ImportResult } from './dataTransfer';
@@ -196,6 +196,7 @@ function ProfileCard() {
 }
 
 const ACCENTS: [AccentColor, string, string][] = [
+  ['coral', 'Кораловий', '240 70 52'],
   ['blue', 'Синій', '71 120 245'],
   ['violet', 'Фіолетовий', '132 94 247'],
   ['green', 'Зелений', '22 163 110'],
@@ -506,7 +507,7 @@ function NotificationsSection() {
         />
       </Row>
       <Row label="Задачі з часом" hint="У час початку задачі.">
-        <GlassSwitch aria-label="Нагадування про задачі" checked={s.remindTasks} onCheckedChange={(remindTasks) => set({ remindTasks })} />
+        <Switch label="Нагадування про задачі" checked={s.remindTasks} onCheckedChange={(remindTasks) => set({ remindTasks })} />
       </Row>
       <Row label="Ранковий підсумок" hint="Скільки задач і подій сьогодні.">
         <Select aria-label="Ранковий підсумок" className="w-[170px]" value={s.digestAt} onChange={(digestAt) => set({ digestAt })} options={times('Вимкнено')} />
@@ -782,7 +783,7 @@ export default function SettingsPage() {
     <PageContainer className="pb-10">
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
         <aside className="lg:sticky lg:top-4 lg:w-56 lg:shrink-0 lg:self-start">
-          <h1 className="mb-4 text-[26px] font-bold tracking-tight sm:text-[28px]">Налаштування</h1>
+          <h1 className="mb-4 text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Налаштування</h1>
           <label className="mb-3 flex h-10 items-center gap-2 rounded-xl border border-line bg-surface px-3 text-[13px] focus-within:border-subtle">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
             <input

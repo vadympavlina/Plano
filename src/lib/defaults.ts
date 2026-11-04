@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS: Settings = {
   habitsReminderAt: '21:00',
   digestAt: '08:00',
   eveningAt: '21:00',
-  accent: 'blue',
+  accent: 'coral',
 };
 
 const STARTER: [string, string, ColorKey, string][] = [

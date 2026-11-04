@@ -1,10 +1,11 @@
-import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
 import { CalendarDays, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CheckCircle } from '@/components/ui/misc';
-import { GlassButton, GlassTabs } from '@/components/ui/glass';
+import { CheckCircle, Segmented } from '@/components/ui/misc';
+import { RightPanel } from '@/components/layout/RightPanel';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useActions } from '@/hooks/useActions';
 import { solidTint } from '@/lib/utils/colors';
 import { taskDate } from '@/features/tasks/logic';
@@ -37,7 +38,6 @@ import { startTaskDrag } from './TaskTick';
 import { MonthView } from './MonthView';
 import { MiniCalendar } from '@/components/ui/calendar';
 import { EmptyState } from '@/components/common/States';
-import { cn } from '@/lib/utils/cn';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 
 function rangeFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1) {
@@ -130,16 +130,14 @@ export default function CalendarPage() {
   );
 
   const viewSwitch = (className?: string, stretch?: boolean) => (
-    <GlassTabs
-      fill={stretch}
-      wrapperClassName={className}
-      className={stretch ? undefined : className}
-      tabHeight={32}
-      aria-label="Вигляд календаря"
+    <Segmented
+      ariaLabel="Вигляд календаря"
+      size="sm"
+      stretch={stretch}
+      className={className}
       value={view}
-      onValueChange={(v) => navigate({ view: v as CalendarView })}
-      style={stretch ? undefined : ({ '--lg-tab-width': '74px' } as CSSProperties)}
-      items={[
+      onChange={(v) => navigate({ view: v })}
+      options={[
         { value: 'day', label: 'День' },
         { value: 'week', label: 'Тиждень' },
         { value: 'month', label: 'Місяць' },
@@ -160,152 +158,110 @@ export default function CalendarPage() {
     </Popover>
   );
 
+  const wide = useMediaQuery('(min-width: 1280px)');
+
+  const sidePanel = (
+    <>
+      <MiniCalendar selected={anchor} today={today} weekStartsOn={settings.weekStartsOn} onSelect={(d) => navigate({ date: d })} markedDates={monthMarks} highlightRange={view === 'week' ? range : undefined} />
+      <h3 className="mb-3 mt-6 text-[15px] font-bold">{laterToday.length ? 'Далі сьогодні' : 'Найближче'}</h3>
+      {laterToday.length > 0 ? (
+        <div className="space-y-2">
+          {laterToday.map((o, i) => {
+            const color = eventColor(o.event, categoryById);
+            const start = timeToMinutes(o.event.startTime!);
+            const badge = start <= nowMinutes ? 'зараз' : i === 0 ? `через ${formatDuration(start - nowMinutes)}` : '';
+            return (
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => openEvent(o.event.id, o.date)}
+                className="block w-full rounded-2xl p-3 text-left transition-[filter] hover:brightness-[0.97]"
+                style={{ backgroundColor: solidTint(color, 0.1) }}
+              >
+                <span className="flex items-center justify-between gap-2 text-[12px] font-semibold tabular-nums" style={{ color }}>
+                  {formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
+                  {badge && <span className="rounded-full bg-surface px-2 text-[10.5px]">{badge}</span>}
+                </span>
+                <span className="mt-0.5 block truncate text-[14px] font-semibold">{o.event.title}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : upcoming.length === 0 ? (
+        <EmptyState compact icon={<CalendarDays />} title="Нічого не заплановано" className="!py-6" />
+      ) : (
+        <div className="-mx-2 space-y-0.5">
+          {upcoming.map((o) => (
+            <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl px-2 py-2 text-left hover:bg-surface-2">
+              <span className="mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-medium">{o.event.title}</span>
+                <span className="block text-[12px] tabular-nums text-muted">
+                  {relativeDayLabel(o.date < today ? today : o.date, today)} · {o.event.allDay ? 'весь день' : formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {untimedToday.length > 0 && (
+        <>
+          <h3 className="mb-1.5 mt-6 text-[15px] font-bold">Задачі без часу</h3>
+          <div className="-mx-1">
+            {untimedToday.map((t) => (
+              <div key={t.id} draggable onDragStart={(e) => startTaskDrag(e, t.id)} title="Перетягніть у календар, щоб призначити час" className="flex cursor-grab items-center gap-3 rounded-2xl px-2 py-2 hover:bg-surface-2 active:cursor-grabbing">
+                <CheckCircle checked={false} size="sm" label={`Виконати «${t.title}»`} onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)} />
+                <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left text-[14px]">
+                  {t.title}
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+
   return (
-    <div className="flex w-full flex-col px-4 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-6">
-      {/* Desktop toolbar */}
-      <div className="mb-3 hidden items-center gap-2 lg:flex">
-        <div className="flex items-center gap-1.5">
-          <GlassButton aria-label="Назад" onClick={() => step(-1)} icon={<ChevronLeft />} />
-          <GlassButton aria-label="Вперед" onClick={() => step(1)} icon={<ChevronRight />} />
+    <div className="flex w-full flex-col lg:h-[var(--page-h)]">
+      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-3 sm:pb-4">
+        <div className="min-w-0 max-w-full">
+          {datePicker(
+            <span className="block truncate text-left text-[26px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">
+              <span className="sm:hidden">{titleFor(view, anchor, settings.weekStartsOn, true)}</span>
+              <span className="hidden sm:inline">{titleFor(view, anchor, settings.weekStartsOn)}</span>
+            </span>,
+            'block max-w-full rounded-xl text-left',
+          )}
         </div>
-        {datePicker(
-          titleFor(view, anchor, settings.weekStartsOn),
-          'ml-1 truncate rounded-lg px-2 py-1 text-[22px] font-bold tracking-tight first-letter:uppercase hover:bg-surface',
-        )}
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 sm:gap-2 sm:pt-1">
           <GoogleSyncButton />
-          <GlassButton onClick={() => navigate({ date: today })} disabled={anchor === today}>
+          <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => navigate({ date: today })} disabled={anchor === today} className={anchor === today ? 'hidden sm:inline-flex' : undefined}>
             Сьогодні
-          </GlassButton>
+          </Button>
+          <Button variant="outline" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
           {viewSwitch()}
-          <GlassButton variant="filled" tint="rgb(var(--ink))" onClick={addEvent} icon={<Plus className="!h-4 !w-4" />} className="dark:!text-bg">
-            Подія
-          </GlassButton>
+          <Button variant="dark" size="sm" onClick={addEvent} className="hidden sm:inline-flex">
+            <Plus className="h-4 w-4" /> Подія
+          </Button>
         </div>
+      </header>
+
+      <div className="h-[calc(100dvh-330px)] min-h-[440px] min-w-0 flex-1 overflow-hidden rounded-2xl lg:h-auto lg:min-h-0">
+        {view === 'month' ? (
+          <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
+        ) : (
+          <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} />
+        )}
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4">
-        <Card className="flex h-[calc(100dvh-154px-max(12px,env(safe-area-inset-bottom))-env(safe-area-inset-top))] min-h-[460px] min-w-0 flex-1 flex-col overflow-hidden lg:h-auto lg:min-h-0">
-          {/* Phone & tablet toolbar */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-line p-3 sm:px-4 lg:hidden">
-            <div className="flex min-w-0 flex-1 basis-0 items-center sm:flex-none sm:basis-auto">
-              <Button variant="ghost" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {datePicker(
-                <>
-                  <span className="sm:hidden">{titleFor(view, anchor, settings.weekStartsOn, true)}</span>
-                  <span className="hidden sm:inline">{titleFor(view, anchor, settings.weekStartsOn)}</span>
-                </>,
-                'truncate rounded-lg px-1.5 py-1 text-[14px] font-semibold tracking-tight hover:bg-surface-2 sm:px-2',
-              )}
-              <Button variant="ghost" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            {viewSwitch('order-last w-full sm:order-none sm:w-auto', true)}
-            <GoogleSyncButton />
-            <Button
-              variant="outline"
-              size="sm"
-              className={cn('px-2.5', anchor === today && 'hidden sm:inline-flex')}
-              onClick={() => navigate({ date: today })}
-              disabled={anchor === today}
-            >
-              Сьогодні
-            </Button>
-            <Button variant="dark" size="sm" className="w-8 px-0 sm:ml-auto sm:w-auto sm:px-3" aria-label="Додати подію" onClick={addEvent}>
-              <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Додати подію</span>
-            </Button>
-          </div>
-
-          <div className="min-h-0 flex-1">
-            {view === 'month' ? (
-              <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
-            ) : (
-              <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} />
-            )}
-          </div>
-        </Card>
-
-        <aside className="hidden w-[272px] shrink-0 flex-col gap-4 xl:flex">
-          <Card className="p-4">
-            <MiniCalendar
-              selected={anchor}
-              today={today}
-              weekStartsOn={settings.weekStartsOn}
-              onSelect={(d) => navigate({ date: d })}
-              markedDates={monthMarks}
-              highlightRange={view === 'week' ? range : undefined}
-            />
-          </Card>
-          <Card className="scrollbar-thin min-h-0 flex-1 overflow-y-auto p-4">
-            <h3 className="mb-3 text-sm font-semibold">{laterToday.length ? 'Далі сьогодні' : 'Найближче'}</h3>
-            {laterToday.length > 0 ? (
-              <div className="space-y-2">
-                {laterToday.map((o, i) => {
-                  const color = eventColor(o.event, categoryById);
-                  const start = timeToMinutes(o.event.startTime!);
-                  const badge = start <= nowMinutes ? 'зараз' : i === 0 ? `через ${formatDuration(start - nowMinutes)}` : '';
-                  return (
-                    <button
-                      key={o.key}
-                      type="button"
-                      onClick={() => openEvent(o.event.id, o.date)}
-                      className="block w-full rounded-xl p-2.5 text-left transition-[filter] hover:brightness-[0.97]"
-                      style={{ backgroundColor: solidTint(color, 0.1) }}
-                    >
-                      <span className="flex items-center justify-between gap-2 text-[12px] font-semibold tabular-nums" style={{ color }}>
-                        {formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
-                        {badge && <span className="rounded bg-surface px-1.5 text-[10.5px]">{badge}</span>}
-                      </span>
-                      <span className="mt-0.5 block truncate text-[13px] font-semibold">{o.event.title}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : upcoming.length === 0 ? (
-              <EmptyState compact icon={<CalendarDays />} title="Нічого не заплановано" className="!py-6" />
-            ) : (
-              <div className="-mx-2 space-y-0.5">
-                {upcoming.map((o) => (
-                  <button
-                    key={o.key}
-                    type="button"
-                    onClick={() => openEvent(o.event.id, o.date)}
-                    className="flex w-full items-start gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-surface-2"
-                  >
-                    <span className="mt-0.5 h-8 w-[3px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-medium">{o.event.title}</span>
-                      <span className="block text-[11.5px] tabular-nums text-muted">
-                        {o.event.allDay ? 'Весь день' : formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[11px] text-subtle">{relativeDayLabel(o.date < today ? today : o.date, today)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {untimedToday.length > 0 && (
-              <>
-                <h3 className="mb-1.5 mt-5 text-sm font-semibold">Задачі без часу</h3>
-                <div className="-mx-1">
-                  {untimedToday.map((t) => (
-                    <div key={t.id} draggable onDragStart={(e) => startTaskDrag(e, t.id)} title="Перетягніть у календар, щоб призначити час" className="flex cursor-grab items-center gap-2.5 rounded-lg px-1 py-1.5 active:cursor-grabbing">
-                      <CheckCircle checked={false} size="sm" label={`Виконати «${t.title}»`} onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)} />
-                      <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left text-[13px]">
-                        {t.title}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </Card>
-        </aside>
-      </div>
+      {wide && <RightPanel>{sidePanel}</RightPanel>}
     </div>
   );
 }

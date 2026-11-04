@@ -10,7 +10,7 @@ export function applyTheme(theme: ThemePreference) {
   // Status bar / browser chrome follows the app theme, not just the OS one.
   document.querySelectorAll('meta[name="theme-color"]').forEach((m) => {
     m.removeAttribute('media');
-    m.setAttribute('content', dark ? '#0E1117' : '#F3F5F9');
+    m.setAttribute('content', '#0D0D0F');
   });
   try {
     localStorage.setItem('plano:theme', theme);

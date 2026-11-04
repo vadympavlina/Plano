@@ -18,9 +18,9 @@ export type ControlVariant = 'field' | 'chip' | 'ghost';
 export function triggerClass(variant: ControlVariant, opts: { invalid?: boolean; empty?: boolean } = {}) {
   return cn(
     'group inline-flex min-w-0 items-center gap-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50',
-    // Glass, like the fields and buttons (see .glass-control).
-    variant === 'field' && 'glass-control h-10 w-full rounded-full px-3.5 text-sm',
-    variant === 'chip' && 'glass-control h-8 rounded-full px-3 text-[13px] font-medium',
+    variant === 'field' &&
+      'h-10 w-full rounded-[14px] bg-surface-2 px-3.5 text-sm hover:bg-line/50 data-[state=open]:bg-surface data-[state=open]:ring-2 data-[state=open]:ring-primary/20',
+    variant === 'chip' && 'h-8 rounded-full bg-surface-2 px-3 text-[13px] font-medium hover:bg-line/70 data-[state=open]:bg-line/70',
     variant === 'ghost' && 'h-8 rounded-full px-2.5 text-[13px] font-medium hover:bg-surface-2 data-[state=open]:bg-surface-2',
     opts.empty ? 'text-subtle' : 'text-ink',
     opts.invalid && 'ring-2 ring-danger/40',
@@ -28,7 +28,7 @@ export function triggerClass(variant: ControlVariant, opts: { invalid?: boolean;
 }
 
 export const popoverPanel =
-  'glass-panel z-50 rounded-[20px] p-1.5 text-sm text-ink outline-none data-[state=open]:animate-scale-in';
+  'z-50 rounded-[20px] border border-line bg-surface p-1.5 text-sm text-ink shadow-pop outline-none data-[state=open]:animate-scale-in';
 
 interface SelectProps<T extends string> {
   value: T | undefined;

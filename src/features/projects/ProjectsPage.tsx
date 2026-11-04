@@ -117,9 +117,9 @@ export default function ProjectsPage() {
     .filter((g) => g.list.length > 0);
 
   return (
-    <div className="w-full px-4 pb-8 sm:px-6">
+    <div className="w-full px-2 pb-8">
       <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-3">
-        <h1 className="text-[26px] font-bold tracking-tight sm:text-[28px]">Проєкти</h1>
+        <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Проєкти</h1>
         <span className="text-[13.5px] text-muted">
           {counts.active ?? 0} {plural(counts.active ?? 0, ['активний', 'активні', 'активних'])} · {openTasks} {plural(openTasks, ['відкрита задача', 'відкриті задачі', 'відкритих задач'])}
         </span>

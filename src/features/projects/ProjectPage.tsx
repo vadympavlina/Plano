@@ -137,7 +137,7 @@ export default function ProjectPage() {
             </LineIconPicker>
           </div>
           <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
-            <h1 className="truncate text-[22px] font-bold tracking-tight sm:text-[26px]">{project.name}</h1>
+            <h1 className="truncate text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">{project.name}</h1>
             <p className="mt-0.5 text-[13.5px] text-muted">
               {project.startDate && `з ${formatDateKey(project.startDate, 'd MMMM')}`}
               {project.startDate && project.targetDate && ' · '}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CategoryIcon } from '@/components/common/CategoryMark';
-import { CalendarDays, Clock, Flag, FolderKanban, Pencil, Repeat, Tag, Target, Trash2, CircleDot } from 'lucide-react';
+import { CalendarDays, Clock, Flag, FolderKanban, Pencil, Repeat, Tag, Target, Trash2, CircleDot, X } from 'lucide-react';
 import { Dialog, SheetContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge, CheckCircle, Progress } from '@/components/ui/misc';
@@ -47,25 +47,15 @@ function Row({ icon, label, children }: { icon: React.ReactNode; label: string; 
   );
 }
 
-export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
+/** The task's details: a right-side sheet (phones, tablets) or, with `panel`, the page's side card. */
+function TaskDetailInner({ task, onClose, panel }: { task: Task; onClose: () => void; panel?: boolean }) {
   const { data } = useData();
-  const task: Task | undefined = data.tasks[taskId];
   const { categories, projects, categoryById } = useCollections();
   const settings = useSettings();
   const actions = useActions();
   const { openTaskForm } = useUI();
   const today = useToday();
   const [newSubtask, setNewSubtask] = useState('');
-
-  if (!task) {
-    return (
-      <Dialog open onOpenChange={(o) => !o && onClose()}>
-        <SheetContent title="Задача">
-          <EmptyState title="Задачу не знайдено" description="Можливо, її видалили." />
-        </SheetContent>
-      </Dialog>
-    );
-  }
 
   const category = categoryById(task.categoryId);
   const goal = task.goalId ? data.goals[task.goalId] : undefined;
@@ -82,36 +72,34 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
     setNewSubtask('');
   };
 
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent
-        title={task.title}
-        headerActions={
-          <>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Редагувати задачу"
-              onClick={() => {
-                onClose();
-                openTaskForm({ task });
-              }}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Видалити задачу"
-              onClick={async () => {
-                if (await deleteTaskWithConfirm(task, actions.tasks.remove)) onClose();
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </>
-        }
+  const headerActions = (
+    <>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Редагувати задачу"
+        onClick={() => {
+          if (!panel) onClose();
+          openTaskForm({ task });
+        }}
       >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Видалити задачу"
+        onClick={async () => {
+          if (await deleteTaskWithConfirm(task, actions.tasks.remove)) onClose();
+        }}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </>
+  );
+
+  const body = (
+    <>
         <div className="flex items-start gap-3 pt-2">
           <div className="pt-1">
             <CheckCircle
@@ -278,7 +266,52 @@ export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; o
           Створено {new Date(task.createdAt).toLocaleString('uk-UA')}
           {task.completedAt && ` · Виконано ${new Date(task.completedAt).toLocaleString('uk-UA')}`}
         </p>
+    </>
+  );
+
+  if (panel)
+    return (
+      <div className="flex min-h-full flex-col">
+        <div className="mb-2 flex items-center justify-end gap-1">
+          {headerActions}
+          <Button variant="ghost" size="icon-sm" aria-label="Закрити" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        {body}
+      </div>
+    );
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <SheetContent title={task.title} headerActions={headerActions}>
+        {body}
       </SheetContent>
     </Dialog>
   );
 }
+
+function useTask(taskId: string): Task | undefined {
+  const { data } = useData();
+  return data.tasks[taskId];
+}
+
+export default function TaskDetailSheet({ taskId, onClose }: { taskId: string; onClose: () => void }) {
+  const task = useTask(taskId);
+  if (!task)
+    return (
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <SheetContent title="Задача">
+          <EmptyState title="Задачу не знайдено" description="Можливо, її видалили." />
+        </SheetContent>
+      </Dialog>
+    );
+  return <TaskDetailInner task={task} onClose={onClose} />;
+}
+
+/** The same details inside a page's side card (wide screens). */
+export function TaskDetailPanel({ taskId, onClose }: { taskId: string; onClose: () => void }) {
+  const task = useTask(taskId);
+  if (!task) return <EmptyState title="Задачу не знайдено" description="Можливо, її видалили." />;
+  return <TaskDetailInner task={task} onClose={onClose} panel />;
+}
+

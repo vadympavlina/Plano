@@ -1,7 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { GlassTabs } from './glass';
 import { tint } from '@/lib/utils/colors';
 import { haptic } from '@/lib/utils/haptic';
 
@@ -100,7 +99,7 @@ export function CheckCircle({
   );
 }
 
-/** Segmented control: glass tabs (glisse); with `stretch` the tabs share the full width. */
+/** Segmented control: a soft pill group, the selected option filled dark. */
 export function Segmented<T extends string>({
   value,
   onChange,
@@ -112,7 +111,7 @@ export function Segmented<T extends string>({
 }: {
   value: T;
   onChange: (v: T) => void;
-  options: { value: T; label: ReactNode; count?: number }[];
+  options: { value: T; label: ReactNode; count?: number; title?: string }[];
   className?: string;
   size?: 'sm' | 'md';
   ariaLabel?: string;
@@ -120,24 +119,30 @@ export function Segmented<T extends string>({
   stretch?: boolean;
 }) {
   return (
-    <GlassTabs
-      fill={stretch}
-      fit={!stretch}
-      small={size === 'sm'}
-      wrapperClassName={className}
-      aria-label={ariaLabel}
-      value={value}
-      onValueChange={(v) => onChange(v as T)}
-      items={options.map((o) => ({
-        value: o.value,
-        label: (
-          <span className="inline-flex items-center gap-1.5 font-medium">
+    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex items-center gap-0.5 rounded-full bg-surface-2 p-1', stretch && 'flex w-full', className)}>
+      {options.map((o) => {
+        const on = value === o.value;
+        return (
+          <button
+            key={o.value}
+            role="tab"
+            type="button"
+            title={o.title}
+            aria-selected={on}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-colors',
+              stretch && 'flex-1',
+              size === 'sm' ? 'h-7 px-3 text-xs' : 'h-8 px-3.5 text-[13px]',
+              on ? 'bg-accent text-surface' : 'text-muted hover:text-ink',
+            )}
+          >
             {o.label}
-            {o.count != null && <span className="text-[11px] tabular-nums opacity-60">{o.count}</span>}
-          </span>
-        ),
-      }))}
-    />
+            {o.count != null && <span className={cn('text-[11px] tabular-nums', on ? 'opacity-70' : 'text-subtle')}>{o.count}</span>}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

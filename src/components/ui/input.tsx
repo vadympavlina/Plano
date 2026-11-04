@@ -1,28 +1,36 @@
-import { forwardRef, useId, type FormEventHandler, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
-import { GlassInput } from './glass';
+import { forwardRef, useId, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from 'react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
+const fieldBase =
+  'w-full rounded-[14px] border border-transparent bg-surface-2 px-3.5 text-sm text-ink placeholder:text-subtle transition-colors hover:bg-line/50 focus:border-primary/50 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15';
+
 /**
- * A glass field (glisse). It wraps the input in its own element, so `className` styles
- * the field and the usual props (id, aria, value, onChange…) go to the input inside.
+ * Text field. With `icon` it gets a leading glyph (search fields); with `onValueChange` and
+ * type="search" it also shows a clear button.
  */
 export const Input = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode; onValueChange?: (value: string) => void }
->(function Input(
-  { className, onChange, value, defaultValue, ...props },
-  ref,
-) {
+>(function Input({ className, icon, onValueChange, ...props }, ref) {
+  const field = <input ref={ref} className={cn(fieldBase, 'h-10', icon && 'pl-10', className)} {...props} />;
+  if (!icon) return field;
+  const clearable = props.type === 'search' && !!onValueChange && !!props.value && !props.disabled;
   return (
-    <GlassInput
-      ref={ref}
-      className={cn('ui-field h-10', className)}
-      value={value == null ? undefined : String(value)}
-      defaultValue={defaultValue == null ? undefined : String(defaultValue)}
-      // glisse keeps its own onChange for the field's state; ours listens to the same keystrokes.
-      onInput={onChange as unknown as FormEventHandler<HTMLInputElement>}
-      {...props}
-    />
+    <div className="relative">
+      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+      {field}
+      {clearable && (
+        <button
+          type="button"
+          aria-label="Очистити"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-subtle hover:text-ink"
+          onClick={() => onValueChange?.('')}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
   );
 });
 
@@ -30,16 +38,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
   { className, ...props },
   ref,
 ) {
-  return (
-    <textarea
-      ref={ref}
-      className={cn(
-        'glass-control w-full min-h-[84px] resize-y rounded-[18px] px-3.5 py-2.5 text-sm leading-relaxed text-ink placeholder:text-subtle focus:outline-none disabled:cursor-not-allowed disabled:opacity-60',
-        className,
-      )}
-      {...props}
-    />
-  );
+  return <textarea ref={ref} className={cn(fieldBase, 'min-h-[84px] resize-y py-2.5 leading-relaxed', className)} {...props} />;
 });
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {

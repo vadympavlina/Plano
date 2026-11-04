@@ -117,7 +117,7 @@ test('task form: dates, time and category are read from the title', async ({ pag
   await expect(page.getByLabel('Час початку')).toContainText('15:00');
 });
 
-test('phone tab bar: tabs switch sections, «Більше» opens the sheet', async ({ page, isMobile }) => {
+test('phone: the tab bar switches sections and the menu button opens every section', async ({ page, isMobile }) => {
   test.skip(!isMobile, 'the tab bar is for phones');
   await start(page);
   const nav = page.getByRole('navigation', { name: 'Головна навігація' });
@@ -125,18 +125,61 @@ test('phone tab bar: tabs switch sections, «Більше» opens the sheet', as
   await expect(page).toHaveURL(/#\/calendar/);
   await nav.getByRole('link', { name: 'Задачі' }).tap();
   await expect(page).toHaveURL(/#\/tasks/);
-  await nav.getByRole('tab', { name: 'Більше' }).tap();
-  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('button', { name: 'Меню', exact: true }).tap();
+  const drawer = page.getByRole('dialog');
+  await expect(drawer).toBeVisible();
+  await drawer.getByRole('link', { name: 'Звички' }).tap();
+  await expect(page).toHaveURL(/#\/habits/);
 });
 
-test('calendar: the glass view switch changes the view', async ({ page }) => {
+test('desktop: the sidebar leads to every section, including «Найближчі»', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the sidebar is for wide screens');
+  await start(page);
+  const side = page.getByRole('navigation', { name: 'Розділи' });
+  await side.getByRole('link', { name: 'Найближчі' }).click();
+  await expect(page).toHaveURL(/#\/upcoming/);
+  await expect(page.getByRole('heading', { name: 'Найближчі' })).toBeVisible();
+  await side.getByRole('link', { name: 'Сьогодні' }).click();
+  await expect(page.getByRole('heading', { name: 'Сьогодні' })).toBeVisible();
+});
+
+test('today: a task added to the inbox shows in the side card and can be ticked off', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the side card is for wide screens');
+  await start(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const input = page.getByLabel('Нова задача у вхідні');
+  await input.fill('Розібрати папку');
+  await input.press('Enter');
+  const tick = page.getByRole('checkbox', { name: /Виконати «Розібрати папку»/ });
+  await expect(tick).toBeVisible();
+  await tick.click();
+  await expect(page.getByRole('checkbox', { name: /Повернути «Розібрати папку»/ })).toBeVisible();
+});
+
+test('tasks: a task opens in the side card and closes again', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the side card is for wide screens');
+  await start(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#/tasks');
+  const field = page.getByLabel('Нова задача', { exact: true });
+  await field.fill('Скласти план');
+  await field.press('Enter');
+  await page.getByRole('button', { name: /Скласти план/ }).click();
+  const panel = page.getByRole('complementary', { name: 'Бічна панель' });
+  await expect(panel).toContainText('Скласти план');
+  await panel.getByRole('button', { name: 'Закрити' }).click();
+  await expect(panel).toBeHidden();
+});
+
+test('calendar: the view switch changes the view', async ({ page }) => {
   await start(page);
   await page.goto('/#/calendar?view=week');
   await page.getByRole('tablist', { name: 'Вигляд календаря' }).filter({ visible: true }).getByRole('tab', { name: 'Місяць' }).click();
   await expect(page).toHaveURL(/view=month/);
 });
 
-test('quick add: «Детальніше…» with an empty title opens the full event form', async ({ page }) => {
+test('quick add: «Детальніше…» with an empty title opens the full event form', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the «Подія» button is for wider screens; phones use the tab bar');
   await start(page);
   await page.goto('/#/calendar?view=week');
   await page.getByRole('button', { name: /поді[яю]/i }).filter({ visible: true }).first().click();

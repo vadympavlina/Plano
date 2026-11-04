@@ -4,7 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageSkeleton } from '@/components/common/States';
 
 const Dashboard = lazy(() => import('@/features/dashboard/DashboardPage'));
-const TodayPage = lazy(() => import('@/features/dashboard/TodayPage'));
+const UpcomingPage = lazy(() => import('@/features/dashboard/UpcomingPage'));
 const CalendarPage = lazy(() => import('@/features/calendar/CalendarPage'));
 const TasksPage = lazy(() => import('@/features/tasks/TasksPage'));
 const ProjectsPage = lazy(() => import('@/features/projects/ProjectsPage'));
@@ -22,7 +22,8 @@ const routes: RouteObject[] = [
     element: <AppLayout />,
     children: [
       { index: true, element: page(<Dashboard />) },
-      { path: 'today', element: page(<TodayPage />) },
+      { path: 'today', element: <Navigate to="/" replace /> },
+      { path: 'upcoming', element: page(<UpcomingPage />) },
       { path: 'calendar', element: page(<CalendarPage />) },
       { path: 'tasks', element: page(<TasksPage />) },
       { path: 'projects', element: page(<ProjectsPage />) },

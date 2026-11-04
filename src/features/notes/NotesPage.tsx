@@ -50,7 +50,7 @@ export default function NotesPage() {
         key={n.id}
         to={`/notes/${n.id}`}
         aria-current={active ? 'page' : undefined}
-        className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]', active ? 'bg-surface shadow-soft ring-1 ring-line' : 'hover:bg-surface/70')}
+        className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]', active ? 'bg-surface-2' : 'hover:bg-surface-2/60')}
       >
         {n.icon ? (
           <span className="mt-0.5 flex w-4 shrink-0 justify-center" style={{ color: dot }}>
@@ -71,10 +71,10 @@ export default function NotesPage() {
   };
 
   return (
-    <div className="flex w-full gap-5 px-4 pb-6 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-6 lg:pb-0">
+    <div className="flex w-full gap-5 px-2 pb-6 lg:h-[var(--page-h)] lg:pb-0">
       <nav aria-label="Нотатки" className={cn('flex w-full flex-col lg:w-[300px] lg:shrink-0', noteId && 'hidden lg:flex')}>
         <div className="mb-3 flex items-center justify-between px-1">
-          <h1 className="text-[22px] font-bold tracking-tight">Нотатки</h1>
+          <h1 className="text-[28px] font-extrabold leading-none tracking-tight">Нотатки</h1>
           <Button size="icon-sm" variant="dark" aria-label="Нова нотатка" title="Нова нотатка" onClick={() => createNote()}>
             <Plus className="h-4 w-4" />
           </Button>
@@ -88,7 +88,7 @@ export default function NotesPage() {
                 type="button"
                 onClick={() => setTag(t)}
                 aria-pressed={tag === t}
-                className={cn('shrink-0 rounded-md px-2 py-1 text-xs font-medium', tag === t ? 'bg-accent text-surface' : 'bg-surface text-muted ring-1 ring-line/70 hover:text-ink')}
+                className={cn('shrink-0 rounded-md px-2 py-1 text-xs font-medium', tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink')}
               >
                 {t ? `#${t}` : 'Усі'}
               </button>
@@ -115,7 +115,7 @@ export default function NotesPage() {
       </nav>
       <div
         className={cn(
-          'min-h-[70dvh] min-w-0 flex-1 overflow-hidden rounded-[20px] border border-line/60 bg-surface shadow-soft lg:min-h-0',
+          'min-h-[70dvh] min-w-0 flex-1 overflow-hidden rounded-[20px] border border-line bg-surface lg:min-h-0',
           !noteId && 'hidden lg:block',
         )}
       >

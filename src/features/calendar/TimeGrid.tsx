@@ -128,8 +128,11 @@ export function TimeGrid({
     });
     ro.observe(el);
     setDraftSlot(null);
+    // Layout can settle a moment later (fonts, the page's own height): retry while still at the top.
+    const retries = [60, 250, 700].map((ms) => setTimeout(() => el.scrollTop === 0 && hour > 0 && apply(), ms));
     return () => {
       cancelAnimationFrame(raf);
+      retries.forEach(clearTimeout);
       ro.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

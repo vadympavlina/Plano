@@ -109,7 +109,7 @@ export default function HabitPage() {
   };
 
   return (
-    <div className="flex w-full gap-5 px-4 pb-8 sm:px-6 lg:h-[calc(100dvh-72px-2.5rem)] lg:px-6 lg:pb-0">
+    <div className="flex w-full gap-5 px-2 pb-8 lg:h-[var(--page-h)] lg:pb-0">
       {/* Habit list */}
       <nav aria-label="Звички" className="hidden w-[290px] shrink-0 flex-col lg:flex">
         <div className="mb-3 flex items-center justify-between px-1">
@@ -136,7 +136,7 @@ export default function HabitPage() {
           </span>
           {/* On phones the title takes the whole row and the actions wrap below it. */}
           <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
-            <h1 className="truncate text-[22px] font-bold tracking-tight sm:text-[26px]">{habit.name}</h1>
+            <h1 className="truncate text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">{habit.name}</h1>
             <p className="text-[13.5px] text-muted">
               {describeSchedule(habit.schedule)}
               {habit.goalType === 'count' && ` · ${habit.target} ${habit.unit ?? ''} на день`} · з {formatDateKey(habit.startDate, 'd MMMM')}

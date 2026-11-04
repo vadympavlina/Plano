@@ -3,8 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#F3F5F9" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0E1117" media="(prefers-color-scheme: dark)" />
+    <style>html,body{background:#0D0D0F}</style>
+    <meta name="theme-color" content="#0D0D0F" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0D0D0F" media="(prefers-color-scheme: dark)" />
     <meta name="description" content="Plano — Твоє життя. В одному місці." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -41,10 +42,10 @@
           var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
           document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-          document.documentElement.dataset.accent = localStorage.getItem('plano:accent') || 'blue';
+          document.documentElement.dataset.accent = localStorage.getItem('plano:accent') || 'coral';
           document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
             m.removeAttribute('media');
-            m.setAttribute('content', dark ? '#0E1117' : '#F3F5F9');
+            m.setAttribute('content', '#0D0D0F');
           });
         } catch (e) {}
       })();

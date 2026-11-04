@@ -1,631 +1,415 @@
-import { useMemo, type ReactNode } from 'react';
-import { CategoryChip, CategoryIcon } from '@/components/common/CategoryMark';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CalendarDays, Flame, MapPin, Plus, Repeat, X } from 'lucide-react';
+import { CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Plus, TriangleAlert, X } from 'lucide-react';
+import { RightPanel } from '@/components/layout/RightPanel';
 import { toast } from '@/components/ui/toast';
-import { PageContainer } from '@/components/layout/AppLayout';
-import { CheckCircle, Progress } from '@/components/ui/misc';
-import { Button } from '@/components/ui/button';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useData } from '@/app/providers/DataProvider';
 import { useNow } from '@/hooks/useNow';
-import { useProfile } from '@/hooks/useProfile';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
-import { formatDateKey, formatDuration, formatTime, greetingFor, minutesToTime, plural, relativeDayLabel, todayKey } from '@/lib/date';
+import { addDaysKey, formatDateKey, formatTime, plural, relativeDayLabel, todayKey } from '@/lib/date';
 import { colorOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { haptic } from '@/lib/utils/haptic';
-import type { Habit } from '@/types';
-import { isOverdue, percent, sortTasks, taskDate, weekProgress } from '@/features/tasks/logic';
-import { expandEvents, occurrencesOnDay, upcomingOccurrences } from '@/features/calendar/logic';
-import { currentStreak, habitValue, isBad, isDone, isScheduled, nextHabitValue, slipLimit } from '@/features/habits/logic';
-import { goalPercent } from '@/features/goals/logic';
+import type { DateKey, Habit } from '@/types';
+import { doneInList } from '@/features/tasks/lists';
+import { compareTasks, isOpen, taskDate } from '@/features/tasks/logic';
+import { TaskRow } from '@/features/tasks/TaskViews';
+import { compareOccurrences, expandEvents, upcomingOccurrences } from '@/features/calendar/logic';
 import { eventColor } from '@/features/calendar/items';
+import { currentStreak, habitValue, isBad, isDone, isScheduled, nextHabitValue, slipLimit } from '@/features/habits/logic';
 import { QuickAdd } from './QuickAdd';
-import { WeekBoard } from './WeekBoard';
-import { buildSchedule, freeTime, nextUpLabel, nowLineIndex } from './logic';
 
-const panel = 'rounded-[20px] border border-line/60 bg-surface shadow-soft';
+const STRIP_DAYS = 21;
 
-function Section({
-  title,
-  meta,
-  link,
-  children,
-  className,
-}: {
-  title: string;
-  meta?: ReactNode;
-  link?: { to: string; label: string };
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <section className={cn(panel, 'p-5', className)}>
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h2 className="text-[15px] font-semibold tracking-tight">{title}</h2>
-        {link ? (
-          <Link to={link.to} className="inline-flex shrink-0 items-center gap-1 text-[12.5px] font-medium text-muted hover:text-ink">
-            {link.label} <ArrowRight className="h-3 w-3" />
-          </Link>
-        ) : (
-          meta && <span className="text-[12.5px] text-muted">{meta}</span>
-        )}
-      </div>
-      {children}
-    </section>
-  );
+function salutation(now: Date) {
+  const h = now.getHours();
+  return h < 5 ? 'Доброї ночі' : h < 12 ? 'Доброго ранку' : h < 18 ? 'Доброго дня' : 'Доброго вечора';
 }
 
-function Ring({
-  value,
-  size,
-  stroke,
-  color,
-  track = 'rgb(var(--line))',
-  children,
-}: {
-  value: number;
-  size: number;
-  stroke: number;
-  color: string;
-  track?: string;
-  children?: ReactNode;
-}) {
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
+/** A coloured count inside the summary sentence. */
+function Chip({ tone, icon, children }: { tone: 'red' | 'grey' | 'orange'; icon: ReactNode; children: ReactNode }) {
+  const cls = {
+    red: 'bg-danger/12 text-danger',
+    grey: 'bg-line/70 text-muted',
+    orange: 'bg-warning/15 text-warning',
+  }[tone];
   return (
-    <span className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90" aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={track} strokeWidth={stroke} />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={c * (1 - Math.min(1, Math.max(0, value)))}
-          className="transition-[stroke-dashoffset] duration-500"
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center">{children}</span>
+    <span className={cn('inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5', cls)}>
+      {icon}
+      {children}
     </span>
   );
 }
 
+const BAD_TONE = {
+  clean: { box: 'border-solid border-success bg-success/10', badge: 'bg-success', text: 'text-success' },
+  near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning', text: 'text-warning' },
+  slip: { box: 'border-solid border-danger bg-danger/10', badge: 'bg-danger', text: 'text-danger' },
+};
+
 export default function DashboardPage() {
+  const { events, tasks, habits, categoryById } = useCollections();
+  const { data } = useData();
+  const settings = useSettings();
+  const actions = useActions();
+  const { openEvent } = useUI();
   const now = useNow(60_000);
   const today = todayKey(now);
-  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const { data } = useData();
-  const { tasks, events, habits, goals, categoryById } = useCollections();
-  const settings = useSettings();
-  const profile = useProfile();
-  const { openTask, openTaskForm, openEvent, openEventForm } = useUI();
-  const actions = useActions();
-  const fmt = (t?: string) => (t ? formatTime(t, settings.timeFormat) : '');
+  const [selected, setSelected] = useState<DateKey>(today);
+  const day = selected;
+  const isToday = day === today;
+  const past = day < today;
 
-  const todayTasks = useMemo(() => tasks.filter((t) => taskDate(t) === today && t.status !== 'cancelled'), [tasks, today]);
-  const doneCount = todayTasks.filter((t) => t.status === 'completed').length;
-  const openCount = todayTasks.length - doneCount;
-  const untimed = useMemo(
-    () =>
-      sortTasks(
-        todayTasks.filter((t) => !t.startTime && t.status !== 'completed'),
-        'due',
-      ),
-    [todayTasks],
-  );
-  const overdue = useMemo(() => tasks.filter((t) => isOverdue(t, today)), [tasks, today]);
-
-  const todayOcc = useMemo(() => occurrencesOnDay(expandEvents(events, today, today), today), [events, today]);
-  const allDay = todayOcc.filter((o) => o.event.allDay);
-  const schedule = useMemo(() => buildSchedule(todayOcc, todayTasks), [todayOcc, todayTasks]);
-  const nowAt = nowLineIndex(schedule, nowMinutes);
-  const free = freeTime(schedule, nowMinutes);
-  const next = useMemo(
-    () => upcomingOccurrences(events, now, today, 14, 4).find((o) => !o.event.allDay) ?? upcomingOccurrences(events, now, today, 14, 1)[0],
-    [events, now, today],
-  );
-
-  const weekCounts = useMemo(() => weekProgress(tasks, today, settings.weekStartsOn), [tasks, today, settings.weekStartsOn]);
-  const ahead = useMemo(() => {
-    const groups: {
-      day: string;
-      items: ReturnType<typeof upcomingOccurrences>;
-    }[] = [];
-    for (const o of upcomingOccurrences(events, now, today, 7, 30)) {
-      if (o.date <= today) continue;
-      const g = groups.find((x) => x.day === o.date);
-      if (g) g.items.push(o);
-      else groups.push({ day: o.date, items: [o] });
-    }
-    return groups.slice(0, 3);
-  }, [events, now, today]);
-
-  const activeHabits = habits.filter((h) => !h.archived);
-  const habitsToday = activeHabits.filter((h) => isScheduled(h, today));
-  const bestStreak = activeHabits.reduce((best, h) => Math.max(best, currentStreak(h, data.habitLogs, today)), 0);
-  const activeGoals = goals.filter((g) => g.status === 'active').slice(0, 4);
-
-  const tapHabit = (h: Habit) => {
-    haptic();
-    void actions.habits.setValue(h.id, today, nextHabitValue(h, habitValue(data.habitLogs, h.id, today))).catch(() => undefined);
+  // The strip of days: it keeps the selected day in view and starts a few days before today.
+  const [stripStart, setStripStart] = useState<DateKey>(today);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const strip = useMemo(() => Array.from({ length: STRIP_DAYS }, (_, i) => addDaysKey(stripStart, i)), [stripStart]);
+  useEffect(() => {
+    const el = stripRef.current?.querySelector<HTMLElement>('[aria-current="date"]');
+    el?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+  }, [selected]);
+  const move = (by: number) => {
+    const next = addDaysKey(selected, by);
+    setSelected(next);
+    if (next < stripStart) setStripStart(next);
+    else if (next > addDaysKey(stripStart, STRIP_DAYS - 1)) setStripStart(addDaysKey(next, -(STRIP_DAYS - 1)));
+  };
+  const goToday = () => {
+    setSelected(today);
+    setStripStart(today);
   };
 
-  /* ---------- blocks ---------- */
+  const dayData = useMemo(() => {
+    const occ = expandEvents(events, day, day).sort(compareOccurrences);
+    const dated = tasks.filter((t) => taskDate(t) === day && t.status !== 'cancelled');
+    const open = dated.filter(isOpen).sort(compareTasks('due'));
+    const done = tasks.filter((t) => doneInList(t, 'today', day) && (taskDate(t) === day || day === today)).sort((a, b) => ((a.completedAt ?? a.updatedAt) < (b.completedAt ?? b.updatedAt) ? 1 : -1));
+    return { occ, open, done, habits: habits.filter((h) => !h.archived && isScheduled(h, day)) };
+  }, [events, tasks, habits, day, today]);
 
-  const nextUp = (
-    <div className="relative flex min-h-[176px] flex-col overflow-hidden rounded-[20px] bg-sidebar p-5 text-sidebar-fg sm:p-6">
-      <div className="pointer-events-none absolute -right-12 -top-20 h-56 w-56 rounded-full bg-primary/30 blur-3xl" aria-hidden />
-      {next ? (
-        <>
-          <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-sidebar-fg/55">
-            {nextUpLabel(next.event, next.date, now, today, (d) => relativeDayLabel(d, today), fmt)}
-          </p>
-          <p className="mt-1.5 line-clamp-2 text-[21px] font-bold leading-tight tracking-tight">{next.event.title}</p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[13px] text-sidebar-fg/70">
-            {next.event.allDay ? 'Весь день' : `${fmt(next.event.startTime)} – ${fmt(next.event.endTime)}`}
-            {next.event.location && (
-              <span className="inline-flex items-center gap-1">
-                · <MapPin className="h-3.5 w-3.5" /> {next.event.location}
-              </span>
-            )}
-          </p>
-          <div className="mt-auto flex items-center gap-2 pt-5">
-            {next.event.url && (
-              <a
-                href={next.event.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033] hover:bg-white/90"
-              >
-                Приєднатися
-              </a>
-            )}
-            <button
-              type="button"
-              onClick={() => openEvent(next.event.id, next.date)}
-              className="rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-medium hover:bg-white/15"
-            >
-              Деталі
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-sidebar-fg/55">Найближчі 2 тижні</p>
-          <p className="mt-1.5 text-[21px] font-bold leading-tight">Календар вільний</p>
-          <p className="mt-1 text-[13px] text-sidebar-fg/70">Подій не заплановано.</p>
-          <div className="mt-auto pt-5">
-            <button
-              type="button"
-              onClick={() => openEventForm()}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-[#172033]"
-            >
-              <Plus className="h-3.5 w-3.5" /> Додати подію
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  );
+  const goodHabits = dayData.habits.filter((h) => !isBad(h));
+  const badHabits = dayData.habits.filter(isBad);
+  const important = dayData.open.filter((t) => t.priority === 'high' || t.priority === 'urgent').length;
+  const badHolding = badHabits.filter((h) => isDone(h, data.habitLogs, day)).length;
+  const empty = !dayData.occ.length && !dayData.open.length && !dayData.done.length && !dayData.habits.length;
 
-  const progress = (
-    <Link to="/tasks?filter=today" className={cn(panel, 'flex min-h-[120px] flex-col justify-between gap-4 p-5 transition-colors hover:border-line')}>
-      <div className="flex items-center gap-4">
-        <Ring value={todayTasks.length ? doneCount / todayTasks.length : 0} size={64} stroke={7} color="rgb(var(--success))">
-          <span className="text-[15px] font-bold tabular-nums">
-            {doneCount}/{todayTasks.length}
-          </span>
-        </Ring>
-        <div className="min-w-0">
-          <p className="text-[15px] font-semibold">Задачі на сьогодні</p>
-          <p className="text-[12.5px] text-muted">
-            {todayTasks.length === 0
-              ? 'Задач немає'
-              : openCount === 0
-                ? 'Усе виконано'
-                : `Ще ${openCount}${overdue.length ? ` · ${overdue.length} ${plural(overdue.length, ['прострочена', 'прострочені', 'прострочених'])}` : ''}`}
-          </p>
-          {bestStreak > 0 && (
-            <p className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium text-warning">
-              <Flame className="h-3.5 w-3.5" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])}
-            </p>
-          )}
-        </div>
-      </div>
-      <div>
-        <div className="mb-1.5 flex justify-between text-[12px] text-muted">
-          <span>Цей тиждень</span>
-          <span className="tabular-nums">
-            {weekCounts.done} з {weekCounts.total}
-          </span>
-        </div>
-        <Progress value={percent(weekCounts.done, weekCounts.total)} color="rgb(var(--primary))" label="Задачі цього тижня" />
-      </div>
-    </Link>
-  );
-
-  const freePill = (text: string) => (
-    <div className="mb-2 ml-[4.25rem] rounded-xl border border-dashed border-line px-3.5 py-2 text-[12.5px] text-subtle">{text}</div>
-  );
-
-  const nowLine = (
-    <div className="relative my-1 flex items-center gap-3" aria-label={`Зараз ${minutesToTime(nowMinutes)}`}>
-      <span className="w-11 text-right text-[11.5px] font-semibold tabular-nums text-danger">{fmt(minutesToTime(nowMinutes))}</span>
-      <span className="h-2 w-2 shrink-0 rounded-full bg-danger" />
-      <span className="h-px flex-1 bg-danger/50" />
-    </div>
-  );
-
-  const scheduleBlock = (
-    <Section title="Розклад дня" link={{ to: `/calendar?date=${today}&view=day`, label: 'Календар' }}>
-      {allDay.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {allDay.map((o) => (
-            <button
-              key={o.key}
-              type="button"
-              onClick={() => openEvent(o.event.id, o.date)}
-              className="rounded-lg px-2.5 py-1 text-[12.5px] font-semibold"
-              style={{
-                backgroundColor: tint(eventColor(o.event, categoryById), 0.14),
-              }}
-            >
-              {o.event.title} <span className="font-normal text-muted">· весь день</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {schedule.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-2xl bg-surface-2/70 px-4 py-8 text-center">
-          <CalendarDays className="h-6 w-6 text-subtle" />
-          <p className="text-[14px] text-muted">На сьогодні нічого не заплановано за часом.</p>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => openEventForm({ defaults: { date: today } })}>
-              <Plus className="h-3.5 w-3.5" /> Подія
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => openTaskForm({ defaults: { dueDate: today } })}>
-              <Plus className="h-3.5 w-3.5" /> Задача
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div>
-          {schedule.map((item, i) => {
-            const past = (item.end ?? item.start) <= nowMinutes;
-            const started = item.start <= nowMinutes;
-            const row =
-              item.kind === 'event' ? (
-                <button
-                  type="button"
-                  onClick={() => openEvent(item.occurrence.event.id, item.occurrence.date)}
-                  className="mb-2 block w-full rounded-xl px-3.5 py-2.5 text-left transition-[filter] hover:brightness-[0.98]"
-                  style={{
-                    backgroundColor: tint(eventColor(item.occurrence.event, categoryById), 0.1),
-                  }}
-                >
-                  <span className="flex items-center gap-2">
-                    <CategoryIcon category={categoryById(item.occurrence.event.categoryId)} color={eventColor(item.occurrence.event, categoryById)} />
-                    <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{item.occurrence.event.title}</span>
-                    {item.occurrence.event.recurrence && <Repeat className="h-3.5 w-3.5 shrink-0 text-muted" />}
-                    <span className="shrink-0 text-[11px] font-medium text-muted">Подія</span>
-                  </span>
-                  <span className="mt-0.5 block truncate text-[12px] text-muted">
-                    {fmt(item.occurrence.event.startTime)}
-                    {item.occurrence.event.endTime ? ` – ${fmt(item.occurrence.event.endTime)}` : ''}
-                    {item.occurrence.event.location ? ` · ${item.occurrence.event.location}` : ''}
-                  </span>
-                </button>
-              ) : (
-                <div className="mb-2 flex w-full items-start gap-3 rounded-xl border border-line px-3.5 py-2.5">
-                  <span className="pt-0.5">
-                    <CheckCircle
-                      checked={item.task.status === 'completed'}
-                      onChange={(c) => void actions.tasks.setDone(item.task, c).catch(() => undefined)}
-                      label={`Виконати «${item.task.title}»`}
-                      size="sm"
-                    />
-                  </span>
-                  <button type="button" onClick={() => openTask(item.task.id)} className="min-w-0 flex-1 text-left">
-                    <span className={cn('block truncate text-[14px] font-medium', item.task.status === 'completed' && 'text-subtle line-through')}>
-                      {item.task.title}
-                    </span>
-                    <span className="mt-0.5 block truncate text-[12px] text-muted">
-                      {fmt(item.task.startTime)}
-                      {item.task.endTime ? ` – ${fmt(item.task.endTime)}` : ''}
-                      {item.task.subtasks.length > 0 && ` · підзадачі ${item.task.subtasks.filter((s) => s.done).length}/${item.task.subtasks.length}`}
-                    </span>
-                  </button>
-                </div>
-              );
-            const color =
-              item.kind === 'event' ? eventColor(item.occurrence.event, categoryById) : colorOf(categoryById(item.task.categoryId)?.color ?? 'slate');
-            return (
-              <div key={item.key}>
-                {i === nowAt && nowLine}
-                {i === nowAt && free.untilNext && freePill(`Вільно ${formatDuration(free.untilNext)}`)}
-                <div className={cn('flex items-stretch gap-3', past && 'opacity-60')}>
-                  <span className={cn('w-11 shrink-0 pt-2.5 text-right text-[12.5px] font-semibold tabular-nums', started ? 'text-subtle' : 'text-ink')}>
-                    {fmt(minutesToTime(item.start))}
-                  </span>
-                  <div className="flex w-2 shrink-0 flex-col items-center">
-                    <span className="mt-[15px] h-2 w-2 rounded-full ring-4 ring-surface" style={{ backgroundColor: color }} />
-                    <span className={cn('w-px flex-1 bg-line', i === schedule.length - 1 && nowAt !== schedule.length && 'bg-transparent')} />
-                  </div>
-                  <div className="min-w-0 flex-1">{row}</div>
-                </div>
-              </div>
-            );
-          })}
-          {nowAt === schedule.length && nowLine}
-          {free.freeAfter !== undefined && freePill(`Вільно після ${fmt(minutesToTime(free.freeAfter))}`)}
-        </div>
-      )}
-    </Section>
-  );
-
-  const untimedBlock = (untimed.length > 0 || overdue.length > 0) && (
-    <Section title="Без часу" meta={untimed.length ? String(untimed.length) : undefined}>
-      <div className="-mx-1">
-        {untimed.slice(0, 6).map((t) => {
-          const cat = categoryById(t.categoryId);
-          return (
-            <div key={t.id} className="flex items-center gap-3 rounded-lg px-1 py-2">
-              <CheckCircle
-                checked={false}
-                onChange={(c) => void actions.tasks.setDone(t, c).catch(() => undefined)}
-                label={`Виконати «${t.title}»`}
-                size="sm"
-              />
-              <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left text-[14px]">
-                {t.title}
-              </button>
-              {cat && <CategoryChip category={cat} />}
-            </div>
-          );
-        })}
-        {untimed.length > 6 && (
-          <Link to="/tasks?filter=today" className="block px-1 py-1 text-[12.5px] font-medium text-muted hover:text-ink">
-            Ще {untimed.length - 6}
-          </Link>
-        )}
-      </div>
-      {overdue.length > 0 && (
-        <Link
-          to="/tasks?filter=overdue"
-          className="mt-2 flex items-center justify-between rounded-xl bg-danger/[0.07] px-3 py-2 text-[13px] font-medium text-danger hover:bg-danger/10"
-        >
-          <span className="truncate">
-            Прострочено: {overdue.length === 1 ? overdue[0].title : `${overdue.length} ${plural(overdue.length, ['задача', 'задачі', 'задач'])}`}
-          </span>
-          <ArrowRight className="h-3.5 w-3.5 shrink-0" />
-        </Link>
-      )}
-    </Section>
-  );
-
-  const goodToday = habitsToday.filter((h) => !isBad(h));
-  const badToday = habitsToday.filter(isBad);
-  const goodDone = goodToday.filter((h) => isDone(h, data.habitLogs, today)).length;
-  const badHolding = badToday.filter((h) => isDone(h, data.habitLogs, today)).length;
-
-  /** A bad habit today: clean, some slips but within the limit, or a slip past it. */
+  const tapHabit = (h: Habit, date: DateKey) => {
+    if (date > today) return;
+    haptic();
+    void actions.habits.setValue(h.id, date, nextHabitValue(h, habitValue(data.habitLogs, h.id, date))).catch(() => undefined);
+  };
+  const tapBad = (h: Habit) => {
+    const before = habitValue(data.habitLogs, h.id, day);
+    const next = nextHabitValue(h, before);
+    tapHabit(h, day);
+    // A slip is easy to log by accident: offer a way back.
+    if (next > before)
+      toast.info(`Записано зрив: ${h.name}`, { action: { label: 'Скасувати', onClick: () => void actions.habits.setValue(h.id, day, before).catch(() => undefined) } });
+  };
   const badState = (h: Habit) => {
-    const value = habitValue(data.habitLogs, h.id, today);
+    const value = habitValue(data.habitLogs, h.id, day);
     const limit = slipLimit(h);
     if (value > limit) return { tone: 'slip' as const, value, limit, label: 'Зрив' };
     if (value > 0) return { tone: 'near' as const, value, limit, label: value === limit ? 'ліміт вичерпано' : `ще ${limit - value} до ліміту` };
     const streak = currentStreak(h, data.habitLogs, today);
     return { tone: 'clean' as const, value, limit, streak, label: streak > 0 ? `${streak} дн. без` : 'Сьогодні чисто' };
   };
-  const BAD_TONE = {
-    clean: { box: 'border-solid border-success bg-success/10', badge: 'bg-success', text: 'text-success' },
-    near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning', text: 'text-warning' },
-    slip: { box: 'border-solid border-danger bg-danger/10', badge: 'bg-danger', text: 'text-danger' },
-  };
-  const tapBad = (h: Habit) => {
-    const before = habitValue(data.habitLogs, h.id, today);
-    const next = nextHabitValue(h, before);
-    tapHabit(h);
-    // A slip is easy to log by accident: offer a way back.
-    if (next > before)
-      toast.info(`Записано зрив: ${h.name}`, {
-        action: { label: 'Скасувати', onClick: () => void actions.habits.setValue(h.id, today, before).catch(() => undefined) },
-      });
-  };
 
-  // Top row, where the week summary used to be: always there, with a way in when empty.
-  const habitsBlock = (
-    <Section
-      title="Звички"
-      className="flex-1"
-      link={habitsToday.length ? undefined : { to: '/habits', label: activeHabits.length ? 'Усі звички' : 'Створити' }}
-      meta={goodToday.length ? `${goodDone} з ${goodToday.length}` : badToday.length ? `${badHolding} з ${badToday.length} тримаються` : undefined}
-    >
-      {habitsToday.length === 0 ? (
-        <p className="text-[13px] text-muted">{activeHabits.length ? 'Сьогодні звичок не заплановано.' : 'Додайте звичку, щоб бачити її тут щодня.'}</p>
-      ) : (
-        <>
-          {goodToday.length > 0 && (
-            <div className="grid grid-cols-4 gap-x-2 gap-y-3">
-              {goodToday.slice(0, 8).map((h) => {
-                const value = habitValue(data.habitLogs, h.id, today);
-                const done = isDone(h, data.habitLogs, today);
-                const color = colorOf(h.color);
-                const ratio = h.goalType === 'count' ? value / Math.max(1, h.target) : done ? 1 : 0;
-                return (
-                  <button
-                    key={h.id}
-                    type="button"
-                    onClick={() => tapHabit(h)}
-                    aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
-                    className="group flex min-w-0 flex-col items-center gap-1.5"
-                  >
-                    <Ring value={ratio} size={52} stroke={4.5} color={color}>
-                      <span
-                        className={cn(
-                          'flex h-[38px] w-[38px] items-center justify-center rounded-full text-[18px] transition-colors',
-                          done ? '' : 'group-hover:bg-surface-2',
-                        )}
-                        style={done ? { backgroundColor: tint(color, 0.14) } : undefined}
-                      >
-                        {h.icon}
-                      </span>
-                    </Ring>
-                    <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
-                    <span className={cn('-mt-1 text-[10.5px] tabular-nums', done ? 'text-success' : 'text-subtle')}>
-                      {h.goalType === 'count' ? `${value}/${h.target}` : done ? 'Готово' : '—'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {badToday.length > 0 && (
-            <div className={cn(goodToday.length > 0 && 'mt-4 border-t border-line pt-3')}>
-              {goodToday.length > 0 && (
-                <div className="mb-2.5 flex items-baseline justify-between gap-3">
-                  <h3 className="text-[11px] font-bold uppercase tracking-[0.06em] text-subtle">Без шкідливих</h3>
-                  <span className="text-[12px] text-muted">
-                    {badHolding} з {badToday.length} {plural(badHolding, ['тримається', 'тримаються', 'тримаються'])}
-                  </span>
-                </div>
-              )}
-              <div className="grid grid-cols-4 gap-x-2 gap-y-3">
-                {badToday.slice(0, 8).map((h) => {
-                  const st = badState(h);
-                  const tone = BAD_TONE[st.tone];
-                  const badge = st.tone === 'slip' ? <X className="h-3 w-3" strokeWidth={3} /> : st.tone === 'near' ? `${st.value}/${st.limit}` : st.streak || null;
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      onClick={() => tapBad(h)}
-                      aria-label={`${h.name}: ${st.tone === 'slip' ? 'зрив сьогодні' : st.tone === 'near' ? `${st.value} з ${st.limit}, ${st.label}` : st.label}. Натисніть, щоб записати зрив`}
-                      title={h.goalType === 'count' ? 'Натисніть, щоб додати ще один' : st.tone === 'slip' ? 'Натисніть, щоб прибрати зрив' : 'Натисніть, якщо не втримались'}
-                      className="group flex min-w-0 flex-col items-center gap-1.5"
-                    >
-                      <span className={cn('relative flex h-[52px] w-[52px] items-center justify-center rounded-[16px] border-[2.5px] text-[18px] transition-transform group-active:scale-95', tone.box)}>
-                        {h.icon}
-                        {badge != null && (
-                          <span
-                            className={cn(
-                              'absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface px-1 text-[10px] font-bold tabular-nums text-white',
-                              tone.badge,
-                            )}
-                          >
-                            {badge}
-                          </span>
-                        )}
-                      </span>
-                      <span className="w-full truncate text-center text-[11.5px] font-medium">{h.name}</span>
-                      <span className={cn('-mt-1 w-full truncate text-center text-[10.5px]', tone.text)}>{st.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="mt-3 flex items-center gap-3 border-t border-line pt-2.5 text-[11px] text-muted">
-                <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px] bg-success" />тримаюсь</span>
-                <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px] bg-warning" />біля ліміту</span>
-                <span className="flex items-center gap-1"><i className="h-2 w-2 rounded-[3px] bg-danger" />зрив</span>
-                <span className="ml-auto text-subtle">тап = зрив</span>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-    </Section>
-  );
-
-  const aheadBlock = (
-    <Section title="Попереду" link={{ to: '/calendar?view=week', label: 'Тиждень' }}>
-      {ahead.length === 0 ? (
-        <p className="text-[13px] text-muted">Найближчі 7 днів подій немає.</p>
-      ) : (
-        <div className="space-y-3">
-          {ahead.map((g) => (
-            <div key={g.day}>
-              <p className="mb-1 text-[12px] font-semibold text-subtle">{relativeDayLabel(g.day, today, 'EEEE, d MMM')}</p>
-              {g.items.slice(0, 4).map((o) => (
-                <button
-                  key={o.key}
-                  type="button"
-                  onClick={() => openEvent(o.event.id, o.date)}
-                  className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 py-1.5 text-left hover:bg-surface-2"
-                >
-                  <span
-                    className="h-6 w-[3px] shrink-0 rounded-full"
-                    style={{
-                      backgroundColor: eventColor(o.event, categoryById),
-                    }}
-                  />
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{o.event.title}</span>
-                  <span className="shrink-0 text-[12px] tabular-nums text-muted">{o.event.allDay ? 'весь день' : fmt(o.event.startTime)}</span>
-                </button>
-              ))}
-              {g.items.length > 4 && <p className="pl-3 text-[12px] text-muted">ще {g.items.length - 4}</p>}
-            </div>
-          ))}
-        </div>
-      )}
-    </Section>
-  );
-
-  const goalsBlock = activeGoals.length > 0 && (
-    <Section title="Цілі" link={{ to: '/goals', label: 'Усі' }}>
-      <div className="space-y-3.5">
-        {activeGoals.map((g) => (
-          <Link key={g.id} to="/goals" className="block">
-            <div className="mb-1.5 flex items-baseline justify-between gap-2 text-[13px]">
-              <span className="truncate font-medium">{g.title}</span>
-              <span className="shrink-0 tabular-nums text-muted">
-                {g.currentValue}/{g.targetValue}
+  // ---- the day, in one list: all-day first, then by time ----
+  type Entry = { key: string; at: number; node: ReactNode };
+  const entries: Entry[] = [];
+  const minutes = (t?: string) => (t ? Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) : -1);
+  for (const o of dayData.occ) {
+    const color = eventColor(o.event, categoryById);
+    const cat = o.event.categoryId ? categoryById(o.event.categoryId) : undefined;
+    entries.push({
+      key: o.key,
+      at: o.event.allDay ? -2 : minutes(o.event.startTime),
+      node: (
+        <button type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2/70">
+          <span className="mx-[6.5px] mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: color }} />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-[15.5px] font-medium leading-snug">{o.event.title}</span>
+            <span className="mt-1 flex items-center gap-2.5 text-[12px] text-muted">
+              <span className="tabular-nums">
+                {o.event.allDay || !o.event.startTime
+                  ? 'Весь день'
+                  : `${formatTime(o.event.startTime, settings.timeFormat)}${o.event.endTime ? ` – ${formatTime(o.event.endTime, settings.timeFormat)}` : ''}`}
               </span>
-            </div>
-            <Progress value={goalPercent(g)} color={colorOf(categoryById(g.categoryId)?.color ?? 'blue')} label={g.title} />
-          </Link>
-        ))}
-      </div>
-    </Section>
+              {o.event.location && <span className="truncate">{o.event.location}</span>}
+              {cat && <span className="rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold" style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: colorOf(cat.color) }}>{cat.name}</span>}
+            </span>
+          </span>
+        </button>
+      ),
+    });
+  }
+  for (const t of dayData.open)
+    entries.push({ key: `t${t.id}`, at: t.startTime ? minutes(t.startTime) : -1, node: <TaskRow task={t} today={today} showDate={false} /> });
+  const habitRows: ReactNode[] = [];
+  for (const h of goodHabits) {
+    const value = habitValue(data.habitLogs, h.id, day);
+    const done = isDone(h, data.habitLogs, day);
+    const streak = currentStreak(h, data.habitLogs, today);
+    const color = colorOf(h.color);
+    habitRows.push(
+      (
+        <button
+          type="button"
+          onClick={() => tapHabit(h, day)}
+          aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
+          className="flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2/70"
+        >
+          <span className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-lg text-[13px]" style={{ backgroundColor: tint(color, done ? 0.28 : 0.14) }}>
+            {done ? <Check className="h-3.5 w-3.5 stroke-[3.2]" style={{ color }} /> : h.icon}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className={cn('block truncate text-[15.5px] font-medium leading-snug', done && 'text-muted line-through')}>
+              {h.name}
+              {h.goalType === 'count' && <span className="ml-2 text-[13px] font-normal text-muted">{value} з {h.target}{h.unit ? ` ${h.unit}` : ''}</span>}
+            </span>
+            <span className="mt-1 flex items-center gap-2 text-[12px] text-muted">
+              <span className="inline-flex items-center gap-1"><Flame className="h-3.5 w-3.5" style={{ color: streak ? '#ff7a1a' : undefined }} />{streak ? `серія ${streak}` : 'звичка'}</span>
+            </span>
+          </span>
+        </button>
+      ),
+    );
+  }
+  entries.sort((a, b) => a.at - b.at);
+
+  const nextUp = isToday
+    ? upcomingOccurrences(events, now, today, 1, 1).find((o) => o.date === today)
+    : undefined;
+  const tomorrow = addDaysKey(today, 1);
+  const dayLabel = isToday ? 'Сьогодні' : day === tomorrow ? 'Завтра' : day === addDaysKey(today, -1) ? 'Вчора' : formatDateKey(day, 'EEEE');
+
+  // ---- inbox (right panel) ----
+  const inbox = useMemo(() => {
+    const open = tasks.filter(isOpen);
+    return {
+      overdue: open.filter((t) => { const d = taskDate(t); return !!d && d < today; }).sort(compareTasks('due')),
+      undated: open.filter((t) => !taskDate(t)).sort(compareTasks('due')),
+      soon: upcomingOccurrences(events, now, today, 7, 6),
+    };
+  }, [tasks, events, now, today]);
+  const [draft, setDraft] = useState('');
+  const addInbox = (e: FormEvent) => {
+    e.preventDefault();
+    const title = draft.trim();
+    if (!title) return;
+    const { id, write } = actions.tasks.create({ title, status: 'todo', priority: 'medium', tags: [], subtasks: [] });
+    write.catch(() => toast.error('Не вдалося додати задачу'));
+    toast.success(`Додано до вхідних: ${title}`, { action: { label: 'Скасувати', onClick: () => void actions.tasks.remove(id).catch(() => undefined) } });
+    setDraft('');
+  };
+  const sec = (title: string, count?: number) => (
+    <h3 className="mb-1 mt-5 flex items-center gap-2 px-3 text-[12px] font-semibold text-muted">
+      {title}
+      {count != null && <span className="font-medium text-subtle">{count}</span>}
+    </h3>
   );
 
   return (
-    <PageContainer className="flex flex-col pb-6 pt-2 lg:min-h-[calc(100dvh-72px)] lg:pt-0">
-      <header className="mb-5">
-        <p className="text-[13px] font-medium text-muted">{formatDateKey(today, 'EEEE, d MMMM')}</p>
-        <h1 className="text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]">
-          {greetingFor(now)}
-          {profile.firstName ? `, ${profile.firstName}` : ''}
-        </h1>
+    <div className="pb-6">
+      <header className="flex items-start justify-between gap-3 px-2">
+        <div className="min-w-0">
+          <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight first-letter:uppercase sm:text-[38px]">{dayLabel}</h1>
+          <p className="mt-1.5 text-[13px] text-muted first-letter:uppercase">{formatDateKey(day, 'EEEE, d MMMM yyyy')}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 pt-1">
+          <button type="button" onClick={goToday} disabled={isToday} className="h-8 rounded-full bg-surface-2 px-3.5 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-60">
+            Сьогодні
+          </button>
+          <button type="button" aria-label="Попередній день" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button type="button" aria-label="Наступний день" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
-      <QuickAdd className="mb-4" />
-
-      {/* Wide screens: «next up» over today's tasks on the left, habits beside them at the same height. */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
-          <div className="min-w-0">{nextUp}</div>
-          <div className="flex min-w-0 lg:flex-1 [&>a]:flex-1">{progress}</div>
-        </div>
-        <div className="flex min-w-0 sm:col-span-2 lg:col-span-1">{habitsBlock}</div>
+      <div ref={stripRef} role="tablist" aria-label="Дні" className="no-scrollbar mt-5 flex gap-1.5 overflow-x-auto px-2 pb-1">
+        {strip.map((d) => {
+          const on = d === selected;
+          const dot = d === today;
+          return (
+            <button
+              key={d}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              aria-current={on ? 'date' : undefined}
+              aria-label={formatDateKey(d, 'EEEE, d MMMM')}
+              onClick={() => setSelected(d)}
+              className={cn(
+                'flex h-[62px] w-[52px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl text-[17px] font-bold tabular-nums transition-colors',
+                on ? 'border-[1.5px] border-primary text-primary' : 'border-[1.5px] border-transparent hover:bg-surface-2',
+                !on && dot && 'text-primary',
+              )}
+            >
+              <span>{Number(d.slice(8))}</span>
+              <span className={cn('text-[11.5px] font-medium capitalize', on ? 'text-primary' : 'text-muted')}>{formatDateKey(d, 'EEEEEE')}</span>
+            </button>
+          );
+        })}
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="min-w-0 lg:col-span-7">{scheduleBlock}</div>
-        <div className="min-w-0 space-y-4 lg:col-span-5">
-          {aheadBlock}
-          {untimedBlock}
-          {goalsBlock}
-        </div>
+      <div className="mx-2 mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl bg-surface-2 px-4 py-3.5 text-[14.5px]">
+        {empty ? (
+          <span className="text-muted">
+            {isToday ? `${salutation(now)}! ` : ''}Тут поки порожньо — додайте задачу або подію.
+          </span>
+        ) : (
+          <>
+            <span>{isToday ? `${salutation(now)}, сьогодні у вас` : past ? 'Цього дня було' : 'На цей день у вас'}</span>
+            {dayData.occ.length > 0 && (
+              <Chip tone="red" icon={<CalendarDays />}>
+                {dayData.occ.length} {plural(dayData.occ.length, ['подія', 'події', 'подій'])}
+              </Chip>
+            )}
+            {dayData.habits.length > 0 && (
+              <Chip tone="grey" icon={<Flame />}>
+                {dayData.habits.length} {plural(dayData.habits.length, ['звичка', 'звички', 'звичок'])}
+              </Chip>
+            )}
+            {dayData.open.length > 0 && (
+              <Chip tone="grey" icon={<Check />}>
+                {dayData.open.length} {plural(dayData.open.length, ['задача', 'задачі', 'задач'])}
+              </Chip>
+            )}
+            {important > 0 && (
+              <Chip tone="orange" icon={<TriangleAlert />}>
+                {important} {plural(important, ['важлива', 'важливі', 'важливих'])}
+              </Chip>
+            )}
+          </>
+        )}
+        {nextUp && (
+          <span className="basis-full text-[13px] text-muted">
+            Далі: <span className="font-semibold text-ink">{nextUp.event.title}</span> о {formatTime(nextUp.event.startTime!, settings.timeFormat)}
+          </span>
+        )}
       </div>
 
-      <WeekBoard today={today} className="mt-6 lg:flex-1" />
-    </PageContainer>
+      <div className="mx-2 mt-3">
+        <QuickAdd />
+      </div>
+
+      <div className="mt-3">
+        {entries.map((e) => (
+          <div key={e.key}>{e.node}</div>
+        ))}
+        {dayData.done.map((t) => (
+          <TaskRow key={t.id} task={t} today={today} showDate={false} />
+        ))}
+      </div>
+
+      {habitRows.length > 0 && (
+        <section className="mt-4" aria-label="Звички">
+          <h2 className="mb-1 flex items-baseline justify-between px-3 text-[12px] font-semibold text-muted">
+            Звички
+            <span className="font-medium">{goodHabits.filter((h) => isDone(h, data.habitLogs, day)).length} з {goodHabits.length}</span>
+          </h2>
+          {habitRows.map((r, i) => (
+            <div key={goodHabits[i]!.id}>{r}</div>
+          ))}
+        </section>
+      )}
+
+      {badHabits.length > 0 && (
+        <section className="mx-2 mt-4 border-t border-line pt-4" aria-label="Кидаю">
+          <h2 className="mb-2 flex items-baseline justify-between px-1 text-[12px] font-semibold text-muted">
+            Кидаю
+            <span className="font-medium">{badHolding} з {badHabits.length} {plural(badHolding, ['тримається', 'тримаються', 'тримаються'])}</span>
+          </h2>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {badHabits.map((h) => {
+              const st = badState(h);
+              const tone = BAD_TONE[st.tone];
+              const badge = st.tone === 'slip' ? <X className="h-3 w-3" strokeWidth={3} /> : st.tone === 'near' ? `${st.value}/${st.limit}` : st.streak || null;
+              return (
+                <button
+                  key={h.id}
+                  type="button"
+                  onClick={() => tapBad(h)}
+                  aria-label={`${h.name}: ${st.tone === 'slip' ? 'зрив' : st.label}. Натисніть, щоб записати зрив`}
+                  title={h.goalType === 'count' ? 'Натисніть, щоб додати ще один' : st.tone === 'slip' ? 'Натисніть, щоб прибрати зрив' : 'Натисніть, якщо не втримались'}
+                  className="flex items-center gap-3 rounded-2xl bg-surface-2 p-2.5 text-left transition-transform active:scale-[0.98]"
+                >
+                  <span className={cn('relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border-[2.5px] text-[17px]', tone.box)}>
+                    {h.icon}
+                    {badge != null && (
+                      <span className={cn('absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[10px] font-bold tabular-nums text-white', tone.badge)}>
+                        {badge}
+                      </span>
+                    )}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[14px] font-semibold">{h.name}</span>
+                    <span className={cn('block truncate text-[12px]', tone.text)}>{st.label}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 px-1 text-[11.5px] text-subtle">Натискання записує зрив; його можна скасувати.</p>
+        </section>
+      )}
+
+      <RightPanel>
+        <div className="flex items-center justify-between px-3">
+          <h2 className="text-[22px] font-extrabold tracking-tight">Вхідні</h2>
+          <Link to="/tasks" className="text-[12.5px] font-semibold text-muted hover:text-ink">
+            Усі задачі
+          </Link>
+        </div>
+        <form onSubmit={addInbox} className="mt-3 flex items-center gap-3 rounded-2xl px-3 py-2.5">
+          <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-subtle/70 text-subtle">
+            <Plus className="h-3 w-3" strokeWidth={3} />
+          </span>
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            aria-label="Нова задача у вхідні"
+            placeholder="Нова задача"
+            className="min-w-0 flex-1 bg-transparent text-[15.5px] font-medium outline-none placeholder:font-normal placeholder:text-subtle"
+          />
+        </form>
+        {inbox.overdue.length > 0 && (
+          <>
+            {sec('Прострочено', inbox.overdue.length)}
+            {inbox.overdue.map((t) => (
+              <TaskRow key={t.id} task={t} today={today} />
+            ))}
+          </>
+        )}
+        {sec('Без дати', inbox.undated.length)}
+        {inbox.undated.map((t) => (
+          <TaskRow key={t.id} task={t} today={today} />
+        ))}
+        {inbox.undated.length === 0 && <p className="px-3 py-1 text-[13px] text-subtle">Усе розібрано</p>}
+        {inbox.soon.length > 0 && (
+          <>
+            {sec('Найближчі події')}
+            {inbox.soon.map((o) => (
+              <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-surface-2/70">
+                <span className="mx-[6.5px] mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14.5px] font-medium">{o.event.title}</span>
+                  <span className="text-[12px] text-muted">
+                    {relativeDayLabel(o.date, today, 'EEEEEE, d MMM')}
+                    {!o.event.allDay && o.event.startTime ? ` · ${formatTime(o.event.startTime, settings.timeFormat)}` : ''}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </>
+        )}
+      </RightPanel>
+    </div>
   );
 }

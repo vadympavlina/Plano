@@ -3,63 +3,69 @@
 @tailwind utilities;
 
 @layer base {
+  /* The app is a dark frame (sidebar, top bar) holding light cards. In the dark theme the
+     frame is the same and the cards turn dark too. */
   :root {
-    --bg: 243 245 249;
-    --surface: 255 255 255;
-    --surface-2: 248 249 252;
-    --sidebar: 23 27 36;
-    --sidebar-fg: 236 239 245;
-    --sidebar-muted: 140 148 166;
-    --sidebar-active: 39 45 58;
-    --ink: 23 32 51;
-    --muted: 107 116 135;
-    --subtle: 154 162 178;
-    --line: 231 234 241;
-    --primary: 71 120 245;
+    --bg: 13 13 15;
+    --surface: 253 252 251;
+    --surface-2: 244 243 241;
+    --sidebar: 13 13 15;
+    --sidebar-fg: 233 233 236;
+    --sidebar-muted: 133 133 140;
+    --sidebar-active: 38 38 42;
+    --ink: 27 27 29;
+    --muted: 107 107 115;
+    --subtle: 160 160 168;
+    --line: 236 233 230;
+    --primary: 240 70 52;
     --primary-fg: 255 255 255;
-    --success: 53 185 138;
-    --warning: 224 146 50;
+    --success: 47 179 106;
+    --warning: 240 150 20;
     --danger: 229 72 77;
     --purple: 146 117 239;
-    --accent: 23 27 36;
+    --accent: 27 27 29;
     /* Pastel strength of tinted event backgrounds (see solidTint). */
     --tint-k: 1;
     --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
-    --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / 0.18), 0 4px 8px -4px rgb(16 24 40 / 0.08);
+    --shadow-pop: 0 12px 32px -8px rgb(16 24 40 / 0.22), 0 4px 8px -4px rgb(16 24 40 / 0.1);
     color-scheme: light;
   }
 
   .dark {
-    --bg: 11 13 18;
-    --surface: 22 26 35;
-    --surface-2: 30 35 46;
-    --sidebar: 18 21 29;
-    --sidebar-fg: 236 239 245;
-    --sidebar-muted: 128 137 156;
-    --sidebar-active: 32 37 49;
-    --ink: 232 235 242;
-    --muted: 160 168 186;
-    --subtle: 114 123 143;
-    --line: 45 52 67;
-    --primary: 102 145 255;
+    --bg: 13 13 15;
+    --surface: 29 29 32;
+    --surface-2: 40 40 44;
+    --sidebar: 13 13 15;
+    --sidebar-fg: 233 233 236;
+    --sidebar-muted: 133 133 140;
+    --sidebar-active: 38 38 42;
+    --ink: 242 242 244;
+    --muted: 155 155 163;
+    --subtle: 105 105 113;
+    --line: 46 46 51;
+    --primary: 255 100 86;
     --primary-fg: 255 255 255;
-    --success: 64 199 150;
-    --warning: 240 165 74;
+    --success: 64 199 130;
+    --warning: 250 168 50;
     --danger: 240 98 102;
     --purple: 166 141 247;
-    --accent: 236 239 245;
+    --accent: 242 242 244;
     --tint-k: 1.7;
     /* Shadows vanish on dark: a faint top highlight and a deeper drop instead. */
     --shadow-soft: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 1px 3px rgb(0 0 0 / 0.35);
-    --shadow-pop: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 16px 40px -8px rgb(0 0 0 / 0.6);
+    --shadow-pop: inset 0 1px 0 rgb(255 255 255 / 0.05), 0 16px 40px -8px rgb(0 0 0 / 0.7);
     color-scheme: dark;
   }
 
-  /* Accent colour (Settings → Вигляд); blue is the default above. */
+  /* Accent colour (Settings → Вигляд); coral is the default above. */
+  [data-accent='coral'] { --primary: 240 70 52; }
+  [data-accent='blue'] { --primary: 71 120 245; }
   [data-accent='violet'] { --primary: 132 94 247; }
   [data-accent='green'] { --primary: 22 163 110; }
   [data-accent='orange'] { --primary: 232 118 30; }
   [data-accent='pink'] { --primary: 219 68 133; }
+  .dark[data-accent='coral'] { --primary: 255 100 86; }
+  .dark[data-accent='blue'] { --primary: 102 145 255; }
   .dark[data-accent='violet'] { --primary: 162 134 255; }
   .dark[data-accent='green'] { --primary: 52 199 140; }
   .dark[data-accent='orange'] { --primary: 250 148 72; }
@@ -73,7 +79,8 @@
   }
 
   body {
-    @apply bg-bg text-ink font-sans antialiased;
+    @apply bg-bg font-sans antialiased;
+    color: rgb(var(--sidebar-fg));
     overscroll-behavior-y: none;
   }
 
@@ -106,8 +113,9 @@
 }
 
 @layer components {
+  /* A soft panel inside the main card (list groups, stat tiles). */
   .card {
-    @apply rounded-card border border-line bg-surface;
+    @apply rounded-[18px] bg-surface-2;
   }
   .scrollbar-thin {
     scrollbar-width: thin;
@@ -156,82 +164,19 @@
   }
 }
 
-/* Liquid Glass (glisse): its colours follow the app's accent and theme. Kept outside
-   @layer so they win over the library's own (unlayered) defaults. */
-:root {
+/* Liquid Glass (glisse) is kept only for the phone's floating tab bar. */
+.glass-dock {
   --lg-fill: rgb(var(--primary));
-  --lg-on: rgb(var(--success));
-  --glass-add: rgb(var(--ink));
+  /* Smoked glass: dark enough to stay dark over the white card. */
+  --lg-glass: #131316e8;
+  --lg-glass-active: #2e2e34d9;
+  --lg-edge: #ffffff26;
+  --lg-lens: #ffffff1a;
+  --lg-selection: #ffffff2e;
 }
-.dark {
-  --glass-add: rgb(var(--primary));
-}
-
-/* On solid cards and dialogs there is nothing to see through, so glass takes a soft grey
-   there (iOS does the same on sheets); over the page it stays clear. */
-.bg-surface {
-  --lg-glass: rgb(118 118 128 / 0.1);
-  --lg-glass-active: rgb(118 118 128 / 0.17);
-}
-.dark .bg-surface {
-  --lg-glass: rgb(118 118 128 / 0.22);
-  --lg-glass-active: rgb(118 118 128 / 0.32);
-}
-
-@layer components {
-/* Glass for our own controls (select/date/time triggers, chips, textareas): the same
-   fill, edge and blur as glisse's .lg-glass, without its refraction. */
-:where(.glass-control) {
-  background-color: var(--lg-glass);
-  box-shadow: inset 0 0 0 0.5px var(--lg-edge), 0 1px 3px var(--lg-drop);
-  -webkit-backdrop-filter: blur(3px) saturate(1.5);
-  backdrop-filter: blur(3px) saturate(1.5);
-  transition: background-color 0.2s, box-shadow 0.2s;
-}
-:where(.glass-control:hover, .glass-control[data-state='open']) {
-  background-color: var(--lg-glass-active);
-}
-:where(textarea.glass-control:focus),
-.ui-field:focus-within {
-  box-shadow: inset 0 0 0 1.5px rgb(var(--primary) / 0.55), 0 0 0 3px rgb(var(--primary) / 0.14);
-}
-
-/* Menus, popovers, select lists: glisse's frosted menu surface. */
-.glass-panel {
-  background: var(--lg-surface);
-  -webkit-backdrop-filter: blur(22px) saturate(1.9);
-  backdrop-filter: blur(22px) saturate(1.9);
-  box-shadow: inset 0 0 0 0.5px var(--lg-surface-edge), 0 12px 40px var(--lg-shadow);
-}
-
-/* glisse Input as our field: any width, our text size, errors in red. */
-.ui-field.lg-input {
-  max-width: none;
-  border-radius: 9999px;
-}
-.ui-field.lg-input input {
-  font-size: 14px;
-  color: rgb(var(--ink));
-}
-.ui-field.lg-input input::placeholder {
-  color: rgb(var(--subtle));
-}
-.ui-field.text-center input {
-  text-align: center;
-}
-.ui-field:has(input[aria-invalid='true']) {
-  box-shadow: inset 0 0 0 1.5px rgb(var(--danger) / 0.7), 0 0 0 3px rgb(var(--danger) / 0.12);
-}
-}
-
-/* Small segmented controls. */
-.glass-tabs-sm .lg-tab,
-.glass-tabs-sm .lg-tab-copy {
-  font-size: 12.5px;
-}
-.lg-tab,
-.lg-tab-copy {
-  font-size: 13.5px;
+.glass-dock .lg-tab,
+.glass-dock .lg-tab-copy {
+  font-size: 10.5px;
 }
 
 /* An app, not a page: long presses and drags don't select text or pick up links and

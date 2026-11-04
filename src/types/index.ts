@@ -229,7 +229,7 @@ export interface Settings {
   accent: AccentColor;
 }
 
-export const ACCENT_COLORS = ['blue', 'violet', 'green', 'orange', 'pink'] as const;
+export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number];
 
 export interface Profile {

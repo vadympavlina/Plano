@@ -109,3 +109,36 @@ export function Stepper({
   );
 }
 
+
+/** On/off switch (settings, "all day"). */
+export function Switch({
+  checked,
+  onCheckedChange,
+  label,
+  disabled,
+  className,
+}: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  label: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onCheckedChange(!checked)}
+      className={cn(
+        'relative h-[26px] w-[44px] shrink-0 rounded-full transition-colors disabled:opacity-50',
+        checked ? 'bg-success' : 'bg-line',
+        className,
+      )}
+    >
+      <span className={cn('absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.3)] transition-transform duration-200', checked && 'translate-x-[18px]')} />
+    </button>
+  );
+}

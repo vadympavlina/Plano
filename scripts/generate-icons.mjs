@@ -46,7 +46,7 @@ await writeFile(`${out}/icon-maskable-512.png`, await icon(512, 0.6, 0));
 await writeFile(`${out}/apple-touch-icon.png`, await icon(180, 0.7, 0));
 await copyFile(`${out}/apple-touch-icon.png`, 'public/apple-touch-icon.png');
 // Transparent duck for dark UI (sidebar), and an SVG favicon wrapping the rounded tile.
-await writeFile('public/logo-duck.png', await sharp(duck).resize(128, 128).png().toBuffer());
+await writeFile('public/logo-duck.png', await sharp(duck).resize(256, 256).png().toBuffer());
 const fav = (await icon(64, 0.8, 0.22)).toString('base64');
 await writeFile('public/favicon.svg', `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><image width="64" height="64" href="data:image/png;base64,${fav}"/></svg>\n`);
 
@@ -61,7 +61,7 @@ for (const [w, h, r] of SPLASH) {
   const [W, H] = [w * r, h * r];
   const d = Math.round(W * 0.34);
   const name = `splash/${W}x${H}.png`;
-  const png = await sharp({ create: { width: W, height: H, channels: 4, background: '#0E1117' } })
+  const png = await sharp({ create: { width: W, height: H, channels: 4, background: '#0D0D0F' } })
     .composite([{ input: await sharp(duck).resize(d, d).toBuffer(), left: (W - d) >> 1, top: (H - d) >> 1 }])
     .png({ compressionLevel: 9, palette: true })
     .toBuffer();
