@@ -185,16 +185,16 @@ export default function CalendarPage() {
 
   return (
     <div className="flex w-full flex-col lg:h-[var(--page-h)]">
-      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-3 px-2 pb-3 sm:pb-4">
-        <div className="min-w-0 max-w-full">
+      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
+        <div className="min-w-[9.5rem] max-w-full flex-1">
           {datePicker(
             <span className="block">
-              <span className="block truncate text-[28px] font-extrabold leading-[1.08] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">{title.main}</span>
-              <span className="mt-1 block text-[13px] font-medium text-muted">{title.sub}</span>
+              <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">{title.main}</span>
+              <span className="mt-0.5 block text-[12.5px] font-medium text-muted sm:mt-1 sm:text-[13px]">{title.sub}</span>
             </span>,
           )}
         </div>
-        <div className="flex flex-wrap items-center gap-1.5 pt-0.5 sm:gap-2 sm:pt-1">
+        <div className="flex shrink-0 items-center gap-1.5 pt-0.5 sm:gap-2 sm:pt-1">
           <GoogleSyncButton />
           <Select<CalendarView>
             variant="chip"
@@ -218,7 +218,7 @@ export default function CalendarPage() {
         </div>
       </header>
 
-      <div className="h-[calc(100dvh-300px)] min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1">
+      <div className="h-[calc(100dvh-250px)] min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1">
         {view === 'month' ? (
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
         ) : (

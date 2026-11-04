@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
-import { Repeat } from 'lucide-react';
+import { MapPin, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
@@ -8,14 +8,16 @@ import { useData } from '@/app/providers/DataProvider';
 import { TASK_DRAG, TaskTick, startTaskDrag } from './TaskTick';
 import { useNow } from '@/hooks/useNow';
 import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, minutesToTime, todayKey, weekRange } from '@/lib/date';
-import { colorOf } from '@/lib/utils/colors';
+import { colorOf, solidTint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
 import { expandEvents, layoutDay, occurrencesOnDay, selectionRange, type EventOccurrence } from './logic';
 import { buildTimedItems, eventColor, type GridItem } from './items';
 
-const HOUR_PX = 52;
+/** Pixels per hour: the day view is roomier than the multi-day views. */
+const HOUR_PX_DAY = 68;
+const HOUR_PX_MULTI = 52;
 const SNAP = 15;
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const LONG_PRESS_MS = 350;
@@ -116,6 +118,7 @@ export function TimeGrid({
   /** Set when a mouse drag ends, so the click that follows doesn't open the event. */
   const suppressClick = useRef(false);
   const single = days.length === 1;
+  const HOUR_PX = single ? HOUR_PX_DAY : HOUR_PX_MULTI;
   const fmt = (m: number) => formatTime(minutesToTime(Math.min(m, DAY_END - 1)), settings.timeFormat);
 
   /** Share of each day's tasks that are done: the small ring in the day header. */
@@ -433,7 +436,7 @@ export function TimeGrid({
     <div className="flex h-full min-h-0 select-none flex-col">
       {/* Day headers */}
       {strip ? (
-        <div className="grid grid-cols-7 gap-0.5 border-b border-line px-1.5 py-1.5 sm:px-3">
+        <div className="grid grid-cols-7 gap-0.5 border-b border-line/70 px-1 pb-1 sm:px-3 sm:py-1.5">
           {strip.map(({ d, marked }) => {
             const on = d === days[0];
             const isToday = d === today;
@@ -444,12 +447,12 @@ export function TimeGrid({
                 onClick={() => onSelectDay(d)}
                 aria-pressed={on}
                 aria-label={formatDateKey(d, 'EEEE, d MMMM')}
-                className={cn('flex flex-col items-center gap-0.5 rounded-xl py-1 transition-colors', !on && 'hover:bg-surface-2')}
+                className={cn('flex flex-col items-center gap-0 rounded-xl py-0.5 transition-colors sm:gap-0.5 sm:py-1', !on && 'hover:bg-surface-2')}
               >
                 <span className={cn('text-[11px] font-medium', isToday ? 'text-primary' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
                 <span
                   className={cn(
-                    'flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors',
+                    'flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors max-sm:h-7 max-sm:w-7',
                     on ? (isToday ? 'bg-primary text-white' : 'bg-accent text-surface') : isToday ? 'text-primary' : 'text-ink',
                   )}
                 >
@@ -516,7 +519,7 @@ export function TimeGrid({
                 onPointerDown={(e) => onAllDayPointerDown(e, index)}
                 title="Натисніть або протягніть, щоб додати подію на весь день"
                 className={cn(
-                  'scrollbar-thin max-h-[116px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line/60 p-1 transition-colors',
+                  'scrollbar-thin max-h-[116px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line/60 p-1 transition-colors max-sm:max-h-[92px]',
                   selected ? 'bg-primary/10' : 'hover:bg-surface-2/50',
                 )}
               >
@@ -527,7 +530,7 @@ export function TimeGrid({
                       key={o.key}
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
-                      className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold"
+                      className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold max-sm:py-1"
                       title={o.event.title}
                     >
                       <Marker category={categoryById(o.event.categoryId)} color={color} />
@@ -542,7 +545,7 @@ export function TimeGrid({
                     draggable={t.status !== 'completed'}
                     onDragStart={(e) => startTaskDrag(e, t.id)}
                     onClick={() => openTask(t.id)}
-                    className={cn('flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink', t.status === 'completed' && 'text-subtle line-through')}
+                    className={cn('flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink max-sm:py-1', t.status === 'completed' && 'text-subtle line-through')}
                     title={`Задача: ${t.title}`}
                   >
                     <TaskTick task={t} color={taskColor(t)} size={14} />
@@ -667,8 +670,9 @@ export function TimeGrid({
                         }
                       }}
                       className={cn(
-                        'group/ev absolute z-[1] overflow-hidden rounded-xl bg-surface-2 text-left transition-shadow hover:shadow-soft',
-                        short ? 'px-2 py-0.5' : 'px-2.5 py-2',
+                        'group/ev absolute z-[1] overflow-hidden text-left transition-shadow hover:shadow-soft',
+                        single && item.kind === 'event' ? 'rounded-2xl border-l-[5px]' : 'rounded-xl bg-surface-2',
+                        short ? 'px-2 py-0.5' : single ? 'px-3.5 py-2.5' : 'px-2.5 py-2',
                         item.draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                         isDragging && drag.moved && 'z-20 opacity-90 shadow-pop',
                       )}
@@ -678,25 +682,35 @@ export function TimeGrid({
                         left: `calc(${(column / cols) * 100}% + 2px)`,
                         width: `calc(${100 / cols}% - 4px)`,
                         transform: dayShift ? `translateX(${dayShift}px)` : undefined,
+                        ...(single && item.kind === 'event' ? { borderLeftColor: item.color, backgroundColor: solidTint(item.color, 0.13) } : {}),
                       }}
                     >
-                      <div className={cn('flex gap-2', short ? 'items-center' : 'items-start')}>
-                        <span className={cn(!short && 'pt-px')}>
-                          {item.kind === 'task' ? <TaskTick task={item.task} color={item.color} size={short ? 13 : 15} /> : <Marker category={item.category} color={item.color} />}
+                      <div className={cn('flex gap-2.5', short ? 'items-center' : 'items-start')}>
+                        <span className={cn(!short && 'pt-0.5')}>
+                          {item.kind === 'task' ? <TaskTick task={item.task} color={item.color} size={short ? 13 : 16} /> : <Marker category={item.category} color={item.color} />}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className={cn('flex items-center gap-1 truncate text-[12.5px] font-semibold leading-tight', done && 'text-subtle line-through')}>
+                          <p className={cn('flex items-center gap-1 truncate font-semibold leading-tight', single ? 'text-[14.5px]' : 'text-[12.5px]', done && 'text-subtle line-through')}>
                             <span className="truncate">{item.title}</span>
-                            {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-2.5 w-2.5 shrink-0 opacity-50" />}
+                            {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-3 w-3 shrink-0 opacity-50" />}
                             {short && <span className="ml-auto shrink-0 pl-1 text-[11px] font-medium tabular-nums text-muted">{fmt(start)}</span>}
                           </p>
                           {!short && (
-                            <p className="mt-0.5 truncate text-[11.5px] tabular-nums text-muted">
+                            <p className={cn('mt-0.5 truncate tabular-nums text-muted', single ? 'text-[12.5px]' : 'text-[11.5px]')}>
                               {fmt(start)} – {fmt(end)}
+                              {end - start >= 30 && ` · ${formatDuration(end - start)}`}
                               {item.kind === 'task' && item.task.subtasks.length > 0 && ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}
                             </p>
                           )}
-                          {!short && single && item.kind === 'event' && item.occurrence.event.location && <p className="truncate text-[11.5px] text-muted">{item.occurrence.event.location}</p>}
+                          {!short && single && item.kind === 'event' && item.occurrence.event.location && (
+                            <p className="mt-1 flex items-center gap-1 truncate text-[12.5px] text-muted">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{item.occurrence.event.location}</span>
+                            </p>
+                          )}
+                          {height >= 110 && single && item.kind === 'event' && item.occurrence.event.description && (
+                            <p className="mt-1.5 line-clamp-2 text-[12.5px] leading-snug text-muted">{item.occurrence.event.description}</p>
+                          )}
                         </div>
                       </div>
                       {item.kind === 'event' && item.draggable && (
@@ -751,7 +765,7 @@ export function TimeGrid({
                 )}
 
                 {c.day === today && (
-                  <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: (nowMinutes / 60) * HOUR_PX - 1 }} aria-hidden>
+                  <div className="pointer-events-none absolute inset-x-0 z-0" style={{ top: (nowMinutes / 60) * HOUR_PX - 1 }} aria-hidden>
                     <div className="relative h-[2px] bg-danger">
                       <span className="absolute -left-[5px] -top-[4px] h-2.5 w-2.5 rounded-full bg-danger" />
                     </div>

@@ -156,7 +156,7 @@ function GoalRow({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void;
                 )}
               </>
             ) : (
-              <span className="text-subtle">Без дедлайну</span>
+              <span className="hidden text-subtle md:inline">Без дедлайну</span>
             )}
           </span>
           <span className="ml-auto md:ml-0 md:justify-self-end">
