@@ -92,7 +92,7 @@ export function MonthView({
               onPointerDown={(e) => onDown(e, index)}
               className={cn(
                 'relative min-w-0 cursor-cell rounded-xl p-1 transition-colors sm:rounded-2xl sm:p-2',
-                inMonth ? 'bg-surface-2/70' : 'opacity-40',
+                inMonth ? 'bg-surface-2/70' : 'bg-surface-2/30',
                 index >= lo && index <= hi ? 'bg-primary/10' : inMonth && 'hover:bg-surface-2',
               )}
             >
@@ -102,15 +102,15 @@ export function MonthView({
                   onClick={() => onSelectDay(d)}
                   aria-label={`Відкрити ${d}`}
                   className={cn(
-                    'pointer-events-auto flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
-                    isToday ? 'bg-primary font-bold text-white hover:bg-primary' : inMonth ? 'font-semibold text-ink' : 'text-subtle',
+                    'pointer-events-auto flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
+                    isToday ? 'bg-primary font-bold text-primary-fg hover:bg-primary' : inMonth ? 'font-semibold text-ink' : 'text-subtle',
                   )}
                 >
                   {Number(d.slice(8))}
                 </button>
               </div>
               {/* Phones: dots only */}
-              <button type="button" className="flex flex-wrap gap-0.5 sm:hidden" onClick={() => onSelectDay(d)} aria-label={`Елементів: ${items.length}`}>
+              <button type="button" className="-mx-1 flex min-h-6 w-[calc(100%+0.5rem)] flex-wrap content-start gap-0.5 px-1 sm:hidden" onClick={() => onSelectDay(d)} aria-label={`Елементів: ${items.length}`}>
                 {items.slice(0, 6).map((it, i) => (
                   <span
                     key={i}

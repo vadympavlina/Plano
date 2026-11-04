@@ -14,7 +14,7 @@ import { useData } from '@/app/providers/DataProvider';
 import { useActions } from '@/hooks/useActions';
 import { useToday } from '@/hooks/useNow';
 import { addDaysKey, formatDateKey, fromDateKey, monthGrid, plural, toDateKey, weekdayLabels } from '@/lib/date';
-import { colorOf, tint } from '@/lib/utils/colors';
+import { colorOf, inkOf, onColor, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
 import {
@@ -64,7 +64,7 @@ function HabitListItem({ habit, active }: { habit: Habit; active: boolean }) {
           {isPaused(habit, today) ? 'На паузі' : !isScheduled(habit, today) && !done ? 'Сьогодні вихідний' : habit.goalType === 'count' ? `${value}/${habit.target} ${habit.unit ?? ''}` : isBad(habit) ? (done ? 'Без зривів' : 'Зрив') : done ? 'Виконано' : 'Ще ні'}
         </span>
       </span>
-      {streak > 0 && <span className="text-[12px] font-semibold text-warning">🔥 {streak}</span>}
+      {streak > 0 && <span className="text-[12px] font-semibold text-warning-ink">🔥 {streak}</span>}
     </Link>
   );
 }
@@ -149,7 +149,7 @@ export default function HabitPage() {
                 <Button size="icon-sm" variant="ghost" aria-label="Зменшити" onClick={() => setValue(value - 1)} disabled={value <= 0}>
                   <Minus className="h-4 w-4" />
                 </Button>
-                <span className="min-w-[72px] text-center text-[14px] font-semibold tabular-nums" style={{ color: done ? color : undefined }}>
+                <span className="min-w-[72px] text-center text-[14px] font-semibold tabular-nums" style={{ color: done ? inkOf(color) : undefined }}>
                   {value} / {habit.target}
                 </span>
                 <Button size="icon-sm" variant="ghost" aria-label="Збільшити" onClick={() => setValue(value + 1)}>
@@ -161,8 +161,8 @@ export default function HabitPage() {
                 type="button"
                 onClick={() => void toggle(habit, today)}
                 aria-pressed={done}
-                className={cn('flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors', done ? 'text-white' : 'border-2')}
-                style={done ? { backgroundColor: color } : { borderColor: tint(color, 0.5), color }}
+                className={cn('flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors', done ? '' : 'border-2')}
+                style={done ? { backgroundColor: color, color: onColor(color) } : { borderColor: tint(color, 0.5), color: inkOf(color) }}
               >
                 <Check className="h-4 w-4 stroke-[3]" /> {bad ? (done ? 'Сьогодні без зривів · позначити зрив' : 'Зрив сьогодні · скасувати') : done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}
               </button>
@@ -276,12 +276,12 @@ export default function HabitPage() {
                     )}
                     style={{
                       backgroundColor: slip ? 'rgb(var(--danger))' : dDone ? (bad ? 'rgb(var(--success))' : color) : partial ? tint(color, 0.35) : future ? undefined : scheduled ? 'rgb(var(--surface-2))' : undefined,
-                      color: dDone || slip ? '#fff' : future || !scheduled ? 'rgb(var(--subtle))' : 'rgb(var(--muted))',
+                      color: slip ? 'rgb(var(--on-fill))' : dDone ? (bad ? 'rgb(var(--on-fill))' : onColor(color)) : partial ? 'rgb(var(--ink))' : future || !scheduled ? 'rgb(var(--subtle))' : 'rgb(var(--muted))',
                       ['--tw-ring-color' as string]: tint(color, 0.5),
                     }}
                   >
                     {Number(d.slice(8))}
-                    {habit.dayNotes?.[d] && <span className="absolute bottom-1 h-1 w-1 rounded-full" style={{ backgroundColor: dDone || slip ? '#fff' : color }} />}
+                    {habit.dayNotes?.[d] && <span className="absolute bottom-1 h-1 w-1 rounded-full" style={{ backgroundColor: slip ? 'rgb(var(--on-fill))' : dDone ? (bad ? 'rgb(var(--on-fill))' : onColor(color)) : color }} />}
                   </button>
                 );
               })}

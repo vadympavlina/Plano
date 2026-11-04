@@ -42,7 +42,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { colorOf, tint } from '@/lib/utils/colors';
+import { colorOf, inkOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { Category } from '@/types';
 
@@ -128,7 +128,7 @@ export function CategoryChip({ category, compact, className }: { category: Categ
   return (
     <span
       className={cn('inline-flex max-w-[150px] shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold', className)}
-      style={{ backgroundColor: tint(color, 0.12), color }}
+      style={{ backgroundColor: tint(color, 0.12), color: inkOf(color) }}
       title={category.name}
     >
       <CategoryMark category={category} className={categoryIcon(category) ? 'h-3.5 w-3.5' : 'h-1.5 w-1.5'} />

@@ -28,7 +28,7 @@ export function TaskTick({ task, color, size = 14 }: { task: Task; color: string
         e.preventDefault();
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
-      className={cn('flex shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors', done ? 'border-transparent bg-success text-white' : 'bg-surface hover:bg-surface-2')}
+      className={cn('relative flex shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-2 before:content-[""]', done ? 'border-transparent bg-success text-on-fill' : 'bg-surface hover:bg-surface-2')}
       style={{ width: size, height: size, borderColor: done ? undefined : color }}
     >
       {done && <Check className="stroke-[3.5]" style={{ width: size * 0.65, height: size * 0.65 }} />}

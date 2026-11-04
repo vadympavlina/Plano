@@ -27,7 +27,7 @@ export function SyncIndicator({ variant = 'sidebar', collapsed }: { variant?: 's
   const s = useSyncSummary();
   const Icon = s.icon;
   const color =
-    s.tone === 'success' ? 'text-success' : s.tone === 'warning' ? 'text-warning' : s.tone === 'danger' ? 'text-danger' : '';
+    s.tone === 'success' ? 'text-success' : s.tone === 'warning' ? 'text-warning-ink' : s.tone === 'danger' ? 'text-danger' : '';
   return (
     <div
       role="status"

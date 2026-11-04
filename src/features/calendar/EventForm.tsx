@@ -188,7 +188,7 @@ export default function EventFormDialog({
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
               onBlur={applySmart}
-              className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
           {visible.title && <p role="alert" className="ml-6 mt-1 text-[13px] text-danger">{visible.title}</p>}
@@ -279,7 +279,7 @@ export default function EventFormDialog({
             {timeError && <p role="alert" className="mt-2 text-[13px] text-danger">{timeError}</p>}
             {conflicts.length > 0 && (
               <p className="mt-2 flex items-start gap-2 text-[12.5px] text-muted">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-ink" />
                 <span>
                   Перетинається з{' '}
                   {conflicts
@@ -381,7 +381,7 @@ export default function EventFormDialog({
             </Button>
             <Button type="submit" variant="dark" loading={saving}>
               {event ? 'Зберегти' : 'Створити подію'}
-              <kbd className="ml-1.5 hidden font-sans text-[11.5px] font-medium opacity-50 lg:inline">{isMac ? '⌘' : 'Ctrl'}↵</kbd>
+              <kbd className="ml-1.5 hidden font-sans text-[11.5px] font-medium opacity-75 lg:inline">{isMac ? '⌘' : 'Ctrl'}↵</kbd>
             </Button>
           </DialogFooter>
         </form>

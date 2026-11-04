@@ -128,7 +128,7 @@ export default function TaskFormDialog({
             maxLength={300}
             onChange={(e) => patch({ title: e.target.value })}
             onBlur={applySmart}
-            className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle/80 focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
           <Textarea
@@ -243,7 +243,7 @@ export default function TaskFormDialog({
                     <button
                       type="button"
                       aria-label="Видалити підзадачу"
-                      className="rounded-md p-1 text-subtle opacity-0 transition-opacity hover:bg-surface-2 hover:text-danger focus:opacity-100 group-hover:opacity-100"
+                      className="rounded-md p-1 text-subtle opacity-0 transition-opacity hover:bg-surface-2 hover:text-danger focus:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100"
                       onClick={() => patch({ subtasks: draft.subtasks.filter((x) => x.id !== s.id) })}
                     >
                       <X className="h-3.5 w-3.5" />

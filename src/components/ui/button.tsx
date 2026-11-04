@@ -11,7 +11,7 @@ const variants: Record<Variant, string> = {
   secondary: 'bg-surface-2 text-ink hover:bg-line/70 active:bg-line',
   outline: 'bg-surface-2 text-ink hover:bg-line/70 active:bg-line',
   ghost: 'text-muted hover:bg-surface-2 hover:text-ink active:bg-line/70',
-  danger: 'bg-danger text-white hover:brightness-105 active:brightness-95',
+  danger: 'bg-danger text-on-fill hover:brightness-105 active:brightness-95',
   link: 'text-primary hover:underline underline-offset-2 px-0 h-auto',
 };
 

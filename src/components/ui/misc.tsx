@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { tint } from '@/lib/utils/colors';
+import { inkOf, tint } from '@/lib/utils/colors';
 import { haptic } from '@/lib/utils/haptic';
 
 export function Badge({
@@ -10,7 +10,7 @@ export function Badge({
   children,
   ...props
 }: HTMLAttributes<HTMLSpanElement> & { color?: string }) {
-  const style: CSSProperties | undefined = color ? { backgroundColor: tint(color, 0.13), color } : undefined;
+  const style: CSSProperties | undefined = color ? { backgroundColor: tint(color, 0.13), color: inkOf(color) } : undefined;
   return (
     <span
       className={cn(
@@ -137,7 +137,7 @@ export function Segmented<T extends string>({
             className={cn(
               'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-colors',
               stretch && 'flex-1',
-              size === 'sm' ? 'h-7 px-3 text-xs' : 'h-8 px-3.5 text-[13px]',
+              size === 'sm' ? 'h-8 px-3 text-[12.5px] sm:h-7 sm:text-xs' : 'h-9 px-3.5 text-[13px] sm:h-8',
               on ? 'bg-accent text-surface' : 'text-muted hover:text-ink',
             )}
           >

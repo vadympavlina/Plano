@@ -21,7 +21,7 @@ const ORDER: ProjectStatus[] = ['active', 'on_hold', 'completed', 'archived'];
 const GROUP_LABEL: Record<ProjectStatus, string> = { active: 'Активні', on_hold: 'На паузі', completed: 'Завершені', archived: 'В архіві' };
 const STATUS_PILL: Record<ProjectStatus, string> = {
   active: 'bg-success/12 text-success',
-  on_hold: 'bg-warning/15 text-warning',
+  on_hold: 'bg-warning/15 text-warning-ink',
   completed: 'bg-surface text-muted',
   archived: 'bg-surface text-subtle',
 };
@@ -34,7 +34,7 @@ function ProjectCard({ project, today }: { project: Project; today: DateKey }) {
   const open = prog.total - prog.done;
   const finished = project.status === 'completed' || project.status === 'archived';
   const hint = project.targetDate && !finished ? deadlineHint(project.targetDate, today) : undefined;
-  const toneClass = hint?.tone === 'danger' ? 'bg-danger/10 text-danger' : hint?.tone === 'warning' ? 'bg-warning/15 text-warning' : 'bg-surface text-muted';
+  const toneClass = hint?.tone === 'danger' ? 'bg-danger/10 text-danger' : hint?.tone === 'warning' ? 'bg-warning/15 text-warning-ink' : 'bg-surface text-muted';
 
   return (
     <Link

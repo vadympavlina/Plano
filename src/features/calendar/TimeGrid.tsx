@@ -453,7 +453,7 @@ export function TimeGrid({
                 <span
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors max-sm:h-7 max-sm:w-7',
-                    on ? (isToday ? 'bg-primary text-white' : 'bg-accent text-surface') : isToday ? 'text-primary' : 'text-ink',
+                    on ? (isToday ? 'bg-primary text-primary-fg' : 'bg-accent text-surface') : isToday ? 'text-primary' : 'text-ink',
                   )}
                 >
                   {Number(d.slice(8))}
@@ -496,7 +496,7 @@ export function TimeGrid({
 
       {/* All-day row: always present so all-day events can be drawn here */}
       <div className="flex border-b border-line/70">
-        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[10px] leading-[1.1] text-subtle sm:w-14">
+        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[11px] leading-[1.1] text-subtle sm:w-14">
           <span>
             весь
             <br />
@@ -530,7 +530,7 @@ export function TimeGrid({
                       key={o.key}
                       type="button"
                       onClick={() => openEvent(o.event.id, o.date)}
-                      className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold max-sm:py-1"
+                      className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold max-sm:py-1.5"
                       title={o.event.title}
                     >
                       <Marker category={categoryById(o.event.categoryId)} color={color} />
@@ -545,7 +545,7 @@ export function TimeGrid({
                     draggable={t.status !== 'completed'}
                     onDragStart={(e) => startTaskDrag(e, t.id)}
                     onClick={() => openTask(t.id)}
-                    className={cn('flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink max-sm:py-1', t.status === 'completed' && 'text-subtle line-through')}
+                    className={cn('flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink max-sm:py-1.5', t.status === 'completed' && 'text-subtle line-through')}
                     title={`Задача: ${t.title}`}
                   >
                     <TaskTick task={t} color={taskColor(t)} size={14} />
@@ -569,7 +569,7 @@ export function TimeGrid({
           <div className="relative w-12 shrink-0 sm:w-14" aria-hidden>
             {showsToday && (
               <span
-                className="absolute right-1 z-10 -translate-y-1/2 rounded-md bg-danger px-1 text-[10px] font-bold tabular-nums text-white"
+                className="absolute right-1 z-10 -translate-y-1/2 rounded-md bg-danger px-1 text-[10px] font-bold tabular-nums text-on-fill"
                 style={{ top: (nowMinutes / 60) * HOUR_PX }}
               >
                 {fmt(nowMinutes)}
@@ -748,7 +748,7 @@ export function TimeGrid({
                       openSlot(dayIndex, draftSlot);
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className="absolute inset-x-1 z-10 flex flex-col items-start rounded-lg bg-primary px-2 py-1 text-left text-white shadow-pop animate-scale-in"
+                    className="absolute inset-x-1 z-10 flex flex-col items-start rounded-lg bg-primary px-2 py-1 text-left text-primary-fg shadow-pop animate-scale-in"
                     style={{ top: (draftSlot.start / 60) * HOUR_PX, height: ((draftSlot.end - draftSlot.start) / 60) * HOUR_PX }}
                   >
                     <span className="text-[12px] font-semibold">+ Нова подія</span>

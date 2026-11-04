@@ -157,7 +157,7 @@ export function SetupScreen() {
         <p className="text-sm text-muted">Твоє життя. В одному місці.</p>
       </div>
       <div className="card p-6">
-        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-warning/15 text-warning">
+        <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-warning/15 text-warning-ink">
           <Wrench className="h-5 w-5" />
         </div>
         <h1 className="text-lg font-semibold">Підключіть Firebase, щоб почати</h1>

@@ -92,7 +92,7 @@ export function renderMarkdown(src: string): string {
       }
       const checked = task[1].toLowerCase() === 'x';
       html.push(
-        `<li class="task-item"><input type="checkbox" disabled${checked ? ' checked' : ''}/> <span${checked ? ' style="text-decoration:line-through;opacity:.6"' : ''}>${inline(task[2])}</span></li>`,
+        `<li class="task-item"><input type="checkbox" disabled${checked ? ' checked' : ''}/> <span${checked ? ' style="text-decoration:line-through;opacity:.75"' : ''}>${inline(task[2])}</span></li>`,
       );
     } else if (bullet) {
       closePara();

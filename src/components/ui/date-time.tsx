@@ -43,7 +43,7 @@ function ClearButton({ onClear, label }: { onClear: () => void; label: string })
       type="button"
       aria-label={label}
       onClick={onClear}
-      className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-subtle hover:bg-line hover:text-ink"
+      className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-subtle hover:bg-line hover:text-ink"
     >
       <X className="h-3.5 w-3.5" />
     </button>

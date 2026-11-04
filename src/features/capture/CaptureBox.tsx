@@ -10,7 +10,7 @@ import { useDictation } from '@/hooks/useDictation';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { CreateMenu } from '@/components/layout/CreateMenu';
 import { useUI } from '@/app/providers/UIProvider';
-import { colorOf } from '@/lib/utils/colors';
+import { colorOf, inkOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { plural } from '@/lib/date';
 import { SmartField, type SmartFieldHandle } from './SmartField';
@@ -157,7 +157,7 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
         const I = CHIP_ICON[x.type];
         const color = x.category ? colorOf(x.category.color) : x.project ? colorOf(x.project.color) : undefined;
         return (
-          <span key={x.key} className={cn(chip, 'pr-1.5', color ? '' : 'bg-primary/10 text-primary')} style={color ? { backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)`, color } : undefined}>
+          <span key={x.key} className={cn(chip, 'pr-1.5', color ? '' : 'bg-primary/10 text-primary')} style={color ? { backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)`, color: inkOf(color) } : undefined}>
             {x.category ? <CategoryIcon category={x.category} /> : I && <I className="h-3.5 w-3.5" />}
             <span className="max-w-[180px] truncate">{x.label}</span>
             {(x.spans.length > 0 || x.type === 'time' || x.type === 'date') && (
@@ -213,7 +213,7 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
       className={cn(
         'relative flex shrink-0 items-center justify-center rounded-full transition-colors',
         sheet ? 'h-12 w-12 bg-surface-2' : 'h-9 w-9',
-        voice.listening ? 'bg-danger text-white' : 'text-muted hover:bg-surface-2 hover:text-ink',
+        voice.listening ? 'bg-danger text-on-fill' : 'text-muted hover:bg-surface-2 hover:text-ink',
       )}
     >
       {voice.listening && <span className="absolute inset-0 animate-ping rounded-full bg-danger/40" aria-hidden />}

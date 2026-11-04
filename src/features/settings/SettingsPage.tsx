@@ -196,12 +196,12 @@ function ProfileCard() {
 }
 
 const ACCENTS: [AccentColor, string, string][] = [
-  ['coral', 'Кораловий', '240 70 52'],
-  ['blue', 'Синій', '71 120 245'],
-  ['violet', 'Фіолетовий', '132 94 247'],
-  ['green', 'Зелений', '22 163 110'],
-  ['orange', 'Помаранчевий', '232 118 30'],
-  ['pink', 'Рожевий', '219 68 133'],
+  ['coral', 'Кораловий', '197 57 43'],
+  ['blue', 'Синій', '60 102 208'],
+  ['violet', 'Фіолетовий', '116 83 217'],
+  ['green', 'Зелений', '17 124 84'],
+  ['orange', 'Помаранчевий', '169 86 22'],
+  ['pink', 'Рожевий', '186 58 113'],
 ];
 
 const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [

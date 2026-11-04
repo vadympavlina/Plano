@@ -70,7 +70,7 @@ const PACE_PILL: Record<Pace, string> = {
   done: 'bg-success/12 text-success',
   ahead: 'bg-success/12 text-success',
   on_track: 'bg-primary/10 text-primary',
-  behind: 'bg-warning/15 text-warning',
+  behind: 'bg-warning/15 text-warning-ink',
   overdue: 'bg-danger/10 text-danger',
   no_deadline: 'bg-surface text-muted',
 };
@@ -91,7 +91,7 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
   const daysLeft = goal.targetDate ? diffDaysKey(goal.targetDate, today) : null;
   const finished = goal.status !== 'active';
   const fmt = (n: number) => n.toLocaleString('uk-UA');
-  const deadlineTone = daysLeft == null || finished ? 'bg-surface text-muted' : daysLeft < 0 ? 'bg-danger/10 text-danger' : daysLeft <= 14 ? 'bg-warning/15 text-warning' : 'bg-surface text-muted';
+  const deadlineTone = daysLeft == null || finished ? 'bg-surface text-muted' : daysLeft < 0 ? 'bg-danger/10 text-danger' : daysLeft <= 14 ? 'bg-warning/15 text-warning-ink' : 'bg-surface text-muted';
 
   const remove = async () => {
     const ok = await confirm({ title: 'Видалити ціль?', description: `«${goal.title}» та історію прогресу буде видалено.`, confirmLabel: 'Видалити', danger: true });

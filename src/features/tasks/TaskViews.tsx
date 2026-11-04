@@ -205,7 +205,7 @@ export const TaskRow = memo(function TaskRow({
         <span className="pt-px">
           <TaskCheck task={task} />
         </span>
-        <button type="button" onClick={() => !swipe.swallowClick() && (onOpen ?? openTask)(task.id)} className="min-w-0 flex-1 text-left">
+        <button type="button" onClick={() => !swipe.swallowClick() && (onOpen ?? openTask)(task.id)} className="-my-2.5 min-w-0 flex-1 py-2.5 text-left">
           <span className={cn('block truncate text-[15.5px] font-medium leading-snug', done && 'line-through')}>{task.title}</span>
           <TaskMeta task={task} today={today} showDate={showDate} showProject={showProject} hideSubtasks />
         </button>
@@ -340,7 +340,7 @@ export function TaskBoard({
                 type="button"
                 onClick={() => onAdd(status)}
                 aria-label={`Додати задачу: ${meta.label}`}
-                className="ml-auto rounded-lg p-1 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
+                className="ml-auto rounded-full p-2 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
               >
                 <Plus className="h-4 w-4" />
               </button>

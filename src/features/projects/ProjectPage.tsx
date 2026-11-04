@@ -142,7 +142,7 @@ export default function ProjectPage() {
               {project.startDate && `з ${formatDateKey(project.startDate, 'd MMMM')}`}
               {project.startDate && project.targetDate && ' · '}
               {project.targetDate && `до ${formatDateKey(project.targetDate, 'd MMMM yyyy')}`}
-              {hint && <span className={cn(' font-semibold', hint.tone === 'danger' ? 'text-danger' : hint.tone === 'warning' ? 'text-warning' : '')}> · {hint.text}</span>}
+              {hint && <span className={cn(' font-semibold', hint.tone === 'danger' ? 'text-danger' : hint.tone === 'warning' ? 'text-warning-ink' : '')}> · {hint.text}</span>}
             </p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto">

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Check, ShieldCheck, X } from 'lucide-react';
 import { useData } from '@/app/providers/DataProvider';
 import { useActions } from '@/hooks/useActions';
-import { colorOf, tint } from '@/lib/utils/colors';
+import { colorOf, inkOf, onColor, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey, Habit } from '@/types';
 import { habitValue, isBad, isDone, nextHabitValue } from './logic';
@@ -69,7 +69,7 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
             <ShieldCheck className="h-5 w-5" />
           </span>
         ) : (
-          <span className="flex items-center justify-center rounded-full bg-danger text-white" style={{ width: size, height: size }}>
+          <span className="flex items-center justify-center rounded-full bg-danger text-on-fill" style={{ width: size, height: size }}>
             <X className="h-5 w-5 stroke-[3]" />
           </span>
         )}
@@ -100,12 +100,12 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
       className="shrink-0 rounded-full transition-transform active:scale-95"
     >
       {done ? (
-        <span className="flex items-center justify-center rounded-full text-white" style={{ width: size, height: size, backgroundColor: color }}>
+        <span className="flex items-center justify-center rounded-full" style={{ width: size, height: size, backgroundColor: color, color: onColor(color) }}>
           <Check className="h-5 w-5 stroke-[3]" />
         </span>
       ) : habit.goalType === 'count' ? (
         <Ring value={value / Math.max(1, habit.target)} size={size} stroke={4} color={color}>
-          <span className="text-[11px] font-bold" style={{ color }}>
+          <span className="text-[11px] font-bold" style={{ color: inkOf(color) }}>
             +1
           </span>
         </Ring>

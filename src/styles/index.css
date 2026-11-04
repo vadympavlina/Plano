@@ -11,19 +11,25 @@
     --surface-2: 244 243 241;
     --sidebar: 13 13 15;
     --sidebar-fg: 233 233 236;
-    --sidebar-muted: 133 133 140;
+    --sidebar-muted: 152 152 160;
     --sidebar-active: 38 38 42;
     --ink: 27 27 29;
-    --muted: 107 107 115;
-    --subtle: 160 160 168;
-    --line: 236 233 230;
-    --primary: 240 70 52;
+    /* Text tones are checked against WCAG AA (4.5:1) on cards, soft panels and tinted chips. */
+    --muted: 84 84 92;
+    --subtle: 104 104 114;
+    --line: 232 229 226;
+    --primary: 197 57 43;
     --primary-fg: 255 255 255;
-    --success: 47 179 106;
+    /* The accent on the dark frame (sidebar, top bar); the same in both themes. */
+    --primary-bright: 255 100 86;
+    --success: 32 124 73;
     --warning: 240 150 20;
-    --danger: 229 72 77;
-    --purple: 146 117 239;
+    --warning-ink: 138 82 6;
+    --danger: 188 59 63;
+    --purple: 116 83 217;
     --accent: 27 27 29;
+    /* Text on a filled primary / success / danger surface. */
+    --on-fill: 255 255 255;
     /* Pastel strength of tinted event backgrounds (see solidTint). */
     --tint-k: 1;
     --shadow-soft: 0 1px 2px rgb(16 24 40 / 0.04), 0 1px 3px rgb(16 24 40 / 0.04);
@@ -37,19 +43,21 @@
     --surface-2: 40 40 44;
     --sidebar: 13 13 15;
     --sidebar-fg: 233 233 236;
-    --sidebar-muted: 133 133 140;
+    --sidebar-muted: 152 152 160;
     --sidebar-active: 38 38 42;
     --ink: 242 242 244;
-    --muted: 155 155 163;
-    --subtle: 105 105 113;
-    --line: 46 46 51;
+    --muted: 172 172 180;
+    --subtle: 150 150 160;
+    --line: 52 52 58;
     --primary: 255 100 86;
-    --primary-fg: 255 255 255;
+    --primary-fg: 22 22 24;
     --success: 64 199 130;
     --warning: 250 168 50;
-    --danger: 240 98 102;
+    --warning-ink: 250 168 50;
+    --danger: 248 113 117;
     --purple: 166 141 247;
     --accent: 242 242 244;
+    --on-fill: 22 22 24;
     --tint-k: 1.7;
     /* Shadows vanish on dark: a faint top highlight and a deeper drop instead. */
     --shadow-soft: inset 0 1px 0 rgb(255 255 255 / 0.03), 0 1px 3px rgb(0 0 0 / 0.35);
@@ -57,13 +65,13 @@
     color-scheme: dark;
   }
 
-  /* Accent colour (Settings → Вигляд); coral is the default above. */
-  [data-accent='coral'] { --primary: 240 70 52; }
-  [data-accent='blue'] { --primary: 71 120 245; }
-  [data-accent='violet'] { --primary: 132 94 247; }
-  [data-accent='green'] { --primary: 22 163 110; }
-  [data-accent='orange'] { --primary: 232 118 30; }
-  [data-accent='pink'] { --primary: 219 68 133; }
+  /* Accent colour (Settings → Вигляд); coral is the default above. Each one keeps 4.5:1 with white text on it. */
+  [data-accent='coral'] { --primary-bright: 255 100 86; --primary: 197 57 43; }
+  [data-accent='blue'] { --primary-bright: 102 145 255; --primary: 60 102 208; }
+  [data-accent='violet'] { --primary-bright: 162 134 255; --primary: 116 83 217; }
+  [data-accent='green'] { --primary-bright: 52 199 140; --primary: 17 124 84; }
+  [data-accent='orange'] { --primary-bright: 250 148 72; --primary: 169 86 22; }
+  [data-accent='pink'] { --primary-bright: 240 108 162; --primary: 186 58 113; }
   .dark[data-accent='coral'] { --primary: 255 100 86; }
   .dark[data-accent='blue'] { --primary: 102 145 255; }
   .dark[data-accent='violet'] { --primary: 162 134 255; }
@@ -177,7 +185,7 @@
 }
 .glass-dock .lg-tab,
 .glass-dock .lg-tab-copy {
-  font-size: 10.5px;
+  font-size: 11px;
 }
 
 /* An app, not a page: long presses and drags don't select text or pick up links and

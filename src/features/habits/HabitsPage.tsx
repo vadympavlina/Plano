@@ -183,7 +183,7 @@ export default function HabitsPage() {
       )}
       {bestStreak >= 7 && (
         <p className="mt-6 flex items-center justify-center gap-2 text-sm text-muted">
-          <Trophy className="h-4 w-4 text-warning" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])} — чудова послідовність.
+          <Trophy className="h-4 w-4 text-warning-ink" /> Серія {bestStreak} {plural(bestStreak, ['день', 'дні', 'днів'])} — чудова послідовність.
         </p>
       )}
       {creating && <HabitForm onClose={() => setCreating(false)} />}

@@ -9,7 +9,7 @@ import { useNow } from '@/hooks/useNow';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { addDaysKey, formatDateKey, formatTime, plural, relativeDayLabel, todayKey } from '@/lib/date';
-import { colorOf, tint } from '@/lib/utils/colors';
+import { colorOf, inkOf, tint } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 import { haptic } from '@/lib/utils/haptic';
 import type { DateKey, Habit } from '@/types';
@@ -33,7 +33,7 @@ function Chip({ tone, icon, children }: { tone: 'red' | 'grey' | 'orange'; icon:
   const cls = {
     red: 'bg-danger/12 text-danger',
     grey: 'bg-line/70 text-muted',
-    orange: 'bg-warning/15 text-warning',
+    orange: 'bg-warning/15 text-warning-ink',
   }[tone];
   return (
     <span className={cn('inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold [&>svg]:h-3.5 [&>svg]:w-3.5', cls)}>
@@ -45,7 +45,7 @@ function Chip({ tone, icon, children }: { tone: 'red' | 'grey' | 'orange'; icon:
 
 const BAD_TONE = {
   clean: { box: 'border-solid border-success bg-success/10', badge: 'bg-success', text: 'text-success' },
-  near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning', text: 'text-warning' },
+  near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning !text-[#1b1b1d]', text: 'text-warning-ink' },
   slip: { box: 'border-solid border-danger bg-danger/10', badge: 'bg-danger', text: 'text-danger' },
 };
 
@@ -139,7 +139,7 @@ export default function DashboardPage() {
                   : `${formatTime(o.event.startTime, settings.timeFormat)}${o.event.endTime ? ` – ${formatTime(o.event.endTime, settings.timeFormat)}` : ''}`}
               </span>
               {o.event.location && <span className="truncate">{o.event.location}</span>}
-              {cat && <span className="rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold" style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: colorOf(cat.color) }}>{cat.name}</span>}
+              {cat && <span className="rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold" style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: inkOf(colorOf(cat.color)) }}>{cat.name}</span>}
             </span>
           </span>
         </button>
@@ -346,7 +346,7 @@ export default function DashboardPage() {
                   <span className={cn('relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border-[2.5px] text-[17px]', tone.box)}>
                     {h.icon}
                     {badge != null && (
-                      <span className={cn('absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[10px] font-bold tabular-nums text-white', tone.badge)}>
+                      <span className={cn('absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[10px] font-bold tabular-nums text-on-fill', tone.badge)}>
                         {badge}
                       </span>
                     )}
@@ -366,7 +366,7 @@ export default function DashboardPage() {
       <RightPanel>
         <div className="flex items-center justify-between px-3">
           <h2 className="text-[22px] font-extrabold tracking-tight">Вхідні</h2>
-          <Link to="/tasks" className="text-[12.5px] font-semibold text-muted hover:text-ink">
+          <Link to="/tasks" className="-mr-2 rounded-full px-2 py-2 text-[12.5px] font-semibold text-muted hover:text-ink">
             Усі задачі
           </Link>
         </div>
@@ -379,7 +379,7 @@ export default function DashboardPage() {
             onChange={(e) => setDraft(e.target.value)}
             aria-label="Нова задача у вхідні"
             placeholder="Нова задача"
-            className="min-w-0 flex-1 bg-transparent text-[15.5px] font-medium outline-none placeholder:font-normal placeholder:text-subtle"
+            className="-my-2 min-w-0 flex-1 bg-transparent py-2 text-[15.5px] font-medium outline-none placeholder:font-normal placeholder:text-subtle"
           />
         </form>
         {inbox.overdue.length > 0 && (

@@ -211,7 +211,7 @@ export function NoteEditor({ note }: { note: Note }) {
             {/* Cover + icon */}
             {coverColor ? (
               <div className="group relative mb-2 mt-2 h-24 rounded-2xl sm:h-28" style={{ background: coverGradient(note.cover!) }}>
-                <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
                   <CoverPicker value={note.cover} onChange={(cover) => void actions.notes.update(note.id, { cover }).catch(() => undefined)} />
                 </div>
               </div>
@@ -224,7 +224,7 @@ export function NoteEditor({ note }: { note: Note }) {
                   </span>
                 </LineIconPicker>
               )}
-              <div className={cn('flex gap-1 pb-1 text-[12.5px] text-subtle opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100', !note.icon && !coverColor && 'opacity-100 sm:opacity-0')}>
+              <div className={cn('flex gap-1 pb-1 text-[12.5px] text-subtle opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100', !note.icon && !coverColor && 'opacity-100 sm:opacity-0')}>
                 {!note.icon && (
                   <LineIconPicker label="Іконка нотатки" value={undefined} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
                     <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">

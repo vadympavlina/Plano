@@ -97,7 +97,7 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
           <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate} className={({ isActive }) => itemCls(isActive, !!big)}>
             {({ isActive }) => (
               <>
-                <Icon className={cn('shrink-0', big ? 'h-5 w-5' : 'h-[18px] w-[18px]', isActive ? 'text-primary' : 'text-sidebar-muted')} strokeWidth={isActive ? 2.1 : 1.9} />
+                <Icon className={cn('shrink-0', big ? 'h-5 w-5' : 'h-[18px] w-[18px]', isActive ? 'text-primary-bright' : 'text-sidebar-muted')} strokeWidth={isActive ? 2.1 : 1.9} />
                 <span className="min-w-0 flex-1 truncate">{label}</span>
                 {!!counts[to] && <span className={cn('rounded-full px-2 text-[12px] font-semibold tabular-nums', isActive ? 'bg-white/15 text-white' : 'text-sidebar-muted')}>{counts[to]}</span>}
               </>

@@ -25,7 +25,7 @@ function SearchPill({ className }: { className?: string }) {
         <span className="sm:hidden">Пошук</span>
         <span className="hidden sm:inline">Пошук або створити будь-що…</span>
       </span>
-      <kbd className="ml-auto hidden rounded-lg bg-[#34343a] px-2 py-0.5 font-sans text-[11px] font-semibold text-[#9b9ba3] lg:block">{isMac ? '⌘' : 'Ctrl'} K</kbd>
+      <kbd className="ml-auto hidden rounded-lg bg-[#34343a] px-2 py-0.5 font-sans text-[11px] font-semibold text-[#b3b3bb] lg:block">{isMac ? '⌘' : 'Ctrl'} K</kbd>
     </button>
   );
 }

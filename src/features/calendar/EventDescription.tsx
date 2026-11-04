@@ -70,7 +70,7 @@ export function JoinMeetingButton({ url }: { url: string }) {
       href={url}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[14px] font-semibold text-white hover:brightness-110"
+      className="flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-[14px] font-semibold text-primary-fg hover:brightness-110"
     >
       <Video className="h-4 w-4" /> Приєднатися до зустрічі
     </a>

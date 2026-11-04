@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react';
 import { COLOR_KEYS, type ColorKey } from '@/types';
-import { COLORS } from '@/lib/utils/colors';
+import { COLORS, onColor } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
 
 export function ColorPicker({ value, onChange }: { value: ColorKey; onChange: (c: ColorKey) => void }) {
@@ -21,7 +21,7 @@ export function ColorPicker({ value, onChange }: { value: ColorKey; onChange: (c
           )}
           style={{ backgroundColor: COLORS[key].solid, ['--tw-ring-color' as string]: COLORS[key].solid }}
         >
-          {value === key && <Check className="h-3.5 w-3.5 stroke-[3] text-white" />}
+          {value === key && <Check className="h-3.5 w-3.5 stroke-[3]" style={{ color: onColor(COLORS[key].solid) }} />}
         </button>
       ))}
     </div>
