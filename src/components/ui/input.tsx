@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 const fieldBase =
-  'w-full rounded-[14px] border border-transparent bg-surface-2 px-3.5 text-sm text-ink placeholder:text-subtle transition-colors hover:bg-line/50 focus:border-primary/50 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15';
+  'w-full rounded-[14px] border border-transparent bg-surface-2 px-3.5 text-sm text-ink placeholder:text-subtle transition-colors hover:bg-line/50 focus:border-ink/25 focus:bg-surface focus:outline-none focus:ring-2 focus:ring-ink/10 disabled:cursor-not-allowed disabled:opacity-60 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15';
 
 /**
  * Text field. With `icon` it gets a leading glyph (search fields); with `onValueChange` and

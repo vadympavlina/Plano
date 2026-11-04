@@ -29,7 +29,7 @@ export function TagInput({
 
   return (
     <div className={className}>
-      <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border border-line bg-surface px-2 py-1.5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+      <div className="flex min-h-10 flex-wrap items-center gap-1.5 rounded-xl border border-line bg-surface px-2 py-1.5 focus-within:border-ink/25 focus-within:ring-2 focus-within:ring-primary/15">
         {value.map((t) => (
           <span key={t} className="inline-flex items-center gap-1 rounded-md bg-surface-2 py-0.5 pl-2 pr-1 text-[12.5px] font-medium text-ink">
             #{t}

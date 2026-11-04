@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { CalendarDays, CheckSquare, CornerDownLeft, FolderKanban, Heart, NotebookPen, Search, Target } from 'lucide-react';
 import { useCollections } from '@/hooks/useCollections';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useUI } from '@/app/providers/UIProvider';
 import { markdownExcerpt } from '@/lib/utils/markdown';
 import { formatDateKey } from '@/lib/date';
@@ -24,6 +25,7 @@ const norm = (s: string | undefined) => (s ?? '').toLowerCase();
 export default function SearchCommand({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
+  const wide = useMediaQuery('(min-width: 640px)');
   const { tasks, events, projects, notes, goals, habits } = useCollections();
   const { openTask, openEvent } = useUI();
   const navigate = useNavigate();
@@ -144,7 +146,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
                 setQuery(e.target.value);
                 setActive(0);
               }}
-              placeholder="Шукати задачі, події, проєкти, нотатки…"
+              placeholder={wide ? 'Шукати задачі, події, проєкти, нотатки…' : 'Пошук…'}
               aria-label="Пошук"
               role="combobox"
               aria-expanded

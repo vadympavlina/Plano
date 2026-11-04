@@ -67,7 +67,7 @@ export function Stepper({
   return (
     <div
       className={cn(
-        'flex h-10 items-center rounded-xl border border-line bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15',
+        'flex h-10 items-center rounded-xl border border-line bg-surface focus-within:border-ink/25 focus-within:ring-2 focus-within:ring-ink/10',
         invalid && 'border-danger',
         className,
       )}

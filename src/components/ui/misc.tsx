@@ -131,6 +131,7 @@ export function Segmented<T extends string>({
             role="tab"
             type="button"
             title={o.title}
+            aria-label={o.title}
             aria-selected={on}
             onClick={() => onChange(o.value)}
             className={cn(

@@ -72,7 +72,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                   role="radio"
                   aria-checked={on}
                   onClick={() => patch(k === 'bad' ? { kind: 'bad', schedule: [0, 1, 2, 3, 4, 5, 6] } : { kind: undefined })}
-                  className={cn('rounded-xl border-2 px-3 py-2 text-left transition-colors', on ? (k === 'bad' ? 'border-danger/60 bg-danger/[0.06]' : 'border-primary bg-surface-2') : 'border-line')}
+                  className={cn('rounded-xl border-2 px-3 py-2 text-left transition-colors', on ? (k === 'bad' ? 'border-danger/60 bg-danger/[0.06]' : 'border-ink bg-surface-2') : 'border-line')}
                 >
                   <span className="block text-sm font-semibold">{t}</span>
                   <span className="block text-xs text-muted">{d}</span>
@@ -93,7 +93,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                   role="radio"
                   aria-checked={draft.icon === i}
                   onClick={() => patch({ icon: i })}
-                  className={cn('flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors', draft.icon === i ? 'bg-surface-2 ring-2 ring-primary/50' : 'hover:bg-surface-2')}
+                  className={cn('flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors', draft.icon === i ? 'bg-surface-2 ring-2 ring-ink/40' : 'hover:bg-surface-2')}
                 >
                   {i}
                 </button>
@@ -124,9 +124,9 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
               })}
             </div>
             <div className="mt-2 flex gap-2 text-xs">
-              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [0, 1, 2, 3, 4, 5, 6] })}>Щодня</button>
-              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [1, 2, 3, 4, 5] })}>Будні</button>
-              <button type="button" className="text-primary hover:underline" onClick={() => patch({ schedule: [0, 6] })}>Вихідні</button>
+              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [0, 1, 2, 3, 4, 5, 6] })}>Щодня</button>
+              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [1, 2, 3, 4, 5] })}>Будні</button>
+              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [0, 6] })}>Вихідні</button>
             </div>
             {visible.schedule && <p role="alert" className="mt-1.5 text-xs text-danger">{visible.schedule}</p>}
           </div>

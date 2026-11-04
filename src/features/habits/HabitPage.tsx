@@ -386,7 +386,7 @@ function PauseDialog({ habit, today, onClose }: { habit: Habit; today: string; o
         </div>
         <div className="mt-2 flex gap-2 text-xs">
           {[3, 7, 14].map((n) => (
-            <button key={n} type="button" className="text-primary hover:underline" onClick={() => setTo(addDaysKey(from, n - 1))}>
+            <button key={n} type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => setTo(addDaysKey(from, n - 1))}>
               {days(n)}
             </button>
           ))}

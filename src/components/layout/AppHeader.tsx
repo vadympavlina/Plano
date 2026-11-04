@@ -79,7 +79,7 @@ export function AppHeader({ onToggleSidebar, onOpenMenu }: { onToggleSidebar: ()
           }
         />
       </div>
-      {sync.tone !== 'success' && (
+      {sync.tone !== 'success' && sync.tone !== 'muted' && (
         <div className="flex items-center px-4 pb-2 lg:hidden">
           <SyncIndicator variant="sidebar" />
         </div>

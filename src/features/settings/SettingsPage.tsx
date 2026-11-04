@@ -237,7 +237,7 @@ function AppearanceSection() {
               onClick={() => void repos.settings.update({ theme: value }).catch(() => undefined)}
               className={cn(
                 'rounded-2xl border-2 p-1.5 text-left transition-colors',
-                data.settings.theme === value ? 'border-primary' : 'border-line/70 hover:border-line',
+                data.settings.theme === value ? 'border-ink' : 'border-line/70 hover:border-line',
               )}
             >
               <ThemePreview theme={value} />
@@ -788,9 +788,9 @@ export default function SettingsPage() {
 
   return (
     <PageContainer className="pb-10">
+      <h1 className="mb-5 text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Налаштування</h1>
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        <aside className="lg:sticky lg:top-4 lg:w-56 lg:shrink-0 lg:self-start">
-          <h1 className="mb-4 text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Налаштування</h1>
+        <aside className="lg:sticky lg:top-0 lg:w-56 lg:shrink-0 lg:self-start">
           <label className="mb-3 flex h-10 items-center gap-2 rounded-full bg-surface-2 px-3.5 text-[13px] focus-within:ring-2 focus-within:ring-primary/20">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
             <input
@@ -819,7 +819,7 @@ export default function SettingsPage() {
             ))}
           </nav>
         </aside>
-        <div className="min-w-0 flex-1 lg:pt-[3.25rem]">
+        <div className="min-w-0 flex-1">
           <SearchCtx.Provider value={q}>
             <ProfileCard />
             <AppearanceSection />

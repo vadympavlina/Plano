@@ -90,7 +90,7 @@
   }
 
   *:focus-visible {
-    @apply outline-none ring-2 ring-primary/60 ring-offset-1 ring-offset-surface;
+    @apply outline-none ring-2 ring-ink/40 ring-offset-1 ring-offset-surface;
   }
   /* Text fields show focus through their own border, not an extra ring. */
   input:focus-visible,

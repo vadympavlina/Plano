@@ -274,7 +274,7 @@ export default function TaskFormDialog({
           </section>
 
           {!showMore ? (
-            <button type="button" onClick={() => setShowMore(true)} className="mt-4 text-[13px] font-medium text-primary hover:underline">
+            <button type="button" onClick={() => setShowMore(true)} className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink">
               Дата початку, ціль, теги, нотатки
             </button>
           ) : (

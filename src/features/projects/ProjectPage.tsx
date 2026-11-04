@@ -148,7 +148,7 @@ export default function ProjectPage() {
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <Select
               variant="chip"
-              className="h-9 flex-1 sm:flex-none"
+              className="h-9 min-w-[7.5rem] flex-1 sm:flex-none"
               aria-label="Статус проєкту"
               value={project.status}
               onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
@@ -156,13 +156,13 @@ export default function ProjectPage() {
             />
             {!project.cover && (
               <CoverPicker label="Додати обкладинку" value={undefined} onChange={setCover}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-line text-muted hover:bg-surface-2 hover:text-ink" title="Обкладинка">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-muted hover:text-ink" title="Обкладинка">
                   <ImageIcon className="h-4 w-4" />
                 </span>
               </CoverPicker>
             )}
-            <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(true)}>
-              <Pencil className="h-3.5 w-3.5" /> Редагувати
+            <Button variant="outline" size="sm" className="h-9 max-sm:w-9 max-sm:px-0" aria-label="Редагувати проєкт" onClick={() => setEditing(true)}>
+              <Pencil className="h-3.5 w-3.5" /> <span className="max-sm:hidden">Редагувати</span>
             </Button>
             <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Видалити проєкт" onClick={() => void remove()}>
               <Trash2 className="h-4 w-4" />

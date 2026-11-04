@@ -17,9 +17,9 @@ export type ControlVariant = 'field' | 'chip' | 'ghost';
 /** Shared trigger styles for custom controls (select, date, time). */
 export function triggerClass(variant: ControlVariant, opts: { invalid?: boolean; empty?: boolean } = {}) {
   return cn(
-    'group inline-flex min-w-0 items-center gap-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40 disabled:pointer-events-none disabled:opacity-50',
+    'group inline-flex min-w-0 items-center gap-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink/30 disabled:pointer-events-none disabled:opacity-50',
     variant === 'field' &&
-      'h-10 w-full rounded-[14px] bg-surface-2 px-3.5 text-sm hover:bg-line/50 data-[state=open]:bg-surface data-[state=open]:ring-2 data-[state=open]:ring-primary/20',
+      'h-10 w-full rounded-[14px] bg-surface-2 px-3.5 text-sm hover:bg-line/50 data-[state=open]:bg-surface data-[state=open]:ring-2 data-[state=open]:ring-ink/15',
     variant === 'chip' && 'h-8 rounded-full bg-surface-2 px-3 text-[13px] font-medium hover:bg-line/70 data-[state=open]:bg-line/70',
     variant === 'ghost' && 'h-8 rounded-full px-2.5 text-[13px] font-medium hover:bg-surface-2 data-[state=open]:bg-surface-2',
     opts.empty ? 'text-subtle' : 'text-ink',

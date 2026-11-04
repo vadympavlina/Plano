@@ -13,7 +13,7 @@ export function CoverPicker({ value, onChange, children, label = 'Обклади
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {children ? (
-          <button type="button" aria-label={label} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+          <button type="button" aria-label={label} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ink/30">
             {children}
           </button>
         ) : (

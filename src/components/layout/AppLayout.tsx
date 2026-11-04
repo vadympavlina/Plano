@@ -99,7 +99,9 @@ function LayoutInner() {
           <div className="flex h-9 shrink-0 items-center gap-2 bg-sidebar-active px-4 text-xs text-sidebar-fg sm:px-8">
             <Info className="h-3.5 w-3.5 shrink-0 text-primary" />
             <span className="truncate">
-              <strong className="font-semibold">Локальний перегляд.</strong> Дані зберігаються лише в цьому браузері й не синхронізуються. Налаштуйте Firebase, щоб користуватися Plano на всіх пристроях.
+              <strong className="font-semibold">Локальний перегляд.</strong>
+              <span className="sm:hidden"> Дані лише в цьому браузері.</span>
+              <span className="hidden sm:inline"> Дані зберігаються лише в цьому браузері й не синхронізуються. Налаштуйте Firebase, щоб користуватися Plano на всіх пристроях.</span>
             </span>
           </div>
         )}

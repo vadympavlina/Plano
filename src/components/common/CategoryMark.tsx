@@ -148,7 +148,7 @@ export function LineIconPicker({ value, color, label, onChange, children }: { va
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" aria-label={label} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
+        <button type="button" aria-label={label} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ink/30">
           {children}
         </button>
       </PopoverTrigger>
