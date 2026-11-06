@@ -38,7 +38,7 @@ const keyed = <T extends z.ZodTypeAny>(schema: T) =>
   z.record(z.string(), schema).superRefine((rec, ctx) => {
     for (const [key, value] of Object.entries(rec)) {
       if ((value as { id?: string })?.id !== key) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: `Ключ запису «${key}» не збігається з його id`, path: [key] });
+        ctx.addIssue({ code: 'custom', message: `Ключ запису «${key}» не збігається з його id`, path: [key] });
       }
     }
   });
@@ -65,24 +65,24 @@ const importSchema = z.object({
 });
 
 /** Ukrainian messages for import validation errors. */
-const ukErrorMap: z.ZodErrorMap = (issue, ctx) => {
+const ukErrorMap = (issue: z.core.$ZodRawIssue): { message: string } | undefined => {
   switch (issue.code) {
-    case z.ZodIssueCode.invalid_type:
-      return { message: issue.received === 'undefined' ? 'Обов’язкове поле відсутнє' : `Неправильний тип: очікується ${issue.expected}` };
-    case z.ZodIssueCode.invalid_enum_value:
-      return { message: `Недопустиме значення (дозволено: ${issue.options.join(', ')})` };
-    case z.ZodIssueCode.invalid_literal:
-      return { message: 'Це не файл експорту Plano' };
-    case z.ZodIssueCode.unrecognized_keys:
+    case 'invalid_type':
+      return { message: issue.input === undefined ? 'Обов’язкове поле відсутнє' : `Неправильний тип: очікується ${issue.expected}` };
+    case 'invalid_value':
+      return issue.values.length === 1
+        ? { message: 'Це не файл експорту Plano' }
+        : { message: `Недопустиме значення (дозволено: ${issue.values.join(', ')})` };
+    case 'unrecognized_keys':
       return { message: `Невідомі поля: ${issue.keys.join(', ')}` };
-    case z.ZodIssueCode.too_small:
+    case 'too_small':
       return { message: 'Значення закоротке або замале' };
-    case z.ZodIssueCode.too_big:
+    case 'too_big':
       return { message: 'Значення задовге або завелике' };
-    case z.ZodIssueCode.invalid_string:
+    case 'invalid_format':
       return { message: 'Неправильний формат рядка' };
     default:
-      return { message: ctx.defaultError };
+      return undefined;
   }
 };
 
@@ -100,7 +100,7 @@ export function validateImport(text: string): ImportResult {
   } catch {
     return { ok: false, errors: ['Файл не є коректним JSON.'] };
   }
-  const parsed = importSchema.safeParse(json, { errorMap: ukErrorMap });
+  const parsed = importSchema.safeParse(json, { error: ukErrorMap });
   if (!parsed.success) {
     return {
       ok: false,

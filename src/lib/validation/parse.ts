@@ -15,7 +15,7 @@ export interface ParseMemo<T> {
  */
 export function parseCollectionShared<T>(
   raw: unknown,
-  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+  schema: z.ZodType<T, unknown>,
   memo: ParseMemo<T> | undefined,
   onInvalid?: (id: string, error: z.ZodError) => void,
 ): ParseMemo<T> {
