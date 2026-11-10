@@ -325,7 +325,7 @@ function PreferencesSection() {
           options={(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => ({ value: f, label: formatDateKey(sample, f) }))}
         />
       </Row>
-      <Row label="Календар відкривається" hint="На телефоні тиждень показується як день.">
+      <Row label="Календар відкривається" hint="На телефоні календар завжди відкривається на сьогоднішньому дні.">
         <Segmented
           wrap
           ariaLabel="Вигляд календаря за замовчуванням"

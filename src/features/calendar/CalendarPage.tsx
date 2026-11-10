@@ -67,8 +67,8 @@ export default function CalendarPage() {
   const view: CalendarView =
     paramView === 'day' || paramView === '3days' || paramView === 'week' || paramView === 'month'
       ? paramView
-      : !isDesktop && settings.defaultCalendarView === 'week'
-        ? '3days'
+      : !isDesktop
+        ? 'day' // phones open on today only; other views are one tap away
         : settings.defaultCalendarView;
   const paramDate = params.get('date');
   const anchor = paramDate && isDateKey(paramDate) ? paramDate : today;
