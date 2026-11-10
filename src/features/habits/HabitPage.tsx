@@ -222,7 +222,7 @@ export default function HabitPage() {
           ))}
         </div>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
           {/* Month calendar: tap a past day to fix it */}
           <section aria-label="Календар виконання">
             <div className="mb-3 flex items-center justify-between">

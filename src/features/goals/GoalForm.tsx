@@ -70,7 +70,7 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
               {(p) => <Input {...p} placeholder="книжки, км, %" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
             </Field>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Дата початку">
               {(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}
             </Field>

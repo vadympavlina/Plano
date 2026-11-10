@@ -71,12 +71,12 @@ export function PageSkeleton({ label = 'Завантаження…' }: { label?
       <div className={`h-3.5 w-36 ${bar}`} />
       <div className={`mt-2.5 h-8 w-64 max-w-full ${bar}`} />
       <div className={`mt-5 h-14 rounded-[20px] ${bar}`} />
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-[1.25fr_1fr_1fr]">
         {[0, 1, 2].map((i) => (
           <div key={i} className={`h-40 rounded-[20px] ${bar}`} />
         ))}
       </div>
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
         <div className={`h-64 rounded-[20px] ${bar}`} />
         <div className={`h-64 rounded-[20px] ${bar}`} />
       </div>

@@ -161,7 +161,7 @@ function ProfileCard() {
       </div>
       {editing && (
         <div className="mt-5 border-t border-line/70 pt-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Ім’я" hint="Використовується у привітаннях.">
               {(p) => <Input {...p} value={name} maxLength={80} onChange={(e) => setName(e.target.value)} />}
             </Field>
@@ -213,10 +213,10 @@ const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
 /** Tiny picture of the app in a theme; "system" is split light/dark. */
 function ThemePreview({ theme }: { theme: ThemePreference }) {
   const half = (dark: boolean) => (
-    <div className={cn('flex-1 p-2', dark ? 'bg-[#151a2b]' : 'bg-[#eef1f6]')}>
-      <div className={cn('h-1.5 w-8 rounded', dark ? 'bg-white/30' : 'bg-[#cfd5df]')} />
+    <div className={cn('min-w-0 flex-1 overflow-hidden p-2', dark ? 'bg-[#151a2b]' : 'bg-[#eef1f6]')}>
+      <div className={cn('h-1.5 w-3/5 max-w-8 rounded', dark ? 'bg-white/30' : 'bg-[#cfd5df]')} />
       <div className={cn('mt-2 h-5 rounded-md', dark ? 'bg-white/10' : 'bg-white')} />
-      <div className={cn('mt-1.5 h-1.5 w-10 rounded', dark ? 'bg-white/15' : 'bg-[#dde2ea]')} />
+      <div className={cn('mt-1.5 h-1.5 w-4/5 max-w-10 rounded', dark ? 'bg-white/15' : 'bg-[#dde2ea]')} />
     </div>
   );
   return <div className="flex h-[68px] overflow-hidden rounded-xl">{theme === 'system' ? [half(false), half(true)] : half(theme === 'dark')}</div>;
@@ -327,6 +327,7 @@ function PreferencesSection() {
       </Row>
       <Row label="Календар відкривається" hint="На телефоні тиждень показується як день.">
         <Segmented
+          wrap
           ariaLabel="Вигляд календаря за замовчуванням"
           value={s.defaultCalendarView}
           onChange={(defaultCalendarView) => set({ defaultCalendarView })}

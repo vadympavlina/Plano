@@ -130,7 +130,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
             </div>
             {visible.schedule && <p role="alert" className="mt-1.5 text-xs text-danger">{visible.schedule}</p>}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={draft.kind === 'bad' ? 'Мета' : 'Тип цілі'}>
               {(p) => (
                 <div className="flex gap-2" id={p.id}>

@@ -279,7 +279,7 @@ export default function TaskFormDialog({
             </button>
           ) : (
             <div className="mt-6 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Field label="Дата початку" error={visible.startDate} hint="Коли плануєте почати роботу.">
                   {(p) => <DatePicker {...p} value={draft.startDate} weekStartsOn={settings.weekStartsOn} onChange={(startDate) => patch({ startDate })} />}
                 </Field>

@@ -52,7 +52,7 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
             <p className="mb-1.5 text-[13px] font-medium">Колір</p>
             <ColorPicker value={draft.color} onChange={(color) => patch({ color })} />
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Статус">
               {(p) => (
 <Select {...p} value={draft.status} onChange={(status) => patch({ status })} options={projectStatusOptions} />
