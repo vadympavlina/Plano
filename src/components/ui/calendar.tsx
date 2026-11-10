@@ -49,7 +49,7 @@ export function MiniCalendar({
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-7 text-center text-[11px] font-medium text-subtle">
+      <div className="grid grid-cols-7 text-center text-[12px] font-medium text-subtle">
         {labels.map((l, i) => (
           <span key={i} className="py-1">
             {l}

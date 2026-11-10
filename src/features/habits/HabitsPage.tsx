@@ -109,7 +109,7 @@ function HabitCard({ habit }: { habit: Habit }) {
         ].map(([v, l]) => (
           <div key={l} className="rounded-xl bg-surface py-2">
             <p className="text-[16px] font-bold tabular-nums">{v}</p>
-            <p className="text-[11px] text-muted">{l}</p>
+            <p className="text-[12px] text-muted">{l}</p>
           </div>
         ))}
       </div>

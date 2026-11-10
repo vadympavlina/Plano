@@ -74,7 +74,7 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
           </span>
         )}
         {habit.goalType === 'count' && value > 0 && (
-          <span className="absolute -right-1 -top-1 rounded-full bg-ink px-1.5 text-[10px] font-bold text-surface">{value}</span>
+          <span className="absolute -right-1 -top-1 rounded-full bg-ink px-1.5 text-[11.5px] font-bold text-surface">{value}</span>
         )}
       </button>
     );
@@ -105,7 +105,7 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
         </span>
       ) : habit.goalType === 'count' ? (
         <Ring value={value / Math.max(1, habit.target)} size={size} stroke={4} color={color}>
-          <span className="text-[11px] font-bold" style={{ color: inkOf(color) }}>
+          <span className="text-[12px] font-bold" style={{ color: inkOf(color) }}>
             +1
           </span>
         </Ring>

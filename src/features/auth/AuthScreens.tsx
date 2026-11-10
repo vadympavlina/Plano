@@ -131,7 +131,7 @@ export function AccessDeniedScreen({ email, uid }: { email: string | null; uid: 
         <div className="mt-4 rounded-xl bg-surface-2 p-3 text-left text-xs text-muted">
           <p className="mb-1 font-medium text-ink">Якщо це ваш акаунт</p>
           Додайте його у Firebase console → Realtime Database → Data:
-          <code className="mt-2 block break-all rounded-lg bg-surface p-2 font-mono text-[11px] text-ink">
+          <code className="mt-2 block break-all rounded-lg bg-surface p-2 font-mono text-[12px] text-ink">
             allowlist/{uid}: true
           </code>
         </div>
@@ -168,7 +168,7 @@ export function SetupScreen() {
         {missingFirebaseKeys.length > 0 && (
           <div className="mt-4 rounded-xl bg-surface-2 p-3 text-xs text-muted">
             Бракує:
-            <ul className="mt-1 space-y-0.5 font-mono text-[11px] text-ink">
+            <ul className="mt-1 space-y-0.5 font-mono text-[12px] text-ink">
               {missingFirebaseKeys.map((k) => (
                 <li key={k}>{ENV_NAMES[k] ?? k}</li>
               ))}

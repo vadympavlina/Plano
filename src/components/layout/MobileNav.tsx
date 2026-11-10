@@ -18,7 +18,7 @@ const TABS = [
 
 function TabLabel({ label, icon: Icon }: { label: string; icon: (typeof TABS)[number]['icon'] }) {
   return (
-    <span className="flex flex-col items-center gap-0.5 text-[11px] font-semibold leading-none">
+    <span className="flex flex-col items-center gap-0.5 text-[12px] font-semibold leading-none">
       <Icon className="h-[21px] w-[21px]" strokeWidth={2} />
       {label}
     </span>

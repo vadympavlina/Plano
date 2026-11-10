@@ -454,7 +454,7 @@ export function TimeGrid({
                 aria-label={formatDateKey(d, 'EEEE, d MMMM')}
                 className={cn('flex flex-col items-center gap-0 rounded-xl py-0.5 transition-colors sm:gap-0.5 sm:py-1', !on && 'hover:bg-surface-2')}
               >
-                <span className={cn('text-[11px] font-medium', isToday ? 'text-primary' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
+                <span className={cn('text-[12px] font-medium', isToday ? 'text-primary' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
                 <span
                   className={cn(
                     'flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors max-sm:h-7 max-sm:w-7',
@@ -501,7 +501,7 @@ export function TimeGrid({
 
       {/* All-day row: always present so all-day events can be drawn here */}
       <div className="flex border-b border-line/70">
-        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[11px] leading-[1.1] text-subtle sm:w-14">
+        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[12px] leading-[1.1] text-subtle sm:w-14">
           <span>
             весь
             <br />
@@ -558,7 +558,7 @@ export function TimeGrid({
                   </button>
                 ))}
                 {selected && c.allDay.length === 0 && c.untimedTasks.length === 0 && (
-                  <span className="pointer-events-none block truncate px-1.5 py-1 text-[11px] font-medium text-primary">
+                  <span className="pointer-events-none block truncate px-1.5 py-1 text-[12px] font-medium text-primary">
                     {daySelRange!.b > daySelRange!.a ? `${daySelRange!.b - daySelRange!.a + 1} дн.` : 'Весь день'}
                   </span>
                 )}
@@ -574,7 +574,7 @@ export function TimeGrid({
           <div className="relative w-12 shrink-0 sm:w-14" aria-hidden>
             {showsToday && (
               <span
-                className="absolute right-1 z-10 -translate-y-1/2 rounded-md bg-danger px-1 text-[10px] font-bold tabular-nums text-on-fill"
+                className="absolute right-1 z-10 -translate-y-1/2 rounded-md bg-danger px-1 text-[11.5px] font-bold tabular-nums text-on-fill"
                 style={{ top: (nowMinutes / 60) * HOUR_PX }}
               >
                 {fmt(nowMinutes)}
@@ -583,7 +583,7 @@ export function TimeGrid({
             {HOURS.slice(1).map((h) => (
               <span
                 key={h}
-                className={cn('absolute right-2 -translate-y-1/2 text-[10.5px] tabular-nums text-subtle', showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible')}
+                className={cn('absolute right-2 -translate-y-1/2 text-[11.5px] tabular-nums text-subtle', showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible')}
                 style={{ top: h * HOUR_PX }}
               >
                 {formatTime(minutesToTime(h * 60), settings.timeFormat).replace(':00', settings.timeFormat === '12h' ? '' : ':00')}
@@ -624,7 +624,7 @@ export function TimeGrid({
               >
                 {dropAt?.dayIndex === dayIndex && (
                   <div
-                    className="pointer-events-none absolute inset-x-1 z-30 rounded-md border-2 border-dashed border-primary bg-primary/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-primary"
+                    className="pointer-events-none absolute inset-x-1 z-30 rounded-md border-2 border-dashed border-primary bg-primary/10 px-1.5 py-0.5 text-[11.5px] font-semibold text-primary"
                     style={{ top: (dropAt.min / 60) * HOUR_PX, height: HOUR_PX }}
                   >
                     {fmt(dropAt.min)} – {fmt(dropAt.min + 60)}
@@ -633,7 +633,7 @@ export function TimeGrid({
                 {/* hover hint */}
                 {hover && hover.dayIndex === dayIndex && !sel && !drag && (
                   <div
-                    className="pointer-events-none absolute inset-x-1 z-0 flex items-start rounded-md bg-primary/[0.07] px-1.5 py-0.5 text-[10.5px] font-medium text-primary"
+                    className="pointer-events-none absolute inset-x-1 z-0 flex items-start rounded-md bg-primary/[0.07] px-1.5 py-0.5 text-[11.5px] font-medium text-primary"
                     style={{ top: (hover.min / 60) * HOUR_PX, height: HOUR_PX / 2 }}
                   >
                     + {fmt(hover.min)}
@@ -698,7 +698,7 @@ export function TimeGrid({
                           <p className={cn('flex items-center gap-1 truncate font-semibold leading-tight', single ? 'text-[14.5px]' : 'text-[12.5px]', done && 'text-subtle line-through')}>
                             <span className="truncate">{item.title}</span>
                             {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-3 w-3 shrink-0 opacity-50" />}
-                            {short && <span className="ml-auto shrink-0 pl-1 text-[11px] font-medium tabular-nums text-muted">{fmt(start)}</span>}
+                            {short && <span className="ml-auto shrink-0 pl-1 text-[12px] font-medium tabular-nums text-muted">{fmt(start)}</span>}
                           </p>
                           {!short && (
                             <p className={cn('mt-0.5 truncate tabular-nums text-muted', single ? 'text-[12.5px]' : 'text-[11.5px]')}>
@@ -737,10 +737,10 @@ export function TimeGrid({
                     className="pointer-events-none absolute inset-x-1 z-10 rounded-lg border-2 border-primary bg-primary/15 px-1.5 py-1 shadow-soft"
                     style={{ top: (selRange.start / 60) * HOUR_PX, height: Math.max(((selRange.end - selRange.start) / 60) * HOUR_PX, 14) }}
                   >
-                    <p className="truncate text-[11px] font-semibold tabular-nums text-primary">
+                    <p className="truncate text-[12px] font-semibold tabular-nums text-primary">
                       {fmt(selRange.start)} – {fmt(selRange.end)}
                     </p>
-                    <p className="truncate text-[10.5px] text-primary/80">{formatDuration(selRange.end - selRange.start)}</p>
+                    <p className="truncate text-[11.5px] text-primary/80">{formatDuration(selRange.end - selRange.start)}</p>
                   </div>
                 )}
                 {draftSlot && draftSlot.dayIndex === dayIndex && !sel && (
@@ -757,7 +757,7 @@ export function TimeGrid({
                     style={{ top: (draftSlot.start / 60) * HOUR_PX, height: ((draftSlot.end - draftSlot.start) / 60) * HOUR_PX }}
                   >
                     <span className="text-[12px] font-semibold">+ Нова подія</span>
-                    <span className="text-[11px] tabular-nums opacity-85">
+                    <span className="text-[12px] tabular-nums opacity-85">
                       {fmt(draftSlot.start)} – {fmt(draftSlot.end)}
                     </span>
                   </button>

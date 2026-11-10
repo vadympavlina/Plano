@@ -37,7 +37,7 @@ export function TagInput({
               type="button"
               aria-label={`Прибрати тег ${t}`}
               onClick={() => onChange(value.filter((x) => x !== t))}
-              className="flex h-4 w-4 items-center justify-center rounded text-subtle hover:bg-line hover:text-ink"
+              className="relative flex h-4 w-4 items-center justify-center rounded text-subtle before:absolute before:-inset-3 before:content-[''] hover:bg-line hover:text-ink"
             >
               <X className="h-3 w-3" />
             </button>

@@ -185,7 +185,7 @@
 }
 .glass-dock .lg-tab,
 .glass-dock .lg-tab-copy {
-  font-size: 11px;
+  font-size: 12px;
 }
 
 /* An app, not a page: long presses and drags don't select text or pick up links and
@@ -417,8 +417,8 @@ img:not([draggable='true']) {
 /* Touch screens: fields are at least 16px, so iOS does not zoom the page on focus.
    That lets pinch-zoom stay available (the viewport no longer forbids it). */
 @media (hover: none) and (pointer: coarse) {
-  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
-  textarea,
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([class*='text-[2']):not([class*='text-[3']),
+  textarea:not([class*='text-[2']):not([class*='text-[3']),
   select {
     font-size: 16px !important;
   }

@@ -346,7 +346,7 @@ export default function DashboardPage() {
                   <span className={cn('relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border-[2.5px] text-[17px]', tone.box)}>
                     {h.icon}
                     {badge != null && (
-                      <span className={cn('absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[10px] font-bold tabular-nums text-on-fill', tone.badge)}>
+                      <span className={cn('absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[11.5px] font-bold tabular-nums text-on-fill', tone.badge)}>
                         {badge}
                       </span>
                     )}

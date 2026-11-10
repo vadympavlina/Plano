@@ -65,7 +65,7 @@ export default function NotesPage() {
           <span className="block truncate text-[13.5px] font-semibold">{n.title || 'Без назви'}</span>
           <span className="block truncate text-[12px] text-muted">{markdownExcerpt(n.content, 90) || 'Порожня нотатка'}</span>
         </span>
-        <span className="shrink-0 pt-0.5 text-[11px] text-subtle">{timeAgo(n.updatedAt)}</span>
+        <span className="shrink-0 pt-0.5 text-[12px] text-subtle">{timeAgo(n.updatedAt)}</span>
       </Link>
     );
   };
@@ -88,7 +88,7 @@ export default function NotesPage() {
                 type="button"
                 onClick={() => setTag(t)}
                 aria-pressed={tag === t}
-                className={cn('shrink-0 rounded-full px-3 py-1.5 text-xs font-medium', tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink')}
+                className={cn('shrink-0 rounded-full px-3.5 py-2.5 text-xs font-medium sm:py-1.5', tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink')}
               >
                 {t ? `#${t}` : 'Усі'}
               </button>
@@ -105,9 +105,9 @@ export default function NotesPage() {
             />
           ) : (
             <>
-              {pinned.length > 0 && <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Закріплені</p>}
+              {pinned.length > 0 && <p className="px-3 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Закріплені</p>}
               {pinned.map(item)}
-              {rest.length > 0 && pinned.length > 0 && <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Останні</p>}
+              {rest.length > 0 && pinned.length > 0 && <p className="px-3 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Останні</p>}
               <Progressive items={rest}>{item}</Progressive>
             </>
           )}

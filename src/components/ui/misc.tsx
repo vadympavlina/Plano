@@ -142,7 +142,7 @@ export function Segmented<T extends string>({
             )}
           >
             {o.label}
-            {o.count != null && <span className={cn('text-[11px] tabular-nums', on ? 'opacity-70' : 'text-subtle')}>{o.count}</span>}
+            {o.count != null && <span className={cn('text-[12px] tabular-nums', on ? 'opacity-70' : 'text-subtle')}>{o.count}</span>}
           </button>
         );
       })}
@@ -152,7 +152,7 @@ export function Segmented<T extends string>({
 
 export function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[10.5px] font-medium text-muted">
+    <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[11.5px] font-medium text-muted">
       {children}
     </kbd>
   );

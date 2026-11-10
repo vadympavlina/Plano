@@ -179,7 +179,7 @@ export const SmartField = forwardRef<SmartFieldHandle, {
                   {s.kind === 'project' ? <FolderKanban className="h-4 w-4" /> : categoryIcon(s.item) ? <CategoryIcon category={s.item} className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{s.item.name}</span>
-                <span className="text-[11px] text-subtle">{s.kind === 'category' ? 'категорія' : 'проєкт'}</span>
+                <span className="text-[12px] text-subtle">{s.kind === 'category' ? 'категорія' : 'проєкт'}</span>
               </button>
             </li>
           ))}

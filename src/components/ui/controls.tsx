@@ -133,7 +133,7 @@ export function Switch({
       disabled={disabled}
       onClick={() => onCheckedChange(!checked)}
       className={cn(
-        'relative h-[26px] w-[44px] shrink-0 rounded-full transition-colors disabled:opacity-50',
+        'relative h-[26px] w-[44px] shrink-0 rounded-full transition-colors before:absolute before:-inset-y-2.5 before:inset-x-0 before:content-[""] disabled:opacity-50',
         checked ? 'bg-success' : 'bg-line',
         className,
       )}

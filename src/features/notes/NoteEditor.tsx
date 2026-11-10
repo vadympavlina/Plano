@@ -333,7 +333,7 @@ export function NoteEditor({ note }: { note: Note }) {
         <aside className="scrollbar-thin hidden w-[220px] shrink-0 overflow-y-auto border-l border-line p-5 text-[13px] xl:block">
           {headings.length > 0 && (
             <>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle">Зміст</p>
+              <p className="mb-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Зміст</p>
               {headings.map((h, i) => (
                 <button
                   key={i}
@@ -348,7 +348,7 @@ export function NoteEditor({ note }: { note: Note }) {
           )}
           {(relatedTasks.length > 0 || relatedGoals.length > 0) && (
             <>
-              <p className="mb-2 mt-6 text-[11px] font-semibold uppercase tracking-[0.08em] text-subtle first:mt-0">Пов’язане</p>
+              <p className="mb-2 mt-6 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle first:mt-0">Пов’язане</p>
               {relatedTasks.map((t) => (
                 <button key={t.id} type="button" onClick={() => openTask(t.id)} className="flex w-full items-center gap-2 py-1 text-left text-muted hover:text-ink">
                   <span className="h-3.5 w-3.5 shrink-0 rounded-full border-[1.5px] border-subtle" />

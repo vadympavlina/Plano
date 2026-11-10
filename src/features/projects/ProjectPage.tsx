@@ -112,7 +112,7 @@ export default function ProjectPage() {
 
   return (
     <PageContainer className="pb-8">
-      <Link to="/projects" className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
+      <Link to="/projects" className="-my-2 mb-2 inline-flex items-center gap-1.5 py-2 text-sm text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" /> Проєкти
       </Link>
 
@@ -264,7 +264,7 @@ export default function ProjectPage() {
             {related.goals.length === 0 ? (
               <p className="text-[13px] text-muted">
                 Немає пов’язаних цілей.{' '}
-                <Link to="/goals" className="font-medium text-ink hover:underline">
+                <Link to="/goals" className="inline-block py-2 font-medium text-ink hover:underline">
                   <Target className="mb-0.5 inline h-3.5 w-3.5" /> До цілей
                 </Link>
               </p>

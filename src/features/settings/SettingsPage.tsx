@@ -286,7 +286,7 @@ function PreferencesSection() {
           <span>Зберігається автоматично й синхронізується з іншими пристроями.</span>
           <button
             type="button"
-            className="font-medium text-muted hover:text-ink"
+            className="-my-2 py-2 font-medium text-muted hover:text-ink"
             onClick={() => set({ weekStartsOn: DEFAULT_SETTINGS.weekStartsOn, timeFormat: DEFAULT_SETTINGS.timeFormat, dateFormat: DEFAULT_SETTINGS.dateFormat, defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView })}
           >
             Скинути до стандартних
@@ -356,7 +356,7 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
   return (
     <div className="flex items-center gap-3 px-5 py-2.5">
       <Popover>
-        <PopoverTrigger className="h-6 w-6 shrink-0 rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line" style={{ backgroundColor: colorOf(category.color) }} aria-label={`Змінити колір «${category.name}»`} />
+        <PopoverTrigger className="relative h-6 w-6 shrink-0 rounded-full before:absolute before:-inset-2.5 before:content-[''] ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line" style={{ backgroundColor: colorOf(category.color) }} aria-label={`Змінити колір «${category.name}»`} />
         <PopoverContent className="w-[220px]">
           <ColorPicker value={category.color} onChange={(color) => void actions.categories.update(category.id, { color }).catch(() => undefined)} />
         </PopoverContent>

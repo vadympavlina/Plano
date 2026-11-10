@@ -129,7 +129,7 @@ export function MonthView({
                       key={it.o.key}
                       type="button"
                       onClick={() => openEvent(it.o.event.id, it.o.date)}
-                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[11px]', it.o.event.allDay && 'bg-surface')}
+                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[12px]', it.o.event.allDay && 'bg-surface')}
                     >
                       {categoryIcon(categoryById(it.o.event.categoryId)) ? (
                         <CategoryIcon category={categoryById(it.o.event.categoryId)} className="h-3 w-3" color={eventColor(it.o.event, categoryById)} />
@@ -146,7 +146,7 @@ export function MonthView({
                       key={it.t.id}
                       type="button"
                       onClick={() => openTask(it.t.id)}
-                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[11px] font-medium text-ink', it.t.status === 'completed' && 'text-subtle line-through')}
+                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[12px] font-medium text-ink', it.t.status === 'completed' && 'text-subtle line-through')}
                       title={`Задача: ${it.t.title}`}
                     >
                       <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />
@@ -156,7 +156,7 @@ export function MonthView({
                   ),
                 )}
                 {extra > 0 && (
-                  <button type="button" onClick={() => onSelectDay(d)} className="px-1 text-[11px] font-medium text-muted hover:text-ink">
+                  <button type="button" onClick={() => onSelectDay(d)} className="px-1 text-[12px] font-medium text-muted hover:text-ink">
                     ще {extra + 1}
                   </button>
                 )}

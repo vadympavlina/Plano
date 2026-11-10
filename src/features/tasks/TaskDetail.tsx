@@ -262,7 +262,7 @@ function TaskDetailInner({ task, onClose, panel }: { task: Task; onClose: () => 
             </Button>
           )}
         </div>
-        <p className="mt-4 text-[11px] text-subtle">
+        <p className="mt-4 text-[12px] text-subtle">
           Створено {new Date(task.createdAt).toLocaleString('uk-UA')}
           {task.completedAt && ` · Виконано ${new Date(task.completedAt).toLocaleString('uk-UA')}`}
         </p>

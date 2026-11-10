@@ -159,7 +159,7 @@ export function SheetContent({
           <DialogPrimitive.Description className="sr-only">Деталі</DialogPrimitive.Description>
           <DialogPrimitive.Close
             ref={closeBtn}
-            className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+            className="flex min-h-11 items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-muted md:min-h-0 transition-colors hover:bg-surface-2 hover:text-ink"
             aria-label="Закрити"
           >
             <X className="h-4 w-4" />

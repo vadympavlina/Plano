@@ -126,7 +126,7 @@ export default function HabitPage() {
 
       {/* Detail */}
       <div className="scrollbar-thin flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto rounded-[22px] bg-surface-2/70 p-5 sm:p-6">
-        <Link to="/habits" className="mb-4 inline-flex items-center gap-1.5 self-start text-[13px] font-medium text-muted hover:text-ink lg:hidden">
+        <Link to="/habits" className="-my-2 mb-2 inline-flex items-center gap-1.5 self-start py-2 text-[13px] font-medium text-muted hover:text-ink lg:hidden">
           <ArrowLeft className="h-4 w-4" /> Усі звички
         </Link>
 
@@ -244,7 +244,7 @@ export default function HabitPage() {
             </div>
             <div className="grid grid-cols-7 gap-1.5 text-center">
               {weekdayLabels(settings.weekStartsOn).map((l) => (
-                <span key={l} className="pb-1 text-[11px] text-subtle">
+                <span key={l} className="pb-1 text-[12px] text-subtle">
                   {l}
                 </span>
               ))}
@@ -295,12 +295,12 @@ export default function HabitPage() {
             <div className="flex h-[180px] items-end gap-2 rounded-2xl bg-surface p-4">
               {weeks.map((w, i) => (
                 <div key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`Тиждень з ${formatDateKey(w.start, 'd MMM')}: ${w.rate}%`}>
-                  <span className="text-[10.5px] tabular-nums text-muted">{w.scheduled ? `${w.rate}%` : ''}</span>
+                  <span className="text-[11.5px] tabular-nums text-muted">{w.scheduled ? `${w.rate}%` : ''}</span>
                   <div
                     className="w-full rounded-md"
                     style={{ height: `${Math.max(w.scheduled ? 4 : 2, w.rate)}%`, backgroundColor: i === weeks.length - 1 ? color : tint(color, 0.4) }}
                   />
-                  <span className="text-[10px] text-subtle">{formatDateKey(w.start, 'd.MM')}</span>
+                  <span className="text-[11.5px] text-subtle">{formatDateKey(w.start, 'd.MM')}</span>
                 </div>
               ))}
             </div>
