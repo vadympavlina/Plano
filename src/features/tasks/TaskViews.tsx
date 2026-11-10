@@ -1,4 +1,5 @@
-import { memo, useRef, useState, type DragEvent, type PointerEvent, type ReactNode } from 'react';
+import { memo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { useCardDrag } from '@/lib/gesture/useCardDrag';
 import { CategoryChip } from '@/components/common/CategoryMark';
 import { Check, ChevronDown, CornerDownRight, FolderKanban, Plus, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
@@ -281,19 +282,20 @@ export const TaskRow = memo(function TaskRow({
   );
 });
 
-function TaskCard({ task, today, onDragStart }: { task: Task; today: DateKey; onDragStart: (e: DragEvent, t: Task) => void }) {
+function TaskCard({ task, today, onHover, onDropTo }: { task: Task; today: DateKey; onHover: (zone: string | null) => void; onDropTo: (t: Task, zone: string) => boolean }) {
   const { openTask } = useUI();
   const done = task.status === 'completed';
+  const drag = useCardDrag({ onHover, onDrop: (zone) => onDropTo(task, zone) });
   return (
     <div
-      draggable
-      onDragStart={(e) => onDragStart(e, task)}
+      ref={drag.ref as React.RefObject<HTMLDivElement>}
+      {...drag.handlers}
       onClick={() => openTask(task.id)}
       onKeyDown={(e) => e.key === 'Enter' && openTask(task.id)}
       role="button"
       tabIndex={0}
       className={cn(
-        'cursor-grab rounded-2xl bg-surface p-3 shadow-[0_1px_2px_rgba(16,24,40,.06)] ring-1 ring-line/70 transition-shadow hover:shadow-soft active:cursor-grabbing',
+        'cursor-grab rounded-2xl bg-surface p-3 shadow-[0_1px_2px_rgba(16,24,40,.06)] ring-1 ring-line/70 transition-shadow hover:shadow-soft',
         done && 'opacity-55',
       )}
     >
@@ -331,22 +333,14 @@ export function TaskBoard({
 }) {
   const actions = useActions();
   const [over, setOver] = useState<BoardColumn | null>(null);
-  const [dragging, setDragging] = useState<Task | null>(null);
-
-  const onDragStart = (e: DragEvent, t: Task) => {
-    setDragging(t);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', t.id);
-  };
-  const drop = (status: BoardColumn) => {
-    setOver(null);
-    const t = dragging;
-    setDragging(null);
-    if (!t || t.status === status) return;
+  const drop = (t: Task, zone: string) => {
+    const status = zone as BoardColumn;
+    if (!(status in COLUMN_META) || t.status === status) return false;
     void actions.tasks.setStatus(t, status).then(
       () => toast.success(`«${t.title}» → ${COLUMN_META[status].label}`),
       () => undefined,
     );
+    return true;
   };
 
   return (
@@ -358,18 +352,7 @@ export function TaskBoard({
           <section
             key={status}
             aria-label={meta.label}
-            onDragOver={(e) => {
-              if (!dragging) return;
-              e.preventDefault();
-              if (over !== status) setOver(status);
-            }}
-            onDragLeave={(e) => {
-              if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(null);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              drop(status);
-            }}
+            data-drop-zone={status}
             className="flex min-h-0 min-w-0 flex-col"
           >
             <div className="mb-2.5 flex items-center gap-2 px-1">
@@ -393,7 +376,7 @@ export function TaskBoard({
               )}
             >
               {list.map((t) => (
-                <TaskCard key={t.id} task={t} today={today} onDragStart={onDragStart} />
+                <TaskCard key={t.id} task={t} today={today} onHover={(z) => setOver(z as BoardColumn | null)} onDropTo={drop} />
               ))}
               {status !== 'completed' && (
                 <button

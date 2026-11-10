@@ -1,4 +1,5 @@
-import { useMemo, useState, type DragEvent } from 'react';
+import { useMemo, useState } from 'react';
+import { useCardDrag } from '@/lib/gesture/useCardDrag';
 import { Columns3, List, Plus } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useNow } from '@/hooks/useNow';
@@ -87,22 +88,14 @@ export default function UpcomingPage() {
 
   // ---- board: drag a task onto another day to move it ----
   const [over, setOver] = useState<DateKey | null>(null);
-  const [dragging, setDragging] = useState<Task | null>(null);
-  const drop = (d: DateKey) => {
-    setOver(null);
-    const t = dragging;
-    setDragging(null);
-    if (!t || taskDate(t) === d) return;
+  const drop = (t: Task, d: DateKey) => {
+    if (taskDate(t) === d) return false;
     const was = taskDate(t);
     void actions.tasks.reschedule(t, d).then(
       () => toast.success(`«${t.title}» → ${formatDateKey(d, 'd MMMM')}`, { action: { label: 'Скасувати', onClick: () => void actions.tasks.reschedule(t, was).catch(() => undefined) } }),
       () => undefined,
     );
-  };
-  const onDragStart = (e: DragEvent, t: Task) => {
-    setDragging(t);
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', t.id);
+    return true;
   };
 
   const groups = days.filter((d) => d === today || plan.byDay.get(d)!.events.length || plan.byDay.get(d)!.tasks.length);
@@ -176,18 +169,7 @@ export default function UpcomingPage() {
               <section
                 key={d}
                 aria-label={dayName(d)}
-                onDragOver={(e) => {
-                  if (!dragging) return;
-                  e.preventDefault();
-                  if (over !== d) setOver(d);
-                }}
-                onDragLeave={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(null);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  drop(d);
-                }}
+                data-drop-zone={d}
                 className={cn('flex w-[260px] shrink-0 flex-col rounded-[20px] bg-surface-2/60 p-2.5 transition-colors', over === d && 'bg-primary/10 ring-2 ring-primary/30')}
               >
                 <div className="mb-2 flex items-baseline justify-between px-1.5">
@@ -204,20 +186,7 @@ export default function UpcomingPage() {
                     <div key={o.key} className="[&>button]:bg-surface">{eventCard(o)}</div>
                   ))}
                   {g.tasks.map((t) => (
-                    <div
-                      key={t.id}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, t)}
-                      className="cursor-grab rounded-2xl bg-surface p-3 active:cursor-grabbing"
-                    >
-                      <div className="flex items-start gap-3">
-                        <TaskCheck task={t} />
-                        <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 text-left">
-                          <span className="block text-[14.5px] font-medium leading-snug">{t.title}</span>
-                          {t.startTime && <span className="mt-1 block text-[12px] tabular-nums text-muted">{formatTime(t.startTime, settings.timeFormat)}</span>}
-                        </button>
-                      </div>
-                    </div>
+                    <BoardTask key={t.id} task={t} timeFormat={settings.timeFormat} openTask={openTask} onHover={(z) => setOver(z as DateKey | null)} onDropTo={(task, z) => drop(task, z as DateKey)} />
                   ))}
                   {!g.events.length && !g.tasks.length && <p className="px-2 py-3 text-[12.5px] text-subtle">Вільно</p>}
                 </div>
@@ -226,6 +195,21 @@ export default function UpcomingPage() {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function BoardTask({ task: t, timeFormat, openTask, onHover, onDropTo }: { task: Task; timeFormat: Parameters<typeof formatTime>[1]; openTask: (id: string) => void; onHover: (zone: string | null) => void; onDropTo: (t: Task, zone: string) => boolean }) {
+  const drag = useCardDrag({ onHover, onDrop: (zone) => onDropTo(t, zone) });
+  return (
+    <div ref={drag.ref as React.RefObject<HTMLDivElement>} {...drag.handlers} className="cursor-grab rounded-2xl bg-surface p-3">
+      <div className="flex items-start gap-3">
+        <TaskCheck task={t} />
+        <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 text-left">
+          <span className="block text-[14.5px] font-medium leading-snug">{t.title}</span>
+          {t.startTime && <span className="mt-1 block text-[12px] tabular-nums text-muted">{formatTime(t.startTime, timeFormat)}</span>}
+        </button>
+      </div>
     </div>
   );
 }

@@ -215,3 +215,21 @@ test('phone: the menu drawer follows the finger and a flick to the left closes i
   await touch('touchEnd');
   await expect(drawer).toBeHidden();
 });
+
+test('tasks board: a card can be dragged into another column with the pointer', async ({ page }) => {
+  await start(page);
+  await page.getByLabel('Назва для швидкого додавання').fill('Перетягни мене сьогодні');
+  await page.getByLabel('Назва для швидкого додавання').press('Enter');
+  await page.goto('/#/tasks');
+  await page.locator('[role=tab][title="Дошка"]').click();
+  const from = page.locator('section[aria-label="До виконання"]').getByText('Перетягни мене').first();
+  await expect(from).toBeVisible();
+  const a = (await from.boundingBox())!;
+  const t = (await page.locator('section[aria-label="Виконано"]').boundingBox())!;
+  await page.mouse.move(a.x + 8, a.y + a.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(a.x + 30, a.y + 20, { steps: 3 });
+  await page.mouse.move(t.x + t.width / 2, t.y + 120, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator('section[aria-label="Виконано"]').getByText('Перетягни мене')).toBeVisible();
+});
