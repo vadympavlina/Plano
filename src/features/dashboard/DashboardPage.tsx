@@ -235,7 +235,7 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div ref={stripRef} role="tablist" aria-label="Дні" className="no-scrollbar mt-5 flex gap-1.5 overflow-x-auto px-2 pb-1">
+      <div ref={stripRef} role="tablist" aria-label="Дні" className="no-scrollbar mt-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-2 px-2 pb-1">
         {strip.map((d) => {
           const on = d === selected;
           const dot = d === today;
@@ -249,7 +249,7 @@ export default function DashboardPage() {
               aria-label={formatDateKey(d, 'EEEE, d MMMM')}
               onClick={() => setSelected(d)}
               className={cn(
-                'flex h-[62px] w-[52px] shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl text-[17px] font-bold tabular-nums transition-colors',
+                'flex h-[62px] w-[calc((100%-2.25rem)/7)] shrink-0 snap-start flex-col items-center justify-center gap-0.5 rounded-2xl text-[17px] sm:w-[52px] font-bold tabular-nums transition-colors',
                 on ? 'border-[1.5px] border-primary text-primary' : 'border-[1.5px] border-transparent hover:bg-surface-2',
                 !on && dot && 'text-primary',
               )}
