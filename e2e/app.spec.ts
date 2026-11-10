@@ -202,11 +202,11 @@ test('phone: the menu drawer follows the finger and a flick to the left closes i
     await touch('touchMove', x);
     await page.waitForTimeout(60);
   }
-  expect(await drawer.evaluate((e) => (e as HTMLElement).style.transform)).toContain('translate3d(-40px');
+  expect(await drawer.evaluate((e) => (e as HTMLElement).style.translate)).toContain('-40px');
   await page.waitForTimeout(250);
   await touch('touchEnd');
   await expect(drawer).toBeVisible();
-  await expect.poll(() => drawer.evaluate((e) => (e as HTMLElement).style.transform)).toBe('');
+  await expect.poll(() => drawer.evaluate((e) => (e as HTMLElement).style.translate)).toBe('');
   // A quick flick closes it even though the distance is short.
   await touch('touchStart', 250);
   await touch('touchMove', 205);
@@ -232,4 +232,26 @@ test('tasks board: a card can be dragged into another column with the pointer', 
   await page.mouse.move(t.x + t.width / 2, t.y + 120, { steps: 10 });
   await page.mouse.up();
   await expect(page.locator('section[aria-label="Виконано"]').getByText('Перетягни мене')).toBeVisible();
+});
+
+test('phone: a sheet that is still sliding in can be caught by a finger', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'touch gestures');
+  await start(page);
+  await page.goto('/#/tasks?new=1');
+  const sheet = page.getByRole('dialog');
+  await expect(sheet).toBeVisible();
+  await page.waitForTimeout(700);
+  // Fully open: no leftover offset.
+  expect(await sheet.evaluate((e) => getComputedStyle(e).translate)).toMatch(/^(none|0px( 0px)?)$/);
+  const cdp = await page.context().newCDPSession(page);
+  const handle = (await sheet.locator('div.touch-none').first().boundingBox())!;
+  const touch = (type: string, y?: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: 195, y: y!, id: 1 }] });
+  await touch('touchStart', handle.y + 10);
+  await touch('touchMove', handle.y + 40);
+  await page.waitForTimeout(60);
+  await touch('touchMove', handle.y + 70);
+  // While held, the entrance transition is off and the sheet sits where the finger put it.
+  expect(await sheet.evaluate((e) => (e as HTMLElement).style.transition)).toBe('none');
+  await touch('touchEnd');
+  await expect.poll(() => sheet.evaluate((e) => (e as HTMLElement).style.transition)).toBe('');
 });

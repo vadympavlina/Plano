@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useSyncExternalStore } from 'react';
 import { useDragDismiss } from '@/lib/gesture/useDragDismiss';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -54,12 +54,6 @@ function ToastView({ t }: { t: ToastItem }) {
     const timer = setTimeout(() => dismissToast(t.id), t.duration);
     return () => clearTimeout(timer);
   }, [t.id, t.duration]);
-  // Enters from below with a transition (not a keyframe), so a swipe can catch it at any moment.
-  const [shown, setShown] = useState(false);
-  useEffect(() => {
-    const r = requestAnimationFrame(() => setShown(true));
-    return () => cancelAnimationFrame(r);
-  }, []);
   // It came up from the bottom, so it leaves by swiping down.
   const box = useRef<HTMLDivElement>(null);
   const drag = useDragDismiss({ target: box, axis: 'y', dir: 1, lockAfter: 6, distance: 0.5, onDismiss: () => dismissToast(t.id) });
@@ -70,8 +64,7 @@ function ToastView({ t }: { t: ToastItem }) {
       {...drag}
       role={t.kind === 'error' ? 'alert' : 'status'}
       className={cn(
-        'pointer-events-auto flex w-full touch-pan-x items-start gap-3 rounded-xl border border-line bg-surface p-3.5 pr-2.5 text-sm shadow-pop transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-opacity sm:w-[360px]',
-        shown ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
+        'pointer-events-auto flex w-full touch-pan-x items-start gap-3 rounded-xl border border-line bg-surface p-3.5 pr-2.5 text-sm shadow-pop enter-toast sm:w-[360px]',
       )}
     >
       <Icon

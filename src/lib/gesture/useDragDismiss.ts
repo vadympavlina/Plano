@@ -43,8 +43,22 @@ export function useDragDismiss(o: Options) {
     const el = target.current;
     if (!el) return;
     const size = (axis === 'x' ? el.offsetWidth : el.offsetHeight) || 1;
-    el.style.transform = p === 0 ? '' : axis === 'x' ? `translate3d(${p * dir}px,0,0)` : `translate3d(0,${p * dir}px,0)`;
+    // The `translate` property, not `transform`: it is the one the entrance transition animates,
+    // so a drag that starts mid-entrance picks up from the exact spot.
+    el.style.translate = p === 0 ? '' : axis === 'x' ? `${p * dir}px 0` : `0 ${p * dir}px`;
     if (overlay?.current) overlay.current.style.opacity = p === 0 ? '' : String(Math.max(0, Math.min(1, 1 - p / size)));
+  }, []);
+
+  /** Hand the element to the finger: drop the entrance transition so writes apply at once. */
+  const hold = useCallback(() => {
+    const { target, overlay } = opts.current;
+    if (target.current) target.current.style.transition = 'none';
+    if (overlay?.current) overlay.current.style.transition = 'none';
+  }, []);
+  const release = useCallback(() => {
+    const { target, overlay } = opts.current;
+    if (target.current) target.current.style.transition = '';
+    if (overlay?.current) overlay.current.style.transition = '';
   }, []);
 
   const settle = useCallback(
@@ -77,9 +91,20 @@ export function useDragDismiss(o: Options) {
       const { allow, axis, lockAfter = 0 } = opts.current;
       if (!(allow ? allow(e) : e.pointerType === 'touch')) return;
       // Catch the element mid-flight: carry on from where it is.
-      const caught = spring.current !== null;
+      let caught = spring.current !== null;
       spring.current?.stop();
       spring.current = null;
+      // Still sliding in? Take over from where it is right now.
+      const el = opts.current.target.current;
+      if (el && !caught) {
+        const t = getComputedStyle(el).translate;
+        const [tx = '0px', ty = '0px'] = t === 'none' ? [] : t.split(' ');
+        const cur = parseFloat(axis === 'x' ? tx : ty) * opts.current.dir;
+        if (Math.abs(cur) > 0.5) {
+          caught = true;
+          pos.current = cur;
+        }
+      }
       const c = axis === 'x' ? e.clientX : e.clientY;
       st.current = {
         id: e.pointerId,
@@ -91,6 +116,8 @@ export function useDragDismiss(o: Options) {
       };
       tracker.current.reset(pos.current);
       if (st.current.locked) {
+        hold();
+        write(pos.current);
         try {
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         } catch {
@@ -98,7 +125,7 @@ export function useDragDismiss(o: Options) {
         }
       }
     },
-    [],
+    [hold, write],
   );
 
   const onPointerMove = useCallback(
@@ -113,6 +140,7 @@ export function useDragDismiss(o: Options) {
         if (cross > 10 && cross > Math.abs(along)) return void (st.current = null);
         if (along < lockAfter) return;
         s.locked = true;
+        hold();
         try {
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         } catch {
@@ -126,7 +154,7 @@ export function useDragDismiss(o: Options) {
       tracker.current.push(p);
       write(p);
     },
-    [write],
+    [write, hold],
   );
 
   const end = useCallback(
@@ -152,10 +180,10 @@ export function useDragDismiss(o: Options) {
         );
       } else {
         if (wants) onBlocked?.();
-        settle(0, v, () => write(0));
+        settle(0, v, () => (write(0), release()));
       }
     },
-    [settle, write],
+    [settle, write, release],
   );
 
   return {

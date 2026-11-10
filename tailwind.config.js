@@ -46,20 +46,12 @@ export default {
         // Individual transform properties (scale / translate) so the animation never
         // overrides the element's own centering transform.
         'scale-in': { from: { opacity: '0', scale: '0.97' }, to: { opacity: '1', scale: '1' } },
-        'slide-up': { from: { opacity: '0', translate: '0 16px' }, to: { opacity: '1', translate: '0 0' } },
-        'slide-in-right': { from: { translate: '100% 0' }, to: { translate: '0 0' } },
-        'slide-in-left': { from: { translate: '-100% 0' }, to: { translate: '0 0' } },
-        'sheet-up': { from: { translate: '0 100%' }, to: { translate: '0 0' } },
         // Opacity only: a transform would re-anchor fixed elements inside the page while it runs.
         'page-in': { from: { opacity: '0' }, to: { opacity: '1' } },
       },
       animation: {
         'fade-in': 'fade-in 150ms ease-out',
         'scale-in': 'scale-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-        'slide-up': 'slide-up 200ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-        'slide-in-right': 'slide-in-right 320ms cubic-bezier(0.32, 0.72, 0, 1)',
-        'slide-in-left': 'slide-in-left 320ms cubic-bezier(0.32, 0.72, 0, 1)',
-        'sheet-up': 'sheet-up 450ms cubic-bezier(0.32, 0.72, 0, 1)',
         'page-in': 'page-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
       },
     },

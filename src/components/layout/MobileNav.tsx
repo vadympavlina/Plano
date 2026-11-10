@@ -82,11 +82,11 @@ export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChan
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
+        <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] enter-fade" />
         <DialogPrimitive.Content
           ref={panel}
           {...drag}
-          className="fixed inset-y-0 left-0 z-50 flex touch-pan-y w-[min(330px,88vw)] flex-col rounded-r-[30px] bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-none data-[state=open]:animate-slide-in-left"
+          className="fixed inset-y-0 left-0 z-50 flex touch-pan-y w-[min(330px,88vw)] flex-col rounded-r-[30px] bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-none enter-drawer"
         >
           <DialogPrimitive.Title className="sr-only">Меню</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">Розділи, проєкти та категорії</DialogPrimitive.Description>
