@@ -186,3 +186,32 @@ test('quick add: «Детальніше…» with an empty title opens the full 
   await expect(page.getByRole('dialog')).toContainText('Нова подія');
   await expect(page.getByRole('switch', { name: 'Весь день' })).toBeVisible();
 });
+
+test('phone: the menu drawer follows the finger and a flick to the left closes it', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'touch gestures');
+  await start(page);
+  await page.getByRole('button', { name: 'Меню', exact: true }).tap();
+  const drawer = page.getByRole('dialog');
+  await expect(drawer).toBeVisible();
+  await page.waitForTimeout(500);
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: string, x?: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
+  // Slowly 40px left and let go: it springs back and stays open.
+  await touch('touchStart', 250);
+  for (const x of [235, 220, 210]) {
+    await touch('touchMove', x);
+    await page.waitForTimeout(60);
+  }
+  expect(await drawer.evaluate((e) => (e as HTMLElement).style.transform)).toContain('translate3d(-40px');
+  await page.waitForTimeout(250);
+  await touch('touchEnd');
+  await expect(drawer).toBeVisible();
+  await expect.poll(() => drawer.evaluate((e) => (e as HTMLElement).style.transform)).toBe('');
+  // A quick flick closes it even though the distance is short.
+  await touch('touchStart', 250);
+  await touch('touchMove', 205);
+  await page.waitForTimeout(40);
+  await touch('touchMove', 160);
+  await touch('touchEnd');
+  await expect(drawer).toBeHidden();
+});

@@ -357,7 +357,8 @@ export function TimeGrid({
           deltaDays = Math.max(-drag.dayIndex, Math.min(deltaDays, days.length - 1 - drag.dayIndex));
         }
       }
-      setDrag({ ...drag, deltaMin, deltaDays, moved });
+      // The block moves in 15-minute steps: re-render only when a step changes, not on every pixel.
+      if (deltaMin !== drag.deltaMin || deltaDays !== drag.deltaDays || moved !== drag.moved) setDrag({ ...drag, deltaMin, deltaDays, moved });
       return;
     }
     if (sel && e.pointerId === sel.pointerId) {
@@ -369,16 +370,20 @@ export function TimeGrid({
         }
         return;
       }
-      const pointer = minuteAt(e.clientY);
+      // selectionRange snaps to SNAP anyway, so snap here and skip the render while it is the same slot.
+      const pointer = Math.round(minuteAt(e.clientY) / SNAP) * SNAP;
       const moved = sel.moved || Math.abs(e.clientY - sel.startY) > 4;
-      setSel({ ...sel, pointer, moved });
+      if (pointer !== sel.pointer || moved !== sel.moved) setSel({ ...sel, pointer, moved });
       return;
     }
     if (e.pointerType === 'mouse' && !daySel) {
       const target = e.target as HTMLElement;
       const idx = target.dataset.dayIndex;
-      if (idx !== undefined) setHover({ dayIndex: Number(idx), min: Math.floor(minuteAt(e.clientY) / 30) * 30 });
-      else if (hover) setHover(null);
+      if (idx !== undefined) {
+        const next = { dayIndex: Number(idx), min: Math.floor(minuteAt(e.clientY) / 30) * 30 };
+        // Same half-hour slot: keep the state object, so a moving mouse does not re-render the grid.
+        setHover((h) => (h && h.dayIndex === next.dayIndex && h.min === next.min ? h : next));
+      } else if (hover) setHover(null);
     }
   };
 

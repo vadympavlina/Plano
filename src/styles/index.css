@@ -209,3 +209,23 @@ a:not([draggable='true']),
 img:not([draggable='true']) {
   -webkit-user-drag: none;
 }
+
+/* Reduced motion: keep the gestures (the finger is the one moving), but turn travelling
+   entrances into plain fades. Spinners keep spinning: they are state, not decoration. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-slide-in-left,
+  .animate-slide-in-right,
+  .animate-sheet-up,
+  .animate-scale-in,
+  [class*='animate-slide-'],
+  [class*='animate-sheet-'],
+  [class*='animate-scale-'] {
+    animation-name: fade-in !important;
+    animation-duration: 120ms !important;
+  }
+  .animate-ping,
+  .animate-pulse {
+    animation: none !important;
+  }
+}

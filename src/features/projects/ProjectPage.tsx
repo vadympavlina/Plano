@@ -119,7 +119,7 @@ export default function ProjectPage() {
       <section className="overflow-hidden rounded-[22px] bg-surface-2/70">
         {project.cover && (
           <div className="group relative h-24 sm:h-28" style={{ background: coverGradient(project.cover) }}>
-            <div className="absolute bottom-2 right-2 transition-opacity sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover:opacity-100">
+            <div className="absolute bottom-2 right-2 transition-opacity sm:opacity-0 sm:focus-within:opacity-100 sm:group-hover:opacity-100 [@media(hover:none)]:opacity-100">
               <CoverPicker label="Обкладинка проєкту" value={project.cover} onChange={setCover} />
             </div>
           </div>

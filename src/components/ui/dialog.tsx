@@ -1,6 +1,7 @@
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
-import { useRef, type PointerEvent, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { useDragDismiss } from '@/lib/gesture/useDragDismiss';
 import { cn } from '@/lib/utils/cn';
 
 export const Dialog = DialogPrimitive.Root;
@@ -46,37 +47,23 @@ export function DialogContent({
       onDismissBlocked?.();
     }
   };
-  // Phones: drag the sheet down by its handle/header to close it.
+  // Phones: drag the sheet down by its handle/header. It tracks the finger, then a spring finishes it.
   const sheet = useRef<HTMLDivElement>(null);
+  const shade = useRef<HTMLDivElement>(null);
   const closeBtn = useRef<HTMLButtonElement>(null);
-  const drag = useRef<{ y: number; dy: number } | null>(null);
-  const onDown = (e: PointerEvent) => {
-    if (e.pointerType !== 'touch' || window.matchMedia('(min-width: 640px)').matches || (e.target as HTMLElement).closest('button')) return;
-    drag.current = { y: e.clientY, dy: 0 };
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-  const onMove = (e: PointerEvent) => {
-    if (!drag.current || !sheet.current) return;
-    drag.current.dy = Math.max(0, e.clientY - drag.current.y);
-    sheet.current.style.transition = 'none';
-    sheet.current.style.transform = `translateY(${drag.current.dy}px)`;
-  };
-  const onUp = () => {
-    const d = drag.current;
-    drag.current = null;
-    if (!d || !sheet.current) return;
-    sheet.current.style.transition = 'transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1)';
-    if (d.dy > 90 && !preventDismiss) {
-      sheet.current.style.transform = 'translateY(100%)';
-      setTimeout(() => closeBtn.current?.click(), 160);
-    } else {
-      sheet.current.style.transform = '';
-      if (d.dy > 90) onDismissBlocked?.();
-    }
-  };
+  const drag = useDragDismiss({
+    target: sheet,
+    overlay: shade,
+    axis: 'y',
+    dir: 1,
+    allow: (e) => e.pointerType === 'touch' && !window.matchMedia('(min-width: 640px)').matches && !(e.target as HTMLElement).closest('button'),
+    canDismiss: () => !preventDismiss,
+    onBlocked: onDismissBlocked,
+    onDismiss: () => closeBtn.current?.click(),
+  });
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#0b0f17]/40 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
+      <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-[#0b0f17]/40 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
       <DialogPrimitive.Content
         ref={sheet}
         onInteractOutside={block}
@@ -90,7 +77,7 @@ export function DialogContent({
           className,
         )}
       >
-        <div className="touch-none" onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
+        <div className="touch-none" {...drag}>
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
         <div className={cn('flex items-start gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pt-5', hideTitle && 'sr-only')}>
           <div className="min-w-0 flex-1">
@@ -142,10 +129,22 @@ export function SheetContent({
   className?: string;
   headerActions?: ReactNode;
 }) {
+  const sheet = useRef<HTMLDivElement>(null);
+  const shade = useRef<HTMLDivElement>(null);
+  const closeBtn = useRef<HTMLButtonElement>(null);
+  const drag = useDragDismiss({
+    target: sheet,
+    overlay: shade,
+    axis: 'y',
+    dir: 1,
+    allow: (e) => e.pointerType === 'touch' && !window.matchMedia('(min-width: 768px)').matches && !(e.target as HTMLElement).closest('button'),
+    onDismiss: () => closeBtn.current?.click(),
+  });
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#0b0f17]/30 data-[state=open]:animate-fade-in" />
+      <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-[#0b0f17]/30 data-[state=open]:animate-fade-in" />
       <DialogPrimitive.Content
+        ref={sheet}
         className={cn(
           'fixed z-50 flex flex-col border-line bg-surface shadow-pop focus:outline-none',
           'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[22px] border-t pb-safe data-[state=open]:animate-slide-up',
@@ -153,11 +152,13 @@ export function SheetContent({
           className,
         )}
       >
+        <div className="touch-none md:touch-auto" {...drag}>
         <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line md:hidden" aria-hidden />
         <div className="flex items-center gap-1 px-4 pb-1 pt-3 md:pt-4">
           <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">Деталі</DialogPrimitive.Description>
           <DialogPrimitive.Close
+            ref={closeBtn}
             className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-muted transition-colors hover:bg-surface-2 hover:text-ink"
             aria-label="Закрити"
           >
@@ -165,6 +166,7 @@ export function SheetContent({
             <span>Закрити</span>
           </DialogPrimitive.Close>
           <div className="ml-auto flex items-center gap-1">{headerActions}</div>
+        </div>
         </div>
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-5 pb-6 md:px-6">{children}</div>
       </DialogPrimitive.Content>

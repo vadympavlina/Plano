@@ -297,7 +297,7 @@ export default function HabitPage() {
                 <div key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`Тиждень з ${formatDateKey(w.start, 'd MMM')}: ${w.rate}%`}>
                   <span className="text-[10.5px] tabular-nums text-muted">{w.scheduled ? `${w.rate}%` : ''}</span>
                   <div
-                    className="w-full rounded-md transition-[height] duration-500"
+                    className="w-full rounded-md"
                     style={{ height: `${Math.max(w.scheduled ? 4 : 2, w.rate)}%`, backgroundColor: i === weeks.length - 1 ? color : tint(color, 0.4) }}
                   />
                   <span className="text-[10px] text-subtle">{formatDateKey(w.start, 'd.MM')}</span>

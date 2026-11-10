@@ -4,6 +4,8 @@ const token = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
   darkMode: 'class',
+  // Hover styles apply only where hover exists, so a tap on a phone leaves no stuck hover.
+  future: { hoverOnlyWhenSupported: true },
   theme: {
     extend: {
       colors: {
@@ -55,9 +57,9 @@ export default {
         'fade-in': 'fade-in 150ms ease-out',
         'scale-in': 'scale-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1)',
         'slide-up': 'slide-up 200ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-        'slide-in-right': 'slide-in-right 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-        'slide-in-left': 'slide-in-left 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-        'sheet-up': 'sheet-up 280ms cubic-bezier(0.2, 0.9, 0.25, 1)',
+        'slide-in-right': 'slide-in-right 320ms cubic-bezier(0.32, 0.72, 0, 1)',
+        'slide-in-left': 'slide-in-left 320ms cubic-bezier(0.32, 0.72, 0, 1)',
+        'sheet-up': 'sheet-up 450ms cubic-bezier(0.32, 0.72, 0, 1)',
         'page-in': 'page-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
       },
     },

@@ -39,7 +39,7 @@ function ProjectCard({ project, today }: { project: Project; today: DateKey }) {
   return (
     <Link
       to={`/projects/${project.id}`}
-      className={cn('group flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-surface-2/70 transition-all hover:-translate-y-0.5 hover:bg-surface-2', finished && 'opacity-65')}
+      className={cn('group flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-surface-2/70 transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-surface-2 motion-reduce:hover:translate-y-0', finished && 'opacity-65')}
     >
       <div className="h-[72px] sm:h-20" style={{ background: project.cover ? coverGradient(project.cover, 0.5, 0.2) : `linear-gradient(120deg, ${color}2e, ${color}0f)` }} />
       <div className="flex flex-1 flex-col px-4 pb-4">
@@ -55,7 +55,7 @@ function ProjectCard({ project, today }: { project: Project; today: DateKey }) {
             <span className="font-bold tabular-nums">{prog.percent}%</span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuenow={prog.percent} aria-valuemin={0} aria-valuemax={100} aria-label={`Прогрес: ${project.name}`}>
-            <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${prog.percent}%`, backgroundColor: color }} />
+            <div className="h-full w-full rounded-full transition-transform duration-500 motion-reduce:transition-none" style={{ transform: `translateX(${prog.percent - 100}%)`, backgroundColor: color }} />
           </div>
         </div>
 

@@ -122,7 +122,9 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
       </div>
 
       <div className="relative mt-4 h-2.5 rounded-full bg-surface" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={goal.title}>
-        <div className="h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, backgroundColor: color }} />
+        <div className="h-full overflow-hidden rounded-full">
+          <div className="h-full w-full rounded-full transition-transform duration-500 motion-reduce:transition-none" style={{ transform: `translateX(${Math.min(100, pct) - 100}%)`, backgroundColor: color }} />
+        </div>
         {expectedPct != null && pace !== 'done' && (
           <span className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded bg-ink/45" style={{ left: `${expectedPct}%` }} title={`Де треба бути сьогодні: ${fmt(Math.round(expected!))} ${goal.unit ?? ''}`} />
         )}

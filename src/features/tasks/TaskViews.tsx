@@ -11,6 +11,7 @@ import type { DateKey, Task } from '@/types';
 import { taskDate } from './logic';
 import { BOARD_COLUMNS, type BoardColumn } from './lists';
 import { haptic } from '@/lib/utils/haptic';
+import { reducedMotion, rubberBand, runSpring, VelocityTracker, type SpringHandle } from '@/lib/gesture/spring';
 
 /** Ring colour of the completion circle: orange for high priority, red for urgent. */
 const RING: Partial<Record<Task['priority'], string>> = { urgent: 'rgb(var(--danger))', high: 'rgb(var(--warning))' };
@@ -96,7 +97,7 @@ function SubtaskProgress({ task }: { task: Task }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-[12px] tabular-nums text-muted">
       <span className="h-1 w-8 overflow-hidden rounded-full bg-line">
-        <span className="block h-full rounded-full bg-success transition-[width]" style={{ width: `${(done / task.subtasks.length) * 100}%` }} />
+        <span className="block h-full w-full rounded-full bg-success transition-transform motion-reduce:transition-none" style={{ transform: `translateX(${(done / task.subtasks.length) * 100 - 100}%)` }} />
       </span>
       {done} з {task.subtasks.length}
     </span>
@@ -105,43 +106,82 @@ function SubtaskProgress({ task }: { task: Task }) {
 
 const SWIPE = 80;
 
-/** Touch swipe on a row: right completes, left moves to tomorrow. Vertical scrolling stays native. */
+/**
+ * Touch swipe on a row: right completes, left moves to tomorrow. Vertical scrolling stays native.
+ * The row follows the finger through direct style writes (no React state per move); the reveal
+ * layer's opacity derives from the same offset. On release a spring takes the row home, seeded
+ * with the finger's velocity; a quick flick triggers the action even over a short distance.
+ */
 function useSwipe(onRight: () => void, onLeft: () => void) {
-  const [dx, setDx] = useState(0);
-  const start = useRef<{ x: number; y: number; on: boolean } | null>(null);
+  const row = useRef<HTMLDivElement>(null);
+  const reveal = useRef<HTMLDivElement>(null);
+  const [side, setSide] = useState<'left' | 'right' | null>(null);
+  const sideRef = useRef<'left' | 'right' | null>(null);
+  const start = useRef<{ x: number; y: number; on: boolean; id: number } | null>(null);
   const moved = useRef(false);
+  const pos = useRef(0);
+  const spring = useRef<SpringHandle | null>(null);
+  const tracker = useRef(new VelocityTracker());
+  const cb = useRef({ onRight, onLeft });
+  cb.current = { onRight, onLeft };
+
+  const write = (x: number) => {
+    pos.current = x;
+    if (row.current) row.current.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+    if (reveal.current) reveal.current.style.opacity = String(Math.min(1, Math.abs(x) / SWIPE));
+    const next = x > 0 ? 'right' : x < 0 ? 'left' : null;
+    // Re-render only when the direction flips, not on every move.
+    if (next !== sideRef.current) setSide((sideRef.current = next));
+  };
+  const home = (v: number) => {
+    spring.current?.stop();
+    if (reducedMotion()) return write(0);
+    spring.current = runSpring({ from: pos.current, to: 0, velocity: v, stiffness: 480, damping: 36, onUpdate: write, onDone: () => (spring.current = null) });
+  };
+
   return {
-    dx,
+    row,
+    reveal,
+    side,
+    pos,
     /** True right after a swipe, so the click that ends it is ignored. */
     swallowClick: () => moved.current && !(moved.current = false),
     handlers: {
       onPointerDown: (e: PointerEvent) => {
         if (e.pointerType !== 'touch') return;
-        start.current = { x: e.clientX, y: e.clientY, on: false };
-        moved.current = false;
+        const caught = spring.current !== null;
+        spring.current?.stop();
+        spring.current = null;
+        start.current = { x: e.clientX - pos.current, y: e.clientY, on: caught, id: e.pointerId };
+        tracker.current.reset(pos.current);
+        moved.current = caught;
       },
       onPointerMove: (e: PointerEvent) => {
         const s = start.current;
-        if (!s) return;
+        if (!s || e.pointerId !== s.id) return;
         const x = e.clientX - s.x;
         if (!s.on) {
           if (Math.abs(e.clientY - s.y) > 10) return void (start.current = null);
           if (Math.abs(x) < 12) return;
           s.on = moved.current = true;
         }
-        setDx(Math.max(-140, Math.min(140, x)));
+        tracker.current.push(x);
+        write(rubberBand(x, SWIPE * 1.4));
       },
-      onPointerUp: () => {
-        if (start.current?.on) {
-          if (dx >= SWIPE) onRight();
-          else if (dx <= -SWIPE) onLeft();
-        }
+      onPointerUp: (e: PointerEvent) => {
+        const s = start.current;
         start.current = null;
-        setDx(0);
+        if (!s || e.pointerId !== s.id || !s.on) return;
+        const v = tracker.current.velocity;
+        const x = pos.current;
+        const fire = x >= SWIPE || (v > 600 && x > 24) ? 'right' : x <= -SWIPE || (v < -600 && x < -24) ? 'left' : null;
+        if (fire === 'right') cb.current.onRight();
+        else if (fire === 'left') cb.current.onLeft();
+        home(v);
       },
       onPointerCancel: () => {
         start.current = null;
-        setDx(0);
+        home(0);
       },
     },
   };
@@ -185,22 +225,23 @@ export const TaskRow = memo(function TaskRow({
       );
     },
   );
-  const reveal = swipe.dx > 0 ? (done ? 'Повернути' : 'Виконано') : 'Завтра';
+  const revealText = swipe.side === 'right' ? (done ? 'Повернути' : 'Виконано') : 'Завтра';
   return (
     <div className="relative overflow-hidden rounded-2xl [contain-intrinsic-size:auto_58px] [content-visibility:auto]">
-      {swipe.dx !== 0 && (
+      {swipe.side && (
         <div
+          ref={swipe.reveal}
           aria-hidden
-          className={cn('absolute inset-0 flex items-center px-4 text-[13px] font-semibold text-white', swipe.dx > 0 ? 'justify-start bg-success' : 'justify-end bg-primary')}
-          style={{ opacity: Math.min(1, Math.abs(swipe.dx) / SWIPE) }}
+          className={cn('absolute inset-0 flex items-center px-4 text-[13px] font-semibold text-white', swipe.side === 'right' ? 'justify-start bg-success' : 'justify-end bg-primary')}
+          style={{ opacity: Math.min(1, Math.abs(swipe.pos.current) / SWIPE) }}
         >
-          {reveal}
+          {revealText}
         </div>
       )}
       <div
+        ref={swipe.row}
         {...swipe.handlers}
-        className={cn('group relative flex touch-pan-y items-start gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55', selected && 'ring-[1.8px] ring-inset ring-ink', swipe.dx !== 0 && 'bg-surface')}
-        style={swipe.dx ? { transform: `translateX(${swipe.dx}px)` } : undefined}
+        className={cn('group relative flex touch-pan-y items-start gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55', selected && 'ring-[1.8px] ring-inset ring-ink', swipe.side && 'bg-surface')}
       >
         <span className="pt-px">
           <TaskCheck task={task} />

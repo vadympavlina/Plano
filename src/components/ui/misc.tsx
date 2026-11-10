@@ -52,8 +52,8 @@ export function Progress({
       className={cn('h-1.5 w-full overflow-hidden rounded-full bg-line/80', className)}
     >
       <div
-        className={cn('h-full rounded-full transition-[width] duration-500 ease-out', !color && 'bg-accent')}
-        style={{ width: `${v}%`, backgroundColor: color }}
+        className={cn('h-full w-full rounded-full transition-transform duration-500 ease-out motion-reduce:transition-none', !color && 'bg-accent')}
+        style={{ transform: `translateX(${v - 100}%)`, backgroundColor: color }}
       />
     </div>
   );
@@ -88,7 +88,7 @@ export function CheckCircle({
         onChange(!checked);
       }}
       className={cn(
-        'group relative flex shrink-0 items-center justify-center rounded-md border-[1.5px] transition-all duration-150 before:absolute before:-inset-2.5 before:content-[""]',
+        'group relative flex shrink-0 items-center justify-center rounded-md border-[1.5px] transition-[background-color,border-color] duration-150 before:absolute before:-inset-2.5 before:content-[""]',
         dim,
         checked ? 'border-transparent bg-accent text-surface' : 'border-subtle/70 bg-surface hover:border-ink',
       )}
