@@ -37,6 +37,8 @@ export default defineConfig(({ mode }) => {
         injectRegister: false,
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'icons/apple-touch-icon.png', 'logo-duck.png'],
         manifest: {
+          // Newer manifest members the plugin's types do not list yet.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           id: base,
           name: 'Plano',
           short_name: 'Plano',
@@ -49,6 +51,18 @@ export default defineConfig(({ mode }) => {
           start_url: base,
           scope: base,
           categories: ['productivity', 'lifestyle'],
+          display_override: ['standalone', 'minimal-ui'],
+          // «Поділитися → Plano»: the shared text lands in quick add (see ShareTarget).
+          share_target: { action: base, method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
+          // One window: opening Plano again focuses the running one.
+          launch_handler: { client_mode: ['focus-existing', 'auto'] },
+          screenshots: [
+            { src: 'screenshots/narrow-today.png', sizes: '720x1488', type: 'image/png', form_factor: 'narrow', label: 'Сьогодні: день, задачі й звички' },
+            { src: 'screenshots/narrow-tasks.png', sizes: '720x1488', type: 'image/png', form_factor: 'narrow', label: 'Задачі за датами' },
+            { src: 'screenshots/narrow-habits.png', sizes: '720x1488', type: 'image/png', form_factor: 'narrow', label: 'Звички й серії' },
+            { src: 'screenshots/wide-today.png', sizes: '1280x766', type: 'image/png', form_factor: 'wide', label: 'Сьогодні з боковою карткою' },
+            { src: 'screenshots/wide-tasks.png', sizes: '1280x766', type: 'image/png', form_factor: 'wide', label: 'Задачі' },
+          ],
           // Long-press on the app icon.
           shortcuts: [
             { name: 'Сьогодні', short_name: 'Сьогодні', url: `${base}#/today`, icons: [{ src: 'icons/icon-192.png', sizes: '192x192' }] },
@@ -68,7 +82,7 @@ export default defineConfig(({ mode }) => {
           // not served from a cache after sign-out.
           globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
           // iOS fetches launch screens itself when the app is added to the Home Screen.
-          globIgnores: ['splash/**'],
+          globIgnores: ['splash/**', 'screenshots/**'],
           navigateFallback: 'index.html',
           navigateFallbackDenylist: [/^\/__/],
           cleanupOutdatedCaches: true,

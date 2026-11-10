@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Info } from 'lucide-react';
 import { ReminderSync } from '@/features/reminders/ReminderSync';
 import { NotificationActions } from '@/features/reminders/NotificationActions';
+import { AppBadge } from '@/app/AppBadge';
+import { ShareTarget } from '@/app/ShareTarget';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
 import { MobileDrawer, MobileNav } from './MobileNav';
@@ -22,6 +24,8 @@ export function AppLayout() {
       <GoogleSyncProvider>
         <ReminderSync />
         <NotificationActions />
+        <AppBadge />
+        <ShareTarget />
         <LayoutInner />
       </GoogleSyncProvider>
     </UIProvider>

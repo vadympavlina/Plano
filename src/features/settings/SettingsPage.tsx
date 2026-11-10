@@ -5,6 +5,7 @@ import { Bell, Check, Database, Download, Monitor, Moon, Palette, Pencil, Plug, 
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge, Segmented } from '@/components/ui/misc';
+import { useInstall } from '@/lib/pwa/install';
 import { Field, Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { ColorPicker } from '@/components/ui/color-picker';
@@ -195,6 +196,32 @@ function ProfileCard() {
   );
 }
 
+/** Install the app: the browser's own prompt where it exists, otherwise how to do it by hand. */
+function InstallRow() {
+  const { state, install } = useInstall();
+  if (state === 'unsupported') return null;
+  return (
+    <Row
+      label="Застосунок на пристрої"
+      hint={
+        state === 'installed'
+          ? 'Plano встановлено: відкривається окремим вікном, працює без мережі.'
+          : state === 'ios'
+            ? 'У Safari: «Поділитися» → «На початковий екран». Так Plano відкривається як застосунок і працює без мережі.'
+            : 'Окреме вікно, іконка на екрані й робота без мережі.'
+      }
+      keywords="встановити pwa іконка екран додому застосунок"
+    >
+      {state === 'available' && (
+        <Button variant="outline" size="sm" onClick={() => void install()}>
+          <Download className="h-4 w-4" /> Встановити
+        </Button>
+      )}
+      {state === 'installed' && <Badge>Встановлено</Badge>}
+    </Row>
+  );
+}
+
 const ACCENTS: [AccentColor, string, string][] = [
   ['coral', 'Кораловий', '197 57 43'],
   ['blue', 'Синій', '60 102 208'],
@@ -294,6 +321,7 @@ function PreferencesSection() {
         </div>
       }
     >
+      <InstallRow />
       <Row label="Початок тижня" hint="Для календаря, звичок і тижневих підсумків.">
         <Segmented
           ariaLabel="Початок тижня"

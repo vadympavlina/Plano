@@ -20,6 +20,8 @@ export interface CapturePreset {
   endTime?: string;
   allDay?: boolean;
   kind?: CaptureKind;
+  /** Text to start with (a shared link, a dictated line). */
+  text?: string;
 }
 
 export interface CaptureChip {
@@ -44,7 +46,7 @@ export function useCapture(preset?: CapturePreset) {
   const createNote = useCreateNote();
   const settings = useSettings();
   const { categories, projects, tasks, events } = useCollections();
-  const [text, setText] = useState('');
+  const [text, setText] = useState(preset?.text ?? '');
   const [kindOverride, setKindOverride] = useState<CaptureKind>();
   const [dateOverride, setDateOverride] = useState<DateKey>();
   const [busy, setBusy] = useState(false);

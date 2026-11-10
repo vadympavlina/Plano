@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { AuthProvider, useAuth } from './providers/AuthProvider';
 import { DataProvider } from './providers/DataProvider';
 import { createAppRouter } from './router';
 import { ThemeController } from './ThemeController';
 import { PwaUpdater } from './PwaUpdater';
+import { prefetchChunks } from './prefetch';
 import { SyncFeedback } from './SyncFeedback';
 import { OfflineBanner } from './OfflineBanner';
 import { Toaster } from '@/components/ui/toast';
@@ -14,6 +15,7 @@ import { AccessDeniedScreen, AuthErrorScreen, LoginScreen, SetupScreen, SplashSc
 
 function SignedInApp() {
   const router = useMemo(() => createAppRouter(), []);
+  useEffect(() => prefetchChunks(), []);
   return (
     <>
       <ThemeController />

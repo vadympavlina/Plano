@@ -82,7 +82,7 @@ export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChan
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-black/60 backdrop-blur-[2px] enter-fade" />
+        <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-black/60 enter-fade" />
         <DialogPrimitive.Content
           ref={panel}
           {...drag}

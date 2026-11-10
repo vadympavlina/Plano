@@ -119,7 +119,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
   return (
     <DialogPrimitive.Root open onOpenChange={(o) => !o && onClose()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#0b0f17]/40 backdrop-blur-[2px] data-[state=open]:animate-fade-in" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-[#0b0f17]/40 data-[state=open]:animate-fade-in" />
         <DialogPrimitive.Content
           className="fixed left-1/2 top-[max(env(safe-area-inset-top),12px)] z-50 flex max-h-[min(560px,80dvh)] w-[calc(100%-24px)] max-w-xl -translate-x-1/2 flex-col overflow-hidden rounded-card border border-line bg-surface shadow-pop data-[state=open]:animate-scale-in sm:top-[12vh]"
           onKeyDown={(e) => {

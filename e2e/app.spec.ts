@@ -255,3 +255,22 @@ test('phone: a sheet that is still sliding in can be caught by a finger', async 
   await touch('touchEnd');
   await expect.poll(() => sheet.evaluate((e) => (e as HTMLElement).style.transition)).toBe('');
 });
+
+test('share target: shared text opens quick add with that text, and the address is cleaned', async ({ page }) => {
+  await start(page);
+  await page.goto('/?title=Ідея&text=Купити%20молоко%20завтра%20о%2010&url=https%3A%2F%2Fexample.com');
+  const field = page.getByRole('dialog').getByLabel('Назва для швидкого додавання');
+  await expect(field).toHaveValue(/Ідея Купити молоко завтра о 10 https:\/\/example\.com/);
+  expect(page.url()).not.toContain('text=');
+});
+
+test('pwa: the manifest declares install, share and shortcut metadata', async ({ request }) => {
+  const res = await request.get('/manifest.webmanifest');
+  expect(res.ok()).toBeTruthy();
+  const m = await res.json();
+  expect(m.display).toBe('standalone');
+  expect(m.share_target?.params?.text).toBe('text');
+  expect(m.shortcuts?.length).toBeGreaterThanOrEqual(3);
+  expect(m.icons.some((i: { purpose?: string }) => i.purpose === 'maskable')).toBe(true);
+  expect(m.screenshots.some((s: { form_factor?: string }) => s.form_factor === 'wide')).toBe(true);
+});

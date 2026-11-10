@@ -63,7 +63,7 @@ export function DialogContent({
   });
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-[#0b0f17]/40 backdrop-blur-[2px] enter-fade" />
+      <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-[#0b0f17]/40 enter-fade" />
       <DialogPrimitive.Content
         ref={sheet}
         onInteractOutside={block}
