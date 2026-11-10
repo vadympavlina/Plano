@@ -350,3 +350,76 @@ img:not([draggable='true']) {
     }
   }
 }
+
+/* Exits: shorter than entrances (the person has already decided). Radix keeps the node
+   mounted until this animation ends. A swipe-dismiss sets `animation: none` first, because
+   the element is already off screen. */
+@keyframes exit-fade {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes exit-sheet {
+  to {
+    translate: 0 100%;
+  }
+}
+@keyframes exit-drawer {
+  to {
+    translate: -100% 0;
+  }
+}
+@keyframes exit-side {
+  to {
+    translate: 100% 0;
+  }
+}
+@keyframes exit-pop {
+  to {
+    opacity: 0;
+    scale: 0.97;
+  }
+}
+.enter-fade[data-state='closed'] {
+  animation: exit-fade 200ms ease-in forwards;
+}
+.enter-sheet[data-state='closed'] {
+  animation: exit-sheet 260ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+.enter-drawer[data-state='closed'] {
+  animation: exit-drawer 240ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+.enter-side[data-state='closed'] {
+  animation: exit-sheet 260ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+.enter-dialog[data-state='closed'] {
+  animation: exit-sheet 260ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+@media (min-width: 768px) {
+  .enter-side[data-state='closed'] {
+    animation-name: exit-side;
+  }
+}
+@media (min-width: 640px) {
+  .enter-dialog[data-state='closed'] {
+    animation: exit-pop 140ms ease-in forwards;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .enter-sheet[data-state='closed'],
+  .enter-drawer[data-state='closed'],
+  .enter-side[data-state='closed'],
+  .enter-dialog[data-state='closed'] {
+    animation: exit-fade 100ms linear forwards !important;
+  }
+}
+
+/* Touch screens: fields are at least 16px, so iOS does not zoom the page on focus.
+   That lets pinch-zoom stay available (the viewport no longer forbids it). */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}

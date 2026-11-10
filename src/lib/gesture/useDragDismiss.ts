@@ -174,6 +174,9 @@ export function useDragDismiss(o: Options) {
           () => {
             // The element is about to unmount; the next one starts at rest.
             pos.current = 0;
+            // Already off screen: skip the exit animation.
+            if (target.current) target.current.style.animation = 'none';
+            if (opts.current.overlay?.current) opts.current.overlay.current.style.animation = 'none';
             onDismiss();
           },
           false,

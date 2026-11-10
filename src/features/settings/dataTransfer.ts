@@ -65,24 +65,23 @@ const importSchema = z.object({
 });
 
 /** Ukrainian messages for import validation errors. */
-const ukErrorMap: z.ZodErrorMap = (issue, ctx) => {
+const ukError = (issue: z.core.$ZodRawIssue): string | undefined => {
   switch (issue.code) {
-    case z.ZodIssueCode.invalid_type:
-      return { message: issue.received === 'undefined' ? 'Обов’язкове поле відсутнє' : `Неправильний тип: очікується ${issue.expected}` };
-    case z.ZodIssueCode.invalid_enum_value:
-      return { message: `Недопустиме значення (дозволено: ${issue.options.join(', ')})` };
-    case z.ZodIssueCode.invalid_literal:
-      return { message: 'Це не файл експорту Plano' };
-    case z.ZodIssueCode.unrecognized_keys:
-      return { message: `Невідомі поля: ${issue.keys.join(', ')}` };
-    case z.ZodIssueCode.too_small:
-      return { message: 'Значення закоротке або замале' };
-    case z.ZodIssueCode.too_big:
-      return { message: 'Значення задовге або завелике' };
-    case z.ZodIssueCode.invalid_string:
-      return { message: 'Неправильний формат рядка' };
+    case 'invalid_type':
+      return issue.input === undefined ? 'Обов’язкове поле відсутнє' : `Неправильний тип: очікується ${issue.expected}`;
+    case 'invalid_value':
+      // The `format` marker is a literal; every other value list is an enum.
+      return issue.path?.at(-1) === 'format' ? 'Це не файл експорту Plano' : `Недопустиме значення (дозволено: ${issue.values.join(', ')})`;
+    case 'unrecognized_keys':
+      return `Невідомі поля: ${issue.keys.join(', ')}`;
+    case 'too_small':
+      return 'Значення закоротке або замале';
+    case 'too_big':
+      return 'Значення задовге або завелике';
+    case 'invalid_format':
+      return 'Неправильний формат рядка';
     default:
-      return { message: ctx.defaultError };
+      return undefined;
   }
 };
 
@@ -100,7 +99,7 @@ export function validateImport(text: string): ImportResult {
   } catch {
     return { ok: false, errors: ['Файл не є коректним JSON.'] };
   }
-  const parsed = importSchema.safeParse(json, { errorMap: ukErrorMap });
+  const parsed = importSchema.safeParse(json, { error: ukError });
   if (!parsed.success) {
     return {
       ok: false,
