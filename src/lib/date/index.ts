@@ -17,6 +17,16 @@ export function toDateKey(date: Date): DateKey {
   return format(date, DATE_KEY_FORMAT);
 }
 
+/**
+ * The local calendar day of an ISO timestamp. (`iso.slice(0, 10)` is the UTC day: for someone a few
+ * hours ahead of UTC it is «yesterday» between midnight and the offset, and a task finished
+ * at 00:30 would not count as finished today.)
+ */
+export function isoToDateKey(iso: string): DateKey {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso.slice(0, 10) : toDateKey(d);
+}
+
 /** "yyyy-MM-dd" → local Date at midnight. */
 export function fromDateKey(key: DateKey): Date {
   const [y, m, d] = key.split('-').map(Number);

@@ -1,4 +1,4 @@
-import { addDaysKey } from '@/lib/date';
+import { addDaysKey, isoToDateKey } from '@/lib/date';
 import type { DateKey, Task, TaskStatus } from '@/types';
 import { compareTasks, isOpen, matchesSearch, taskDate } from './logic';
 
@@ -33,7 +33,7 @@ export function listFromParam(value: string | null): TaskListId {
   }
 }
 
-const completedOn = (t: Task): DateKey | undefined => t.completedAt?.slice(0, 10);
+const completedOn = (t: Task): DateKey | undefined => (t.completedAt ? isoToDateKey(t.completedAt) : undefined);
 
 /** Open tasks that belong to a list. */
 export function openInList(t: Task, list: TaskListId, today: DateKey): boolean {

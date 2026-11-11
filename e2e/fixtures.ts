@@ -97,7 +97,7 @@ export async function startSeeded(page: Page, theme: 'light' | 'dark' = 'light')
   await page.clock.setFixedTime(NOW);
   await page.goto('/');
   await page.getByRole('button', { name: 'Відкрити локальний перегляд' }).click();
-  await expect(page.getByText(/Доброго (ранку|дня|вечора|ночі)/)).toBeVisible();
+  await expect(page.getByText(/Добр(ого|ої) (ранку|дня|вечора|ночі)/)).toBeVisible();
   // The local backend writes its store a moment after the first render.
   await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('plano:preview:data') ?? '{}').users);
   const { theme: t, ...rest } = data(theme);
@@ -112,7 +112,7 @@ export async function startSeeded(page: Page, theme: 'light' | 'dark' = 'light')
     [rest, t] as const,
   );
   await page.reload();
-  await expect(page.getByText(/Доброго (ранку|дня|вечора|ночі)/)).toBeVisible();
+  await expect(page.getByText(/Добр(ого|ої) (ранку|дня|вечора|ночі)/)).toBeVisible();
 }
 
 /** Opens a route of the app and waits until its page content is in. */

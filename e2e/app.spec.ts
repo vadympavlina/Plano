@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 async function start(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Відкрити локальний перегляд' }).click();
-  await expect(page.getByText(/Доброго (ранку|дня|вечора|ночі)/)).toBeVisible();
+  await expect(page.getByText(/Добр(ого|ої) (ранку|дня|вечора|ночі)/)).toBeVisible();
 }
 
 test('task: quick add, find it in Tasks, tick it off', async ({ page }) => {
@@ -51,7 +51,7 @@ test('offline: the installed app still opens', async ({ page, context }) => {
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true);
   await page.reload();
-  await expect(page.getByText(/Доброго (ранку|дня|вечора|ночі)/)).toBeVisible();
+  await expect(page.getByText(/Добр(ого|ої) (ранку|дня|вечора|ночі)/)).toBeVisible();
 });
 
 test('app icon shortcut: «Нова задача» opens the task form', async ({ page }) => {

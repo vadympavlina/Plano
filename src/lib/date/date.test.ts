@@ -9,6 +9,7 @@ import {
   fromDateKey,
   greetingFor,
   isDateKey,
+  isoToDateKey,
   monthGrid,
   relativeDayLabel,
   roundUpTime,
@@ -41,6 +42,21 @@ describe('date keys', () => {
     // Europe DST starts on the last Sunday of March.
     expect(addDaysKey('2025-03-29', 2)).toBe('2025-03-31');
     expect(diffDaysKey('2025-10-27', '2025-10-25')).toBe(2);
+  });
+});
+
+describe('isoToDateKey', () => {
+  it('is the local day of a timestamp, not the UTC one', () => {
+    // 00:30 local on 10 Nov: in UTC that is the 9th for anyone east of Greenwich, and the same ISO string
+    // sliced to 10 characters would give the wrong day.
+    const local = new Date(2026, 10, 10, 0, 30);
+    expect(isoToDateKey(local.toISOString())).toBe('2026-11-10');
+    const lateEvening = new Date(2026, 10, 10, 23, 45);
+    expect(isoToDateKey(lateEvening.toISOString())).toBe('2026-11-10');
+  });
+  it('falls back to the leading date of something that is not a timestamp', () => {
+    expect(isoToDateKey('2026-11-10')).toBe('2026-11-10');
+    expect(isoToDateKey('not a date')).toBe('not a date');
   });
 });
 

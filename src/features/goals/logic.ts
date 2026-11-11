@@ -1,4 +1,4 @@
-import { diffDaysKey } from '@/lib/date';
+import { diffDaysKey, isoToDateKey } from '@/lib/date';
 import type { DateKey, Goal, GoalStatus } from '@/types';
 
 export const GOAL_STATUS_LABEL: Record<GoalStatus, string> = {
@@ -20,7 +20,7 @@ export function goalPace(goal: Goal, today: DateKey): Pace {
   if (goal.currentValue >= goal.targetValue) return 'done';
   if (!goal.targetDate) return 'no_deadline';
   if (today > goal.targetDate) return 'overdue';
-  const start = goal.startDate ?? goal.createdAt.slice(0, 10);
+  const start = goal.startDate ?? isoToDateKey(goal.createdAt);
   const total = diffDaysKey(goal.targetDate, start);
   if (total <= 0) return 'on_track';
   const elapsed = Math.max(0, diffDaysKey(today, start));
@@ -33,7 +33,7 @@ export function goalPace(goal: Goal, today: DateKey): Pace {
 /** Where the goal should be today on a straight line from start to deadline; undefined without a deadline. */
 export function expectedValue(goal: Goal, today: DateKey): number | undefined {
   if (!goal.targetDate) return undefined;
-  const start = goal.startDate ?? goal.createdAt.slice(0, 10);
+  const start = goal.startDate ?? isoToDateKey(goal.createdAt);
   const total = diffDaysKey(goal.targetDate, start);
   if (total <= 0) return goal.targetValue;
   const elapsed = Math.min(total, Math.max(0, diffDaysKey(today, start)));
