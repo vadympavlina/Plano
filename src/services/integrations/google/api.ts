@@ -104,8 +104,7 @@ export async function listEvents(
   return { events: out, nextSyncToken, incremental: !!syncToken };
 }
 
-export const insertEvent = (token: string, calendarId: string, body: GEventInput) =>
-  request<GEvent>(token, 'POST', `${cal(calendarId)}/events`, body);
+export const insertEvent = (token: string, calendarId: string, body: GEventInput) => request<GEvent>(token, 'POST', `${cal(calendarId)}/events`, body);
 
 export const getEvent = (token: string, calendarId: string, eventId: string) =>
   request<GEvent>(token, 'GET', `${cal(calendarId)}/events/${encodeURIComponent(eventId)}`);

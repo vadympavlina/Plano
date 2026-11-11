@@ -52,16 +52,14 @@ export function useActions() {
     // Google Calendar: changes are flagged here and sent by the sync engine.
     const gcal = () => dataRef.current.integrations.google_calendar;
     const gcalOn = () => gcal()?.status === 'connected';
-    const syncsToGoogle = (e: Pick<CalendarEvent, 'external' | 'source'>) =>
-      gcalOn() && (!!e.external || (e.source === 'plano' && !!gcal()?.targetCalendarId));
+    const syncsToGoogle = (e: Pick<CalendarEvent, 'external' | 'source'>) => gcalOn() && (!!e.external || (e.source === 'plano' && !!gcal()?.targetCalendarId));
     const updateEvent = (id: string, patch: Partial<CalendarEvent>) => {
       const current = dataRef.current.events[id];
       return repos.events.update(id, current && syncsToGoogle(current) ? { ...patch, syncPending: true } : patch);
     };
 
     const events = {
-      create: (input: NewEntity<CalendarEvent>) =>
-        repos.events.create(syncsToGoogle(input) ? { ...input, syncPending: true } : input),
+      create: (input: NewEntity<CalendarEvent>) => repos.events.create(syncsToGoogle(input) ? { ...input, syncPending: true } : input),
       update: updateEvent,
       remove(id: string) {
         const current = dataRef.current.events[id];
@@ -77,8 +75,7 @@ export function useActions() {
         return repos.events.remove(id);
       },
       /** Removes a single occurrence of a recurring series. */
-      removeOccurrence: (event: CalendarEvent, date: DateKey) =>
-        updateEvent(event.id, { exdates: [...new Set([...event.exdates, date])].sort() }),
+      removeOccurrence: (event: CalendarEvent, date: DateKey) => updateEvent(event.id, { exdates: [...new Set([...event.exdates, date])].sort() }),
       move: (event: CalendarEvent, date: DateKey, startTime?: TimeString, endTime?: TimeString) => {
         const patch: Partial<CalendarEvent> = { date };
         if (event.allDay && event.endDate) patch.endDate = addDaysKey(date, diffDaysKey(event.endDate, event.date));
@@ -121,7 +118,10 @@ export function useActions() {
       remove: (id: string) => repos.batch('Видалення звички', { [`habits/${id}`]: null, [`habitLogs/${id}`]: null }),
       setValue: (habitId: string, date: DateKey, value: number) => repos.habitLogs.set(habitId, date, value),
       setNote: (habitId: string, date: DateKey, text: string) =>
-        repos.batch('Нотатка до звички', { [`habits/${habitId}/dayNotes/${date}`]: text.trim().slice(0, 1000) || null, [`habits/${habitId}/updatedAt`]: nowIso() }),
+        repos.batch('Нотатка до звички', {
+          [`habits/${habitId}/dayNotes/${date}`]: text.trim().slice(0, 1000) || null,
+          [`habits/${habitId}/updatedAt`]: nowIso(),
+        }),
       pause: (habit: Habit, from: DateKey, to?: DateKey) =>
         repos.habits.update(habit.id, { pauses: [...(habit.pauses ?? []).filter((p) => p.to && p.to < from), { from, to }] }),
       /** Ends the current pause: it lasted until yesterday (or is dropped if it starts today or later). */

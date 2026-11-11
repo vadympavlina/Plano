@@ -54,7 +54,16 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
       <DialogContent title={goal ? 'Редагувати ціль' : 'Нова ціль'} preventDismiss={dirty} size="lg">
         <form onSubmit={onSubmit} noValidate className="space-y-4">
           <Field label="Ціль" error={visible.title}>
-            {(p) => <Input {...p} autoFocus maxLength={200} placeholder="напр. Прочитати 12 книжок цього року" value={draft.title} onChange={(e) => patch({ title: e.target.value })} />}
+            {(p) => (
+              <Input
+                {...p}
+                autoFocus
+                maxLength={200}
+                placeholder="напр. Прочитати 12 книжок цього року"
+                value={draft.title}
+                onChange={(e) => patch({ title: e.target.value })}
+              />
+            )}
           </Field>
           <Field label="Опис">
             {(p) => <Textarea {...p} rows={2} value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />}
@@ -71,11 +80,11 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
             </Field>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Дата початку">
-              {(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}
-            </Field>
+            <Field label="Дата початку">{(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}</Field>
             <Field label="Цільова дата" error={visible.targetDate}>
-              {(p) => <DatePicker {...p} placeholder="Без дедлайну" min={draft.startDate} value={draft.targetDate} onChange={(targetDate) => patch({ targetDate })} />}
+              {(p) => (
+                <DatePicker {...p} placeholder="Без дедлайну" min={draft.startDate} value={draft.targetDate} onChange={(targetDate) => patch({ targetDate })} />
+              )}
             </Field>
             <Field label="Категорія">
               {(p) => (
@@ -84,7 +93,12 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
             </Field>
             <Field label="Статус">
               {(p) => (
-                <Select {...p} value={draft.status} onChange={(status) => patch({ status })} options={GOAL_STATUSES.map((s) => ({ value: s, label: GOAL_STATUS_LABEL[s] }))} />
+                <Select
+                  {...p}
+                  value={draft.status}
+                  onChange={(status) => patch({ status })}
+                  options={GOAL_STATUSES.map((s) => ({ value: s, label: GOAL_STATUS_LABEL[s] }))}
+                />
               )}
             </Field>
           </div>
@@ -113,10 +127,18 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
               </div>
             </div>
           )}
-          {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}
+          {submitError && (
+            <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+              {submitError}
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={onClose} disabled={saving}>Скасувати</Button>
-            <Button type="submit" variant="dark" loading={saving}>{goal ? 'Зберегти зміни' : 'Створити ціль'}</Button>
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              Скасувати
+            </Button>
+            <Button type="submit" variant="dark" loading={saving}>
+              {goal ? 'Зберегти зміни' : 'Створити ціль'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -85,9 +85,7 @@ const ukError = (issue: z.core.$ZodRawIssue): string | undefined => {
   }
 };
 
-export type ImportResult =
-  | { ok: true; file: ExportFile; summary: Record<string, number> }
-  | { ok: false; errors: string[] };
+export type ImportResult = { ok: true; file: ExportFile; summary: Record<string, number> } | { ok: false; errors: string[] };
 
 const MAX_IMPORT_BYTES = 20 * 1024 * 1024;
 

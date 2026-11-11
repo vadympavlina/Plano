@@ -48,7 +48,11 @@ export default function ProjectPage() {
     const list = tasks.filter((t) => t.projectId === projectId);
     return {
       open: sortTasks(list.filter(isOpen), 'due'),
-      done: sortTasks(list.filter((t) => !isOpen(t)), 'due', 'completed'),
+      done: sortTasks(
+        list.filter((t) => !isOpen(t)),
+        'due',
+        'completed',
+      ),
       notes: notes.filter((n) => n.projectId === projectId).sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
       goals: goals.filter((g) => g.projectIds.includes(projectId)),
       events: upcomingOccurrences(
@@ -95,7 +99,7 @@ export default function ProjectPage() {
     try {
       await actions.projects.remove(project.id);
       toast.success('Проєкт видалено');
-      navigate('/projects');
+      void navigate('/projects');
     } catch {
       /* toast from sync layer */
     }
@@ -125,67 +129,82 @@ export default function ProjectPage() {
           </div>
         )}
         <div className="p-5 sm:p-6">
-        <div className="flex flex-wrap items-start gap-4">
-          <div className={cn(project.cover && '-mt-12 sm:-mt-14')}>
-            <LineIconPicker label="Іконка проєкту" value={project.icon} color={color} onChange={(icon) => void actions.projects.update(project.id, { icon }).catch(() => undefined)}>
-              <span
-                className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl', project.cover && 'h-16 w-16 bg-surface shadow-pop ring-1 ring-line/60')}
-                style={project.cover ? { color } : { backgroundColor: `${color}1f`, color }}
+          <div className="flex flex-wrap items-start gap-4">
+            <div className={cn(project.cover && '-mt-12 sm:-mt-14')}>
+              <LineIconPicker
+                label="Іконка проєкту"
+                value={project.icon}
+                color={color}
+                onChange={(icon) => void actions.projects.update(project.id, { icon }).catch(() => undefined)}
               >
-                <LineIcon icon={project.icon} fallback={FolderKanban} className={project.cover ? 'h-7 w-7' : 'h-6 w-6'} />
-              </span>
-            </LineIconPicker>
-          </div>
-          <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
-            <h1 className="truncate text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">{project.name}</h1>
-            <p className="mt-0.5 text-[13.5px] text-muted">
-              {project.startDate && `з ${formatDateKey(project.startDate, 'd MMMM')}`}
-              {project.startDate && project.targetDate && ' · '}
-              {project.targetDate && `до ${formatDateKey(project.targetDate, 'd MMMM yyyy')}`}
-              {hint && <span className={cn(' font-semibold', hint.tone === 'danger' ? 'text-danger' : hint.tone === 'warning' ? 'text-warning-ink' : '')}> · {hint.text}</span>}
-            </p>
-          </div>
-          <div className="flex w-full items-center gap-2 sm:w-auto">
-            <Select
-              variant="chip"
-              className="h-9 min-w-[7.5rem] flex-1 sm:flex-none"
-              aria-label="Статус проєкту"
-              value={project.status}
-              onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
-              options={projectStatusOptions}
-            />
-            {!project.cover && (
-              <CoverPicker label="Додати обкладинку" value={undefined} onChange={setCover}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-muted hover:text-ink" title="Обкладинка">
-                  <ImageIcon className="h-4 w-4" />
+                <span
+                  className={cn(
+                    'flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl',
+                    project.cover && 'h-16 w-16 bg-surface shadow-pop ring-1 ring-line/60',
+                  )}
+                  style={project.cover ? { color } : { backgroundColor: `${color}1f`, color }}
+                >
+                  <LineIcon icon={project.icon} fallback={FolderKanban} className={project.cover ? 'h-7 w-7' : 'h-6 w-6'} />
                 </span>
-              </CoverPicker>
-            )}
-            <Button variant="outline" size="sm" className="h-9 max-sm:w-9 max-sm:px-0" aria-label="Редагувати проєкт" onClick={() => setEditing(true)}>
-              <Pencil className="h-3.5 w-3.5" /> <span className="max-sm:hidden">Редагувати</span>
-            </Button>
-            <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Видалити проєкт" onClick={() => void remove()}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        {project.description && <p className="mt-4 max-w-3xl select-text whitespace-pre-wrap text-[14px] leading-relaxed text-muted">{project.description}</p>}
-
-        <div className="mt-5">
-          <div className="mb-1.5 flex items-baseline justify-between">
-            <span className="text-[13px] font-semibold">Прогрес</span>
-            <span className="text-[22px] font-bold tabular-nums">{prog.percent}%</span>
-          </div>
-          <Progress value={prog.percent} color={color} className="h-2.5" label="Прогрес проєкту" />
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {stats.map(([l, v, bad]) => (
-            <div key={l} className="rounded-2xl bg-surface px-4 py-3">
-              <p className="text-[12px] text-muted">{l}</p>
-              <p className={cn('mt-0.5 truncate text-[18px] font-bold tabular-nums', bad && 'text-danger')}>{v}</p>
+              </LineIconPicker>
             </div>
-          ))}
-        </div>
+            <div className="min-w-[calc(100%-4.5rem)] flex-1 sm:min-w-0">
+              <h1 className="truncate text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">{project.name}</h1>
+              <p className="mt-0.5 text-[13.5px] text-muted">
+                {project.startDate && `з ${formatDateKey(project.startDate, 'd MMMM')}`}
+                {project.startDate && project.targetDate && ' · '}
+                {project.targetDate && `до ${formatDateKey(project.targetDate, 'd MMMM yyyy')}`}
+                {hint && (
+                  <span className={cn(' font-semibold', hint.tone === 'danger' ? 'text-danger' : hint.tone === 'warning' ? 'text-warning-ink' : '')}>
+                    {' '}
+                    · {hint.text}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="flex w-full items-center gap-2 sm:w-auto">
+              <Select
+                variant="chip"
+                className="h-9 min-w-[7.5rem] flex-1 sm:flex-none"
+                aria-label="Статус проєкту"
+                value={project.status}
+                onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}
+                options={projectStatusOptions}
+              />
+              {!project.cover && (
+                <CoverPicker label="Додати обкладинку" value={undefined} onChange={setCover}>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface text-muted hover:text-ink" title="Обкладинка">
+                    <ImageIcon className="h-4 w-4" />
+                  </span>
+                </CoverPicker>
+              )}
+              <Button variant="outline" size="sm" className="h-9 max-sm:w-9 max-sm:px-0" aria-label="Редагувати проєкт" onClick={() => setEditing(true)}>
+                <Pencil className="h-3.5 w-3.5" /> <span className="max-sm:hidden">Редагувати</span>
+              </Button>
+              <Button variant="outline" size="icon" className="h-9 w-9" aria-label="Видалити проєкт" onClick={() => void remove()}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          {project.description && (
+            <p className="mt-4 max-w-3xl select-text whitespace-pre-wrap text-[14px] leading-relaxed text-muted">{project.description}</p>
+          )}
+
+          <div className="mt-5">
+            <div className="mb-1.5 flex items-baseline justify-between">
+              <span className="text-[13px] font-semibold">Прогрес</span>
+              <span className="text-[22px] font-bold tabular-nums">{prog.percent}%</span>
+            </div>
+            <Progress value={prog.percent} color={color} className="h-2.5" label="Прогрес проєкту" />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {stats.map(([l, v, bad]) => (
+              <div key={l} className="rounded-2xl bg-surface px-4 py-3">
+                <p className="text-[12px] text-muted">{l}</p>
+                <p className={cn('mt-0.5 truncate text-[18px] font-bold tabular-nums', bad && 'text-danger')}>{v}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -226,7 +245,12 @@ export default function ProjectPage() {
               )}
               {related.done.length > 0 && (
                 <>
-                  <button type="button" onClick={() => setShowDone((s) => !s)} className="mt-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted hover:text-ink" aria-expanded={showDone}>
+                  <button
+                    type="button"
+                    onClick={() => setShowDone((s) => !s)}
+                    className="mt-1 flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted hover:text-ink"
+                    aria-expanded={showDone}
+                  >
                     <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', !showDone && '-rotate-90')} />
                     Виконані ({related.done.length})
                   </button>
@@ -288,7 +312,12 @@ export default function ProjectPage() {
               <p className="text-[13px] text-muted">Подій у найближчі 60 днів немає.</p>
             ) : (
               related.events.map((o) => (
-                <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-surface-2">
+                <button
+                  key={o.key}
+                  type="button"
+                  onClick={() => openEvent(o.event.id, o.date)}
+                  className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-surface-2"
+                >
                   <CalendarDays className="h-4 w-4 shrink-0 text-muted" />
                   <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium">{o.event.title}</span>
                   <span className="shrink-0 text-xs text-muted">

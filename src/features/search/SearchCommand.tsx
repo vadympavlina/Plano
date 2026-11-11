@@ -42,7 +42,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
         group: 'Перейти',
         icon: <n.icon />,
         title: n.label,
-        run: go(() => navigate(n.to)),
+        run: go(() => void navigate(n.to)),
       }));
     }
     const out: Result[] = [];
@@ -78,7 +78,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
         title: e.title,
         subtitle: `${formatDateKey(e.date, 'EEEEEE, d MMM')}${e.startTime ? ` · ${e.startTime}` : ''}${e.recurrence ? ' · повторюється' : ''}`,
         run: go(() => {
-          navigate(`/calendar?date=${e.date}`);
+          void navigate(`/calendar?date=${e.date}`);
           openEvent(e.id, e.date);
         }),
       }),
@@ -86,7 +86,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
     take(
       projects,
       (p) => norm(p.name).includes(q) || norm(p.description).includes(q),
-      (p) => ({ id: `p-${p.id}`, group: 'Проєкти', icon: <FolderKanban />, title: p.name, run: go(() => navigate(`/projects/${p.id}`)) }),
+      (p) => ({ id: `p-${p.id}`, group: 'Проєкти', icon: <FolderKanban />, title: p.name, run: go(() => void navigate(`/projects/${p.id}`)) }),
     );
     take(
       notes,
@@ -97,18 +97,18 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
         icon: <NotebookPen />,
         title: n.title || 'Без назви',
         subtitle: markdownExcerpt(n.content, 70),
-        run: go(() => navigate(`/notes/${n.id}`)),
+        run: go(() => void navigate(`/notes/${n.id}`)),
       }),
     );
     take(
       goals,
       (g) => norm(g.title).includes(q),
-      (g) => ({ id: `g-${g.id}`, group: 'Цілі', icon: <Target />, title: g.title, run: go(() => navigate('/goals')) }),
+      (g) => ({ id: `g-${g.id}`, group: 'Цілі', icon: <Target />, title: g.title, run: go(() => void navigate('/goals')) }),
     );
     take(
       habits,
       (h) => norm(h.name).includes(q),
-      (h) => ({ id: `h-${h.id}`, group: 'Звички', icon: <Heart />, title: h.name, run: go(() => navigate('/habits')) }),
+      (h) => ({ id: `h-${h.id}`, group: 'Звички', icon: <Heart />, title: h.name, run: go(() => void navigate('/habits')) }),
     );
     return out;
   }, [query, tasks, events, projects, notes, goals, habits, navigate, openTask, openEvent, onClose]);
@@ -139,7 +139,8 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
           <DialogPrimitive.Description className="sr-only">Пошук задач, подій, проєктів, нотаток, цілей і звичок</DialogPrimitive.Description>
           <div className="flex items-center gap-3 border-b border-line px-4">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
-            <input autoComplete="off"
+            <input
+              autoComplete="off"
               autoFocus
               value={query}
               onChange={(e) => {

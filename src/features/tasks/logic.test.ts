@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '@/types';
-import {
-  dayProgress,
-  filterTasks,
-  groupTasks,
-  nextRecurringInstance,
-  recurringInstanceId,
-  sortTasks,
-  weekProgress,
-} from './logic';
+import { dayProgress, filterTasks, groupTasks, nextRecurringInstance, recurringInstanceId, sortTasks, weekProgress } from './logic';
 
 const T0 = '2025-04-01T10:00:00.000Z';
 function task(p: Partial<Task> & { id: string }): Task {
@@ -56,10 +48,7 @@ describe('sorting and grouping', () => {
     expect(sortTasks(filterTasks(tasks, 'all', today), 'priority')[0].id).toBe('d');
   });
   it('groups by category with uncategorised last', () => {
-    const groups = groupTasks(
-      [task({ id: '1' }), task({ id: '2', categoryId: 'work' }), task({ id: '3', categoryId: 'work' })],
-      'category',
-    );
+    const groups = groupTasks([task({ id: '1' }), task({ id: '2', categoryId: 'work' }), task({ id: '3', categoryId: 'work' })], 'category');
     expect(groups.map((g) => [g.key, g.tasks.length])).toEqual([
       ['work', 2],
       ['none', 1],

@@ -72,7 +72,10 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                   role="radio"
                   aria-checked={on}
                   onClick={() => patch(k === 'bad' ? { kind: 'bad', schedule: [0, 1, 2, 3, 4, 5, 6] } : { kind: undefined })}
-                  className={cn('rounded-xl border-2 px-3 py-2 text-left transition-colors', on ? (k === 'bad' ? 'border-danger/60 bg-danger/[0.06]' : 'border-ink bg-surface-2') : 'border-line')}
+                  className={cn(
+                    'rounded-xl border-2 px-3 py-2 text-left transition-colors',
+                    on ? (k === 'bad' ? 'border-danger/60 bg-danger/[0.06]' : 'border-ink bg-surface-2') : 'border-line',
+                  )}
                 >
                   <span className="block text-sm font-semibold">{t}</span>
                   <span className="block text-xs text-muted">{d}</span>
@@ -81,7 +84,16 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
             })}
           </div>
           <Field label="Назва" error={visible.name}>
-            {(p) => <Input {...p} autoFocus maxLength={120} placeholder={draft.kind === 'bad' ? 'напр. Курити, Солодке, Соцмережі' : 'напр. Прочитати 20 сторінок'} value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
+            {(p) => (
+              <Input
+                {...p}
+                autoFocus
+                maxLength={120}
+                placeholder={draft.kind === 'bad' ? 'напр. Курити, Солодке, Соцмережі' : 'напр. Прочитати 20 сторінок'}
+                value={draft.name}
+                onChange={(e) => patch({ name: e.target.value })}
+              />
+            )}
           </Field>
           <div>
             <p className="mb-1.5 text-[13px] font-medium">Іконка</p>
@@ -93,12 +105,22 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                   role="radio"
                   aria-checked={draft.icon === i}
                   onClick={() => patch({ icon: i })}
-                  className={cn('flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors', draft.icon === i ? 'bg-surface-2 ring-2 ring-ink/40' : 'hover:bg-surface-2')}
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg text-lg transition-colors',
+                    draft.icon === i ? 'bg-surface-2 ring-2 ring-ink/40' : 'hover:bg-surface-2',
+                  )}
                 >
                   {i}
                 </button>
               ))}
-              <Input aria-label="Своя іконка" className="h-9 w-16 text-center" maxLength={4} value={ICONS.includes(draft.icon) ? '' : draft.icon} placeholder="✨" onChange={(e) => e.target.value && patch({ icon: e.target.value })} />
+              <Input
+                aria-label="Своя іконка"
+                className="h-9 w-16 text-center"
+                maxLength={4}
+                value={ICONS.includes(draft.icon) ? '' : draft.icon}
+                placeholder="✨"
+                onChange={(e) => e.target.value && patch({ icon: e.target.value })}
+              />
             </div>
           </div>
           <div>
@@ -116,7 +138,10 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                     type="button"
                     aria-pressed={on}
                     onClick={() => patch({ schedule: on ? draft.schedule.filter((x) => x !== d) : [...draft.schedule, d].sort() })}
-                    className={cn('h-9 rounded-lg px-3 text-xs font-semibold transition-colors', on ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink')}
+                    className={cn(
+                      'h-9 rounded-lg px-3 text-xs font-semibold transition-colors',
+                      on ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink',
+                    )}
                   >
                     {DAY_NAMES[d]}
                   </button>
@@ -124,11 +149,29 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
               })}
             </div>
             <div className="mt-2 flex gap-2 text-xs">
-              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [0, 1, 2, 3, 4, 5, 6] })}>Щодня</button>
-              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [1, 2, 3, 4, 5] })}>Будні</button>
-              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [0, 6] })}>Вихідні</button>
+              <button
+                type="button"
+                className="font-medium text-muted underline underline-offset-2 hover:text-ink"
+                onClick={() => patch({ schedule: [0, 1, 2, 3, 4, 5, 6] })}
+              >
+                Щодня
+              </button>
+              <button
+                type="button"
+                className="font-medium text-muted underline underline-offset-2 hover:text-ink"
+                onClick={() => patch({ schedule: [1, 2, 3, 4, 5] })}
+              >
+                Будні
+              </button>
+              <button type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => patch({ schedule: [0, 6] })}>
+                Вихідні
+              </button>
             </div>
-            {visible.schedule && <p role="alert" className="mt-1.5 text-xs text-danger">{visible.schedule}</p>}
+            {visible.schedule && (
+              <p role="alert" className="mt-1.5 text-xs text-danger">
+                {visible.schedule}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={draft.kind === 'bad' ? 'Мета' : 'Тип цілі'}>
@@ -140,7 +183,10 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                       type="button"
                       aria-pressed={draft.goalType === t}
                       onClick={() => patch({ goalType: t, target: t === 'check' ? 1 : Math.max(2, draft.target) })}
-                      className={cn('h-10 flex-1 rounded-xl border text-sm font-medium', draft.goalType === t ? 'border-accent bg-surface-2' : 'border-line text-muted')}
+                      className={cn(
+                        'h-10 flex-1 rounded-xl border text-sm font-medium',
+                        draft.goalType === t ? 'border-accent bg-surface-2' : 'border-line text-muted',
+                      )}
                     >
                       {draft.kind === 'bad' ? (t === 'check' ? 'Відмовитись' : 'Обмежити') : t === 'check' ? 'Так / Ні' : 'Кількість'}
                     </button>
@@ -158,7 +204,14 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                 {(p) => <Stepper {...p} min={1} max={10000} value={draft.target} onChange={(target) => patch({ target })} />}
               </Field>
               <Field label="Одиниця">
-                {(p) => <Input {...p} placeholder={draft.kind === 'bad' ? 'сигарети, чашки…' : 'склянки, сторінки…'} value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
+                {(p) => (
+                  <Input
+                    {...p}
+                    placeholder={draft.kind === 'bad' ? 'сигарети, чашки…' : 'склянки, сторінки…'}
+                    value={draft.unit ?? ''}
+                    onChange={(e) => patch({ unit: e.target.value })}
+                  />
+                )}
               </Field>
             </div>
           )}
@@ -190,10 +243,18 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
               <p className="mt-1.5 text-xs text-muted">Прийде у вибраний час, якщо звичку ще не виконано. Потрібні сповіщення в налаштуваннях.</p>
             </div>
           )}
-          {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}
+          {submitError && (
+            <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+              {submitError}
+            </p>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={onClose} disabled={saving}>Скасувати</Button>
-            <Button type="submit" variant="dark" loading={saving}>{habit ? 'Зберегти зміни' : 'Створити звичку'}</Button>
+            <Button variant="outline" onClick={onClose} disabled={saving}>
+              Скасувати
+            </Button>
+            <Button type="submit" variant="dark" loading={saving}>
+              {habit ? 'Зберегти зміни' : 'Створити звичку'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

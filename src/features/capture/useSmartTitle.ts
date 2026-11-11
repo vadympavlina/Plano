@@ -65,7 +65,10 @@ export function useSmartTitle(title: string | undefined) {
       ...(tags.length && { tags: [...new Set([...draft.tags, ...tags])] }),
       ...(p.description && !draft.description && { description: p.description }),
       ...(p.subtasks && {
-        subtasks: [...draft.subtasks, ...p.subtasks.map((t, i) => ({ id: `st_${Date.now().toString(36)}${i}`, title: t, done: false, order: draft.subtasks.length + i }))],
+        subtasks: [
+          ...draft.subtasks,
+          ...p.subtasks.map((t, i) => ({ id: `st_${Date.now().toString(36)}${i}`, title: t, done: false, order: draft.subtasks.length + i })),
+        ],
       }),
     });
     const event = (draft: { description?: string }): Partial<CalendarEvent> => ({

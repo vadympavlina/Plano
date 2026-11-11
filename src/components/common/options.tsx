@@ -38,9 +38,7 @@ export function categoryOptions(categories: Category[], noneLabel = 'Без ка
 export function projectOptions(projects: Project[], current?: string, noneLabel = 'Без проєкту'): SelectOption<string>[] {
   return [
     { value: '', label: noneLabel, color: '#C3C8D3' },
-    ...projects
-      .filter((p) => p.status !== 'archived' || p.id === current)
-      .map((p) => ({ value: p.id, label: p.name, color: colorOf(p.color) })),
+    ...projects.filter((p) => p.status !== 'archived' || p.id === current).map((p) => ({ value: p.id, label: p.name, color: colorOf(p.color) })),
   ];
 }
 

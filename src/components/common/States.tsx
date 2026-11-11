@@ -22,7 +22,12 @@ export function EmptyState({
     <div className={cn('flex flex-col items-center justify-center text-center', compact ? 'px-4 py-8' : 'px-6 py-14', className)}>
       {/* The Plano duck, with the section's icon as a small badge. */}
       <div className={cn('relative', compact ? 'mb-3' : 'mb-4')}>
-        <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" aria-hidden className={cn('rounded-[22%] shadow-soft', compact ? 'h-12 w-12' : 'h-16 w-16')} />
+        <img
+          src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+          alt=""
+          aria-hidden
+          className={cn('rounded-[22%] shadow-soft', compact ? 'h-12 w-12' : 'h-16 w-16')}
+        />
         {icon && (
           <span className="absolute -bottom-1.5 -right-1.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-surface bg-surface-2 text-muted [&_svg]:h-3.5 [&_svg]:w-3.5">
             {icon}

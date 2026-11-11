@@ -53,12 +53,16 @@ export function NotificationActions() {
             () => undefined,
           );
       } else if (task && task.status !== 'completed') {
-        void actions.tasks.setDone(task, true).then(() => toast.success(`«${task.title}» виконано`), () => undefined);
+        void actions.tasks.setDone(task, true).then(
+          () => toast.success(`«${task.title}» виконано`),
+          () => undefined,
+        );
       } else if (habit) {
         const v = habitValue(data.habitLogs, habit.id, day);
         const next = habit.goalType === 'check' ? 1 : v + 1;
         void actions.habits.setValue(habit.id, day, next).then(
-          () => toast.success(habit.goalType === 'check' ? `${habit.icon} ${habit.name} — відмічено` : `${habit.icon} ${habit.name}: ${next} з ${habit.target}`),
+          () =>
+            toast.success(habit.goalType === 'check' ? `${habit.icon} ${habit.name} — відмічено` : `${habit.icon} ${habit.name}: ${next} з ${habit.target}`),
           () => undefined,
         );
       }

@@ -66,18 +66,48 @@
   }
 
   /* Accent colour (Settings → Вигляд); coral is the default above. Each one keeps 4.5:1 with white text on it. */
-  [data-accent='coral'] { --primary-bright: 255 100 86; --primary: 197 57 43; }
-  [data-accent='blue'] { --primary-bright: 102 145 255; --primary: 60 102 208; }
-  [data-accent='violet'] { --primary-bright: 162 134 255; --primary: 116 83 217; }
-  [data-accent='green'] { --primary-bright: 52 199 140; --primary: 17 124 84; }
-  [data-accent='orange'] { --primary-bright: 250 148 72; --primary: 169 86 22; }
-  [data-accent='pink'] { --primary-bright: 240 108 162; --primary: 186 58 113; }
-  .dark[data-accent='coral'] { --primary: 255 100 86; }
-  .dark[data-accent='blue'] { --primary: 102 145 255; }
-  .dark[data-accent='violet'] { --primary: 162 134 255; }
-  .dark[data-accent='green'] { --primary: 52 199 140; }
-  .dark[data-accent='orange'] { --primary: 250 148 72; }
-  .dark[data-accent='pink'] { --primary: 240 108 162; }
+  [data-accent='coral'] {
+    --primary-bright: 255 100 86;
+    --primary: 197 57 43;
+  }
+  [data-accent='blue'] {
+    --primary-bright: 102 145 255;
+    --primary: 60 102 208;
+  }
+  [data-accent='violet'] {
+    --primary-bright: 162 134 255;
+    --primary: 116 83 217;
+  }
+  [data-accent='green'] {
+    --primary-bright: 52 199 140;
+    --primary: 17 124 84;
+  }
+  [data-accent='orange'] {
+    --primary-bright: 250 148 72;
+    --primary: 169 86 22;
+  }
+  [data-accent='pink'] {
+    --primary-bright: 240 108 162;
+    --primary: 186 58 113;
+  }
+  .dark[data-accent='coral'] {
+    --primary: 255 100 86;
+  }
+  .dark[data-accent='blue'] {
+    --primary: 102 145 255;
+  }
+  .dark[data-accent='violet'] {
+    --primary: 162 134 255;
+  }
+  .dark[data-accent='green'] {
+    --primary: 52 199 140;
+  }
+  .dark[data-accent='orange'] {
+    --primary: 250 148 72;
+  }
+  .dark[data-accent='pink'] {
+    --primary: 240 108 162;
+  }
 
   html {
     -webkit-text-size-adjust: 100%;
@@ -106,7 +136,9 @@
     @apply ring-0 ring-offset-0;
   }
 
-  h1, h2, h3 {
+  h1,
+  h2,
+  h3 {
     text-wrap: balance;
   }
   p {
@@ -155,19 +187,45 @@
   .pr-safe {
     padding-right: env(safe-area-inset-right);
   }
-  .prose-note h1 { @apply mb-2 mt-4 text-xl font-semibold; }
-  .prose-note h2 { @apply mb-2 mt-4 text-lg font-semibold; }
-  .prose-note h3 { @apply mb-1 mt-3 text-base font-semibold; }
-  .prose-note p { @apply my-2 leading-relaxed; }
-  .prose-note ul { @apply my-2 list-disc pl-5; }
-  .prose-note ol { @apply my-2 list-decimal pl-5; }
-  .prose-note li { @apply my-0.5; }
-  .prose-note code { @apply rounded bg-surface-2 px-1 py-0.5 font-mono text-[0.85em]; }
-  .prose-note pre { @apply my-2 overflow-x-auto rounded-lg bg-surface-2 p-3 font-mono text-sm; }
-  .prose-note blockquote { @apply my-2 border-l-2 border-line pl-3 text-muted; }
-  .prose-note a { @apply text-primary underline underline-offset-2; }
-  .prose-note hr { @apply my-4 border-line; }
-  .prose-note .task-item { @apply list-none -ml-5 flex items-start gap-2.5; }
+  .prose-note h1 {
+    @apply mb-2 mt-4 text-xl font-semibold;
+  }
+  .prose-note h2 {
+    @apply mb-2 mt-4 text-lg font-semibold;
+  }
+  .prose-note h3 {
+    @apply mb-1 mt-3 text-base font-semibold;
+  }
+  .prose-note p {
+    @apply my-2 leading-relaxed;
+  }
+  .prose-note ul {
+    @apply my-2 list-disc pl-5;
+  }
+  .prose-note ol {
+    @apply my-2 list-decimal pl-5;
+  }
+  .prose-note li {
+    @apply my-0.5;
+  }
+  .prose-note code {
+    @apply rounded bg-surface-2 px-1 py-0.5 font-mono text-[0.85em];
+  }
+  .prose-note pre {
+    @apply my-2 overflow-x-auto rounded-lg bg-surface-2 p-3 font-mono text-sm;
+  }
+  .prose-note blockquote {
+    @apply my-2 border-l-2 border-line pl-3 text-muted;
+  }
+  .prose-note a {
+    @apply text-primary underline underline-offset-2;
+  }
+  .prose-note hr {
+    @apply my-4 border-line;
+  }
+  .prose-note .task-item {
+    @apply list-none -ml-5 flex items-start gap-2.5;
+  }
   .prose-note .task-item input {
     @apply mt-[3px] h-4 w-4 shrink-0 appearance-none rounded-[5px] border-[1.5px] border-subtle/70 bg-surface;
   }

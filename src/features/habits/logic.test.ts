@@ -52,7 +52,19 @@ describe('habits', () => {
 });
 
 describe('weekly rates and weekday insight', () => {
-  const habit = { id: 'h', name: 'h', icon: '•', color: 'blue', schedule: [0, 1, 2, 3, 4, 5, 6], startDate: '2026-09-01', goalType: 'check', target: 1, archived: false, createdAt: '', updatedAt: '' } as Habit;
+  const habit = {
+    id: 'h',
+    name: 'h',
+    icon: '•',
+    color: 'blue',
+    schedule: [0, 1, 2, 3, 4, 5, 6],
+    startDate: '2026-09-01',
+    goalType: 'check',
+    target: 1,
+    archived: false,
+    createdAt: '',
+    updatedAt: '',
+  } as Habit;
   // Done every day except Saturdays.
   const logs: HabitLogs = { h: {} };
   for (const d of eachDateKey('2026-09-01', '2026-10-14')) if (fromDateKey(d).getDay() !== 6) logs.h[d] = 1;

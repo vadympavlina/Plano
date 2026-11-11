@@ -116,11 +116,20 @@ export function describeSchedule(schedule: number[]): string {
   if (s.length === 5 && [1, 2, 3, 4, 5].every((d) => s.includes(d))) return 'Будні';
   if (s.length === 2 && s.includes(0) && s.includes(6)) return 'Вихідні';
   const names = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-  return [...s].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => names[d]).join(', ');
+  return [...s]
+    .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+    .map((d) => names[d])
+    .join(', ');
 }
 
 /** Completion rate per week for the last `weeks` weeks (oldest first); the current week is included. */
-export function weeklyRates(habit: Habit, logs: HabitLogs, today: DateKey, weekStartsOn: 0 | 1, weeks = 8): { start: DateKey; rate: number; scheduled: number }[] {
+export function weeklyRates(
+  habit: Habit,
+  logs: HabitLogs,
+  today: DateKey,
+  weekStartsOn: 0 | 1,
+  weeks = 8,
+): { start: DateKey; rate: number; scheduled: number }[] {
   const out: { start: DateKey; rate: number; scheduled: number }[] = [];
   const dow = fromDateKey(today).getDay();
   const thisWeekStart = addDaysKey(today, -((dow - weekStartsOn + 7) % 7));

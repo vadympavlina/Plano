@@ -109,13 +109,7 @@ export function taskMinutes(task: Task): { start: number; end: number } | null {
 }
 
 /** Events overlapping a proposed time slot on a date (for a gentle warning). */
-export function findConflicts(
-  events: CalendarEvent[],
-  date: DateKey,
-  start: string,
-  end: string,
-  ignoreId?: string,
-): CalendarEvent[] {
+export function findConflicts(events: CalendarEvent[], date: DateKey, start: string, end: string, ignoreId?: string): CalendarEvent[] {
   const s = timeToMinutes(start);
   const e = timeToMinutes(end);
   return expandEvents(events, date, date)
@@ -128,13 +122,7 @@ export function findConflicts(
 }
 
 /** Next upcoming occurrences from now. */
-export function upcomingOccurrences(
-  events: CalendarEvent[],
-  now: Date,
-  todayKey: DateKey,
-  days = 30,
-  limit = 5,
-): EventOccurrence[] {
+export function upcomingOccurrences(events: CalendarEvent[], now: Date, todayKey: DateKey, days = 30, limit = 5): EventOccurrence[] {
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   return expandEvents(events, todayKey, addDaysKey(todayKey, days))
     .filter((o) => {

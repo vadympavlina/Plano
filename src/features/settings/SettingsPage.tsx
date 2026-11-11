@@ -1,7 +1,26 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { CategoryIcon, LineIconPicker, categoryIcon } from '@/components/common/CategoryMark';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Bell, Check, Database, Download, Monitor, Moon, Palette, Pencil, Plug, Plus, Search, SlidersHorizontal, SmilePlus, Sun, Tags, Trash2, Upload, UserRound } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  Database,
+  Download,
+  Monitor,
+  Moon,
+  Palette,
+  Pencil,
+  Plug,
+  Plus,
+  Search,
+  SlidersHorizontal,
+  SmilePlus,
+  Sun,
+  Tags,
+  Trash2,
+  Upload,
+  UserRound,
+} from 'lucide-react';
 import { PageContainer } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Badge, Segmented } from '@/components/ui/misc';
@@ -148,7 +167,13 @@ function ProfileCard() {
             <span className="truncate">{user?.email ?? (backendKind === 'local' ? 'Локальний перегляд (без входу)' : '')}</span>
             {backendKind === 'firebase' && (
               <span className="inline-flex items-center gap-1.5">
-                · <span className={cn('h-1.5 w-1.5 rounded-full', sync.tone === 'success' ? 'bg-success' : sync.tone === 'danger' ? 'bg-danger' : sync.tone === 'warning' ? 'bg-warning' : 'bg-subtle')} />
+                ·{' '}
+                <span
+                  className={cn(
+                    'h-1.5 w-1.5 rounded-full',
+                    sync.tone === 'success' ? 'bg-success' : sync.tone === 'danger' ? 'bg-danger' : sync.tone === 'warning' ? 'bg-warning' : 'bg-subtle',
+                  )}
+                />
                 {sync.label}
               </span>
             )}
@@ -286,7 +311,10 @@ function AppearanceSection() {
               aria-label={label}
               title={label}
               onClick={() => void repos.settings.update({ accent: value }).catch(() => undefined)}
-              className={cn('flex h-8 w-8 items-center justify-center rounded-full ring-offset-2 ring-offset-surface transition-shadow', data.settings.accent === value ? 'ring-2 ring-ink' : 'hover:ring-2 hover:ring-line')}
+              className={cn(
+                'flex h-8 w-8 items-center justify-center rounded-full ring-offset-2 ring-offset-surface transition-shadow',
+                data.settings.accent === value ? 'ring-2 ring-ink' : 'hover:ring-2 hover:ring-line',
+              )}
               style={{ backgroundColor: `rgb(${rgb})` }}
             >
               {data.settings.accent === value && <Check className="h-4 w-4 text-white" />}
@@ -314,7 +342,14 @@ function PreferencesSection() {
           <button
             type="button"
             className="-my-2 py-2 font-medium text-muted hover:text-ink"
-            onClick={() => set({ weekStartsOn: DEFAULT_SETTINGS.weekStartsOn, timeFormat: DEFAULT_SETTINGS.timeFormat, dateFormat: DEFAULT_SETTINGS.dateFormat, defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView })}
+            onClick={() =>
+              set({
+                weekStartsOn: DEFAULT_SETTINGS.weekStartsOn,
+                timeFormat: DEFAULT_SETTINGS.timeFormat,
+                dateFormat: DEFAULT_SETTINGS.dateFormat,
+                defaultCalendarView: DEFAULT_SETTINGS.defaultCalendarView,
+              })
+            }
           >
             Скинути до стандартних
           </button>
@@ -350,7 +385,10 @@ function PreferencesSection() {
           className="w-[200px]"
           value={s.dateFormat}
           onChange={(dateFormat) => set({ dateFormat })}
-          options={(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => ({ value: f, label: formatDateKey(sample, f) }))}
+          options={(['d MMMM yyyy', 'd MMM yyyy', 'dd.MM.yyyy', 'MM/dd/yyyy', 'yyyy-MM-dd'] as const).map((f) => ({
+            value: f,
+            label: formatDateKey(sample, f),
+          }))}
         />
       </Row>
       <Row label="Календар відкривається" hint="На телефоні календар завжди відкривається на сьогоднішньому дні.">
@@ -385,17 +423,27 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
   return (
     <div className="flex items-center gap-3 px-5 py-2.5">
       <Popover>
-        <PopoverTrigger className="relative h-6 w-6 shrink-0 rounded-full before:absolute before:-inset-2.5 before:content-[''] ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line" style={{ backgroundColor: colorOf(category.color) }} aria-label={`Змінити колір «${category.name}»`} />
+        <PopoverTrigger
+          className="relative h-6 w-6 shrink-0 rounded-full before:absolute before:-inset-2.5 before:content-[''] ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-line"
+          style={{ backgroundColor: colorOf(category.color) }}
+          aria-label={`Змінити колір «${category.name}»`}
+        />
         <PopoverContent className="w-[220px]">
           <ColorPicker value={category.color} onChange={(color) => void actions.categories.update(category.id, { color }).catch(() => undefined)} />
         </PopoverContent>
       </Popover>
-      <LineIconPicker label={`Іконка «${category.name}»`} value={category.icon} color={colorOf(category.color)} onChange={(icon) => void actions.categories.update(category.id, { icon }).catch(() => undefined)}>
+      <LineIconPicker
+        label={`Іконка «${category.name}»`}
+        value={category.icon}
+        color={colorOf(category.color)}
+        onChange={(icon) => void actions.categories.update(category.id, { icon }).catch(() => undefined)}
+      >
         <span className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-surface-2" title="Іконка" style={{ color: colorOf(category.color) }}>
           {categoryIcon(category) ? <CategoryIcon category={category} className="h-[18px] w-[18px]" /> : <SmilePlus className="h-4 w-4 text-subtle" />}
         </span>
       </LineIconPicker>
-      <input autoComplete="off"
+      <input
+        autoComplete="off"
         className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-none hover:bg-surface-2 focus:bg-surface-2"
         aria-label="Назва категорії"
         value={name}
@@ -418,7 +466,11 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
             confirmLabel: 'Видалити',
             danger: true,
           });
-          if (ok) await actions.categories.remove(category.id).then(() => toast.success('Категорію видалено'), () => undefined);
+          if (ok)
+            await actions.categories.remove(category.id).then(
+              () => toast.success('Категорію видалено'),
+              () => undefined,
+            );
         }}
       >
         <Trash2 className="h-4 w-4" />
@@ -440,14 +492,23 @@ function CategoriesSection() {
     setName('');
   };
   return (
-    <Group id="categories" title="Категорії" description="Колір та іконка для задач, подій і цілей." keywords={`колір ${categories.map((c) => c.name).join(' ')}`}>
+    <Group
+      id="categories"
+      title="Категорії"
+      description="Колір та іконка для задач, подій і цілей."
+      keywords={`колір ${categories.map((c) => c.name).join(' ')}`}
+    >
       {categories
         .filter((c) => matches(q, c.name))
         .map((c) => (
           <CategoryRow
             key={c.id}
             category={c}
-            usage={tasks.filter((t) => t.categoryId === c.id).length + events.filter((e) => e.categoryId === c.id).length + goals.filter((g) => g.categoryId === c.id).length}
+            usage={
+              tasks.filter((t) => t.categoryId === c.id).length +
+              events.filter((e) => e.categoryId === c.id).length +
+              goals.filter((g) => g.categoryId === c.id).length
+            }
           />
         ))}
       <form
@@ -460,7 +521,8 @@ function CategoriesSection() {
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-subtle text-subtle">
           <Plus className="h-3.5 w-3.5" />
         </span>
-        <input autoComplete="off"
+        <input
+          autoComplete="off"
           className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] outline-none placeholder:text-subtle hover:bg-surface-2 focus:bg-surface-2"
           placeholder="Нова категорія"
           aria-label="Назва нової категорії"
@@ -497,9 +559,17 @@ function NotificationsSection() {
       setOn(pushEnabledHere());
     }
   };
-  const times = (label: string) => [{ value: '', label }, ...['06:00', '07:00', '08:00', '09:00', '10:00', '19:00', '20:00', '21:00', '22:00'].map((t) => ({ value: t, label: t }))];
+  const times = (label: string) => [
+    { value: '', label },
+    ...['06:00', '07:00', '08:00', '09:00', '10:00', '19:00', '20:00', '21:00', '22:00'].map((t) => ({ value: t, label: t })),
+  ];
   return (
-    <Group id="notifications" title="Сповіщення" keywords="сповіщення нагадування push пуш ранок звички" description="Нагадування приходять, навіть коли Plano закритий.">
+    <Group
+      id="notifications"
+      title="Сповіщення"
+      keywords="сповіщення нагадування push пуш ранок звички"
+      description="Нагадування приходять, навіть коли Plano закритий."
+    >
       <Row
         label="На цьому пристрої"
         hint={
@@ -521,7 +591,12 @@ function NotificationsSection() {
                 Перевірити
               </Button>
             )}
-            <Button variant={on ? 'outline' : 'dark'} size="sm" loading={busy} onClick={() => void run(on ? disablePush : enablePush, on ? undefined : 'Сповіщення увімкнено')}>
+            <Button
+              variant={on ? 'outline' : 'dark'}
+              size="sm"
+              loading={busy}
+              onClick={() => void run(on ? disablePush : enablePush, on ? undefined : 'Сповіщення увімкнено')}
+            >
               {on ? 'Вимкнути' : 'Увімкнути'}
             </Button>
           </div>
@@ -533,20 +608,45 @@ function NotificationsSection() {
           className="w-[170px]"
           value={String(s.remindEventsMin)}
           onChange={(v) => set({ remindEventsMin: Number(v) })}
-          options={[['0', 'Вимкнено'], ['5', 'За 5 хв'], ['10', 'За 10 хв'], ['15', 'За 15 хв'], ['30', 'За 30 хв'], ['60', 'За 1 год']].map(([value, label]) => ({ value, label }))}
+          options={[
+            ['0', 'Вимкнено'],
+            ['5', 'За 5 хв'],
+            ['10', 'За 10 хв'],
+            ['15', 'За 15 хв'],
+            ['30', 'За 30 хв'],
+            ['60', 'За 1 год'],
+          ].map(([value, label]) => ({ value, label }))}
         />
       </Row>
       <Row label="Задачі з часом" hint="У час початку задачі.">
         <Switch label="Нагадування про задачі" checked={s.remindTasks} onCheckedChange={(remindTasks) => set({ remindTasks })} />
       </Row>
       <Row label="Ранковий підсумок" hint="Скільки задач і подій сьогодні.">
-        <Select aria-label="Ранковий підсумок" className="w-[170px]" value={s.digestAt} onChange={(digestAt) => set({ digestAt })} options={times('Вимкнено')} />
+        <Select
+          aria-label="Ранковий підсумок"
+          className="w-[170px]"
+          value={s.digestAt}
+          onChange={(digestAt) => set({ digestAt })}
+          options={times('Вимкнено')}
+        />
       </Row>
       <Row label="Вечірній підсумок" hint="Скільки зроблено, і кнопка перенести решту на завтра.">
-        <Select aria-label="Вечірній підсумок" className="w-[170px]" value={s.eveningAt} onChange={(eveningAt) => set({ eveningAt })} options={times('Вимкнено')} />
+        <Select
+          aria-label="Вечірній підсумок"
+          className="w-[170px]"
+          value={s.eveningAt}
+          onChange={(eveningAt) => set({ eveningAt })}
+          options={times('Вимкнено')}
+        />
       </Row>
       <Row label="Звички" hint="Якщо щось ще не відмічено.">
-        <Select aria-label="Нагадування про звички" className="w-[170px]" value={s.habitsReminderAt} onChange={(habitsReminderAt) => set({ habitsReminderAt })} options={times('Вимкнено')} />
+        <Select
+          aria-label="Нагадування про звички"
+          className="w-[170px]"
+          value={s.habitsReminderAt}
+          onChange={(habitsReminderAt) => set({ habitsReminderAt })}
+          options={times('Вимкнено')}
+        />
       </Row>
     </Group>
   );
@@ -587,7 +687,10 @@ function DataSection() {
   useEffect(() => {
     if (!cloud) return;
     void listBackups().then(setBackups, () => setBackups([]));
-    void listErrors().then((r) => setErrorCount(r.errors.length), () => undefined);
+    void listErrors().then(
+      (r) => setErrorCount(r.errors.length),
+      () => undefined,
+    );
   }, [cloud]);
   const when = (iso: string) => new Date(iso).toLocaleString('uk-UA', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const run = async (fn: () => Promise<unknown>) => {
@@ -697,7 +800,11 @@ function DataSection() {
         </Row>
       )}
       {cloud && (
-        <Row label="Звіти про помилки" hint={errorCount ? `Збережено помилок: ${errorCount}. Скопіюйте й надішліть розробнику.` : 'Помилок не було.'} keywords="помилки журнал errors">
+        <Row
+          label="Звіти про помилки"
+          hint={errorCount ? `Збережено помилок: ${errorCount}. Скопіюйте й надішліть розробнику.` : 'Помилок не було.'}
+          keywords="помилки журнал errors"
+        >
           {!!errorCount && (
             <div className="flex gap-2">
               <Button
@@ -792,7 +899,9 @@ export default function SettingsPage() {
       const inCard = !!card && card.scrollHeight > card.clientHeight + 1 && getComputedStyle(card).overflowY !== 'visible';
       const viewTop = inCard ? card!.getBoundingClientRect().top : 0;
       const viewHeight = inCard ? card!.clientHeight : window.innerHeight;
-      const atBottom = inCard ? card!.scrollTop + card!.clientHeight >= card!.scrollHeight - 4 : window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      const atBottom = inCard
+        ? card!.scrollTop + card!.clientHeight >= card!.scrollHeight - 4
+        : window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
       // At the very bottom keep a picked section (e.g. "Дані"), otherwise follow the scroll position.
       if (atBottom && pick) return setActive(pick.id);
       picked.current = null;
@@ -812,7 +921,7 @@ export default function SettingsPage() {
   const go = (id: SectionId) => {
     setQuery('');
     if (id === section) document.getElementById(`settings-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    else navigate(`/settings/${id}`, { replace: true });
+    else void navigate(`/settings/${id}`, { replace: true });
   };
 
   return (
@@ -822,7 +931,8 @@ export default function SettingsPage() {
         <aside className="lg:sticky lg:top-0 lg:w-56 lg:shrink-0 lg:self-start">
           <label className="mb-3 flex h-10 items-center gap-2 rounded-full bg-surface-2 px-3.5 text-[13px] focus-within:ring-2 focus-within:ring-primary/20">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
-            <input autoComplete="off"
+            <input
+              autoComplete="off"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Знайти налаштування"

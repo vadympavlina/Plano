@@ -35,8 +35,7 @@ function validate(d: Draft): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!d.title.trim()) errors.title = 'Вкажіть назву задачі.';
   if (d.endTime && !d.startTime) errors.time = 'Вкажіть також час початку.';
-  if (d.startTime && d.endTime && timeToMinutes(d.endTime) <= timeToMinutes(d.startTime))
-    errors.time = 'Час завершення має бути пізніше за початок.';
+  if (d.startTime && d.endTime && timeToMinutes(d.endTime) <= timeToMinutes(d.startTime)) errors.time = 'Час завершення має бути пізніше за початок.';
   if ((d.startTime || d.recurrence) && !d.dueDate && !d.startDate) errors.dueDate = 'Оберіть дату для запланованої чи повторюваної задачі.';
   if (d.startDate && d.dueDate && d.startDate > d.dueDate) errors.startDate = 'Дата початку не може бути пізніше за термін.';
   return errors;
@@ -45,15 +44,7 @@ function validate(d: Draft): Record<string, string> {
 let subtaskSeq = 0;
 const newSubtaskId = () => `st_${Date.now().toString(36)}${(subtaskSeq++).toString(36)}`;
 
-export default function TaskFormDialog({
-  task,
-  defaults,
-  onClose,
-}: {
-  task?: Task;
-  defaults?: Partial<Task>;
-  onClose: () => void;
-}) {
+export default function TaskFormDialog({ task, defaults, onClose }: { task?: Task; defaults?: Partial<Task>; onClose: () => void }) {
   const { categories, projects, goals, tasks } = useCollections();
   const settings = useSettings();
   const actions = useActions();
@@ -83,7 +74,10 @@ export default function TaskFormDialog({
   const allTags = [...new Set(tasks.flatMap((t) => t.tags))];
 
   const requestClose = async () => {
-    if (!dirty || (await confirm({ title: 'Скасувати зміни?', description: 'Ваші зміни в задачі буде втрачено.', confirmLabel: 'Скасувати зміни', danger: true })))
+    if (
+      !dirty ||
+      (await confirm({ title: 'Скасувати зміни?', description: 'Ваші зміни в задачі буде втрачено.', confirmLabel: 'Скасувати зміни', danger: true }))
+    )
       onClose();
   };
 
@@ -117,9 +111,16 @@ export default function TaskFormDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
-      <DialogContent quietTitle title={task ? 'Редагувати задачу' : 'Нова задача'} size="lg" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
+      <DialogContent
+        quietTitle
+        title={task ? 'Редагувати задачу' : 'Нова задача'}
+        size="lg"
+        preventDismiss={dirty}
+        onDismissBlocked={() => void requestClose()}
+      >
         <form onSubmit={onSubmit} noValidate>
-          <input autoComplete="off"
+          <input
+            autoComplete="off"
             autoFocus
             aria-label="Назва"
             aria-invalid={visible.title ? true : undefined}
@@ -192,7 +193,11 @@ export default function TaskFormDialog({
               onChange={(priority) => patch({ priority })}
               options={priorityOptions}
             />
-            <ReminderSelect value={draft.remindMin} onChange={(remindMin) => patch({ remindMin })} fallback={settings.remindTasks && draft.startTime ? 'на початку' : 'вимкнено'} />
+            <ReminderSelect
+              value={draft.remindMin}
+              onChange={(remindMin) => patch({ remindMin })}
+              fallback={settings.remindTasks && draft.startTime ? 'на початку' : 'вимкнено'}
+            />
             <Select
               variant="chip"
               aria-label="Категорія"
@@ -212,9 +217,7 @@ export default function TaskFormDialog({
               options={projectOptions(projects, draft.projectId)}
             />
             <RepeatChip value={draft.recurrence} startDate={draft.dueDate ?? draft.startDate} onChange={(recurrence) => patch({ recurrence })} />
-            {task && (
-              <Select variant="chip" aria-label="Статус" value={draft.status} onChange={(status) => patch({ status })} options={statusOptions} />
-            )}
+            {task && <Select variant="chip" aria-label="Статус" value={draft.status} onChange={(status) => patch({ status })} options={statusOptions} />}
           </div>
 
           {firstError && (
@@ -234,7 +237,8 @@ export default function TaskFormDialog({
                       label={`Виконано: ${s.title}`}
                       onChange={() => patch({ subtasks: draft.subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)) })}
                     />
-                    <input autoComplete="off"
+                    <input
+                      autoComplete="off"
                       className={cn('min-w-0 flex-1 bg-transparent text-sm outline-none', s.done && 'text-subtle line-through')}
                       value={s.title}
                       aria-label={`Підзадача ${i + 1}`}
@@ -253,10 +257,16 @@ export default function TaskFormDialog({
               </ul>
             )}
             <div className="flex items-center gap-3 py-1.5">
-              <button type="button" aria-label="Додати підзадачу" onClick={() => (newSubtask.trim() ? addSubtask() : subtaskInput.current?.focus())} className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] text-subtle hover:text-ink">
+              <button
+                type="button"
+                aria-label="Додати підзадачу"
+                onClick={() => (newSubtask.trim() ? addSubtask() : subtaskInput.current?.focus())}
+                className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] text-subtle hover:text-ink"
+              >
                 <Plus className="h-4 w-4" />
               </button>
-              <input autoComplete="off"
+              <input
+                autoComplete="off"
                 ref={subtaskInput}
                 placeholder="Додати підзадачу"
                 value={newSubtask}
@@ -274,7 +284,11 @@ export default function TaskFormDialog({
           </section>
 
           {!showMore ? (
-            <button type="button" onClick={() => setShowMore(true)} className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink">
+            <button
+              type="button"
+              onClick={() => setShowMore(true)}
+              className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink"
+            >
               Дата початку, ціль, теги, нотатки
             </button>
           ) : (
@@ -297,11 +311,17 @@ export default function TaskFormDialog({
                   </Field>
                 )}
               </div>
-              <Field label="Теги">
-                {(p) => <TagInput id={p.id} value={draft.tags} suggestions={allTags} onChange={(tags) => patch({ tags })} />}
-              </Field>
+              <Field label="Теги">{(p) => <TagInput id={p.id} value={draft.tags} suggestions={allTags} onChange={(tags) => patch({ tags })} />}</Field>
               <Field label="Нотатки">
-                {(p) => <Textarea {...p} rows={3} placeholder="Посилання, контекст, думки…" value={draft.notes ?? ''} onChange={(e) => patch({ notes: e.target.value })} />}
+                {(p) => (
+                  <Textarea
+                    {...p}
+                    rows={3}
+                    placeholder="Посилання, контекст, думки…"
+                    value={draft.notes ?? ''}
+                    onChange={(e) => patch({ notes: e.target.value })}
+                  />
+                )}
               </Field>
             </div>
           )}

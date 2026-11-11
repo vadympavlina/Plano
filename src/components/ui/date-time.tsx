@@ -85,17 +85,17 @@ export function DatePicker({
   return (
     <PP.Root open={open} onOpenChange={setOpen}>
       <span className={cn('relative', variant === 'field' ? 'flex w-full' : 'inline-flex')}>
-      <PP.Trigger
-        type="button"
-        aria-haspopup="dialog"
-        disabled={disabled}
-        className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), value && clearable && 'pr-8', className)}
-        {...aria}
-      >
-        <span className="flex shrink-0 text-muted [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
-        <span className="min-w-0 flex-1 truncate">{value ? friendlyDate(value, today) : placeholder}</span>
-      </PP.Trigger>
-      {value && clearable && <ClearButton onClear={() => onChange(undefined)} label="Прибрати дату" />}
+        <PP.Trigger
+          type="button"
+          aria-haspopup="dialog"
+          disabled={disabled}
+          className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), value && clearable && 'pr-8', className)}
+          {...aria}
+        >
+          <span className="flex shrink-0 text-muted [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
+          <span className="min-w-0 flex-1 truncate">{value ? friendlyDate(value, today) : placeholder}</span>
+        </PP.Trigger>
+        {value && clearable && <ClearButton onClear={() => onChange(undefined)} label="Прибрати дату" />}
       </span>
       <PP.Portal>
         <PP.Content align="start" sideOffset={6} collisionPadding={12} className={cn(popoverPanel, 'w-[296px] p-3')}>
@@ -116,7 +116,11 @@ export function DatePicker({
                 </button>
               ))}
             {clearable && value && (
-              <button type="button" onClick={() => pick(undefined)} className="rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-muted hover:bg-surface-2">
+              <button
+                type="button"
+                onClick={() => pick(undefined)}
+                className="rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-muted hover:bg-surface-2"
+              >
                 Без дати
               </button>
             )}
@@ -182,17 +186,17 @@ export function TimePicker({
   return (
     <PP.Root open={open} onOpenChange={setOpen}>
       <span className={cn('relative', variant === 'field' ? 'flex w-full' : 'inline-flex')}>
-      <PP.Trigger
-        type="button"
-        aria-haspopup="dialog"
-        disabled={disabled}
-        className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), 'tabular-nums', value && clearable && 'pr-8', className)}
-        {...aria}
-      >
-        <Clock className="h-4 w-4 shrink-0 text-muted" />
-        <span className="min-w-0 flex-1 truncate">{value ? formatTime(value, timeFormat) : placeholder}</span>
-      </PP.Trigger>
-      {value && clearable && <ClearButton onClear={() => onChange(undefined)} label="Прибрати час" />}
+        <PP.Trigger
+          type="button"
+          aria-haspopup="dialog"
+          disabled={disabled}
+          className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), 'tabular-nums', value && clearable && 'pr-8', className)}
+          {...aria}
+        >
+          <Clock className="h-4 w-4 shrink-0 text-muted" />
+          <span className="min-w-0 flex-1 truncate">{value ? formatTime(value, timeFormat) : placeholder}</span>
+        </PP.Trigger>
+        {value && clearable && <ClearButton onClear={() => onChange(undefined)} label="Прибрати час" />}
       </span>
       <PP.Portal>
         <PP.Content align="start" sideOffset={6} collisionPadding={12} className={cn(popoverPanel, 'w-[200px] p-2')}>
@@ -205,7 +209,8 @@ export function TimePicker({
               if (parsed && !typedInvalid) pick(parsed);
             }}
           >
-            <input autoComplete="off"
+            <input
+              autoComplete="off"
               autoFocus
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -217,7 +222,11 @@ export function TimePicker({
             />
           </form>
           {parsed && !typedInvalid && (
-            <button type="button" onClick={() => pick(parsed)} className="mb-1 w-full rounded-lg bg-primary/10 px-2.5 py-2 text-left text-sm font-semibold text-primary">
+            <button
+              type="button"
+              onClick={() => pick(parsed)}
+              className="mb-1 w-full rounded-lg bg-primary/10 px-2.5 py-2 text-left text-sm font-semibold text-primary"
+            >
               {formatTime(parsed, timeFormat)}
             </button>
           )}

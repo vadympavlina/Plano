@@ -21,7 +21,6 @@ import { GOAL_STATUS_LABEL, expectedValue, goalPace, goalPercent, paceText, type
 import { cn } from '@/lib/utils/cn';
 import { GoalForm } from './GoalForm';
 
-
 function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) {
   const actions = useActions();
   const [value, setValue] = useState(String(goal.currentValue));
@@ -52,13 +51,19 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
               {(p) => <Stepper {...p} min={0} value={Number(value) || 0} onChange={(v) => setValue(String(v))} />}
             </Field>
           </div>
-          <p className="text-xs text-muted">Мета: {goal.targetValue} {goal.unit}</p>
+          <p className="text-xs text-muted">
+            Мета: {goal.targetValue} {goal.unit}
+          </p>
           <Field label="Нотатка (необов’язково)">
             {(p) => <Input {...p} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Що змінилося?" />}
           </Field>
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>Скасувати</Button>
-            <Button type="submit" variant="dark" loading={busy} disabled={invalid}>Зберегти</Button>
+            <Button variant="outline" onClick={onClose}>
+              Скасувати
+            </Button>
+            <Button type="submit" variant="dark" loading={busy} disabled={invalid}>
+              Зберегти
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -91,11 +96,27 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
   const daysLeft = goal.targetDate ? diffDaysKey(goal.targetDate, today) : null;
   const finished = goal.status !== 'active';
   const fmt = (n: number) => n.toLocaleString('uk-UA');
-  const deadlineTone = daysLeft == null || finished ? 'bg-surface text-muted' : daysLeft < 0 ? 'bg-danger/10 text-danger' : daysLeft <= 14 ? 'bg-warning/15 text-warning-ink' : 'bg-surface text-muted';
+  const deadlineTone =
+    daysLeft == null || finished
+      ? 'bg-surface text-muted'
+      : daysLeft < 0
+        ? 'bg-danger/10 text-danger'
+        : daysLeft <= 14
+          ? 'bg-warning/15 text-warning-ink'
+          : 'bg-surface text-muted';
 
   const remove = async () => {
-    const ok = await confirm({ title: 'Видалити ціль?', description: `«${goal.title}» та історію прогресу буде видалено.`, confirmLabel: 'Видалити', danger: true });
-    if (ok) await actions.goals.remove(goal.id).then(() => toast.success('Ціль видалено'), () => undefined);
+    const ok = await confirm({
+      title: 'Видалити ціль?',
+      description: `«${goal.title}» та історію прогресу буде видалено.`,
+      confirmLabel: 'Видалити',
+      danger: true,
+    });
+    if (ok)
+      await actions.goals.remove(goal.id).then(
+        () => toast.success('Ціль видалено'),
+        () => undefined,
+      );
   };
 
   return (
@@ -113,7 +134,9 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
         </Ring>
         <div className="min-w-0 flex-1">
           <h3 className="line-clamp-2 text-[16px] font-bold leading-snug tracking-tight">{goal.title}</h3>
-          <p className="mt-0.5 truncate text-[12.5px] text-muted">{projects.length ? `Проєкт ${projects.map((p) => p.name).join(', ')}` : (category?.name ?? 'Особиста ціль')}</p>
+          <p className="mt-0.5 truncate text-[12.5px] text-muted">
+            {projects.length ? `Проєкт ${projects.map((p) => p.name).join(', ')}` : (category?.name ?? 'Особиста ціль')}
+          </p>
           <p className="mt-1 text-[13px] text-muted">
             <b className="font-bold text-ink">{fmt(goal.currentValue)}</b> з {fmt(goal.targetValue)} {goal.unit}
           </p>
@@ -121,23 +144,44 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
         <ChevronDown className={cn('h-4 w-4 shrink-0 self-start text-subtle transition-transform', open && 'rotate-180')} aria-hidden />
       </div>
 
-      <div className="relative mt-4 h-2.5 rounded-full bg-surface" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={goal.title}>
+      <div
+        className="relative mt-4 h-2.5 rounded-full bg-surface"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={goal.title}
+      >
         <div className="h-full overflow-hidden rounded-full">
-          <div className="h-full w-full rounded-full transition-transform duration-500 motion-reduce:transition-none" style={{ transform: `translateX(${Math.min(100, pct) - 100}%)`, backgroundColor: color }} />
+          <div
+            className="h-full w-full rounded-full transition-transform duration-500 motion-reduce:transition-none"
+            style={{ transform: `translateX(${Math.min(100, pct) - 100}%)`, backgroundColor: color }}
+          />
         </div>
         {expectedPct != null && pace !== 'done' && (
-          <span className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded bg-ink/45" style={{ left: `${expectedPct}%` }} title={`Де треба бути сьогодні: ${fmt(Math.round(expected!))} ${goal.unit ?? ''}`} />
+          <span
+            className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded bg-ink/45"
+            style={{ left: `${expectedPct}%` }}
+            title={`Де треба бути сьогодні: ${fmt(Math.round(expected!))} ${goal.unit ?? ''}`}
+          />
         )}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', finished && goal.status !== 'completed' ? 'bg-surface text-muted' : PACE_PILL[pace])}>
+        <span
+          className={cn(
+            'rounded-full px-2.5 py-1 text-[11.5px] font-semibold',
+            finished && goal.status !== 'completed' ? 'bg-surface text-muted' : PACE_PILL[pace],
+          )}
+        >
           {finished && goal.status !== 'completed' ? GOAL_STATUS_LABEL[goal.status] : paceText(goal, today)}
         </span>
         {goal.targetDate && (
           <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', deadlineTone)}>
             {formatDateKey(goal.targetDate, goal.targetDate.slice(0, 4) === today.slice(0, 4) ? 'd MMM' : 'd MMM yyyy')}
-            {daysLeft != null && !finished && ` · ${daysLeft < 0 ? 'минув' : daysLeft === 0 ? 'сьогодні' : `${daysLeft} ${plural(daysLeft, ['день', 'дні', 'днів'])}`}`}
+            {daysLeft != null &&
+              !finished &&
+              ` · ${daysLeft < 0 ? 'минув' : daysLeft === 0 ? 'сьогодні' : `${daysLeft} ${plural(daysLeft, ['день', 'дні', 'днів'])}`}`}
           </span>
         )}
         {goal.status === 'active' && (
@@ -243,7 +287,11 @@ export default function GoalsPage() {
           onChange={setFilter}
           options={[
             { value: 'all' as Filter, label: 'Усі', count: goals.length },
-            ...GROUPS.filter((g) => g.key === 'active' || goals.some(g.match)).map((g) => ({ value: g.key as Filter, label: g.label, count: goals.filter(g.match).length })),
+            ...GROUPS.filter((g) => g.key === 'active' || goals.some(g.match)).map((g) => ({
+              value: g.key as Filter,
+              label: g.label,
+              count: goals.filter(g.match).length,
+            })),
           ]}
         />
       </div>

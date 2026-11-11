@@ -30,7 +30,9 @@ export default defineConfig(({ mode }) => {
         // Open the connection to the Realtime Database while the app JS is still loading.
         name: 'preconnect-database',
         transformIndexHtml: () =>
-          env.VITE_FIREBASE_DATABASE_URL ? [{ tag: 'link', attrs: { rel: 'preconnect', href: new URL(env.VITE_FIREBASE_DATABASE_URL).origin }, injectTo: 'head' }] : [],
+          env.VITE_FIREBASE_DATABASE_URL
+            ? [{ tag: 'link', attrs: { rel: 'preconnect', href: new URL(env.VITE_FIREBASE_DATABASE_URL).origin }, injectTo: 'head' }]
+            : [],
       },
       VitePWA({
         registerType: 'prompt',

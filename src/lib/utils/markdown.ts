@@ -3,12 +3,7 @@
 // back into markup, so user content can never inject scripts or attributes.
 
 export function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function safeUrl(url: string): string | null {
@@ -32,6 +27,8 @@ function inline(text: string): string {
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   s = s.replace(/(^|[^*])\*([^*\s][^*]*)\*/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
+  // NUL is the sentinel that marks a stashed code span: it cannot occur in the user's text.
+  // eslint-disable-next-line no-control-regex
   s = s.replace(/\u0000(\d+)\u0000/g, (_, i: string) => codes[Number(i)]);
   return s;
 }

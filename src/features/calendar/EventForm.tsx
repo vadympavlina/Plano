@@ -74,15 +74,7 @@ function Row({ icon, label, children }: { icon: ReactNode; label: string; childr
 const QUICK_DURATIONS = [30, 60, 90, 120];
 const bareInput = 'h-9 border-transparent bg-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0';
 
-export default function EventFormDialog({
-  event,
-  defaults,
-  onClose,
-}: {
-  event?: CalendarEvent;
-  defaults?: Partial<CalendarEvent>;
-  onClose: () => void;
-}) {
+export default function EventFormDialog({ event, defaults, onClose }: { event?: CalendarEvent; defaults?: Partial<CalendarEvent>; onClose: () => void }) {
   const { categories, projects, events } = useCollections();
   const settings = useSettings();
   const actions = useActions();
@@ -116,7 +108,10 @@ export default function EventFormDialog({
   }, [events, draft.allDay, draft.date, draft.startTime, draft.endTime, errors.time, event?.id]);
 
   const requestClose = async () => {
-    if (!dirty || (await confirm({ title: 'Скасувати зміни?', description: 'Ваші зміни в події буде втрачено.', confirmLabel: 'Скасувати зміни', danger: true })))
+    if (
+      !dirty ||
+      (await confirm({ title: 'Скасувати зміни?', description: 'Ваші зміни в події буде втрачено.', confirmLabel: 'Скасувати зміни', danger: true }))
+    )
       onClose();
   };
 
@@ -163,6 +158,8 @@ export default function EventFormDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
       <DialogContent quietTitle title={event ? 'Редагувати подію' : 'Нова подія'} size="md" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
+        {/* Ctrl/⌘+Enter submits from any field: a form-level shortcut, not an interactive form. */}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
         <form
           onSubmit={onSubmit}
           noValidate
@@ -191,7 +188,11 @@ export default function EventFormDialog({
               className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
-          {visible.title && <p role="alert" className="ml-6 mt-1 text-[13px] text-danger">{visible.title}</p>}
+          {visible.title && (
+            <p role="alert" className="ml-6 mt-1 text-[13px] text-danger">
+              {visible.title}
+            </p>
+          )}
           <div className="ml-6">
             <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
           </div>
@@ -241,9 +242,7 @@ export default function EventFormDialog({
                 <span className="text-muted">{allDaySpan}</span>
               ) : (
                 <>
-                  {!QUICK_DURATIONS.includes(duration) && (
-                    <span className="mr-1 tabular-nums text-muted">{duration > 0 ? formatDuration(duration) : '—'}</span>
-                  )}
+                  {!QUICK_DURATIONS.includes(duration) && <span className="mr-1 tabular-nums text-muted">{duration > 0 ? formatDuration(duration) : '—'}</span>}
                   {QUICK_DURATIONS.map((m) => (
                     <button
                       key={m}
@@ -273,10 +272,20 @@ export default function EventFormDialog({
                   <Repeat className="h-3.5 w-3.5" /> Повторення налаштовується в Google Calendar
                 </p>
               ) : (
-                <RepeatChip variant="ghost" className="-ml-2" value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
+                <RepeatChip
+                  variant="ghost"
+                  className="-ml-2"
+                  value={draft.recurrence}
+                  startDate={draft.date}
+                  onChange={(recurrence) => patch({ recurrence })}
+                />
               )}
             </div>
-            {timeError && <p role="alert" className="mt-2 text-[13px] text-danger">{timeError}</p>}
+            {timeError && (
+              <p role="alert" className="mt-2 text-[13px] text-danger">
+                {timeError}
+              </p>
+            )}
             {conflicts.length > 0 && (
               <p className="mt-2 flex items-start gap-2 text-[12.5px] text-muted">
                 <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-ink" />
@@ -329,13 +338,23 @@ export default function EventFormDialog({
                 options={projectOptions(projects, draft.projectId)}
               />
             )}
-            <ReminderSelect value={draft.remindMin} onChange={(remindMin) => patch({ remindMin })} fallback={draft.allDay ? 'вимкнено' : reminderLabel(settings.remindEventsMin)} />
+            <ReminderSelect
+              value={draft.remindMin}
+              onChange={(remindMin) => patch({ remindMin })}
+              fallback={draft.allDay ? 'вимкнено' : reminderLabel(settings.remindEventsMin)}
+            />
           </div>
 
           {/* Details */}
           <div className="mt-4 divide-y divide-line/70 rounded-2xl border border-line/80">
             <Row icon={<MapPin />} label="Місце">
-              <Input aria-label="Місце" placeholder="Місце" value={draft.location ?? ''} onChange={(e) => patch({ location: e.target.value })} className={bareInput} />
+              <Input
+                aria-label="Місце"
+                placeholder="Місце"
+                value={draft.location ?? ''}
+                onChange={(e) => patch({ location: e.target.value })}
+                className={bareInput}
+              />
             </Row>
             <Row icon={<Link2 />} label="Посилання">
               <Input
@@ -348,7 +367,11 @@ export default function EventFormDialog({
                 onChange={(e) => patch({ url: e.target.value })}
                 className={bareInput}
               />
-              {visible.url && <p role="alert" className="mb-1.5 text-[13px] text-danger">{visible.url}</p>}
+              {visible.url && (
+                <p role="alert" className="mb-1.5 text-[13px] text-danger">
+                  {visible.url}
+                </p>
+              )}
             </Row>
             <Row icon={<AlignLeft />} label="Опис">
               <Textarea

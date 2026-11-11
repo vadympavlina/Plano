@@ -24,7 +24,5 @@ const STARTER: [string, string, ColorKey, string][] = [
 
 /** Starter categories, written once on first sign-in. Fixed ids keep it idempotent. */
 export function starterCategories(now: string): Record<string, Category> {
-  return Object.fromEntries(
-    STARTER.map(([id, name, color, icon], order) => [id, { id, name, color, icon, order, createdAt: now, updatedAt: now }]),
-  );
+  return Object.fromEntries(STARTER.map(([id, name, color, icon], order) => [id, { id, name, color, icon, order, createdAt: now, updatedAt: now }]));
 }

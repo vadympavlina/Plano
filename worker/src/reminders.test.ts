@@ -7,7 +7,7 @@ function store() {
   const m = new Map<string, unknown>();
   return {
     m,
-    get: async <T,>(k: string) => m.get(k) as T | undefined,
+    get: async <T>(k: string) => m.get(k) as T | undefined,
     put: async (k: string, v: unknown) => void m.set(k, structuredClone(v)),
     delete: async (ks: string[]) => ks.filter((k) => m.delete(k)).length,
     setAlarm: async () => undefined,

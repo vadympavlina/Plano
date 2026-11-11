@@ -85,7 +85,9 @@ export default function DashboardPage() {
     const occ = expandEvents(events, day, day).sort(compareOccurrences);
     const dated = tasks.filter((t) => taskDate(t) === day && t.status !== 'cancelled');
     const open = dated.filter(isOpen).sort(compareTasks('due'));
-    const done = tasks.filter((t) => doneInList(t, 'today', day) && (taskDate(t) === day || day === today)).sort((a, b) => ((a.completedAt ?? a.updatedAt) < (b.completedAt ?? b.updatedAt) ? 1 : -1));
+    const done = tasks
+      .filter((t) => doneInList(t, 'today', day) && (taskDate(t) === day || day === today))
+      .sort((a, b) => ((a.completedAt ?? a.updatedAt) < (b.completedAt ?? b.updatedAt) ? 1 : -1));
     return { occ, open, done, habits: habits.filter((h) => !h.archived && isScheduled(h, day)) };
   }, [events, tasks, habits, day, today]);
 
@@ -106,7 +108,9 @@ export default function DashboardPage() {
     tapHabit(h, day);
     // A slip is easy to log by accident: offer a way back.
     if (next > before)
-      toast.info(`Записано зрив: ${h.name}`, { action: { label: 'Скасувати', onClick: () => void actions.habits.setValue(h.id, day, before).catch(() => undefined) } });
+      toast.info(`Записано зрив: ${h.name}`, {
+        action: { label: 'Скасувати', onClick: () => void actions.habits.setValue(h.id, day, before).catch(() => undefined) },
+      });
   };
   const badState = (h: Habit) => {
     const value = habitValue(data.habitLogs, h.id, day);
@@ -128,7 +132,11 @@ export default function DashboardPage() {
       key: o.key,
       at: o.event.allDay ? -2 : minutes(o.event.startTime),
       node: (
-        <button type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2/70">
+        <button
+          type="button"
+          onClick={() => openEvent(o.event.id, o.date)}
+          className="flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2/70"
+        >
           <span className="mx-[6.5px] mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: color }} />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[15.5px] font-medium leading-snug">{o.event.title}</span>
@@ -139,7 +147,14 @@ export default function DashboardPage() {
                   : `${formatTime(o.event.startTime, settings.timeFormat)}${o.event.endTime ? ` – ${formatTime(o.event.endTime, settings.timeFormat)}` : ''}`}
               </span>
               {o.event.location && <span className="truncate">{o.event.location}</span>}
-              {cat && <span className="rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold" style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: inkOf(colorOf(cat.color)) }}>{cat.name}</span>}
+              {cat && (
+                <span
+                  className="rounded-md px-1.5 py-0.5 text-[11.5px] font-semibold"
+                  style={{ backgroundColor: tint(colorOf(cat.color), 0.12), color: inkOf(colorOf(cat.color)) }}
+                >
+                  {cat.name}
+                </span>
+              )}
             </span>
           </span>
         </button>
@@ -155,34 +170,41 @@ export default function DashboardPage() {
     const streak = currentStreak(h, data.habitLogs, today);
     const color = colorOf(h.color);
     habitRows.push(
-      (
-        <button
-          type="button"
-          onClick={() => tapHabit(h, day)}
-          aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
-          className="flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2/70"
+      <button
+        type="button"
+        onClick={() => tapHabit(h, day)}
+        aria-label={`${h.name}: ${h.goalType === 'count' ? `${value} з ${h.target}` : done ? 'виконано' : 'не виконано'}`}
+        className="flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2/70"
+      >
+        <span
+          className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-lg text-[13px]"
+          style={{ backgroundColor: tint(color, done ? 0.28 : 0.14) }}
         >
-          <span className="relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-lg text-[13px]" style={{ backgroundColor: tint(color, done ? 0.28 : 0.14) }}>
-            {done ? <Check className="h-3.5 w-3.5 stroke-[3.2]" style={{ color }} /> : h.icon}
+          {done ? <Check className="h-3.5 w-3.5 stroke-[3.2]" style={{ color }} /> : h.icon}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className={cn('block truncate text-[15.5px] font-medium leading-snug', done && 'text-muted line-through')}>
+            {h.name}
+            {h.goalType === 'count' && (
+              <span className="ml-2 text-[13px] font-normal text-muted">
+                {value} з {h.target}
+                {h.unit ? ` ${h.unit}` : ''}
+              </span>
+            )}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className={cn('block truncate text-[15.5px] font-medium leading-snug', done && 'text-muted line-through')}>
-              {h.name}
-              {h.goalType === 'count' && <span className="ml-2 text-[13px] font-normal text-muted">{value} з {h.target}{h.unit ? ` ${h.unit}` : ''}</span>}
-            </span>
-            <span className="mt-1 flex items-center gap-2 text-[12px] text-muted">
-              <span className="inline-flex items-center gap-1"><Flame className="h-3.5 w-3.5" style={{ color: streak ? '#ff7a1a' : undefined }} />{streak ? `серія ${streak}` : 'звичка'}</span>
+          <span className="mt-1 flex items-center gap-2 text-[12px] text-muted">
+            <span className="inline-flex items-center gap-1">
+              <Flame className="h-3.5 w-3.5" style={{ color: streak ? '#ff7a1a' : undefined }} />
+              {streak ? `серія ${streak}` : 'звичка'}
             </span>
           </span>
-        </button>
-      ),
+        </span>
+      </button>,
     );
   }
   entries.sort((a, b) => a.at - b.at);
 
-  const nextUp = isToday
-    ? upcomingOccurrences(events, now, today, 1, 1).find((o) => o.date === today)
-    : undefined;
+  const nextUp = isToday ? upcomingOccurrences(events, now, today, 1, 1).find((o) => o.date === today) : undefined;
   const tomorrow = addDaysKey(today, 1);
   const dayLabel = isToday ? 'Сьогодні' : day === tomorrow ? 'Завтра' : day === addDaysKey(today, -1) ? 'Вчора' : formatDateKey(day, 'EEEE');
 
@@ -190,7 +212,12 @@ export default function DashboardPage() {
   const inbox = useMemo(() => {
     const open = tasks.filter(isOpen);
     return {
-      overdue: open.filter((t) => { const d = taskDate(t); return !!d && d < today; }).sort(compareTasks('due')),
+      overdue: open
+        .filter((t) => {
+          const d = taskDate(t);
+          return !!d && d < today;
+        })
+        .sort(compareTasks('due')),
       undated: open.filter((t) => !taskDate(t)).sort(compareTasks('due')),
       soon: upcomingOccurrences(events, now, today, 7, 6),
     };
@@ -223,19 +250,42 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5 pt-1">
-          <button type="button" onClick={goToday} disabled={isToday} className={cn('h-8 rounded-full bg-surface-2 px-3.5 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-60', isToday && 'max-sm:hidden')}>
+          <button
+            type="button"
+            onClick={goToday}
+            disabled={isToday}
+            className={cn(
+              'h-8 rounded-full bg-surface-2 px-3.5 text-[13px] font-semibold text-muted transition-colors hover:text-ink disabled:opacity-60',
+              isToday && 'max-sm:hidden',
+            )}
+          >
             Сьогодні
           </button>
-          <button type="button" aria-label="Попередній день" onClick={() => move(-1)} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink">
+          <button
+            type="button"
+            aria-label="Попередній день"
+            onClick={() => move(-1)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink"
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button type="button" aria-label="Наступний день" onClick={() => move(1)} className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink">
+          <button
+            type="button"
+            aria-label="Наступний день"
+            onClick={() => move(1)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-2 text-muted transition-colors hover:text-ink"
+          >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </header>
 
-      <div ref={stripRef} role="tablist" aria-label="Дні" className="no-scrollbar mt-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-2 px-2 pb-1">
+      <div
+        ref={stripRef}
+        role="tablist"
+        aria-label="Дні"
+        className="no-scrollbar mt-5 flex snap-x snap-mandatory gap-1.5 overflow-x-auto scroll-px-2 px-2 pb-1"
+      >
         {strip.map((d) => {
           const on = d === selected;
           const dot = d === today;
@@ -263,9 +313,7 @@ export default function DashboardPage() {
 
       <div className="mx-2 mt-4 flex flex-wrap items-center gap-x-2 gap-y-2 rounded-2xl bg-surface-2 px-4 py-3.5 text-[14.5px]">
         {empty ? (
-          <span className="text-muted">
-            {isToday ? `${salutation(now)}! ` : ''}Тут поки порожньо — додайте задачу або подію.
-          </span>
+          <span className="text-muted">{isToday ? `${salutation(now)}! ` : ''}Тут поки порожньо — додайте задачу або подію.</span>
         ) : (
           <>
             <span>{isToday ? `${salutation(now)}, сьогодні у вас` : past ? 'Цього дня було' : 'На цей день у вас'}</span>
@@ -315,7 +363,9 @@ export default function DashboardPage() {
         <section className="mt-4" aria-label="Звички">
           <h2 className="mb-1 flex items-baseline justify-between px-3 text-[12px] font-semibold text-muted">
             Звички
-            <span className="font-medium">{goodHabits.filter((h) => isDone(h, data.habitLogs, day)).length} з {goodHabits.length}</span>
+            <span className="font-medium">
+              {goodHabits.filter((h) => isDone(h, data.habitLogs, day)).length} з {goodHabits.length}
+            </span>
           </h2>
           {habitRows.map((r, i) => (
             <div key={goodHabits[i]!.id}>{r}</div>
@@ -327,7 +377,9 @@ export default function DashboardPage() {
         <section className="mx-2 mt-4 border-t border-line pt-4" aria-label="Кидаю">
           <h2 className="mb-2 flex items-baseline justify-between px-1 text-[12px] font-semibold text-muted">
             Кидаю
-            <span className="font-medium">{badHolding} з {badHabits.length} {plural(badHolding, ['тримається', 'тримаються', 'тримаються'])}</span>
+            <span className="font-medium">
+              {badHolding} з {badHabits.length} {plural(badHolding, ['тримається', 'тримаються', 'тримаються'])}
+            </span>
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {badHabits.map((h) => {
@@ -340,13 +392,24 @@ export default function DashboardPage() {
                   type="button"
                   onClick={() => tapBad(h)}
                   aria-label={`${h.name}: ${st.tone === 'slip' ? 'зрив' : st.label}. Натисніть, щоб записати зрив`}
-                  title={h.goalType === 'count' ? 'Натисніть, щоб додати ще один' : st.tone === 'slip' ? 'Натисніть, щоб прибрати зрив' : 'Натисніть, якщо не втримались'}
+                  title={
+                    h.goalType === 'count'
+                      ? 'Натисніть, щоб додати ще один'
+                      : st.tone === 'slip'
+                        ? 'Натисніть, щоб прибрати зрив'
+                        : 'Натисніть, якщо не втримались'
+                  }
                   className="flex items-center gap-3 rounded-2xl bg-surface-2 p-2.5 text-left transition-transform active:scale-[0.98]"
                 >
                   <span className={cn('relative flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] border-[2.5px] text-[17px]', tone.box)}>
                     {h.icon}
                     {badge != null && (
-                      <span className={cn('absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[11.5px] font-bold tabular-nums text-on-fill', tone.badge)}>
+                      <span
+                        className={cn(
+                          'absolute -bottom-1.5 -right-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full border-2 border-surface-2 px-1 text-[11.5px] font-bold tabular-nums text-on-fill',
+                          tone.badge,
+                        )}
+                      >
                         {badge}
                       </span>
                     )}
@@ -399,7 +462,12 @@ export default function DashboardPage() {
           <>
             {sec('Найближчі події')}
             {inbox.soon.map((o) => (
-              <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-surface-2/70">
+              <button
+                key={o.key}
+                type="button"
+                onClick={() => openEvent(o.event.id, o.date)}
+                className="flex w-full items-start gap-3 rounded-2xl px-3 py-2 text-left transition-colors hover:bg-surface-2/70"
+              >
                 <span className="mx-[6.5px] mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14.5px] font-medium">{o.event.title}</span>

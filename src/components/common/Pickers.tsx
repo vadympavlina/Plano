@@ -7,7 +7,17 @@ import { COLOR_KEYS, type ColorKey } from '@/types';
 /** Gradient used for note and project covers. */
 export const coverGradient = (c: ColorKey, strong = 0.3, soft = 0.12) => `linear-gradient(120deg, ${tint(colorOf(c), strong)}, ${tint(colorOf(c), soft)})`;
 
-export function CoverPicker({ value, onChange, children, label = 'Обкладинка' }: { value?: ColorKey; onChange: (v: ColorKey | undefined) => void; children?: ReactNode; label?: string }) {
+export function CoverPicker({
+  value,
+  onChange,
+  children,
+  label = 'Обкладинка',
+}: {
+  value?: ColorKey;
+  onChange: (v: ColorKey | undefined) => void;
+  children?: ReactNode;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>

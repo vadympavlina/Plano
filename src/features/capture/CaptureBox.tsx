@@ -1,5 +1,26 @@
 import { useRef, type FormEvent, type ReactNode } from 'react';
-import { AlignLeft, ArrowLeftRight, ArrowUp, Bell, HelpCircle, ListChecks, ListPlus, CalendarDays, CalendarPlus, CheckSquare, Clock, Flag, FolderKanban, Hash, Mic, NotebookPen, Plus, Repeat, Sun, X } from 'lucide-react';
+import {
+  AlignLeft,
+  ArrowLeftRight,
+  ArrowUp,
+  Bell,
+  HelpCircle,
+  ListChecks,
+  ListPlus,
+  CalendarDays,
+  CalendarPlus,
+  CheckSquare,
+  Clock,
+  Flag,
+  FolderKanban,
+  Hash,
+  Mic,
+  NotebookPen,
+  Plus,
+  Repeat,
+  Sun,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DatePicker } from '@/components/ui/date-time';
@@ -17,7 +38,17 @@ import { SmartField, type SmartFieldHandle } from './SmartField';
 import { useCapture, type CaptureChip, type CaptureKind, type CapturePreset } from './useCapture';
 
 const KIND_ICON = { task: CheckSquare, event: CalendarPlus, note: NotebookPen };
-const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = { date: CalendarDays, time: Clock, repeat: Repeat, priority: Flag, reminder: Bell, project: FolderKanban, tag: Hash, note: AlignLeft, subtasks: ListChecks };
+const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = {
+  date: CalendarDays,
+  time: Clock,
+  repeat: Repeat,
+  priority: Flag,
+  reminder: Bell,
+  project: FolderKanban,
+  tag: Hash,
+  note: AlignLeft,
+  subtasks: ListChecks,
+};
 const EXAMPLES: [string, string][] = [
   ['Коли', 'завтра, у пʼятницю, наступного вівторка, через 3 дні, 5 листопада, 25.10, до кінця тижня'],
   ['Час', 'о 15, о 9:30, о 7 вечора, ввечері, з 10 до 12, на годину, через 30 хв, цілий день'],
@@ -30,7 +61,10 @@ const EXAMPLES: [string, string][] = [
 function Help() {
   return (
     <Popover>
-      <PopoverTrigger className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-subtle hover:bg-surface-2 hover:text-ink" aria-label="Що можна писати">
+      <PopoverTrigger
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-subtle hover:bg-surface-2 hover:text-ink"
+        aria-label="Що можна писати"
+      >
         <HelpCircle className="h-4 w-4" />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[340px] p-3">
@@ -48,7 +82,8 @@ function Help() {
   );
 }
 
-const chip = 'inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-[12px] font-semibold transition-colors sm:h-8 sm:px-2.5 sm:text-[12.5px]';
+const chip =
+  'inline-flex h-7 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2 text-[12px] font-semibold transition-colors sm:h-8 sm:px-2.5 sm:text-[12.5px]';
 
 /**
  * The quick-capture box: a smart field that reads dates, times, repeats and
@@ -80,7 +115,20 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
           description: p.description,
         },
       });
-    else openTaskForm({ defaults: { title, dueDate: date, startTime: p.time, endTime: end, recurrence: p.recurrence, priority: p.priority, categoryId: category?.id, projectId: project?.id, description: p.description } });
+    else
+      openTaskForm({
+        defaults: {
+          title,
+          dueDate: date,
+          startTime: p.time,
+          endTime: end,
+          recurrence: p.recurrence,
+          priority: p.priority,
+          categoryId: category?.id,
+          projectId: project?.id,
+          description: p.description,
+        },
+      });
   };
   const wide = useMediaQuery('(min-width: 640px)');
   const field = useRef<SmartFieldHandle>(null);
@@ -121,7 +169,12 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
 
   // The first date is the picker chip; a range's end («по 30 жовт») stays a chip.
   // Card on phones: chips in one line that scrolls sideways; the sheet and wider screens wrap.
-  const rowCls = cn('flex items-center gap-1.5', sheet ? 'flex-wrap' : 'no-scrollbar -mr-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]');
+  const rowCls = cn(
+    'flex items-center gap-1.5',
+    sheet
+      ? 'flex-wrap'
+      : 'no-scrollbar -mr-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]',
+  );
   const chips = c.chips.filter((x) => x.type !== 'kind' && !(x.type === 'date' && !x.label.startsWith('по ')));
   const row = c.lines ? (
     <div className={rowCls}>
@@ -151,13 +204,24 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
         </DropdownMenu>
       )}
       {c.kind !== 'note' && (!empty || !sheet || hasPreset) && (
-        <DatePicker variant="chip" aria-label="Дата" placeholder="Дата" value={c.date} onChange={c.setDate} className="h-7 shrink-0 text-[12px] sm:h-8 sm:text-[12.5px]" />
+        <DatePicker
+          variant="chip"
+          aria-label="Дата"
+          placeholder="Дата"
+          value={c.date}
+          onChange={c.setDate}
+          className="h-7 shrink-0 text-[12px] sm:h-8 sm:text-[12.5px]"
+        />
       )}
       {chips.map((x) => {
         const I = CHIP_ICON[x.type];
         const color = x.category ? colorOf(x.category.color) : x.project ? colorOf(x.project.color) : undefined;
         return (
-          <span key={x.key} className={cn(chip, 'pr-1.5', color ? '' : 'bg-primary/10 text-primary')} style={color ? { backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)`, color: inkOf(color) } : undefined}>
+          <span
+            key={x.key}
+            className={cn(chip, 'pr-1.5', color ? '' : 'bg-primary/10 text-primary')}
+            style={color ? { backgroundColor: `color-mix(in srgb, ${color} 13%, transparent)`, color: inkOf(color) } : undefined}
+          >
             {x.category ? <CategoryIcon category={x.category} /> : I && <I className="h-3.5 w-3.5" />}
             <span className="max-w-[180px] truncate">{x.label}</span>
             {(x.spans.length > 0 || x.type === 'time' || x.type === 'date') && (
@@ -195,7 +259,12 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
       ].map(([I, label, words]) => {
         const Icon = I as typeof Sun;
         return (
-          <button key={label as string} type="button" onClick={() => append(words as string)} className={cn(chip, 'h-9 bg-surface-2 text-ink hover:bg-line/60')}>
+          <button
+            key={label as string}
+            type="button"
+            onClick={() => append(words as string)}
+            className={cn(chip, 'h-9 bg-surface-2 text-ink hover:bg-line/60')}
+          >
             <Icon className="h-3.5 w-3.5 text-muted" /> {label as string}
           </button>
         );
@@ -232,7 +301,17 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
       projects={c.projects}
       big={sheet}
       autoFocus={sheet}
-      placeholder={hasPreset ? (c.kind === 'event' ? 'Назва події' : 'Що додати?') : sheet ? 'Що додати?' : wide ? 'Додати… напр. «Зустріч завтра о 15 #робота»' : 'Що додати? «завтра о 15»'}
+      placeholder={
+        hasPreset
+          ? c.kind === 'event'
+            ? 'Назва події'
+            : 'Що додати?'
+          : sheet
+            ? 'Що додати?'
+            : wide
+              ? 'Додати… напр. «Зустріч завтра о 15 #робота»'
+              : 'Що додати? «завтра о 15»'
+      }
     />
   );
 
@@ -249,13 +328,20 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
               align="center"
               onPick={onDone}
               trigger={
-                <button type="button" className="ml-auto whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
+                <button
+                  type="button"
+                  className="ml-auto whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink"
+                >
                   Повна форма…
                 </button>
               }
             />
           ) : (
-            <button type="button" onClick={openFull} className="ml-auto whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink">
+            <button
+              type="button"
+              onClick={openFull}
+              className="ml-auto whitespace-nowrap rounded-full px-3 py-2 text-[13px] font-medium text-muted hover:bg-surface-2 hover:text-ink"
+            >
               Детальніше…
             </button>
           )}

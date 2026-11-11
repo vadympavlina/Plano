@@ -74,7 +74,11 @@ describe('Plano → Google', () => {
   });
   it('converts recurrence rules and excluded dates', () => {
     expect(
-      toRecurrence({ freq: 'weekly', interval: 2, byWeekday: [1, 3], until: '2026-12-31' }, { allDay: false, startTime: '09:30', exdates: ['2026-10-26'] }, 'Europe/Kyiv'),
+      toRecurrence(
+        { freq: 'weekly', interval: 2, byWeekday: [1, 3], until: '2026-12-31' },
+        { allDay: false, startTime: '09:30', exdates: ['2026-10-26'] },
+        'Europe/Kyiv',
+      ),
     ).toEqual(['RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE;UNTIL=20261231T235959Z', 'EXDATE;TZID=Europe/Kyiv:20261026T093000']);
     expect(toRecurrence({ freq: 'daily', interval: 1 }, { allDay: true, exdates: ['2026-10-21'] }, 'UTC')).toEqual([
       'RRULE:FREQ=DAILY',
@@ -137,7 +141,9 @@ describe('planPull', () => {
 
   it('skips events waiting to be deleted and drops calendars that were deselected', () => {
     const pendingKey = 'primary\u0000e1';
-    expect(planPull({ ...base, pendingDeleteKeys: new Set([pendingKey]), local: [], remote: [{ calendarId: 'primary', events: [g('e1')] }] }).upserts).toEqual([]);
+    expect(planPull({ ...base, pendingDeleteKeys: new Set([pendingKey]), local: [], remote: [{ calendarId: 'primary', events: [g('e1')] }] }).upserts).toEqual(
+      [],
+    );
     const [imported] = planPull({ ...base, local: [], remote: [{ calendarId: 'primary', events: [g('e1')] }] }).upserts;
     expect(planPull({ ...base, selected: [], local: [imported], remote: [] }).deletes).toEqual([imported.id]);
   });

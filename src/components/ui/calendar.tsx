@@ -41,7 +41,12 @@ export function MiniCalendar({
       <div className="mb-2 flex items-center justify-between">
         <p className="pl-1 text-sm font-semibold">{formatDateKey(month, 'LLLL yyyy')}</p>
         <div className="flex">
-          <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Попередній місяць" onClick={() => shift(-1)}>
+          <button
+            type="button"
+            className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink"
+            aria-label="Попередній місяць"
+            onClick={() => shift(-1)}
+          >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Наступний місяць" onClick={() => shift(1)}>

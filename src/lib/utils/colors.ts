@@ -21,7 +21,17 @@ export const COLORS: Record<ColorKey, ColorTokens> = {
  * Share of the colour kept when it is used as TEXT on its own 12% tint: the rest is the page's ink,
  * so the label stays readable (4.5:1) in both themes. Worked out per colour.
  */
-const INK_SHARE: Record<string, number> = { '#4778F5': 65, '#35B98A': 45, '#9275EF': 60, '#E8628F': 55, '#F0A54A': 40, '#2BB3C0': 50, '#D9B42B': 40, '#E5484D': 65, '#7B8497': 65 };
+const INK_SHARE: Record<string, number> = {
+  '#4778F5': 65,
+  '#35B98A': 45,
+  '#9275EF': 60,
+  '#E8628F': 55,
+  '#F0A54A': 40,
+  '#2BB3C0': 50,
+  '#D9B42B': 40,
+  '#E5484D': 65,
+  '#7B8497': 65,
+};
 
 /** The colour as readable text on a tint of itself; use for labels and chips, not for dots or icons. */
 export function inkOf(hex: string): string {
@@ -32,7 +42,15 @@ export function inkOf(hex: string): string {
 /** Black or white, whichever reads better on a solid fill of this colour (check marks, counters). */
 export function onColor(hex: string): string {
   const h = hex.replace('#', '');
-  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  const n = parseInt(
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h,
+    16,
+  );
   const lin = (v: number) => {
     v /= 255;
     return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
@@ -49,7 +67,15 @@ export function colorOf(key: ColorKey | undefined): string {
 /** Hex → rgba with alpha, for soft tinted backgrounds. */
 export function tint(hex: string, alpha: number): string {
   const h = hex.replace('#', '');
-  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  const n = parseInt(
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h,
+    16,
+  );
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 

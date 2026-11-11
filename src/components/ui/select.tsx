@@ -109,12 +109,13 @@ export function Select<T extends string>({
         {...aria}
       >
         {selected?.color && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: selected.color }} />}
-        {(selected?.icon ?? (!selected ? icon : null)) && (
-          <span className="flex shrink-0 text-muted [&_svg]:h-4 [&_svg]:w-4">{selected?.icon ?? icon}</span>
-        )}
+        {(selected?.icon ?? (!selected ? icon : null)) && <span className="flex shrink-0 text-muted [&_svg]:h-4 [&_svg]:w-4">{selected?.icon ?? icon}</span>}
         <span className="min-w-0 flex-1 truncate">{selected?.label ?? placeholder}</span>
         {variant !== 'ghost' && (
-          <ChevronDown className={cn('shrink-0 text-subtle transition-transform group-data-[state=open]:rotate-180', variant === 'chip' ? 'h-3.5 w-3.5' : 'h-4 w-4')} aria-hidden />
+          <ChevronDown
+            className={cn('shrink-0 text-subtle transition-transform group-data-[state=open]:rotate-180', variant === 'chip' ? 'h-3.5 w-3.5' : 'h-4 w-4')}
+            aria-hidden
+          />
         )}
       </PP.Trigger>
       <PP.Portal>
@@ -124,7 +125,10 @@ export function Select<T extends string>({
           collisionPadding={12}
           onOpenAutoFocus={(e) => {
             e.preventDefault();
-            const idx = Math.max(0, options.findIndex((o) => o.value === value));
+            const idx = Math.max(
+              0,
+              options.findIndex((o) => o.value === value),
+            );
             requestAnimationFrame(() => focusAt(idx));
           }}
           className={cn(popoverPanel, 'min-w-[var(--radix-popover-trigger-width)] max-w-[min(340px,calc(100vw-24px))]', contentClassName)}
@@ -132,6 +136,7 @@ export function Select<T extends string>({
           <div
             ref={listRef}
             role="listbox"
+            tabIndex={-1}
             aria-label={aria['aria-label']}
             onKeyDown={onListKey}
             className="scrollbar-thin max-h-[min(320px,50dvh)] overflow-y-auto"

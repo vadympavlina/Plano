@@ -16,7 +16,10 @@ export function OfflineBanner() {
   }, []);
   if (online) return null;
   return (
-    <div role="status" className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+8px)] z-[70] flex -translate-x-1/2 items-center gap-2 rounded-full bg-accent px-4 py-2 text-xs font-medium text-surface shadow-pop">
+    <div
+      role="status"
+      className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+8px)] z-[70] flex -translate-x-1/2 items-center gap-2 rounded-full bg-accent px-4 py-2 text-xs font-medium text-surface shadow-pop"
+    >
       <WifiOff className="h-3.5 w-3.5" />
       Немає мережі — показано збережену версію. Зміни синхронізуються після підключення.
     </div>

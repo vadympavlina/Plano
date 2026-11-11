@@ -85,14 +85,10 @@ export function LoginScreen() {
       <div className="card p-6">
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <Field label="Пошта">
-            {(p) => (
-              <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            )}
+            {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
           </Field>
           <Field label="Пароль">
-            {(p) => (
-              <Input {...p} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            )}
+            {(p) => <Input {...p} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />}
           </Field>
           <Button type="submit" variant="dark" className="w-full" loading={busy === 'email'} disabled={!!busy}>
             Увійти <ArrowRight className="h-4 w-4" />
@@ -125,15 +121,11 @@ export function AccessDeniedScreen({ email, uid }: { email: string | null; uid: 
           <ShieldAlert className="h-6 w-6" />
         </div>
         <h1 className="text-lg font-semibold">У цього акаунта немає доступу</h1>
-        <p className="mt-2 text-sm text-muted">
-          Ви увійшли як {email ?? 'цей акаунт'}, але його немає у списку дозволених (allowlist) цього Plano.
-        </p>
+        <p className="mt-2 text-sm text-muted">Ви увійшли як {email ?? 'цей акаунт'}, але його немає у списку дозволених (allowlist) цього Plano.</p>
         <div className="mt-4 rounded-xl bg-surface-2 p-3 text-left text-xs text-muted">
           <p className="mb-1 font-medium text-ink">Якщо це ваш акаунт</p>
           Додайте його у Firebase console → Realtime Database → Data:
-          <code className="mt-2 block break-all rounded-lg bg-surface p-2 font-mono text-[12px] text-ink">
-            allowlist/{uid}: true
-          </code>
+          <code className="mt-2 block break-all rounded-lg bg-surface p-2 font-mono text-[12px] text-ink">allowlist/{uid}: true</code>
         </div>
         <div className="mt-5 flex gap-2">
           <Button variant="outline" className="flex-1" onClick={() => void signOut()}>
@@ -162,8 +154,8 @@ export function SetupScreen() {
         </div>
         <h1 className="text-lg font-semibold">Підключіть Firebase, щоб почати</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Plano зберігає дані у вашому власному проєкті Firebase. Додайте налаштування веб-застосунку Firebase у змінні середовища й перезберіть проєкт.
-          Див. <span className="font-medium text-ink">README → Налаштування Firebase</span>.
+          Plano зберігає дані у вашому власному проєкті Firebase. Додайте налаштування веб-застосунку Firebase у змінні середовища й перезберіть проєкт. Див.{' '}
+          <span className="font-medium text-ink">README → Налаштування Firebase</span>.
         </p>
         {missingFirebaseKeys.length > 0 && (
           <div className="mt-4 rounded-xl bg-surface-2 p-3 text-xs text-muted">

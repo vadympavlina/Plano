@@ -184,7 +184,8 @@ export function GoogleCalendarSettings() {
           onClick={async () => {
             const ok = await confirm({
               title: 'Відключити Google Calendar?',
-              description: 'Події, імпортовані з Google, буде прибрано з Plano. Ваші події Plano залишаться, але більше не синхронізуватимуться. У самому Google Calendar нічого не зміниться.',
+              description:
+                'Події, імпортовані з Google, буде прибрано з Plano. Ваші події Plano залишаться, але більше не синхронізуватимуться. У самому Google Calendar нічого не зміниться.',
               confirmLabel: 'Відключити',
               danger: true,
             });
@@ -195,8 +196,8 @@ export function GoogleCalendarSettings() {
         </Button>
       </div>
       <p className="text-xs leading-relaxed text-subtle">
-        Синхронізація працює, поки Plano відкритий: одразу після змін і кожні 5 хвилин. Синхронізуються події від 60 днів тому до року вперед.
-        Токен доступу Google зберігається лише в цій вкладці браузера.
+        Синхронізація працює, поки Plano відкритий: одразу після змін і кожні 5 хвилин. Синхронізуються події від 60 днів тому до року вперед. Токен доступу
+        Google зберігається лише в цій вкладці браузера.
       </p>
     </div>
   );

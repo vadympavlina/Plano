@@ -14,15 +14,7 @@ import {
   storeToken,
 } from '@/services/integrations/google/auth';
 import { TokenServerError, exchangeCode, refreshAccess, revokeGrant, usesTokenServer } from '@/services/integrations/google/server';
-import {
-  GoogleApiError,
-  deleteEvent,
-  getEvent,
-  insertEvent,
-  listCalendars,
-  listEvents,
-  updateEvent,
-} from '@/services/integrations/google/api';
+import { GoogleApiError, deleteEvent, getEvent, insertEvent, listCalendars, listEvents, updateEvent } from '@/services/integrations/google/api';
 import { externalKey, googleIdForLocal, toGoogle } from '@/services/integrations/google/mapping';
 import { planPull } from '@/services/integrations/google/reconcile';
 import type { CalendarEvent, ExternalCalendarInfo, IntegrationState } from '@/types';
@@ -54,7 +46,14 @@ interface GoogleSyncValue {
 
 const Ctx = createContext<GoogleSyncValue | null>(null);
 
-function toInfo(c: { id: string; summary: string; summaryOverride?: string; backgroundColor?: string; primary?: boolean; accessRole: string }): ExternalCalendarInfo {
+function toInfo(c: {
+  id: string;
+  summary: string;
+  summaryOverride?: string;
+  backgroundColor?: string;
+  primary?: boolean;
+  accessRole: string;
+}): ExternalCalendarInfo {
   return {
     id: c.id,
     name: c.summaryOverride || c.summary,
@@ -173,7 +172,14 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
                 saved = await updateEvent(token, target, gid, body);
               } else throw err;
             }
-            const external = { provider: 'google' as const, calendarId: target, eventId: gid, etag: saved.etag, color: calById.get(target)?.color, lastSyncedAt: now };
+            const external = {
+              provider: 'google' as const,
+              calendarId: target,
+              eventId: gid,
+              etag: saved.etag,
+              color: calById.get(target)?.color,
+              lastSyncedAt: now,
+            };
             overrides.set(e.id, { ...e, syncPending: false, external });
             await repos.events.update(e.id, { syncPending: false, external });
           } else {
@@ -342,10 +348,13 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
     [repos],
   );
 
-  const setSelected = useCallback(async (calendarIds: string[]) => {
-    await writeState({ calendarIds });
-    void runSync();
-  }, [writeState, runSync]);
+  const setSelected = useCallback(
+    async (calendarIds: string[]) => {
+      await writeState({ calendarIds });
+      void runSync();
+    },
+    [writeState, runSync],
+  );
 
   const setTarget = useCallback((calendarId: string) => writeState({ targetCalendarId: calendarId }), [writeState]);
 
@@ -361,17 +370,18 @@ export function GoogleSyncProvider({ children }: { children: ReactNode }) {
     return n;
   }, [repos]);
 
-  const phase: GoogleSyncPhase = !isGoogleConfigured || backendKind !== 'firebase'
-    ? 'unavailable'
-    : !connected
-      ? 'off'
-      : !canSync
-        ? 'needs_auth'
-        : running
-          ? 'syncing'
-          : error
-            ? 'error'
-            : 'idle';
+  const phase: GoogleSyncPhase =
+    !isGoogleConfigured || backendKind !== 'firebase'
+      ? 'unavailable'
+      : !connected
+        ? 'off'
+        : !canSync
+          ? 'needs_auth'
+          : running
+            ? 'syncing'
+            : error
+              ? 'error'
+              : 'idle';
 
   const value = useMemo<GoogleSyncValue>(
     () => ({ phase, state, error, pending, connect, reauthorize, syncNow: runSync, disconnect, setSelected, setTarget, pushExisting }),

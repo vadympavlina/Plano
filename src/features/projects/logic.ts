@@ -21,7 +21,10 @@ export function projectProgress(project: Project, tasks: Task[], today: DateKey)
   const list = tasks.filter((t) => t.projectId === project.id && t.status !== 'cancelled');
   const done = list.filter((t) => t.status === 'completed').length;
   const open = list.filter((t) => t.status !== 'completed');
-  const deadlines = open.map((t) => t.dueDate).filter((d): d is DateKey => !!d).sort();
+  const deadlines = open
+    .map((t) => t.dueDate)
+    .filter((d): d is DateKey => !!d)
+    .sort();
   return {
     total: list.length,
     done,

@@ -5,7 +5,9 @@ import { encryptPayload, vapidPublicKey } from './push';
 const enc = new TextEncoder();
 async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, n: number) {
   const k = await crypto.subtle.importKey('raw', ikm as Uint8Array<ArrayBuffer>, 'HKDF', false, ['deriveBits']);
-  return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: salt as Uint8Array<ArrayBuffer>, info: info as Uint8Array<ArrayBuffer> }, k, n * 8));
+  return new Uint8Array(
+    await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: salt as Uint8Array<ArrayBuffer>, info: info as Uint8Array<ArrayBuffer> }, k, n * 8),
+  );
 }
 const cat = (...p: Uint8Array[]) => Uint8Array.from(p.flatMap((x) => [...x]));
 

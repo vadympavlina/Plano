@@ -21,7 +21,14 @@ async function signer() {
   return { sign, keys: async () => [jwk] };
 }
 
-const claims = (over: object = {}) => ({ aud: PROJECT, iss: `https://securetoken.google.com/${PROJECT}`, sub: 'user1', iat: NOW - 10, exp: NOW + 3000, ...over });
+const claims = (over: object = {}) => ({
+  aud: PROJECT,
+  iss: `https://securetoken.google.com/${PROJECT}`,
+  sub: 'user1',
+  iat: NOW - 10,
+  exp: NOW + 3000,
+  ...over,
+});
 
 describe('verifyFirebaseToken', () => {
   it('accepts a valid token and returns the uid', async () => {

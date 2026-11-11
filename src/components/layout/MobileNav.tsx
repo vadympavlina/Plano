@@ -92,7 +92,10 @@ export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChan
           <DialogPrimitive.Description className="sr-only">Розділи, проєкти та категорії</DialogPrimitive.Description>
           <div className="mb-3 flex h-11 items-center justify-between pl-2">
             <Logo tone="light" className="text-white" />
-            <DialogPrimitive.Close className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-active text-[#cfcfd4] hover:text-white" aria-label="Закрити меню">
+            <DialogPrimitive.Close
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-active text-[#cfcfd4] hover:text-white"
+              aria-label="Закрити меню"
+            >
               <X className="h-5 w-5" />
             </DialogPrimitive.Close>
           </div>

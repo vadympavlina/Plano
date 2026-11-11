@@ -56,7 +56,11 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
     return (
       <button
         type="button"
-        aria-label={done ? `«${habit.name}»: позначити зрив${habit.goalType === 'count' ? ` (${value} з ${habit.target})` : ''}` : `«${habit.name}»: ${habit.goalType === 'count' ? `додати ще (${value})` : 'скасувати зрив'}`}
+        aria-label={
+          done
+            ? `«${habit.name}»: позначити зрив${habit.goalType === 'count' ? ` (${value} з ${habit.target})` : ''}`
+            : `«${habit.name}»: ${habit.goalType === 'count' ? `додати ще (${value})` : 'скасувати зрив'}`
+        }
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();

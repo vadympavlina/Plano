@@ -74,16 +74,14 @@ export function MonthView({
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={() => setRange(null)}
-        style={{ gridTemplateRows: `repeat(${weeks}, minmax(84px, 1fr))` }}>
+        style={{ gridTemplateRows: `repeat(${weeks}, minmax(84px, 1fr))` }}
+      >
         {days.map((d, index) => {
           const inMonth = d.startsWith(month);
           const isToday = d === today;
           const evs = occurrencesOnDay(occurrences, d);
           const dayTasks = tasks.filter((t) => (t.dueDate ?? t.startDate) === d && t.status !== 'cancelled');
-          const items = [
-            ...evs.map((o) => ({ type: 'event' as const, o })),
-            ...dayTasks.map((t) => ({ type: 'task' as const, t })),
-          ];
+          const items = [...evs.map((o) => ({ type: 'event' as const, o })), ...dayTasks.map((t) => ({ type: 'task' as const, t }))];
           const extra = items.length - MAX_ITEMS;
           return (
             <div
@@ -110,14 +108,18 @@ export function MonthView({
                 </button>
               </div>
               {/* Phones: dots only */}
-              <button type="button" className="-mx-1 flex min-h-6 w-[calc(100%+0.5rem)] flex-wrap content-start gap-0.5 px-1 sm:hidden" onClick={() => onSelectDay(d)} aria-label={`Елементів: ${items.length}`}>
+              <button
+                type="button"
+                className="-mx-1 flex min-h-6 w-[calc(100%+0.5rem)] flex-wrap content-start gap-0.5 px-1 sm:hidden"
+                onClick={() => onSelectDay(d)}
+                aria-label={`Елементів: ${items.length}`}
+              >
                 {items.slice(0, 6).map((it, i) => (
                   <span
                     key={i}
                     className="h-1.5 w-1.5 rounded-full"
                     style={{
-                      backgroundColor:
-                        it.type === 'event' ? eventColor(it.o.event, categoryById) : 'rgb(var(--subtle))',
+                      backgroundColor: it.type === 'event' ? eventColor(it.o.event, categoryById) : 'rgb(var(--subtle))',
                     }}
                   />
                 ))}
@@ -134,7 +136,9 @@ export function MonthView({
                       {categoryIcon(categoryById(it.o.event.categoryId)) ? (
                         <CategoryIcon category={categoryById(it.o.event.categoryId)} className="h-3 w-3" color={eventColor(it.o.event, categoryById)} />
                       ) : (
-                        !it.o.event.allDay && <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: eventColor(it.o.event, categoryById) }} />
+                        !it.o.event.allDay && (
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: eventColor(it.o.event, categoryById) }} />
+                        )
                       )}
                       {!it.o.event.allDay && it.o.event.startTime && (
                         <span className="shrink-0 tabular-nums text-muted">{formatTime(it.o.event.startTime, settings.timeFormat)}</span>
@@ -146,11 +150,18 @@ export function MonthView({
                       key={it.t.id}
                       type="button"
                       onClick={() => openTask(it.t.id)}
-                      className={cn('flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[12px] font-medium text-ink', it.t.status === 'completed' && 'text-subtle line-through')}
+                      className={cn(
+                        'flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[12px] font-medium text-ink',
+                        it.t.status === 'completed' && 'text-subtle line-through',
+                      )}
                       title={`Задача: ${it.t.title}`}
                     >
                       <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />
-                      <CategoryIcon category={categoryById(it.t.categoryId)} className="h-3 w-3" color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} />
+                      <CategoryIcon
+                        category={categoryById(it.t.categoryId)}
+                        className="h-3 w-3"
+                        color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')}
+                      />
                       <span className="truncate">{it.t.title}</span>
                     </button>
                   ),

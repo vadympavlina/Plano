@@ -25,7 +25,11 @@ export function createFirebaseBackend(): Backend {
   return {
     kind: 'firebase',
     subscribe(path, cb, onError) {
-      return onValue(ref(db, path), (snap) => cb(snap.val()), (err) => onError(err));
+      return onValue(
+        ref(db, path),
+        (snap) => cb(snap.val()),
+        (err) => onError(err),
+      );
     },
     async get(path) {
       const snap = await get(ref(db, path));

@@ -69,7 +69,12 @@ export default function UpcomingPage() {
   const eventCard = (o: EventOccurrence) => {
     const cat = o.event.categoryId ? categoryById(o.event.categoryId) : undefined;
     return (
-      <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl bg-surface-2 px-3.5 py-2.5 text-left transition-colors hover:bg-line/60">
+      <button
+        key={o.key}
+        type="button"
+        onClick={() => openEvent(o.event.id, o.date)}
+        className="flex w-full items-start gap-3 rounded-2xl bg-surface-2 px-3.5 py-2.5 text-left transition-colors hover:bg-line/60"
+      >
         <span className="mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-semibold leading-snug">{o.event.title}</span>
@@ -92,7 +97,10 @@ export default function UpcomingPage() {
     if (taskDate(t) === d) return false;
     const was = taskDate(t);
     void actions.tasks.reschedule(t, d).then(
-      () => toast.success(`«${t.title}» → ${formatDateKey(d, 'd MMMM')}`, { action: { label: 'Скасувати', onClick: () => void actions.tasks.reschedule(t, was).catch(() => undefined) } }),
+      () =>
+        toast.success(`«${t.title}» → ${formatDateKey(d, 'd MMMM')}`, {
+          action: { label: 'Скасувати', onClick: () => void actions.tasks.reschedule(t, was).catch(() => undefined) },
+        }),
       () => undefined,
     );
     return true;
@@ -170,23 +178,40 @@ export default function UpcomingPage() {
                 key={d}
                 aria-label={dayName(d)}
                 data-drop-zone={d}
-                className={cn('flex w-[260px] shrink-0 flex-col rounded-[20px] bg-surface-2/60 p-2.5 transition-colors', over === d && 'bg-primary/10 ring-2 ring-primary/30')}
+                className={cn(
+                  'flex w-[260px] shrink-0 flex-col rounded-[20px] bg-surface-2/60 p-2.5 transition-colors',
+                  over === d && 'bg-primary/10 ring-2 ring-primary/30',
+                )}
               >
                 <div className="mb-2 flex items-baseline justify-between px-1.5">
                   <h2>
                     <span className={cn('text-[15px] font-bold capitalize', isToday && 'text-primary')}>{dayName(d)}</span>
                     <span className="ml-2 text-[12px] font-medium text-muted">{formatDateKey(d, 'd MMM')}</span>
                   </h2>
-                  <button type="button" aria-label={`Додати задачу на ${formatDateKey(d, 'd MMMM')}`} onClick={() => openTaskForm({ defaults: { dueDate: d } })} className="rounded-full p-1 text-subtle hover:bg-line/60 hover:text-ink">
+                  <button
+                    type="button"
+                    aria-label={`Додати задачу на ${formatDateKey(d, 'd MMMM')}`}
+                    onClick={() => openTaskForm({ defaults: { dueDate: d } })}
+                    className="rounded-full p-1 text-subtle hover:bg-line/60 hover:text-ink"
+                  >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
                 <div className="space-y-2">
                   {g.events.map((o) => (
-                    <div key={o.key} className="[&>button]:bg-surface">{eventCard(o)}</div>
+                    <div key={o.key} className="[&>button]:bg-surface">
+                      {eventCard(o)}
+                    </div>
                   ))}
                   {g.tasks.map((t) => (
-                    <BoardTask key={t.id} task={t} timeFormat={settings.timeFormat} openTask={openTask} onHover={(z) => setOver(z as DateKey | null)} onDropTo={(task, z) => drop(task, z as DateKey)} />
+                    <BoardTask
+                      key={t.id}
+                      task={t}
+                      timeFormat={settings.timeFormat}
+                      openTask={openTask}
+                      onHover={(z) => setOver(z as DateKey | null)}
+                      onDropTo={(task, z) => drop(task, z as DateKey)}
+                    />
                   ))}
                   {!g.events.length && !g.tasks.length && <p className="px-2 py-3 text-[12.5px] text-subtle">Вільно</p>}
                 </div>
@@ -199,7 +224,19 @@ export default function UpcomingPage() {
   );
 }
 
-function BoardTask({ task: t, timeFormat, openTask, onHover, onDropTo }: { task: Task; timeFormat: Parameters<typeof formatTime>[1]; openTask: (id: string) => void; onHover: (zone: string | null) => void; onDropTo: (t: Task, zone: string) => boolean }) {
+function BoardTask({
+  task: t,
+  timeFormat,
+  openTask,
+  onHover,
+  onDropTo,
+}: {
+  task: Task;
+  timeFormat: Parameters<typeof formatTime>[1];
+  openTask: (id: string) => void;
+  onHover: (zone: string | null) => void;
+  onDropTo: (t: Task, zone: string) => boolean;
+}) {
   const drag = useCardDrag({ onHover, onDrop: (zone) => onDropTo(t, zone) });
   return (
     <div ref={drag.ref as React.RefObject<HTMLDivElement>} {...drag.handlers} className="cursor-grab rounded-2xl bg-surface p-3">

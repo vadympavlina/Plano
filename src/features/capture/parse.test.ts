@@ -12,7 +12,14 @@ const pick = (s: string) => {
 
 describe('basics', () => {
   it('the classic', () => {
-    expect(pick('Зустріч завтра о 15 на годину #робота')).toEqual({ title: 'Зустріч', date: '2026-10-21', time: '15:00', duration: 60, tags: ['робота'], kind: 'event' });
+    expect(pick('Зустріч завтра о 15 на годину #робота')).toEqual({
+      title: 'Зустріч',
+      date: '2026-10-21',
+      time: '15:00',
+      duration: 60,
+      tags: ['робота'],
+      kind: 'event',
+    });
   });
   it('capitalises and keeps plain text intact', () => {
     expect(pick('купити хліб')).toEqual({ title: 'Купити хліб', tags: [] });

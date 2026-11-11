@@ -1,12 +1,5 @@
 import { z } from 'zod';
-import {
-  COLOR_KEYS,
-  GOAL_STATUSES,
-  PRIORITIES,
-  PROJECT_STATUSES,
-  TASK_STATUSES,
-  ACCENT_COLORS,
-} from '@/types';
+import { COLOR_KEYS, GOAL_STATUSES, PRIORITIES, PROJECT_STATUSES, TASK_STATUSES, ACCENT_COLORS } from '@/types';
 
 // Firebase Realtime Database does not store empty arrays and may return arrays
 // as objects with numeric keys. These helpers normalise that on read.
@@ -136,8 +129,12 @@ export const habitSchema = z.object({
   target: z.number().min(1).default(1),
   kind: z.enum(['good', 'bad']).optional().catch(undefined),
   trackFrom: dateKeySchema.optional().catch(undefined),
-  remindAt: arrayish(z.string().regex(/^\d\d:\d\d$/)).optional().catch(undefined),
-  pauses: arrayish(z.object({ from: dateKeySchema, to: optionalDateKey })).optional().catch(undefined),
+  remindAt: arrayish(z.string().regex(/^\d\d:\d\d$/))
+    .optional()
+    .catch(undefined),
+  pauses: arrayish(z.object({ from: dateKeySchema, to: optionalDateKey }))
+    .optional()
+    .catch(undefined),
   dayNotes: z.record(dateKeySchema, z.string().max(1000)).optional().catch(undefined),
   unit: optionalString,
   archived: z.boolean().default(false),
@@ -191,9 +188,18 @@ export const settingsSchema = z.object({
   showHabitStreakOnDashboard: z.boolean().catch(true),
   remindEventsMin: z.number().int().min(0).max(1440).catch(15),
   remindTasks: z.boolean().catch(true),
-  habitsReminderAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
-  digestAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('08:00'),
-  eveningAt: z.string().regex(/^(\d\d:\d\d)?$/).catch('21:00'),
+  habitsReminderAt: z
+    .string()
+    .regex(/^(\d\d:\d\d)?$/)
+    .catch('21:00'),
+  digestAt: z
+    .string()
+    .regex(/^(\d\d:\d\d)?$/)
+    .catch('08:00'),
+  eveningAt: z
+    .string()
+    .regex(/^(\d\d:\d\d)?$/)
+    .catch('21:00'),
   accent: z.enum(ACCENT_COLORS).catch('coral'),
 });
 

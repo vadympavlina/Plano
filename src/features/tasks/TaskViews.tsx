@@ -53,7 +53,19 @@ export function TaskCheck({ task }: { task: Task }) {
 }
 
 /** Small line under the title: time or date, project, subtasks, repeat. */
-function TaskMeta({ task, today, showDate, showProject = true, hideSubtasks }: { task: Task; today: DateKey; showDate: boolean; showProject?: boolean; hideSubtasks?: boolean }) {
+function TaskMeta({
+  task,
+  today,
+  showDate,
+  showProject = true,
+  hideSubtasks,
+}: {
+  task: Task;
+  today: DateKey;
+  showDate: boolean;
+  showProject?: boolean;
+  hideSubtasks?: boolean;
+}) {
   const { projectById, categoryById } = useCollections();
   const category = task.categoryId ? categoryById(task.categoryId) : undefined;
   const settings = useSettings();
@@ -62,10 +74,7 @@ function TaskMeta({ task, today, showDate, showProject = true, hideSubtasks }: {
   const overdue = d && d < today && task.status !== 'completed';
   const subDone = task.subtasks.filter((s) => s.done).length;
   const parts: ReactNode[] = [];
-  if (showDate && d && d !== today)
-    parts.push(
-      <span key="d">{relativeDayLabel(d, today, 'EEEEEE, d MMM')}</span>,
-    );
+  if (showDate && d && d !== today) parts.push(<span key="d">{relativeDayLabel(d, today, 'EEEEEE, d MMM')}</span>);
   if (task.startTime)
     parts.push(
       <span key="t" className={cn('inline-flex items-center gap-1 tabular-nums', overdue && 'font-semibold text-danger')}>
@@ -98,7 +107,10 @@ function SubtaskProgress({ task }: { task: Task }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-[12px] tabular-nums text-muted">
       <span className="h-1 w-8 overflow-hidden rounded-full bg-line">
-        <span className="block h-full w-full rounded-full bg-success transition-transform motion-reduce:transition-none" style={{ transform: `translateX(${(done / task.subtasks.length) * 100 - 100}%)` }} />
+        <span
+          className="block h-full w-full rounded-full bg-success transition-transform motion-reduce:transition-none"
+          style={{ transform: `translateX(${(done / task.subtasks.length) * 100 - 100}%)` }}
+        />
       </span>
       {done} з {task.subtasks.length}
     </span>
@@ -221,7 +233,10 @@ export const TaskRow = memo(function TaskRow({
       if (was === tomorrow) return;
       haptic();
       void actions.tasks.reschedule(task, tomorrow).then(
-        () => toast.success('Перенесено на завтра', { action: { label: 'Скасувати', onClick: () => void actions.tasks.reschedule(task, was).catch(() => undefined) } }),
+        () =>
+          toast.success('Перенесено на завтра', {
+            action: { label: 'Скасувати', onClick: () => void actions.tasks.reschedule(task, was).catch(() => undefined) },
+          }),
         () => undefined,
       );
     },
@@ -233,7 +248,10 @@ export const TaskRow = memo(function TaskRow({
         <div
           ref={swipe.reveal}
           aria-hidden
-          className={cn('absolute inset-0 flex items-center px-4 text-[13px] font-semibold text-white', swipe.side === 'right' ? 'justify-start bg-success' : 'justify-end bg-primary')}
+          className={cn(
+            'absolute inset-0 flex items-center px-4 text-[13px] font-semibold text-white',
+            swipe.side === 'right' ? 'justify-start bg-success' : 'justify-end bg-primary',
+          )}
           style={{ opacity: Math.min(1, Math.abs(swipe.pos.current) / SWIPE) }}
         >
           {revealText}
@@ -242,7 +260,12 @@ export const TaskRow = memo(function TaskRow({
       <div
         ref={swipe.row}
         {...swipe.handlers}
-        className={cn('group relative flex touch-pan-y items-start gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-surface-2/70', done && 'opacity-55', selected && 'ring-[1.8px] ring-inset ring-ink', swipe.side && 'bg-surface')}
+        className={cn(
+          'group relative flex touch-pan-y items-start gap-3 rounded-2xl px-3 py-2.5 transition-colors hover:bg-surface-2/70',
+          done && 'opacity-55',
+          selected && 'ring-[1.8px] ring-inset ring-ink',
+          swipe.side && 'bg-surface',
+        )}
       >
         <span className="pt-px">
           <TaskCheck task={task} />
@@ -271,7 +294,12 @@ export const TaskRow = memo(function TaskRow({
             .map((st) => (
               <li key={st.id}>
                 <label className="flex cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-[13.5px] hover:bg-surface-2/70">
-                  <input type="checkbox" className="h-4 w-4 accent-[rgb(var(--success))]" checked={st.done} onChange={() => void actions.tasks.toggleSubtask(task, st.id).catch(() => undefined)} />
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-[rgb(var(--success))]"
+                    checked={st.done}
+                    onChange={() => void actions.tasks.toggleSubtask(task, st.id).catch(() => undefined)}
+                  />
                   <span className={cn('min-w-0 flex-1 truncate', st.done && 'text-muted line-through')}>{st.title}</span>
                 </label>
               </li>
@@ -282,7 +310,17 @@ export const TaskRow = memo(function TaskRow({
   );
 });
 
-function TaskCard({ task, today, onHover, onDropTo }: { task: Task; today: DateKey; onHover: (zone: string | null) => void; onDropTo: (t: Task, zone: string) => boolean }) {
+function TaskCard({
+  task,
+  today,
+  onHover,
+  onDropTo,
+}: {
+  task: Task;
+  today: DateKey;
+  onHover: (zone: string | null) => void;
+  onDropTo: (t: Task, zone: string) => boolean;
+}) {
   const { openTask } = useUI();
   const done = task.status === 'completed';
   const drag = useCardDrag({ onHover, onDrop: (zone) => onDropTo(task, zone) });
@@ -322,15 +360,7 @@ const COLUMN_META: Record<BoardColumn, { label: string; color?: string }> = {
 };
 
 /** Status board: drag a card into another column to change its status. */
-export function TaskBoard({
-  columns,
-  today,
-  onAdd,
-}: {
-  columns: Record<BoardColumn, Task[]>;
-  today: DateKey;
-  onAdd: (status: BoardColumn) => void;
-}) {
+export function TaskBoard({ columns, today, onAdd }: { columns: Record<BoardColumn, Task[]>; today: DateKey; onAdd: (status: BoardColumn) => void }) {
   const actions = useActions();
   const [over, setOver] = useState<BoardColumn | null>(null);
   const drop = (t: Task, zone: string) => {
@@ -349,12 +379,7 @@ export function TaskBoard({
         const meta = COLUMN_META[status];
         const list = columns[status];
         return (
-          <section
-            key={status}
-            aria-label={meta.label}
-            data-drop-zone={status}
-            className="flex min-h-0 min-w-0 flex-col"
-          >
+          <section key={status} aria-label={meta.label} data-drop-zone={status} className="flex min-h-0 min-w-0 flex-col">
             <div className="mb-2.5 flex items-center gap-2 px-1">
               <span className="text-[14px] font-semibold" style={meta.color ? { color: meta.color } : undefined}>
                 {meta.label}

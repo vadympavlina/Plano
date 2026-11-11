@@ -1,11 +1,4 @@
-import {
-  onAuthStateChanged,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  signOut as fbSignOut,
-  updateProfile,
-  type User,
-} from 'firebase/auth';
+import { onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut as fbSignOut, updateProfile, type User } from 'firebase/auth';
 import { getFirebaseAuth } from '@/lib/firebase/config';
 import type { Backend } from '@/lib/backend/types';
 

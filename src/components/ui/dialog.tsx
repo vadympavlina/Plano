@@ -78,25 +78,27 @@ export function DialogContent({
         )}
       >
         <div className="touch-none" {...drag}>
-        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
-        <div className={cn('flex items-start gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pt-5', hideTitle && 'sr-only')}>
-          <div className="min-w-0 flex-1">
-            <DialogPrimitive.Title className={cn(quietTitle ? 'text-[13px] font-medium text-muted' : 'text-[17px] font-semibold tracking-tight text-ink')}>{title}</DialogPrimitive.Title>
-            {description ? (
-              <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description>
-            ) : (
-              <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Діалог'}</DialogPrimitive.Description>
-            )}
+          <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
+          <div className={cn('flex items-start gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pt-5', hideTitle && 'sr-only')}>
+            <div className="min-w-0 flex-1">
+              <DialogPrimitive.Title className={cn(quietTitle ? 'text-[13px] font-medium text-muted' : 'text-[17px] font-semibold tracking-tight text-ink')}>
+                {title}
+              </DialogPrimitive.Title>
+              {description ? (
+                <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description>
+              ) : (
+                <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Діалог'}</DialogPrimitive.Description>
+              )}
+            </div>
+            {headerActions}
+            <DialogPrimitive.Close
+              ref={closeBtn}
+              className="-mr-1 rounded-lg p-1.5 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
+              aria-label="Закрити"
+            >
+              <X className="h-4 w-4" />
+            </DialogPrimitive.Close>
           </div>
-          {headerActions}
-          <DialogPrimitive.Close
-            ref={closeBtn}
-            className="-mr-1 rounded-lg p-1.5 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
-            aria-label="Закрити"
-          >
-            <X className="h-4 w-4" />
-          </DialogPrimitive.Close>
-        </div>
         </div>
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
       </DialogPrimitive.Content>
@@ -153,20 +155,20 @@ export function SheetContent({
         )}
       >
         <div className="touch-none md:touch-auto" {...drag}>
-        <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line md:hidden" aria-hidden />
-        <div className="flex items-center gap-1 px-4 pb-1 pt-3 md:pt-4">
-          <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">Деталі</DialogPrimitive.Description>
-          <DialogPrimitive.Close
-            ref={closeBtn}
-            className="flex min-h-11 items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-muted md:min-h-0 transition-colors hover:bg-surface-2 hover:text-ink"
-            aria-label="Закрити"
-          >
-            <X className="h-4 w-4" />
-            <span>Закрити</span>
-          </DialogPrimitive.Close>
-          <div className="ml-auto flex items-center gap-1">{headerActions}</div>
-        </div>
+          <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line md:hidden" aria-hidden />
+          <div className="flex items-center gap-1 px-4 pb-1 pt-3 md:pt-4">
+            <DialogPrimitive.Title className="sr-only">{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Description className="sr-only">Деталі</DialogPrimitive.Description>
+            <DialogPrimitive.Close
+              ref={closeBtn}
+              className="flex min-h-11 items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] text-muted md:min-h-0 transition-colors hover:bg-surface-2 hover:text-ink"
+              aria-label="Закрити"
+            >
+              <X className="h-4 w-4" />
+              <span>Закрити</span>
+            </DialogPrimitive.Close>
+            <div className="ml-auto flex items-center gap-1">{headerActions}</div>
+          </div>
         </div>
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6 md:px-6">{children}</div>
       </DialogPrimitive.Content>

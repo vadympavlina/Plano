@@ -18,7 +18,7 @@ export function useCreateNote() {
       projectId: init?.projectId,
     });
     write.catch(() => toast.error('Не вдалося створити нотатку'));
-    navigate(`/notes/${id}`);
+    void navigate(`/notes/${id}`);
   };
 }
 
@@ -40,13 +40,13 @@ export function CreateMenu({ trigger, align = 'end', onPick }: { trigger: ReactN
           Нова нотатка
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem icon={<FolderPlus />} onSelect={() => (onPick?.(), navigate('/projects?new=1'))}>
+        <DropdownMenuItem icon={<FolderPlus />} onSelect={() => (onPick?.(), void navigate('/projects?new=1'))}>
           Новий проєкт
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<Heart />} onSelect={() => (onPick?.(), navigate('/habits?new=1'))}>
+        <DropdownMenuItem icon={<Heart />} onSelect={() => (onPick?.(), void navigate('/habits?new=1'))}>
           Нова звичка
         </DropdownMenuItem>
-        <DropdownMenuItem icon={<Target />} onSelect={() => (onPick?.(), navigate('/goals?new=1'))}>
+        <DropdownMenuItem icon={<Target />} onSelect={() => (onPick?.(), void navigate('/goals?new=1'))}>
           Нова ціль
         </DropdownMenuItem>
       </DropdownMenuContent>

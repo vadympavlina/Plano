@@ -13,7 +13,19 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useNow } from '@/hooks/useNow';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import { addDaysKey, eachDateKey, formatDateKey, formatTimeRange, fromDateKey, isDateKey, monthGrid, relativeDayLabel, toDateKey, todayKey, weekRange } from '@/lib/date';
+import {
+  addDaysKey,
+  eachDateKey,
+  formatDateKey,
+  formatTimeRange,
+  fromDateKey,
+  isDateKey,
+  monthGrid,
+  relativeDayLabel,
+  toDateKey,
+  todayKey,
+  weekRange,
+} from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { CalendarView, DateKey, Task } from '@/types';
 import { expandEvents, upcomingOccurrences } from './logic';
@@ -48,7 +60,9 @@ function titleFor(view: CalendarView, anchor: DateKey, weekStartsOn: 0 | 1, comp
   if (view === 'month') return { main: formatDateKey(anchor, 'LLLL'), sub: year };
   const { start, end } = rangeFor(view, anchor, weekStartsOn);
   const sameMonth = start.slice(0, 7) === end.slice(0, 7);
-  const main = sameMonth ? `${formatDateKey(start, 'd')} – ${formatDateKey(end, compact ? 'd MMM' : 'd MMMM')}` : `${formatDateKey(start, 'd MMM')} – ${formatDateKey(end, 'd MMM')}`;
+  const main = sameMonth
+    ? `${formatDateKey(start, 'd')} – ${formatDateKey(end, compact ? 'd MMM' : 'd MMMM')}`
+    : `${formatDateKey(start, 'd MMM')} – ${formatDateKey(end, 'd MMM')}`;
   return { main, sub: start.slice(0, 4) === end.slice(0, 4) ? year : `${start.slice(0, 4)} – ${end.slice(0, 4)}` };
 }
 
@@ -102,14 +116,20 @@ export default function CalendarPage() {
   }, [events, anchor, settings.weekStartsOn]);
 
   const selectDay = (d: DateKey) => navigate({ date: d, view: 'day' });
-  const addEvent = () => openQuickAdd({ kind: 'event', date: view === 'month' && anchor.slice(0, 7) !== today.slice(0, 7) ? anchor : view === 'day' ? anchor : today });
+  const addEvent = () =>
+    openQuickAdd({ kind: 'event', date: view === 'month' && anchor.slice(0, 7) !== today.slice(0, 7) ? anchor : view === 'day' ? anchor : today });
 
   // Side card: tasks waiting for a slot (drag them into the grid), then what is coming up.
   const inbox = useMemo(() => {
     const open = tasks.filter(isOpen);
     const rows = (list: Task[]) => list.sort(compareTasks('due'));
     return {
-      overdue: rows(open.filter((t) => { const d = taskDate(t); return !!d && d < today; })),
+      overdue: rows(
+        open.filter((t) => {
+          const d = taskDate(t);
+          return !!d && d < today;
+        }),
+      ),
       untimed: rows(open.filter((t) => taskDate(t) === today && !t.startTime)),
       undated: rows(open.filter((t) => !taskDate(t))),
     };
@@ -125,13 +145,26 @@ export default function CalendarPage() {
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[280px]">
-        <MiniCalendar selected={anchor} today={today} weekStartsOn={settings.weekStartsOn} onSelect={(d) => navigate({ date: d })} markedDates={monthMarks} highlightRange={view === 'week' || view === '3days' ? range : undefined} />
+        <MiniCalendar
+          selected={anchor}
+          today={today}
+          weekStartsOn={settings.weekStartsOn}
+          onSelect={(d) => navigate({ date: d })}
+          markedDates={monthMarks}
+          highlightRange={view === 'week' || view === '3days' ? range : undefined}
+        />
       </PopoverContent>
     </Popover>
   );
 
   const taskRow = (t: Task) => (
-    <div key={t.id} draggable onDragStart={(e) => startTaskDrag(e, t.id)} title="Перетягніть у календар, щоб призначити час" className="flex cursor-grab items-start gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-surface-2/70 active:cursor-grabbing">
+    <div
+      key={t.id}
+      draggable
+      onDragStart={(e) => startTaskDrag(e, t.id)}
+      title="Перетягніть у календар, щоб призначити час"
+      className="flex cursor-grab items-start gap-3 rounded-2xl px-2 py-2 transition-colors hover:bg-surface-2/70 active:cursor-grabbing"
+    >
       <span className="pt-px">
         <TaskCheck task={t} />
       </span>
@@ -168,12 +201,18 @@ export default function CalendarPage() {
         <>
           <h3 className="mb-1 mt-6 px-2 text-[12px] font-semibold text-muted">Далі в календарі</h3>
           {upcoming.map((o) => (
-            <button key={o.key} type="button" onClick={() => openEvent(o.event.id, o.date)} className="flex w-full items-start gap-3 rounded-2xl px-2 py-2 text-left transition-colors hover:bg-surface-2/70">
+            <button
+              key={o.key}
+              type="button"
+              onClick={() => openEvent(o.event.id, o.date)}
+              className="flex w-full items-start gap-3 rounded-2xl px-2 py-2 text-left transition-colors hover:bg-surface-2/70"
+            >
               <span className="mx-[6.5px] mt-[7px] h-[9px] w-[9px] shrink-0 rounded-full" style={{ backgroundColor: eventColor(o.event, categoryById) }} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-[14.5px] font-medium">{o.event.title}</span>
                 <span className="block text-[12px] tabular-nums text-muted">
-                  {relativeDayLabel(o.date < today ? today : o.date, today, 'EEEEEE, d MMM')} · {o.event.allDay ? 'весь день' : formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
+                  {relativeDayLabel(o.date < today ? today : o.date, today, 'EEEEEE, d MMM')} ·{' '}
+                  {o.event.allDay ? 'весь день' : formatTimeRange(o.event.startTime, o.event.endTime, settings.timeFormat)}
                 </span>
               </span>
             </button>
@@ -189,7 +228,9 @@ export default function CalendarPage() {
         <div className="min-w-[9.5rem] max-w-full flex-1">
           {datePicker(
             <span className="block">
-              <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">{title.main}</span>
+              <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">
+                {title.main}
+              </span>
               <span className="mt-0.5 block text-[12.5px] font-medium text-muted sm:mt-1 sm:text-[13px]">{title.sub}</span>
             </span>,
           )}
@@ -203,7 +244,13 @@ export default function CalendarPage() {
             onChange={(v) => navigate({ view: v })}
             options={VIEWS.map((v) => ({ value: v.value, label: v.label }))}
           />
-          <Button variant="outline" size="sm" onClick={() => navigate({ date: today })} disabled={anchor === today} className={cn(anchor === today && 'hidden sm:inline-flex')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate({ date: today })}
+            disabled={anchor === today}
+            className={cn(anchor === today && 'hidden sm:inline-flex')}
+          >
             Сьогодні
           </Button>
           <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>

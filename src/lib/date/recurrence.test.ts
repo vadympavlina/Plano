@@ -11,21 +11,13 @@ describe('recurrence', () => {
 
   it('weekly on selected weekdays', () => {
     const rule = { freq: 'weekly' as const, interval: 1, byWeekday: [1, 3, 5] }; // Mon Wed Fri
-    expect(occurrencesInRange(rule, '2025-04-21', '2025-04-21', '2025-04-27')).toEqual([
-      '2025-04-21',
-      '2025-04-23',
-      '2025-04-25',
-    ]);
+    expect(occurrencesInRange(rule, '2025-04-21', '2025-04-21', '2025-04-27')).toEqual(['2025-04-21', '2025-04-23', '2025-04-25']);
   });
 
   it('weekly defaults to the start weekday and respects interval', () => {
     const rule = { freq: 'weekly' as const, interval: 2 };
     // 2025-04-24 is a Thursday
-    expect(occurrencesInRange(rule, '2025-04-24', '2025-04-20', '2025-05-31')).toEqual([
-      '2025-04-24',
-      '2025-05-08',
-      '2025-05-22',
-    ]);
+    expect(occurrencesInRange(rule, '2025-04-24', '2025-04-20', '2025-05-31')).toEqual(['2025-04-24', '2025-05-08', '2025-05-22']);
   });
 
   it('bi-weekly with several weekdays counts weeks from the start week', () => {
@@ -53,10 +45,7 @@ describe('recurrence', () => {
 
   it('skips excluded dates', () => {
     const rule = { freq: 'daily' as const, interval: 1 };
-    expect(occurrencesInRange(rule, '2025-04-01', '2025-04-01', '2025-04-03', ['2025-04-02'])).toEqual([
-      '2025-04-01',
-      '2025-04-03',
-    ]);
+    expect(occurrencesInRange(rule, '2025-04-01', '2025-04-01', '2025-04-03', ['2025-04-02'])).toEqual(['2025-04-01', '2025-04-03']);
   });
 
   it('describes rules', () => {

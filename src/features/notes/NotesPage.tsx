@@ -33,7 +33,11 @@ export default function NotesPage() {
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
     return notes
-      .filter((n) => (!tag || n.tags.includes(tag)) && (!q || n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q))))
+      .filter(
+        (n) =>
+          (!tag || n.tags.includes(tag)) &&
+          (!q || n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q))),
+      )
       .sort((a, b) => Number(b.isPinned) - Number(a.isPinned) || (a.updatedAt < b.updatedAt ? 1 : -1));
   }, [notes, query, tag]);
   const current = noteId ? notes.find((n) => n.id === noteId) : undefined;
@@ -50,7 +54,10 @@ export default function NotesPage() {
         key={n.id}
         to={`/notes/${n.id}`}
         aria-current={active ? 'page' : undefined}
-        className={cn('flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]', active ? 'bg-surface-2' : 'hover:bg-surface-2/60')}
+        className={cn(
+          'flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]',
+          active ? 'bg-surface-2' : 'hover:bg-surface-2/60',
+        )}
       >
         {n.icon ? (
           <span className="mt-0.5 flex w-4 shrink-0 justify-center" style={{ color: dot }}>
@@ -79,7 +86,16 @@ export default function NotesPage() {
             <Plus className="h-4 w-4" />
           </Button>
         </div>
-        <Input type="search" icon={<Search />} className="mb-2 h-9" placeholder="Пошук нотаток" aria-label="Пошук нотаток" value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} />
+        <Input
+          type="search"
+          icon={<Search />}
+          className="mb-2 h-9"
+          placeholder="Пошук нотаток"
+          aria-label="Пошук нотаток"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onValueChange={setQuery}
+        />
         {allTags.length > 0 && (
           <div className="no-scrollbar mb-1 flex gap-1.5 overflow-x-auto pb-1">
             {['', ...allTags].map((t) => (
@@ -88,7 +104,10 @@ export default function NotesPage() {
                 type="button"
                 onClick={() => setTag(t)}
                 aria-pressed={tag === t}
-                className={cn('shrink-0 rounded-full px-3.5 py-2.5 text-xs font-medium sm:py-1.5', tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink')}
+                className={cn(
+                  'shrink-0 rounded-full px-3.5 py-2.5 text-xs font-medium sm:py-1.5',
+                  tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink',
+                )}
               >
                 {t ? `#${t}` : 'Усі'}
               </button>
@@ -107,29 +126,41 @@ export default function NotesPage() {
             <>
               {pinned.length > 0 && <p className="px-3 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Закріплені</p>}
               {pinned.map(item)}
-              {rest.length > 0 && pinned.length > 0 && <p className="px-3 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Останні</p>}
+              {rest.length > 0 && pinned.length > 0 && (
+                <p className="px-3 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Останні</p>
+              )}
               <Progressive items={rest}>{item}</Progressive>
             </>
           )}
         </div>
       </nav>
-      <div
-        className={cn(
-          'min-h-[70dvh] min-w-0 flex-1 overflow-hidden rounded-[20px] border border-line bg-surface lg:min-h-0',
-          !noteId && 'hidden lg:block',
-        )}
-      >
+      <div className={cn('min-h-[70dvh] min-w-0 flex-1 overflow-hidden rounded-[20px] border border-line bg-surface lg:min-h-0', !noteId && 'hidden lg:block')}>
         {current ? (
           <NoteEditor key={current.id} note={current} />
         ) : noteId ? (
-          <EmptyState icon={<NotebookPen />} title="Нотатку не знайдено" description="Можливо, її видалили." action={<Link to="/notes"><Button variant="outline" size="sm">До нотаток</Button></Link>} />
+          <EmptyState
+            icon={<NotebookPen />}
+            title="Нотатку не знайдено"
+            description="Можливо, її видалили."
+            action={
+              <Link to="/notes">
+                <Button variant="outline" size="sm">
+                  До нотаток
+                </Button>
+              </Link>
+            }
+          />
         ) : (
           <EmptyState
             icon={<NotebookPen />}
             title="Оберіть нотатку"
             description="Або створіть нову. Нотатки зберігаються автоматично під час набору."
             className="h-full"
-            action={<Button variant="outline" size="sm" onClick={() => createNote()}><Plus className="h-3.5 w-3.5" /> Нова нотатка</Button>}
+            action={
+              <Button variant="outline" size="sm" onClick={() => createNote()}>
+                <Plus className="h-3.5 w-3.5" /> Нова нотатка
+              </Button>
+            }
           />
         )}
       </div>

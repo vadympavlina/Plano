@@ -7,7 +7,10 @@ import { cn } from '@/lib/utils/cn';
 export { GlassButton };
 
 /** Glass tabs pass `href`; the app routes with react-router. */
-export const RouterLink = forwardRef<HTMLAnchorElement, AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }>(function RouterLink({ href, ...props }, ref) {
+export const RouterLink = forwardRef<HTMLAnchorElement, AnchorHTMLAttributes<HTMLAnchorElement> & { href: string }>(function RouterLink(
+  { href, ...props },
+  ref,
+) {
   return <Link ref={ref} to={href} {...props} />;
 });
 

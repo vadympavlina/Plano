@@ -60,7 +60,8 @@ export function useCapture(preset?: CapturePreset) {
     if (!raw.time && !raw.allDay && !pre.time && pre.allDay) p.allDay = true;
     if (!raw.date && !raw.endDate && pre.endDate) p.endDate = pre.endDate;
     p.date ??= pre.date;
-    const tagSpan = (tag: string) => p.spans.filter((s) => s.type === 'tag' && sameName(text.slice(s.start, s.end).replace(/^#|^хештег\s+|^хеш тег\s+/i, ''), tag));
+    const tagSpan = (tag: string) =>
+      p.spans.filter((s) => s.type === 'tag' && sameName(text.slice(s.start, s.end).replace(/^#|^хештег\s+|^хеш тег\s+/i, ''), tag));
     let category: Category | undefined;
     let project: Project | undefined;
     const used: string[] = [];
@@ -103,16 +104,22 @@ export function useCapture(preset?: CapturePreset) {
       else if (p.time) add({ type: 'time', label: formatTimeRange(p.time, end, settings.timeFormat), spans: [...of('time'), ...of('duration')] });
       else if (p.duration) add({ type: 'time', label: formatDuration(p.duration), spans: of('duration') });
       if (p.recurrence) add({ type: 'repeat', label: describeRecurrence(p.recurrence), spans: of('repeat') });
-      if (p.priority && p.priority !== 'medium') add({ type: 'priority', label: p.priority === 'urgent' ? 'Терміново' : p.priority === 'high' ? 'Важливо' : 'Не терміново', spans: of('priority') });
-      if (p.remindMin != null) add({ type: 'reminder', label: p.remindMin ? `Нагадати за ${formatDuration(p.remindMin)}` : 'Нагадати вчасно', spans: of('reminder') });
+      if (p.priority && p.priority !== 'medium')
+        add({ type: 'priority', label: p.priority === 'urgent' ? 'Терміново' : p.priority === 'high' ? 'Важливо' : 'Не терміново', spans: of('priority') });
+      if (p.remindMin != null)
+        add({ type: 'reminder', label: p.remindMin ? `Нагадати за ${formatDuration(p.remindMin)}` : 'Нагадати вчасно', spans: of('reminder') });
       if (p.subtasks) add({ type: 'subtasks', label: `${p.subtasks.length} ${plural(p.subtasks.length, ['підзадача', 'підзадачі', 'підзадач'])}`, spans: [] });
       if (category) add({ type: 'category', label: category.name, category, spans: tagSpan(used.find((t) => sameName(t, category!.name))!) });
     }
-    if (project) add({ type: 'project', label: project.name, project, spans: p.project ? of('project') : tagSpan(used.find((t) => sameName(t, project!.name)) ?? '') });
+    if (project)
+      add({ type: 'project', label: project.name, project, spans: p.project ? of('project') : tagSpan(used.find((t) => sameName(t, project!.name)) ?? '') });
     if (kind !== 'note') for (const t of tags) add({ type: 'tag', label: `#${t}`, spans: tagSpan(t) });
     if (p.description) add({ type: 'note', label: p.description, spans: of('note') });
     // Several lines: each becomes its own item.
-    const lines = text.split(/\n+/).map((l) => l.trim()).filter(Boolean);
+    const lines = text
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter(Boolean);
     // Highlights: each line parsed on its own, so every line shows what it means.
     let spans = p.spans;
     if (lines.length > 1) {
@@ -139,7 +146,14 @@ export function useCapture(preset?: CapturePreset) {
     // A preset time or day range has no words to remove: drop it from the preset.
     if (chip.type === 'time') setPre((x) => ({ ...x, time: undefined, endTime: undefined, allDay: undefined }));
     if (chip.type === 'date') setPre((x) => ({ ...x, endDate: undefined }));
-    setText((t) => removeSpans(t, chip.spans, chip.spans.map((s) => s.type)).trimEnd() + ' ');
+    setText(
+      (t) =>
+        removeSpans(
+          t,
+          chip.spans,
+          chip.spans.map((s) => s.type),
+        ).trimEnd() + ' ',
+    );
   };
   const setDate = (d: DateKey | undefined) => {
     setText((t) => removeSpans(t, r.p.spans, ['date']));
@@ -179,7 +193,9 @@ export function useCapture(preset?: CapturePreset) {
         });
         await settleWrite(write);
         const when = date ? ` на ${relativeDayLabel(date, today, 'd MMMM').toLowerCase()}` : '';
-        toast.success(`Задачу «${title}» додано${when}`, { action: { label: 'Скасувати', onClick: () => void actions.tasks.remove(id).catch(() => undefined) } });
+        toast.success(`Задачу «${title}» додано${when}`, {
+          action: { label: 'Скасувати', onClick: () => void actions.tasks.remove(id).catch(() => undefined) },
+        });
       } else {
         const start = p.time;
         const { id, write } = actions.events.create({
@@ -217,7 +233,10 @@ export function useCapture(preset?: CapturePreset) {
     setBusy(true);
     try {
       const ids: { kind: 'task' | 'event'; id: string }[] = [];
-      for (const line of text.split(/\n+/).map((l) => l.trim()).filter(Boolean)) {
+      for (const line of text
+        .split(/\n+/)
+        .map((l) => l.trim())
+        .filter(Boolean)) {
         const p = parseQuick(line, today);
         const cat = p.tags.map((t) => categories.find((x) => sameName(x.name, t))).find(Boolean);
         const proj = projects.find((x) => sameName(x.name, p.project ?? '') || p.tags.some((t) => sameName(x.name, t)));
@@ -225,17 +244,47 @@ export function useCapture(preset?: CapturePreset) {
         const links = { categoryId: cat?.id, projectId: proj?.id };
         const end = p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined);
         if (p.kind === 'event') {
-          const { id, write } = actions.events.create({ title, date: p.date ?? today, endDate: p.endDate, allDay: !p.time, startTime: p.time, endTime: p.time ? (end ?? endOf(p.time, 60)) : undefined, recurrence: p.recurrence, remindMin: p.remindMin, description: p.description, ...links, exdates: [], source: 'plano', timezone: deviceTimeZone() });
+          const { id, write } = actions.events.create({
+            title,
+            date: p.date ?? today,
+            endDate: p.endDate,
+            allDay: !p.time,
+            startTime: p.time,
+            endTime: p.time ? (end ?? endOf(p.time, 60)) : undefined,
+            recurrence: p.recurrence,
+            remindMin: p.remindMin,
+            description: p.description,
+            ...links,
+            exdates: [],
+            source: 'plano',
+            timezone: deviceTimeZone(),
+          });
           await settleWrite(write);
           ids.push({ kind: 'event', id });
         } else {
-          const { id, write } = actions.tasks.create({ title, status: 'todo', priority: p.priority ?? 'medium', subtasks: [], tags: [], dueDate: p.date ?? (p.time || p.recurrence ? today : undefined), startTime: p.time, endTime: end, recurrence: p.recurrence, remindMin: p.remindMin, description: p.description, ...links });
+          const { id, write } = actions.tasks.create({
+            title,
+            status: 'todo',
+            priority: p.priority ?? 'medium',
+            subtasks: [],
+            tags: [],
+            dueDate: p.date ?? (p.time || p.recurrence ? today : undefined),
+            startTime: p.time,
+            endTime: end,
+            recurrence: p.recurrence,
+            remindMin: p.remindMin,
+            description: p.description,
+            ...links,
+          });
           await settleWrite(write);
           ids.push({ kind: 'task', id });
         }
       }
       toast.success(`Додано: ${ids.length}`, {
-        action: { label: 'Скасувати', onClick: () => ids.forEach((x) => void (x.kind === 'task' ? actions.tasks.remove(x.id) : actions.events.remove(x.id)).catch(() => undefined)) },
+        action: {
+          label: 'Скасувати',
+          onClick: () => ids.forEach((x) => void (x.kind === 'task' ? actions.tasks.remove(x.id) : actions.events.remove(x.id)).catch(() => undefined)),
+        },
       });
       reset();
       return true;

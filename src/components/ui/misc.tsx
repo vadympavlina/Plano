@@ -4,12 +4,7 @@ import { cn } from '@/lib/utils/cn';
 import { inkOf, tint } from '@/lib/utils/colors';
 import { haptic } from '@/lib/utils/haptic';
 
-export function Badge({
-  color,
-  className,
-  children,
-  ...props
-}: HTMLAttributes<HTMLSpanElement> & { color?: string }) {
+export function Badge({ color, className, children, ...props }: HTMLAttributes<HTMLSpanElement> & { color?: string }) {
   const style: CSSProperties | undefined = color ? { backgroundColor: tint(color, 0.13), color: inkOf(color) } : undefined;
   return (
     <span
@@ -30,17 +25,7 @@ export function Dot({ color, className }: { color: string; className?: string })
   return <span className={cn('inline-block h-2 w-2 shrink-0 rounded-full', className)} style={{ backgroundColor: color }} />;
 }
 
-export function Progress({
-  value,
-  color,
-  className,
-  label,
-}: {
-  value: number;
-  color?: string;
-  className?: string;
-  label?: string;
-}) {
+export function Progress({ value, color, className, label }: { value: number; color?: string; className?: string; label?: string }) {
   const v = Math.max(0, Math.min(100, value));
   return (
     <div
@@ -122,7 +107,16 @@ export function Segmented<T extends string>({
   wrap?: boolean;
 }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className={cn('inline-flex max-w-full items-center gap-0.5 rounded-full bg-surface-2 p-1', stretch && 'flex w-full', wrap && 'flex-wrap rounded-3xl', className)}>
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className={cn(
+        'inline-flex max-w-full items-center gap-0.5 rounded-full bg-surface-2 p-1',
+        stretch && 'flex w-full',
+        wrap && 'flex-wrap rounded-3xl',
+        className,
+      )}
+    >
       {options.map((o) => {
         const on = value === o.value;
         return (
@@ -151,14 +145,9 @@ export function Segmented<T extends string>({
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return (
-    <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[11.5px] font-medium text-muted">
-      {children}
-    </kbd>
-  );
+  return <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[11.5px] font-medium text-muted">{children}</kbd>;
 }
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return <div className={cn('card', className)} {...props} />;
 }
-

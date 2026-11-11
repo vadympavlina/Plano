@@ -30,19 +30,25 @@ export interface SmartFieldHandle {
  * place (a mirror under a transparent textarea), # and @ suggest categories and
  * projects, Enter adds.
  */
-export const SmartField = forwardRef<SmartFieldHandle, {
-  value: string;
-  onChange: (v: string) => void;
-  spans: Span[];
-  onSubmit: () => void;
-  categories: Category[];
-  projects: Project[];
-  placeholder?: string;
-  big?: boolean;
-  autoFocus?: boolean;
-  className?: string;
-  label?: string;
-}>(function SmartField({ value, onChange, spans, onSubmit, categories, projects, placeholder, big, autoFocus, className, label = 'Назва для швидкого додавання' }, ref) {
+export const SmartField = forwardRef<
+  SmartFieldHandle,
+  {
+    value: string;
+    onChange: (v: string) => void;
+    spans: Span[];
+    onSubmit: () => void;
+    categories: Category[];
+    projects: Project[];
+    placeholder?: string;
+    big?: boolean;
+    autoFocus?: boolean;
+    className?: string;
+    label?: string;
+  }
+>(function SmartField(
+  { value, onChange, spans, onSubmit, categories, projects, placeholder, big, autoFocus, className, label = 'Назва для швидкого додавання' },
+  ref,
+) {
   const area = useRef<HTMLTextAreaElement>(null);
   const [caret, setCaret] = useState(0);
   const [active, setActive] = useState(0);
@@ -141,6 +147,8 @@ export const SmartField = forwardRef<SmartFieldHandle, {
       <div aria-hidden className={cn('pointer-events-none absolute inset-0 whitespace-pre-wrap break-words py-2 text-ink', text)}>
         {mirror}
       </div>
+      {/* aria-expanded reports the suggestions popup on a multi-line textbox (a combobox role would claim a single line). */}
+      {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
       <textarea
         ref={area}
         rows={1}
@@ -163,7 +171,10 @@ export const SmartField = forwardRef<SmartFieldHandle, {
         onKeyDown={onKeyDown}
         onBlur={() => setTimeout(() => setClosed(true), 150)}
         onFocus={() => setClosed(false)}
-        className={cn('relative block w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent py-2 text-transparent caret-ink outline-none placeholder:text-subtle', text)}
+        className={cn(
+          'relative block w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent py-2 text-transparent caret-ink outline-none placeholder:text-subtle',
+          text,
+        )}
       />
       {open && (
         <ul role="listbox" className="absolute left-0 top-full z-30 mt-1 w-[260px] max-w-full rounded-xl border border-line bg-surface p-1 shadow-pop">
@@ -173,10 +184,19 @@ export const SmartField = forwardRef<SmartFieldHandle, {
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => pick(s)}
-                className={cn('flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13.5px]', i === active ? 'bg-surface-2' : 'hover:bg-surface-2')}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[13.5px]',
+                  i === active ? 'bg-surface-2' : 'hover:bg-surface-2',
+                )}
               >
                 <span className="flex w-4 justify-center" style={{ color: colorOf(s.item.color) }}>
-                  {s.kind === 'project' ? <FolderKanban className="h-4 w-4" /> : categoryIcon(s.item) ? <CategoryIcon category={s.item} className="h-4 w-4" /> : <Hash className="h-4 w-4" />}
+                  {s.kind === 'project' ? (
+                    <FolderKanban className="h-4 w-4" />
+                  ) : categoryIcon(s.item) ? (
+                    <CategoryIcon category={s.item} className="h-4 w-4" />
+                  ) : (
+                    <Hash className="h-4 w-4" />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{s.item.name}</span>
                 <span className="text-[12px] text-subtle">{s.kind === 'category' ? 'категорія' : 'проєкт'}</span>

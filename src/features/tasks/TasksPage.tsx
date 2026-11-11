@@ -115,7 +115,10 @@ export default function TasksPage() {
   const setList = (l: TaskListId) => setParams({ list: l }, { replace: true });
 
   const scopeList: TaskListId = projectId || categoryId ? (list === 'done' ? 'done' : 'all') : list;
-  const content = useMemo(() => listContent(tasks, { list: scopeList, projectId, categoryId }, today, query), [tasks, scopeList, projectId, categoryId, today, query]);
+  const content = useMemo(
+    () => listContent(tasks, { list: scopeList, projectId, categoryId }, today, query),
+    [tasks, scopeList, projectId, categoryId, today, query],
+  );
   const counts = useMemo(() => listCounts(tasks, today), [tasks, today]);
 
   // On wide screens a task opens in the side card; elsewhere in the details sheet.
@@ -162,11 +165,17 @@ export default function TasksPage() {
       <header className="flex flex-wrap items-start justify-between gap-3 px-2">
         <div className="flex min-w-0 items-center gap-3">
           {project ? (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: `${colorOf(project.color)}1f`, color: colorOf(project.color) }}>
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: `${colorOf(project.color)}1f`, color: colorOf(project.color) }}
+            >
               <Folder className="h-5 w-5" />
             </span>
           ) : category ? (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: `${colorOf(category.color)}1f`, color: colorOf(category.color) }}>
+            <span
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: `${colorOf(category.color)}1f`, color: colorOf(category.color) }}
+            >
               <CategoryMark category={category} className={categoryIcon(category) ? 'h-5 w-5' : undefined} />
             </span>
           ) : null}
@@ -204,11 +213,29 @@ export default function TasksPage() {
           options={LISTS.map((l) => ({ value: l.id, label: l.label, count: l.id === 'done' || l.id === 'all' ? undefined : counts[l.id] || undefined }))}
         />
         <div className="hidden min-w-[220px] flex-1 sm:block sm:max-w-[320px]">
-          <Input type="search" icon={<Search />} value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9 rounded-full" />
+          <Input
+            type="search"
+            icon={<Search />}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onValueChange={setQuery}
+            placeholder="Пошук задач"
+            aria-label="Пошук задач"
+            className="h-9 rounded-full"
+          />
         </div>
       </div>
       <div className="mt-3 px-2 sm:hidden">
-        <Input type="search" icon={<Search />} value={query} onChange={(e) => setQuery(e.target.value)} onValueChange={setQuery} placeholder="Пошук задач" aria-label="Пошук задач" className="h-9 rounded-full" />
+        <Input
+          type="search"
+          icon={<Search />}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onValueChange={setQuery}
+          placeholder="Пошук задач"
+          aria-label="Пошук задач"
+          className="h-9 rounded-full"
+        />
       </div>
 
       <div className="mt-4">
@@ -223,7 +250,8 @@ export default function TasksPage() {
                 <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-subtle/70 text-subtle">
                   <Plus className="h-3 w-3" strokeWidth={3} />
                 </span>
-                <input autoComplete="off"
+                <input
+                  autoComplete="off"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   aria-label="Нова задача"
@@ -235,7 +263,17 @@ export default function TasksPage() {
             {empty ? (
               <EmptyState
                 icon={<Inbox />}
-                title={query ? 'Нічого не знайдено' : scopeList === 'today' ? 'На сьогодні все чисто' : scopeList === 'inbox' ? 'Вхідні порожні' : scopeList === 'done' ? 'Виконаних задач поки немає' : 'Тут поки немає задач'}
+                title={
+                  query
+                    ? 'Нічого не знайдено'
+                    : scopeList === 'today'
+                      ? 'На сьогодні все чисто'
+                      : scopeList === 'inbox'
+                        ? 'Вхідні порожні'
+                        : scopeList === 'done'
+                          ? 'Виконаних задач поки немає'
+                          : 'Тут поки немає задач'
+                }
                 description={query ? 'Спробуйте інший запит.' : scopeList === 'inbox' ? 'Сюди потрапляють задачі без дати.' : undefined}
               />
             ) : (

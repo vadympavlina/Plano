@@ -88,6 +88,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
       - run: npm test
       # Real-browser checks (desktop + phone) on a local-preview build; a failure stops the deploy.
       # The browser itself comes from Playwright's CDN. Its system libraries and fonts come from apt, whose

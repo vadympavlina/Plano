@@ -100,172 +100,185 @@ function TaskDetailInner({ task, onClose, panel }: { task: Task; onClose: () => 
 
   const body = (
     <>
-        <div className="flex items-start gap-3 pt-2">
-          <div className="pt-1">
-            <CheckCircle
-              checked={done}
-              label={done ? 'Позначити як невиконану' : 'Позначити як виконану'}
-              onChange={(c) => void actions.tasks.setDone(task, c).catch(() => undefined)}
-            />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className={cn('text-xl font-semibold leading-snug tracking-tight', done && 'text-subtle line-through')}>{task.title}</h2>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {category && <Badge color={colorOf(category.color)}><CategoryIcon category={category} />{category.name}</Badge>}
-              {isOverdue(task, today) && <Badge color="#E5484D">Прострочено</Badge>}
-              {task.tags.map((t) => (
-                <Badge key={t}>#{t}</Badge>
-              ))}
-            </div>
-          </div>
+      <div className="flex items-start gap-3 pt-2">
+        <div className="pt-1">
+          <CheckCircle
+            checked={done}
+            label={done ? 'Позначити як невиконану' : 'Позначити як виконану'}
+            onChange={(c) => void actions.tasks.setDone(task, c).catch(() => undefined)}
+          />
         </div>
-
-        {task.description && <p className="mt-4 select-text whitespace-pre-wrap text-sm leading-relaxed text-muted">{task.description}</p>}
-
-        <div className="mt-5 space-y-0.5 border-y border-line py-3">
-          <Row icon={<CalendarDays />} label="Термін">
-            <DatePicker
-              variant="ghost"
-              className={cn('-ml-2', isOverdue(task, today) && 'text-danger')}
-              aria-label="Термін"
-              weekStartsOn={settings.weekStartsOn}
-              value={task.dueDate}
-              onChange={(dueDate) => update({ dueDate })}
-            />
-          </Row>
-          {task.startDate && (
-            <Row icon={<CalendarDays />} label="Початок">
-              {formatDateKey(task.startDate, settings.dateFormat)}
-            </Row>
-          )}
-          {task.startTime && (
-            <Row icon={<Clock />} label="Час">
-              <span className="tabular-nums">{formatTimeRange(task.startTime, task.endTime, settings.timeFormat)}</span>
-            </Row>
-          )}
-          {task.recurrence && (
-            <Row icon={<Repeat />} label="Повтор">
-              {describeRecurrence(task.recurrence)}
-            </Row>
-          )}
-          <Row icon={<Flag />} label="Пріоритет">
-            <Select variant="ghost" className="-ml-2" aria-label="Пріоритет" value={task.priority} onChange={(priority) => update({ priority })} options={priorityOptions} />
-          </Row>
-          <Row icon={<CircleDot />} label="Статус">
-            <Select
-              variant="ghost"
-              className="-ml-2"
-              aria-label="Статус"
-              value={task.status}
-              onChange={(status) => void actions.tasks.setStatus(task, status).catch(() => undefined)}
-              options={statusOptions}
-            />
-          </Row>
-          <Row icon={<Tag />} label="Категорія">
-            <Select
-              variant="ghost"
-              className="-ml-2"
-              aria-label="Категорія"
-              value={task.categoryId ?? ''}
-              onChange={(v) => update({ categoryId: v || undefined })}
-              options={categoryOptions(categories)}
-            />
-          </Row>
-          <Row icon={<FolderKanban />} label="Проєкт">
-            <Select
-              variant="ghost"
-              className="-ml-2 max-w-full"
-              aria-label="Проєкт"
-              value={task.projectId ?? ''}
-              onChange={(v) => update({ projectId: v || undefined })}
-              options={projectOptions(projects, task.projectId)}
-            />
-          </Row>
-          {goal && (
-            <Row icon={<Target />} label="Ціль">
-              {goal.title}
-            </Row>
-          )}
-        </div>
-
-        <section className="mt-5">
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Підзадачі</h3>
-            {task.subtasks.length > 0 && (
-              <span className="text-xs tabular-nums text-muted">
-                {subDone}/{task.subtasks.length}
-              </span>
+        <div className="min-w-0 flex-1">
+          <h2 className={cn('text-xl font-semibold leading-snug tracking-tight', done && 'text-subtle line-through')}>{task.title}</h2>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {category && (
+              <Badge color={colorOf(category.color)}>
+                <CategoryIcon category={category} />
+                {category.name}
+              </Badge>
             )}
-          </div>
-          {task.subtasks.length > 0 && (
-            <Progress value={(subDone / task.subtasks.length) * 100} className="mb-2" label="Прогрес підзадач" />
-          )}
-          <ul className="space-y-0.5">
-            {task.subtasks.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 rounded-lg px-1 py-1.5">
-                <CheckCircle
-                  size="sm"
-                  checked={s.done}
-                  label={`Підзадача ${s.title}`}
-                  onChange={() => void actions.tasks.toggleSubtask(task, s.id).catch(() => undefined)}
-                />
-                <span className={cn('text-sm', s.done && 'text-subtle line-through')}>{s.title}</span>
-              </li>
+            {isOverdue(task, today) && <Badge color="#E5484D">Прострочено</Badge>}
+            {task.tags.map((t) => (
+              <Badge key={t}>#{t}</Badge>
             ))}
-          </ul>
-          <form
-            className="mt-1"
-            onSubmit={(e) => {
-              e.preventDefault();
-              addSubtask();
-            }}
-          >
-            <Input
-              placeholder="+ Додати підзадачу"
-              aria-label="Нова підзадача"
-              className="h-9 border-dashed"
-              value={newSubtask}
-              onChange={(e) => setNewSubtask(e.target.value)}
-              onBlur={addSubtask}
-            />
-          </form>
-        </section>
+          </div>
+        </div>
+      </div>
 
-        {task.notes && (
-          <section className="mt-5">
-            <h3 className="mb-2 text-sm font-semibold">Нотатки</h3>
-            <p className="select-text whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">{task.notes}</p>
-          </section>
+      {task.description && <p className="mt-4 select-text whitespace-pre-wrap text-sm leading-relaxed text-muted">{task.description}</p>}
+
+      <div className="mt-5 space-y-0.5 border-y border-line py-3">
+        <Row icon={<CalendarDays />} label="Термін">
+          <DatePicker
+            variant="ghost"
+            className={cn('-ml-2', isOverdue(task, today) && 'text-danger')}
+            aria-label="Термін"
+            weekStartsOn={settings.weekStartsOn}
+            value={task.dueDate}
+            onChange={(dueDate) => update({ dueDate })}
+          />
+        </Row>
+        {task.startDate && (
+          <Row icon={<CalendarDays />} label="Початок">
+            {formatDateKey(task.startDate, settings.dateFormat)}
+          </Row>
         )}
+        {task.startTime && (
+          <Row icon={<Clock />} label="Час">
+            <span className="tabular-nums">{formatTimeRange(task.startTime, task.endTime, settings.timeFormat)}</span>
+          </Row>
+        )}
+        {task.recurrence && (
+          <Row icon={<Repeat />} label="Повтор">
+            {describeRecurrence(task.recurrence)}
+          </Row>
+        )}
+        <Row icon={<Flag />} label="Пріоритет">
+          <Select
+            variant="ghost"
+            className="-ml-2"
+            aria-label="Пріоритет"
+            value={task.priority}
+            onChange={(priority) => update({ priority })}
+            options={priorityOptions}
+          />
+        </Row>
+        <Row icon={<CircleDot />} label="Статус">
+          <Select
+            variant="ghost"
+            className="-ml-2"
+            aria-label="Статус"
+            value={task.status}
+            onChange={(status) => void actions.tasks.setStatus(task, status).catch(() => undefined)}
+            options={statusOptions}
+          />
+        </Row>
+        <Row icon={<Tag />} label="Категорія">
+          <Select
+            variant="ghost"
+            className="-ml-2"
+            aria-label="Категорія"
+            value={task.categoryId ?? ''}
+            onChange={(v) => update({ categoryId: v || undefined })}
+            options={categoryOptions(categories)}
+          />
+        </Row>
+        <Row icon={<FolderKanban />} label="Проєкт">
+          <Select
+            variant="ghost"
+            className="-ml-2 max-w-full"
+            aria-label="Проєкт"
+            value={task.projectId ?? ''}
+            onChange={(v) => update({ projectId: v || undefined })}
+            options={projectOptions(projects, task.projectId)}
+          />
+        </Row>
+        {goal && (
+          <Row icon={<Target />} label="Ціль">
+            {goal.title}
+          </Row>
+        )}
+      </div>
 
-        <div className="mt-6 flex gap-2">
+      <section className="mt-5">
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Підзадачі</h3>
+          {task.subtasks.length > 0 && (
+            <span className="text-xs tabular-nums text-muted">
+              {subDone}/{task.subtasks.length}
+            </span>
+          )}
+        </div>
+        {task.subtasks.length > 0 && <Progress value={(subDone / task.subtasks.length) * 100} className="mb-2" label="Прогрес підзадач" />}
+        <ul className="space-y-0.5">
+          {task.subtasks.map((s) => (
+            <li key={s.id} className="flex items-center gap-3 rounded-lg px-1 py-1.5">
+              <CheckCircle
+                size="sm"
+                checked={s.done}
+                label={`Підзадача ${s.title}`}
+                onChange={() => void actions.tasks.toggleSubtask(task, s.id).catch(() => undefined)}
+              />
+              <span className={cn('text-sm', s.done && 'text-subtle line-through')}>{s.title}</span>
+            </li>
+          ))}
+        </ul>
+        <form
+          className="mt-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            addSubtask();
+          }}
+        >
+          <Input
+            placeholder="+ Додати підзадачу"
+            aria-label="Нова підзадача"
+            className="h-9 border-dashed"
+            value={newSubtask}
+            onChange={(e) => setNewSubtask(e.target.value)}
+            onBlur={addSubtask}
+          />
+        </form>
+      </section>
+
+      {task.notes && (
+        <section className="mt-5">
+          <h3 className="mb-2 text-sm font-semibold">Нотатки</h3>
+          <p className="select-text whitespace-pre-wrap rounded-xl bg-surface-2 p-3 text-sm leading-relaxed text-muted">{task.notes}</p>
+        </section>
+      )}
+
+      <div className="mt-6 flex gap-2">
+        <Button
+          variant={done ? 'outline' : 'dark'}
+          className="flex-1"
+          onClick={() =>
+            void actions.tasks.setDone(task, !done).then(
+              () => toast.success(done ? 'Задачу повернуто в роботу' : 'Задачу виконано'),
+              () => undefined,
+            )
+          }
+        >
+          {done ? 'Повернути в роботу' : 'Позначити виконаною'}
+        </Button>
+        {!done && task.dueDate !== addDaysKey(today, 1) && (
           <Button
-            variant={done ? 'outline' : 'dark'}
-            className="flex-1"
+            variant="outline"
             onClick={() =>
-              void actions.tasks.setDone(task, !done).then(
-                () => toast.success(done ? 'Задачу повернуто в роботу' : 'Задачу виконано'),
+              void actions.tasks.reschedule(task, addDaysKey(today, 1)).then(
+                () => toast.success('Перенесено на завтра'),
                 () => undefined,
               )
             }
           >
-            {done ? 'Повернути в роботу' : 'Позначити виконаною'}
+            На завтра
           </Button>
-          {!done && task.dueDate !== addDaysKey(today, 1) && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                void actions.tasks.reschedule(task, addDaysKey(today, 1)).then(() => toast.success('Перенесено на завтра'), () => undefined)
-              }
-            >
-              На завтра
-            </Button>
-          )}
-        </div>
-        <p className="mt-4 text-[12px] text-subtle">
-          Створено {new Date(task.createdAt).toLocaleString('uk-UA')}
-          {task.completedAt && ` · Виконано ${new Date(task.completedAt).toLocaleString('uk-UA')}`}
-        </p>
+        )}
+      </div>
+      <p className="mt-4 text-[12px] text-subtle">
+        Створено {new Date(task.createdAt).toLocaleString('uk-UA')}
+        {task.completedAt && ` · Виконано ${new Date(task.completedAt).toLocaleString('uk-UA')}`}
+      </p>
     </>
   );
 
@@ -314,4 +327,3 @@ export function TaskDetailPanel({ taskId, onClose }: { taskId: string; onClose: 
   if (!task) return <EmptyState title="Задачу не знайдено" description="Можливо, її видалили." />;
   return <TaskDetailInner task={task} onClose={onClose} panel />;
 }
-

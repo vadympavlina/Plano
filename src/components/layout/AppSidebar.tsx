@@ -16,7 +16,11 @@ export function SidebarFooter() {
       <UserMenu
         side="top"
         trigger={
-          <button type="button" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full p-1.5 pr-3 text-left transition-colors hover:bg-white/[0.06]" aria-label="Меню акаунта">
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full p-1.5 pr-3 text-left transition-colors hover:bg-white/[0.06]"
+            aria-label="Меню акаунта"
+          >
             <Avatar name={profile.name} src={profile.avatarUrl} />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[13px] font-semibold text-sidebar-fg">{profile.name || 'Акаунт'}</span>
@@ -33,7 +37,10 @@ export function SidebarFooter() {
         title="Налаштування"
         aria-label="Налаштування"
         className={({ isActive }) =>
-          cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors', isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-muted hover:bg-white/[0.06] hover:text-white')
+          cn(
+            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors',
+            isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-muted hover:bg-white/[0.06] hover:text-white',
+          )
         }
       >
         <Settings className="h-[18px] w-[18px]" />

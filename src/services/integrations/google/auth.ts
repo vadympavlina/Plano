@@ -8,10 +8,7 @@
 export const GOOGLE_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '';
 export const isGoogleConfigured = GOOGLE_CLIENT_ID.endsWith('.apps.googleusercontent.com');
 
-const SCOPES = [
-  'https://www.googleapis.com/auth/calendar.calendarlist.readonly',
-  'https://www.googleapis.com/auth/calendar.events',
-].join(' ');
+const SCOPES = ['https://www.googleapis.com/auth/calendar.calendarlist.readonly', 'https://www.googleapis.com/auth/calendar.events'].join(' ');
 
 const STORAGE_KEY = 'plano:gcal-token';
 

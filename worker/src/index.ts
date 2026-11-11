@@ -46,7 +46,9 @@ function revoke(token: string) {
 
 export async function handle(req: Request, env: Env, verify = verifyFirebaseToken): Promise<Response> {
   const origin = req.headers.get('Origin') ?? '';
-  const allowed = env.ALLOWED_ORIGINS.split(',').map((s) => s.trim()).includes(origin);
+  const allowed = env.ALLOWED_ORIGINS.split(',')
+    .map((s) => s.trim())
+    .includes(origin);
   const cors: Record<string, string> = allowed
     ? {
         'Access-Control-Allow-Origin': origin,
@@ -70,7 +72,8 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
   // «Відкласти» on a notification: the service worker has no sign-in, only the token sent with the push.
   if (path === '/snooze') {
     const b = (await req.json().catch(() => ({}))) as { uid?: unknown; token?: unknown; item?: unknown };
-    const ok = typeof b.uid === 'string' && typeof b.token === 'string' && b.uid.length < 200 && (await checkSnoozeToken(b.uid, b.token, env.GOOGLE_CLIENT_SECRET));
+    const ok =
+      typeof b.uid === 'string' && typeof b.token === 'string' && b.uid.length < 200 && (await checkSnoozeToken(b.uid, b.token, env.GOOGLE_CLIENT_SECRET));
     if (!ok || !env.REMINDERS) return json(403, { error: 'forbidden' });
     const res = await env.REMINDERS.get(env.REMINDERS.idFromName(b.uid as string)).fetch(
       new Request('https://do/push/snooze', { method: 'POST', body: JSON.stringify({ item: b.item }), headers: { 'x-uid': b.uid as string } }),
@@ -115,7 +118,11 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
         await revoke(t.access_token);
         return json(400, { error: 'no_refresh_token' });
       }
-      return json(200, { accessToken: t.access_token, expiresIn: t.expires_in ?? 3600, grant: await sealGrant(t.refresh_token, uid, env.GOOGLE_CLIENT_SECRET) });
+      return json(200, {
+        accessToken: t.access_token,
+        expiresIn: t.expires_in ?? 3600,
+        grant: await sealGrant(t.refresh_token, uid, env.GOOGLE_CLIENT_SECRET),
+      });
     }
     case '/token': {
       const grant = str(body.grant);

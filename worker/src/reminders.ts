@@ -34,7 +34,13 @@ interface ErrorReport {
 }
 const SUBJECT = 'https://plano.edvault.online';
 const SNOOZE_MS = 10 * 60_000;
-const clean = (i: Reminder): Reminder => ({ at: i.at, title: i.title.slice(0, 120), body: i.body?.slice(0, 240), url: i.url?.slice(0, 200), tag: i.tag?.slice(0, 80) });
+const clean = (i: Reminder): Reminder => ({
+  at: i.at,
+  title: i.title.slice(0, 120),
+  body: i.body?.slice(0, 240),
+  url: i.url?.slice(0, 200),
+  tag: i.tag?.slice(0, 80),
+});
 
 export class Reminders extends DurableObject<Env> {
   async fetch(req: Request): Promise<Response> {
@@ -98,7 +104,10 @@ export class Reminders extends DurableObject<Env> {
     if (pathname === '/push/subscribe' && body.subscription?.endpoint && body.subscription.keys) {
       await this.ctx.storage.put('subs', [...subs.filter((s) => s.endpoint !== body.subscription!.endpoint), body.subscription].slice(-10));
     } else if (pathname === '/push/unsubscribe') {
-      await this.ctx.storage.put('subs', subs.filter((s) => s.endpoint !== body.endpoint));
+      await this.ctx.storage.put(
+        'subs',
+        subs.filter((s) => s.endpoint !== body.endpoint),
+      );
     } else if (pathname === '/push/schedule' && Array.isArray(body.items)) {
       const now = Date.now();
       const items = body.items
@@ -132,7 +141,10 @@ export class Reminders extends DurableObject<Env> {
     for (const key of ['items', 'snoozed']) {
       const items = (await this.ctx.storage.get<Reminder[]>(key)) ?? [];
       await this.deliver(items.filter((i) => i.at <= now));
-      await this.ctx.storage.put(key, items.filter((i) => i.at > now));
+      await this.ctx.storage.put(
+        key,
+        items.filter((i) => i.at > now),
+      );
     }
     await this.arm();
   }

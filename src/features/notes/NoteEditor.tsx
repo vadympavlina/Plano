@@ -1,6 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, FolderKanban, Bold, Check, Clock, Eye, FileText, Hash, Heading2, ImageIcon, Italic, Link2, List, ListChecks, Loader2, Pencil, Pin, PinOff, Smile, Target, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  FolderKanban,
+  Bold,
+  Check,
+  Clock,
+  Eye,
+  FileText,
+  Hash,
+  Heading2,
+  ImageIcon,
+  Italic,
+  Link2,
+  List,
+  ListChecks,
+  Loader2,
+  Pencil,
+  Pin,
+  PinOff,
+  Smile,
+  Target,
+  Trash2,
+} from 'lucide-react';
 import { CoverPicker, coverGradient } from '@/components/common/Pickers';
 import { LineIcon, LineIconPicker } from '@/components/common/CategoryMark';
 import { useUI } from '@/app/providers/UIProvider';
@@ -41,7 +63,14 @@ export function NoteEditor({ note }: { note: Note }) {
   const saved = useRef({ title: note.title, content: note.content, tags: note.tags.join(', ') });
 
   const save = useDebouncedCallback((next: { title: string; content: string; tags: string }) => {
-    const tags = [...new Set(next.tags.split(',').map((t) => t.trim()).filter(Boolean))];
+    const tags = [
+      ...new Set(
+        next.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean),
+      ),
+    ];
     setState('saving');
     saved.current = next;
     actions.notes.update(note.id, { title: next.title, content: next.content, tags }).then(
@@ -121,13 +150,18 @@ export function NoteEditor({ note }: { note: Note }) {
   const html = useMemo(() => (preview ? renderMarkdown(content) : ''), [preview, content]);
 
   const remove = async () => {
-    const ok = await confirm({ title: 'Видалити нотатку?', description: `«${title || 'Без назви'}» буде видалено назавжди.`, confirmLabel: 'Видалити', danger: true });
+    const ok = await confirm({
+      title: 'Видалити нотатку?',
+      description: `«${title || 'Без назви'}» буде видалено назавжди.`,
+      confirmLabel: 'Видалити',
+      danger: true,
+    });
     if (!ok) return;
     save.cancel();
     try {
       await actions.notes.remove(note.id);
       toast.success('Нотатку видалено');
-      navigate('/notes');
+      void navigate('/notes');
     } catch {
       /* toast from sync layer */
     }
@@ -179,15 +213,43 @@ export function NoteEditor({ note }: { note: Note }) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Slim top bar */}
         <div className="flex items-center gap-1 px-3 py-2 sm:px-4">
-          <Button variant="ghost" size="icon-sm" className="lg:hidden" aria-label="До нотаток" onClick={() => { save.flush(); navigate('/notes'); }}>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="lg:hidden"
+            aria-label="До нотаток"
+            onClick={() => {
+              save.flush();
+              void navigate('/notes');
+            }}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <span className="flex items-center gap-1 text-xs text-muted" role="status">
-            {state === 'saving' || state === 'pending' ? <Loader2 className="h-3 w-3 animate-spin" /> : state === 'saved' ? <Check className="h-3 w-3 text-success" /> : null}
-            {state === 'pending' ? 'Редагування…' : state === 'saving' ? 'Збереження…' : state === 'saved' ? 'Збережено' : <span className="text-danger">Не збережено</span>}
+            {state === 'saving' || state === 'pending' ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : state === 'saved' ? (
+              <Check className="h-3 w-3 text-success" />
+            ) : null}
+            {state === 'pending' ? (
+              'Редагування…'
+            ) : state === 'saving' ? (
+              'Збереження…'
+            ) : state === 'saved' ? (
+              'Збережено'
+            ) : (
+              <span className="text-danger">Не збережено</span>
+            )}
           </span>
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => (preview ? startEditing() : setPreview(true))} aria-pressed={!preview} aria-label={preview ? 'Редагувати' : 'Перегляд'} className="max-sm:w-8 max-sm:px-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => (preview ? startEditing() : setPreview(true))}
+              aria-pressed={!preview}
+              aria-label={preview ? 'Редагувати' : 'Перегляд'}
+              className="max-sm:w-8 max-sm:px-0"
+            >
               {preview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               <span className="hidden sm:inline">{preview ? 'Редагувати' : 'Перегляд'}</span>
             </Button>
@@ -219,12 +281,20 @@ export function NoteEditor({ note }: { note: Note }) {
             <div className={cn('group/head flex items-end gap-2', coverColor && note.icon ? '-mt-12 ml-3' : 'mt-4')}>
               {note.icon && (
                 <LineIconPicker label="Іконка нотатки" value={note.icon} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
-                  <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface shadow-pop ring-1 ring-line/60" style={{ color: coverColor }}>
+                  <span
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface shadow-pop ring-1 ring-line/60"
+                    style={{ color: coverColor }}
+                  >
                     <LineIcon icon={note.icon} fallback={FileText} className="h-7 w-7" />
                   </span>
                 </LineIconPicker>
               )}
-              <div className={cn('flex gap-1 pb-1 text-[12.5px] text-subtle opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100', !note.icon && !coverColor && 'opacity-100 sm:opacity-0')}>
+              <div
+                className={cn(
+                  'flex gap-1 pb-1 text-[12.5px] text-subtle opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100',
+                  !note.icon && !coverColor && 'opacity-100 sm:opacity-0',
+                )}
+              >
                 {!note.icon && (
                   <LineIconPicker label="Іконка нотатки" value={undefined} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
                     <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
@@ -242,7 +312,8 @@ export function NoteEditor({ note }: { note: Note }) {
               </div>
             </div>
 
-            <input autoComplete="off"
+            <input
+              autoComplete="off"
               value={title}
               onChange={(e) => change({ title: e.target.value })}
               placeholder="Без назви"
@@ -271,7 +342,10 @@ export function NoteEditor({ note }: { note: Note }) {
               </span>
               <TagInput
                 className="min-w-0"
-                value={tagsText.split(',').map((t) => t.trim()).filter(Boolean)}
+                value={tagsText
+                  .split(',')
+                  .map((t) => t.trim())
+                  .filter(Boolean)}
                 onChange={(tags) => change({ tags: tags.join(', ') })}
                 placeholder="Додати тег"
               />
@@ -279,7 +353,8 @@ export function NoteEditor({ note }: { note: Note }) {
                 <Clock className="h-4 w-4" /> Змінено
               </span>
               <span className="text-muted">
-                {updatedAt.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })}, {updatedAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+                {updatedAt.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })},{' '}
+                {updatedAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
             <div className="my-6 h-px bg-line" />
@@ -339,7 +414,11 @@ export function NoteEditor({ note }: { note: Note }) {
                   key={i}
                   type="button"
                   onClick={() => jumpTo(i)}
-                  className={cn('block w-full truncate py-1 text-left transition-colors hover:text-ink', h.level === 1 ? 'font-medium text-ink' : 'text-muted', h.level === 3 && 'pl-3')}
+                  className={cn(
+                    'block w-full truncate py-1 text-left transition-colors hover:text-ink',
+                    h.level === 1 ? 'font-medium text-ink' : 'text-muted',
+                    h.level === 3 && 'pl-3',
+                  )}
                 >
                   {h.text}
                 </button>
@@ -350,7 +429,12 @@ export function NoteEditor({ note }: { note: Note }) {
             <>
               <p className="mb-2 mt-6 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle first:mt-0">Пов’язане</p>
               {relatedTasks.map((t) => (
-                <button key={t.id} type="button" onClick={() => openTask(t.id)} className="flex w-full items-center gap-2 py-1 text-left text-muted hover:text-ink">
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => openTask(t.id)}
+                  className="flex w-full items-center gap-2 py-1 text-left text-muted hover:text-ink"
+                >
                   <span className="h-3.5 w-3.5 shrink-0 rounded-full border-[1.5px] border-subtle" />
                   <span className="truncate">{t.title}</span>
                 </button>

@@ -44,21 +44,25 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
   const readOnly = isReadOnly(event, gcal);
 
   const removeOccurrence = async () => {
-    await actions.events.removeOccurrence(event, occurrence).then(() => toast.success('Повторення видалено'), () => undefined);
+    await actions.events.removeOccurrence(event, occurrence).then(
+      () => toast.success('Повторення видалено'),
+      () => undefined,
+    );
     onClose();
   };
 
   const removeAll = async () => {
     const ok = await confirm({
       title: event.recurrence ? 'Видалити всю серію?' : 'Видалити подію?',
-      description: event.recurrence
-        ? `Усі повторення «${event.title}» буде видалено.`
-        : `«${event.title}» буде видалено назавжди.`,
+      description: event.recurrence ? `Усі повторення «${event.title}» буде видалено.` : `«${event.title}» буде видалено назавжди.`,
       confirmLabel: 'Видалити',
       danger: true,
     });
     if (!ok) return;
-    await actions.events.remove(event.id).then(() => toast.success('Подію видалено'), () => undefined);
+    await actions.events.remove(event.id).then(
+      () => toast.success('Подію видалено'),
+      () => undefined,
+    );
     onClose();
   };
 
@@ -102,7 +106,12 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             </p>
           )}
           <div className="flex flex-wrap gap-1.5">
-            {category && <Badge color={color}><CategoryIcon category={category} />{category.name}</Badge>}
+            {category && (
+              <Badge color={color}>
+                <CategoryIcon category={category} />
+                {category.name}
+              </Badge>
+            )}
             {event.external && <Badge color={googleCalendar?.color}>Google Calendar{googleCalendar ? ` · ${googleCalendar.name}` : ''}</Badge>}
             {readOnly && <Badge>Лише перегляд</Badge>}
             {event.syncPending && gcal?.status === 'connected' && <Badge>Очікує синхронізації</Badge>}
@@ -112,38 +121,36 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
         {readOnly ? (
           <p className="mt-4 text-xs text-muted">Цей календар Google доступний лише для перегляду — змінюйте подію в Google Calendar.</p>
         ) : (
-        <DialogFooter>
-          {event.recurrence ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Trash2 className="h-4 w-4" /> Видалити…
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem onSelect={() => void removeOccurrence()}>
-                  Лише {formatDateKey(occurrence, 'd MMM')}
-                </DropdownMenuItem>
-                <DropdownMenuItem danger onSelect={() => void removeAll()}>
-                  Усю серію
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button variant="outline" onClick={() => void removeAll()}>
-              <Trash2 className="h-4 w-4" /> Видалити
+          <DialogFooter>
+            {event.recurrence ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Trash2 className="h-4 w-4" /> Видалити…
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onSelect={() => void removeOccurrence()}>Лише {formatDateKey(occurrence, 'd MMM')}</DropdownMenuItem>
+                  <DropdownMenuItem danger onSelect={() => void removeAll()}>
+                    Усю серію
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="outline" onClick={() => void removeAll()}>
+                <Trash2 className="h-4 w-4" /> Видалити
+              </Button>
+            )}
+            <Button
+              variant="dark"
+              onClick={() => {
+                onClose();
+                openEventForm({ event });
+              }}
+            >
+              <Pencil className="h-4 w-4" /> Редагувати
             </Button>
-          )}
-          <Button
-            variant="dark"
-            onClick={() => {
-              onClose();
-              openEventForm({ event });
-            }}
-          >
-            <Pencil className="h-4 w-4" /> Редагувати
-          </Button>
-        </DialogFooter>
+          </DialogFooter>
         )}
       </DialogContent>
     </Dialog>

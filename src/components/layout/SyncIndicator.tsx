@@ -26,17 +26,12 @@ export function useSyncSummary() {
 export function SyncIndicator({ variant = 'sidebar', collapsed }: { variant?: 'sidebar' | 'header'; collapsed?: boolean }) {
   const s = useSyncSummary();
   const Icon = s.icon;
-  const color =
-    s.tone === 'success' ? 'text-success' : s.tone === 'warning' ? 'text-warning-ink' : s.tone === 'danger' ? 'text-danger' : '';
+  const color = s.tone === 'success' ? 'text-success' : s.tone === 'warning' ? 'text-warning-ink' : s.tone === 'danger' ? 'text-danger' : '';
   return (
     <div
       role="status"
       title={`${s.label} — ${s.detail}`}
-      className={cn(
-        'flex items-center gap-2 text-xs',
-        variant === 'sidebar' ? 'text-sidebar-muted' : 'text-muted',
-        collapsed && 'justify-center',
-      )}
+      className={cn('flex items-center gap-2 text-xs', variant === 'sidebar' ? 'text-sidebar-muted' : 'text-muted', collapsed && 'justify-center')}
     >
       <Icon className={cn('h-3.5 w-3.5 shrink-0', color, s.icon === Loader2 && 'animate-spin')} aria-hidden />
       <span className={cn('truncate', collapsed && 'sr-only')}>{s.label}</span>

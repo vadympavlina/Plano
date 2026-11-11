@@ -25,9 +25,7 @@ export function occursOn(rule: RecurrenceRule, startKey: DateKey, dateKey: DateK
     case 'weekly': {
       if (!weekdaysOf(rule, start).includes(date.getDay())) return false;
       // Weeks are counted from the (Monday-based) week that contains the start.
-      const weeks = Math.round(
-        differenceInCalendarDays(startOfWeek(date, { weekStartsOn: 1 }), startOfWeek(start, { weekStartsOn: 1 })) / 7,
-      );
+      const weeks = Math.round(differenceInCalendarDays(startOfWeek(date, { weekStartsOn: 1 }), startOfWeek(start, { weekStartsOn: 1 })) / 7);
       return weeks % interval === 0;
     }
     case 'monthly': {
@@ -47,13 +45,7 @@ export function occursOn(rule: RecurrenceRule, startKey: DateKey, dateKey: DateK
 }
 
 /** All occurrence dates of a series within [rangeStart, rangeEnd] (inclusive). */
-export function occurrencesInRange(
-  rule: RecurrenceRule,
-  startKey: DateKey,
-  rangeStart: DateKey,
-  rangeEnd: DateKey,
-  exdates: DateKey[] = [],
-): DateKey[] {
+export function occurrencesInRange(rule: RecurrenceRule, startKey: DateKey, rangeStart: DateKey, rangeEnd: DateKey, exdates: DateKey[] = []): DateKey[] {
   const out: DateKey[] = [];
   let cur = rangeStart < startKey ? startKey : rangeStart;
   const last = rule.until && rule.until < rangeEnd ? rule.until : rangeEnd;
@@ -92,7 +84,10 @@ export function describeRecurrence(rule: RecurrenceRule | undefined): string {
       if (days && days.length === 5 && [1, 2, 3, 4, 5].every((d) => days.includes(d))) {
         text = n === 1 ? 'Щобудня' : `${base} у будні`;
       } else if (days) {
-        text = `${base}: ${[...days].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => WEEKDAY_NAMES[d]).join(', ')}`;
+        text = `${base}: ${[...days]
+          .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
+          .map((d) => WEEKDAY_NAMES[d])
+          .join(', ')}`;
       } else text = base;
       break;
     }

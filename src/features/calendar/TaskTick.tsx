@@ -28,7 +28,10 @@ export function TaskTick({ task, color, size = 14 }: { task: Task; color: string
         e.preventDefault();
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
-      className={cn('relative flex shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-2 before:content-[""]', done ? 'border-transparent bg-success text-on-fill' : 'bg-surface hover:bg-surface-2')}
+      className={cn(
+        'relative flex shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-2 before:content-[""]',
+        done ? 'border-transparent bg-success text-on-fill' : 'bg-surface hover:bg-surface-2',
+      )}
       style={{ width: size, height: size, borderColor: done ? undefined : color }}
     >
       {done && <Check className="stroke-[3.5]" style={{ width: size * 0.65, height: size * 0.65 }} />}
@@ -40,7 +43,10 @@ export function TaskTick({ task, color, size = 14 }: { task: Task; color: string
 export function taskChipStyle(color: string, done: boolean) {
   return done
     ? { borderColor: 'rgb(var(--line))', backgroundColor: 'rgb(var(--surface-2))' }
-    : { borderColor: `color-mix(in srgb, ${color} 70%, rgb(var(--surface)))`, backgroundColor: `color-mix(in srgb, ${color} calc(7% * var(--tint-k, 1)), rgb(var(--surface)))` };
+    : {
+        borderColor: `color-mix(in srgb, ${color} 70%, rgb(var(--surface)))`,
+        backgroundColor: `color-mix(in srgb, ${color} calc(7% * var(--tint-k, 1)), rgb(var(--surface)))`,
+      };
 }
 
 /** Drag type for untimed tasks dropped onto the time grid (desktop). */

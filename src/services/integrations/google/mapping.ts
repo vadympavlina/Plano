@@ -117,7 +117,13 @@ const compact = (d: DateKey) => d.replace(/-/g, '');
 export function toRecurrence(rule: RecurrenceRule, event: Pick<CalendarEvent, 'allDay' | 'startTime' | 'exdates'>, tz: string): string[] {
   const parts = [`FREQ=${rule.freq.toUpperCase()}`];
   if (rule.interval > 1) parts.push(`INTERVAL=${rule.interval}`);
-  if (rule.freq === 'weekly' && rule.byWeekday?.length) parts.push(`BYDAY=${[...rule.byWeekday].sort().map((d) => BYDAY[d]).join(',')}`);
+  if (rule.freq === 'weekly' && rule.byWeekday?.length)
+    parts.push(
+      `BYDAY=${[...rule.byWeekday]
+        .sort()
+        .map((d) => BYDAY[d])
+        .join(',')}`,
+    );
   if (rule.until) parts.push(event.allDay ? `UNTIL=${compact(rule.until)}` : `UNTIL=${compact(rule.until)}T235959Z`);
   const lines = [`RRULE:${parts.join(';')}`];
   if (event.exdates.length) {

@@ -148,46 +148,57 @@ export function useCardDrag(o: Options) {
     [hit, loop, place],
   );
 
-  const finish = useCallback(
-    (cancel: boolean) => {
-      const sess = s.current;
-      s.current = null;
-      if (!sess) return;
-      if (sess.timer) clearTimeout(sess.timer);
-      if (!sess.started) return;
-      cancelAnimationFrame(sess.raf);
-      window.removeEventListener('touchmove', preventScroll);
-      swallow.current = true;
-      setTimeout(() => (swallow.current = false), 300);
-      const el = ref.current;
-      const clone = sess.clone;
-      const zone = sess.zone;
-      opts.current.onHover?.(null);
-      const accepted = !cancel && zone !== null && opts.current.onDrop(zone) !== false;
-      if (el) el.style.opacity = '';
-      if (!clone) return;
-      if (accepted || reducedMotion()) return void clone.remove();
-      // Back to where it was: a quick spring from where the card was let go.
-      const dx = sess.x - sess.x0;
-      const dy = sess.y - sess.y0;
-      runSpring({
-        from: 1,
-        to: 0,
-        stiffness: 520,
-        damping: 38,
-        onUpdate: (k) => (clone.style.transform = `translate3d(${dx * k}px,${dy * k}px,0) scale(${1 + 0.03 * k})`),
-        onDone: () => clone.remove(),
-      });
-    },
-    [],
-  );
+  const finish = useCallback((cancel: boolean) => {
+    const sess = s.current;
+    s.current = null;
+    if (!sess) return;
+    if (sess.timer) clearTimeout(sess.timer);
+    if (!sess.started) return;
+    cancelAnimationFrame(sess.raf);
+    window.removeEventListener('touchmove', preventScroll);
+    swallow.current = true;
+    setTimeout(() => (swallow.current = false), 300);
+    const el = ref.current;
+    const clone = sess.clone;
+    const zone = sess.zone;
+    opts.current.onHover?.(null);
+    const accepted = !cancel && zone !== null && opts.current.onDrop(zone) !== false;
+    if (el) el.style.opacity = '';
+    if (!clone) return;
+    if (accepted || reducedMotion()) return void clone.remove();
+    // Back to where it was: a quick spring from where the card was let go.
+    const dx = sess.x - sess.x0;
+    const dy = sess.y - sess.y0;
+    runSpring({
+      from: 1,
+      to: 0,
+      stiffness: 520,
+      damping: 38,
+      onUpdate: (k) => (clone.style.transform = `translate3d(${dx * k}px,${dy * k}px,0) scale(${1 + 0.03 * k})`),
+      onDone: () => clone.remove(),
+    });
+  }, []);
 
   const onPointerDown = useCallback(
     (e: ReactPointerEvent<HTMLElement>) => {
       if (s.current || (e.pointerType === 'mouse' && e.button !== 0)) return;
       if ((e.target as HTMLElement).closest('input,textarea,[role=checkbox]')) return;
       const touch = e.pointerType !== 'mouse';
-      const sess: Session = { id: e.pointerId, touch, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, started: false, timer: null, clone: null, rect: null, zone: null, raf: 0, scrollers: [] };
+      const sess: Session = {
+        id: e.pointerId,
+        touch,
+        x0: e.clientX,
+        y0: e.clientY,
+        x: e.clientX,
+        y: e.clientY,
+        started: false,
+        timer: null,
+        clone: null,
+        rect: null,
+        zone: null,
+        raf: 0,
+        scrollers: [],
+      };
       s.current = sess;
       if (touch) {
         const target = e.currentTarget;

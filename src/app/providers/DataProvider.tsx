@@ -1,13 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Backend } from '@/lib/backend/types';
 import { parseCollectionShared, type ParseMemo } from '@/lib/validation/parse';
-import {
-  collectionSchemas,
-  habitLogsSchema,
-  integrationSchema,
-  profileSchema,
-  settingsSchema,
-} from '@/lib/validation/schemas';
+import { collectionSchemas, habitLogsSchema, integrationSchema, profileSchema, settingsSchema } from '@/lib/validation/schemas';
 import { DEFAULT_SETTINGS, starterCategories } from '@/lib/defaults';
 import { createRepositories, nowIso, type Repositories } from '@/services/repositories';
 import { setConnected } from '@/services/sync';
@@ -15,19 +9,7 @@ import type { Category, Project, UserData } from '@/types';
 import { applyOps, clearOutbox, readOutbox } from '@/lib/backend/outbox';
 
 type NodeKey = keyof UserData;
-const NODES: NodeKey[] = [
-  'profile',
-  'settings',
-  'categories',
-  'tasks',
-  'events',
-  'projects',
-  'habits',
-  'habitLogs',
-  'goals',
-  'notes',
-  'integrations',
-];
+const NODES: NodeKey[] = ['profile', 'settings', 'categories', 'tasks', 'events', 'projects', 'habits', 'habitLogs', 'goals', 'notes', 'integrations'];
 
 const EMPTY: UserData = {
   profile: {},
@@ -184,9 +166,7 @@ export function DataProvider({ backend, uid, children }: { backend: Backend; uid
     seeded.current = true;
     if (rawNull.current.settings && rawNull.current.categories) {
       const now = nowIso();
-      void repos
-        .batch('Початкове налаштування Plano', { settings: DEFAULT_SETTINGS, categories: starterCategories(now) })
-        .catch(() => undefined);
+      void repos.batch('Початкове налаштування Plano', { settings: DEFAULT_SETTINGS, categories: starterCategories(now) }).catch(() => undefined);
     }
   }, [serverReady, repos]);
 
@@ -221,7 +201,17 @@ function useSharedCollections(data: UserData) {
   const categoryById = useCallback((id?: string): Category | undefined => (id ? categories[id] : undefined), [categories]);
   const projectById = useCallback((id?: string): Project | undefined => (id ? projects[id] : undefined), [projects]);
   return useMemo(
-    () => ({ tasks: taskList, events: eventList, projects: projectList, habits: habitList, goals: goalList, notes: noteList, categories: categoryList, categoryById, projectById }),
+    () => ({
+      tasks: taskList,
+      events: eventList,
+      projects: projectList,
+      habits: habitList,
+      goals: goalList,
+      notes: noteList,
+      categories: categoryList,
+      categoryById,
+      projectById,
+    }),
     [taskList, eventList, projectList, habitList, goalList, noteList, categoryList, categoryById, projectById],
   );
 }

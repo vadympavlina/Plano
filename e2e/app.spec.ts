@@ -15,14 +15,20 @@ test('task: quick add, find it in Tasks, tick it off', async ({ page }) => {
   await page.goto('/#/tasks?list=today');
   const row = page.getByText('Купити молоко').first();
   await expect(row).toBeVisible();
-  await page.getByRole('checkbox', { name: /Купити молоко/ }).first().click();
+  await page
+    .getByRole('checkbox', { name: /Купити молоко/ })
+    .first()
+    .click();
   await expect(page.getByRole('checkbox', { name: /Купити молоко/ }).first()).toHaveAttribute('aria-checked', 'true');
 });
 
 test('habit: create one and mark today', async ({ page }) => {
   await start(page);
   await page.goto('/#/habits');
-  await page.getByRole('button', { name: /Звичка/ }).first().click();
+  await page
+    .getByRole('button', { name: /Звичка/ })
+    .first()
+    .click();
   await page.getByLabel('Назва').fill('Вода');
   await page.getByRole('button', { name: 'Створити звичку' }).click();
   await expect(page.getByText('Вода').first()).toBeVisible();
@@ -181,7 +187,11 @@ test('quick add: «Детальніше…» with an empty title opens the full 
   test.skip(isMobile, 'the «Подія» button is for wider screens; phones use the tab bar');
   await start(page);
   await page.goto('/#/calendar?view=week');
-  await page.getByRole('button', { name: /поді[яю]/i }).filter({ visible: true }).first().click();
+  await page
+    .getByRole('button', { name: /поді[яю]/i })
+    .filter({ visible: true })
+    .first()
+    .click();
   await page.getByRole('button', { name: 'Детальніше…' }).click();
   await expect(page.getByRole('dialog')).toContainText('Нова подія');
   await expect(page.getByRole('switch', { name: 'Весь день' })).toBeVisible();
@@ -195,7 +205,8 @@ test('phone: the menu drawer follows the finger and a flick to the left closes i
   await expect(drawer).toBeVisible();
   await page.waitForTimeout(500);
   const cdp = await page.context().newCDPSession(page);
-  const touch = (type: string, x?: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
+  const touch = (type: string, x?: number) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
   // Slowly 40px left and let go: it springs back and stays open.
   await touch('touchStart', 250);
   for (const x of [235, 220, 210]) {
@@ -245,7 +256,8 @@ test('phone: a sheet that is still sliding in can be caught by a finger', async 
   expect(await sheet.evaluate((e) => getComputedStyle(e).translate)).toMatch(/^(none|0px( 0px)?)$/);
   const cdp = await page.context().newCDPSession(page);
   const handle = (await sheet.locator('div.touch-none').first().boundingBox())!;
-  const touch = (type: string, y?: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: 195, y: y!, id: 1 }] });
+  const touch = (type: string, y?: number) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: 195, y: y!, id: 1 }] });
   await touch('touchStart', handle.y + 10);
   await touch('touchMove', handle.y + 40);
   await page.waitForTimeout(60);
@@ -283,7 +295,14 @@ test('desktop: the sidebar button collapses and restores the menu', async ({ pag
   await page.locator('[class*="h-[72px]"] button').first().click();
   // Collapsed: it slides out and is no longer reachable by keyboard or pointer.
   await expect(page.locator('div[inert]').filter({ has: nav })).toHaveCount(1);
-  await expect.poll(() => page.locator('div[inert]').first().evaluate((e) => e.getBoundingClientRect().width)).toBe(0);
+  await expect
+    .poll(() =>
+      page
+        .locator('div[inert]')
+        .first()
+        .evaluate((e) => e.getBoundingClientRect().width),
+    )
+    .toBe(0);
   await page.locator('[class*="h-[72px]"] button').first().click();
   await expect(nav).toBeVisible();
 });
@@ -292,7 +311,8 @@ test('phone: a swipe from the left edge opens the menu', async ({ page, isMobile
   test.skip(!isMobile, 'touch gestures');
   await start(page);
   const cdp = await page.context().newCDPSession(page);
-  const touch = (type: string, x?: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
+  const touch = (type: string, x?: number) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
   await touch('touchStart', 8);
   for (const x of [30, 52, 74]) {
     await touch('touchMove', x);

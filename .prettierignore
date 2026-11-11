@@ -1,0 +1,9 @@
+dist
+dist-e2e
+node_modules
+public
+assets-src
+package-lock.json
+README.md
+docs
+index.html

@@ -61,7 +61,19 @@ function HabitListItem({ habit, active }: { habit: Habit; active: boolean }) {
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[13.5px] font-semibold">{habit.name}</span>
         <span className="block text-[11.5px] text-muted">
-          {isPaused(habit, today) ? 'На паузі' : !isScheduled(habit, today) && !done ? 'Сьогодні вихідний' : habit.goalType === 'count' ? `${value}/${habit.target} ${habit.unit ?? ''}` : isBad(habit) ? (done ? 'Без зривів' : 'Зрив') : done ? 'Виконано' : 'Ще ні'}
+          {isPaused(habit, today)
+            ? 'На паузі'
+            : !isScheduled(habit, today) && !done
+              ? 'Сьогодні вихідний'
+              : habit.goalType === 'count'
+                ? `${value}/${habit.target} ${habit.unit ?? ''}`
+                : isBad(habit)
+                  ? done
+                    ? 'Без зривів'
+                    : 'Зрив'
+                  : done
+                    ? 'Виконано'
+                    : 'Ще ні'}
         </span>
       </span>
       {streak > 0 && <span className="text-[12px] font-semibold text-warning-ink">🔥 {streak}</span>}
@@ -102,10 +114,18 @@ export default function HabitPage() {
 
   const setValue = (v: number) => void actions.habits.setValue(habit.id, today, Math.max(0, v)).catch(() => undefined);
   const remove = async () => {
-    const ok = await confirm({ title: 'Видалити звичку?', description: `«${habit.name}» і вся її історія буде видалено.`, confirmLabel: 'Видалити', danger: true });
+    const ok = await confirm({
+      title: 'Видалити звичку?',
+      description: `«${habit.name}» і вся її історія буде видалено.`,
+      confirmLabel: 'Видалити',
+      danger: true,
+    });
     if (!ok) return;
-    navigate('/habits', { replace: true });
-    await actions.habits.remove(habit.id).then(() => toast.success('Звичку видалено'), () => undefined);
+    void navigate('/habits', { replace: true });
+    await actions.habits.remove(habit.id).then(
+      () => toast.success('Звичку видалено'),
+      () => undefined,
+    );
   };
 
   return (
@@ -144,7 +164,9 @@ export default function HabitPage() {
             </p>
           </div>
           <div className="flex w-full items-center gap-2 sm:w-auto [&>*:first-child]:flex-1 sm:[&>*:first-child]:flex-none">
-            {isPaused(habit, today) ? <span className="sm:hidden" /> : habit.goalType === 'count' ? (
+            {isPaused(habit, today) ? (
+              <span className="sm:hidden" />
+            ) : habit.goalType === 'count' ? (
               <div className="flex items-center justify-between gap-1 rounded-xl p-1" style={{ backgroundColor: tint(color, 0.1) }}>
                 <Button size="icon-sm" variant="ghost" aria-label="Зменшити" onClick={() => setValue(value - 1)} disabled={value <= 0}>
                   <Minus className="h-4 w-4" />
@@ -161,10 +183,14 @@ export default function HabitPage() {
                 type="button"
                 onClick={() => void toggle(habit, today)}
                 aria-pressed={done}
-                className={cn('flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors', done ? '' : 'border-2')}
+                className={cn(
+                  'flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[14px] font-semibold transition-colors',
+                  done ? '' : 'border-2',
+                )}
                 style={done ? { backgroundColor: color, color: onColor(color) } : { borderColor: tint(color, 0.5), color: inkOf(color) }}
               >
-                <Check className="h-4 w-4 stroke-[3]" /> {bad ? (done ? 'Сьогодні без зривів · позначити зрив' : 'Зрив сьогодні · скасувати') : done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}
+                <Check className="h-4 w-4 stroke-[3]" />{' '}
+                {bad ? (done ? 'Сьогодні без зривів · позначити зрив' : 'Зрив сьогодні · скасувати') : done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}
               </button>
             )}
             <DropdownMenu>
@@ -264,7 +290,9 @@ export default function HabitPage() {
                     type="button"
                     disabled={future || paused || d < habit.startDate}
                     // Bad habit, day before tracking started: a tap starts tracking from that day.
-                    onClick={() => void (bad && !scheduled ? actions.habits.update(habit.id, { trackFrom: d }).catch(() => undefined) : toggle(habit, d, 'toggle'))}
+                    onClick={() =>
+                      void (bad && !scheduled ? actions.habits.update(habit.id, { trackFrom: d }).catch(() => undefined) : toggle(habit, d, 'toggle'))
+                    }
                     aria-pressed={dDone}
                     aria-label={`${formatDateKey(d, 'd MMMM')}: ${paused ? 'пауза' : dDone ? 'виконано' : scheduled ? 'не виконано' : 'не заплановано'}`}
                     title={habit.dayNotes?.[d]}
@@ -275,18 +303,49 @@ export default function HabitPage() {
                       paused && 'border border-dashed border-line',
                     )}
                     style={{
-                      backgroundColor: slip ? 'rgb(var(--danger))' : dDone ? (bad ? 'rgb(var(--success))' : color) : partial ? tint(color, 0.35) : future ? undefined : scheduled ? 'rgb(var(--surface-2))' : undefined,
-                      color: slip ? 'rgb(var(--on-fill))' : dDone ? (bad ? 'rgb(var(--on-fill))' : onColor(color)) : partial ? 'rgb(var(--ink))' : future || !scheduled ? 'rgb(var(--subtle))' : 'rgb(var(--muted))',
+                      backgroundColor: slip
+                        ? 'rgb(var(--danger))'
+                        : dDone
+                          ? bad
+                            ? 'rgb(var(--success))'
+                            : color
+                          : partial
+                            ? tint(color, 0.35)
+                            : future
+                              ? undefined
+                              : scheduled
+                                ? 'rgb(var(--surface-2))'
+                                : undefined,
+                      color: slip
+                        ? 'rgb(var(--on-fill))'
+                        : dDone
+                          ? bad
+                            ? 'rgb(var(--on-fill))'
+                            : onColor(color)
+                          : partial
+                            ? 'rgb(var(--ink))'
+                            : future || !scheduled
+                              ? 'rgb(var(--subtle))'
+                              : 'rgb(var(--muted))',
                       ['--tw-ring-color' as string]: tint(color, 0.5),
                     }}
                   >
                     {Number(d.slice(8))}
-                    {habit.dayNotes?.[d] && <span className="absolute bottom-1 h-1 w-1 rounded-full" style={{ backgroundColor: slip ? 'rgb(var(--on-fill))' : dDone ? (bad ? 'rgb(var(--on-fill))' : onColor(color)) : color }} />}
+                    {habit.dayNotes?.[d] && (
+                      <span
+                        className="absolute bottom-1 h-1 w-1 rounded-full"
+                        style={{ backgroundColor: slip ? 'rgb(var(--on-fill))' : dDone ? (bad ? 'rgb(var(--on-fill))' : onColor(color)) : color }}
+                      />
+                    )}
                   </button>
                 );
               })}
             </div>
-            <p className="mt-2 text-[12px] text-subtle">{bad ? 'Натисніть на день, щоб позначити або зняти зрив. Сірий день до початку відстеження — почати рахувати з нього.' : 'Натисніть на день, щоб відмітити або зняти відмітку.'}</p>
+            <p className="mt-2 text-[12px] text-subtle">
+              {bad
+                ? 'Натисніть на день, щоб позначити або зняти зрив. Сірий день до початку відстеження — почати рахувати з нього.'
+                : 'Натисніть на день, щоб відмітити або зняти відмітку.'}
+            </p>
             <DayNotes habit={habit} today={today} />
           </section>
 
@@ -294,7 +353,11 @@ export default function HabitPage() {
             <h2 className="mb-3 text-[14px] font-semibold">{bad ? 'Чисті дні по тижнях' : 'Виконання по тижнях'}</h2>
             <div className="flex h-[180px] items-end gap-2 rounded-2xl bg-surface p-4">
               {weeks.map((w, i) => (
-                <div key={w.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`Тиждень з ${formatDateKey(w.start, 'd MMM')}: ${w.rate}%`}>
+                <div
+                  key={w.start}
+                  className="flex h-full flex-1 flex-col items-center justify-end gap-1"
+                  title={`Тиждень з ${formatDateKey(w.start, 'd MMM')}: ${w.rate}%`}
+                >
                   <span className="text-[11.5px] tabular-nums text-muted">{w.scheduled ? `${w.rate}%` : ''}</span>
                   <div
                     className="w-full rounded-md"
@@ -307,7 +370,8 @@ export default function HabitPage() {
             <div className="mt-4 rounded-2xl bg-surface p-4 text-[13px] leading-relaxed text-muted">
               {insight ? (
                 <>
-                  Найкраще виходить у <b className="text-ink">{joinDays(insight.best)}</b>. Найчастіше пропускаєте <b className="text-ink">{joinDays(insight.worst)}</b>.
+                  Найкраще виходить у <b className="text-ink">{joinDays(insight.best)}</b>. Найчастіше пропускаєте{' '}
+                  <b className="text-ink">{joinDays(insight.worst)}</b>.
                 </>
               ) : (
                 'Ще замало даних, щоб побачити закономірності. Продовжуйте відмічати — підказки з’являться за кілька тижнів.'
@@ -373,7 +437,10 @@ function PauseDialog({ habit, today, onClose }: { habit: Habit; today: string; o
   const [from, setFrom] = useState(today);
   const [to, setTo] = useState<string | undefined>();
   const save = () => {
-    void actions.habits.pause(habit, from, to && to >= from ? to : undefined).then(() => toast.success('Звичку поставлено на паузу'), () => undefined);
+    void actions.habits.pause(habit, from, to && to >= from ? to : undefined).then(
+      () => toast.success('Звичку поставлено на паузу'),
+      () => undefined,
+    );
     onClose();
   };
   return (
@@ -386,14 +453,23 @@ function PauseDialog({ habit, today, onClose }: { habit: Habit; today: string; o
         </div>
         <div className="mt-2 flex gap-2 text-xs">
           {[3, 7, 14].map((n) => (
-            <button key={n} type="button" className="font-medium text-muted underline underline-offset-2 hover:text-ink" onClick={() => setTo(addDaysKey(from, n - 1))}>
+            <button
+              key={n}
+              type="button"
+              className="font-medium text-muted underline underline-offset-2 hover:text-ink"
+              onClick={() => setTo(addDaysKey(from, n - 1))}
+            >
               {days(n)}
             </button>
           ))}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Скасувати</Button>
-          <Button variant="dark" onClick={save}>Поставити на паузу</Button>
+          <Button variant="outline" onClick={onClose}>
+            Скасувати
+          </Button>
+          <Button variant="dark" onClick={save}>
+            Поставити на паузу
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

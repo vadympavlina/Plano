@@ -3,7 +3,20 @@ import type { Goal } from '@/types';
 import { expectedValue, goalPace, paceText } from './logic';
 
 const goal = (extra: Partial<Goal>): Goal =>
-  ({ id: 'g', title: 'g', targetValue: 100, currentValue: 0, status: 'active', projectIds: [], history: [], createdAt: '2026-01-01T00:00:00Z', updatedAt: '', startDate: '2026-01-01', targetDate: '2026-12-31', ...extra }) as Goal;
+  ({
+    id: 'g',
+    title: 'g',
+    targetValue: 100,
+    currentValue: 0,
+    status: 'active',
+    projectIds: [],
+    history: [],
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '',
+    startDate: '2026-01-01',
+    targetDate: '2026-12-31',
+    ...extra,
+  }) as Goal;
 
 describe('goal pace', () => {
   it('computes the expected value on a straight line', () => {

@@ -1,14 +1,4 @@
-import {
-  addDays,
-  differenceInCalendarDays,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isValid,
-  parse,
-  startOfMonth,
-  startOfWeek,
-} from 'date-fns';
+import { addDays, differenceInCalendarDays, endOfMonth, endOfWeek, format, isValid, parse, startOfMonth, startOfWeek } from 'date-fns';
 import { uk } from 'date-fns/locale/uk';
 import type { DateKey, Settings, TimeString } from '@/types';
 
@@ -89,11 +79,7 @@ export function formatTime(time: TimeString | undefined, fmt: Settings['timeForm
   return format(d, 'h:mm a');
 }
 
-export function formatTimeRange(
-  start: TimeString | undefined,
-  end: TimeString | undefined,
-  fmt: Settings['timeFormat'] = '24h',
-): string {
+export function formatTimeRange(start: TimeString | undefined, end: TimeString | undefined, fmt: Settings['timeFormat'] = '24h'): string {
   if (!start) return '';
   return end ? `${formatTime(start, fmt)} – ${formatTime(end, fmt)}` : formatTime(start, fmt);
 }
@@ -131,9 +117,7 @@ export function monthGrid(key: DateKey, weekStartsOn: 0 | 1): DateKey[] {
 
 export function weekdayLabels(weekStartsOn: 0 | 1, style: 'short' | 'narrow' = 'short'): string[] {
   const base = startOfWeek(new Date(2024, 0, 10), { weekStartsOn });
-  return Array.from({ length: 7 }, (_, i) =>
-    capitalize(format(addDays(base, i), style === 'short' ? 'EEEEEE' : 'EEEEE', { locale: uk })),
-  );
+  return Array.from({ length: 7 }, (_, i) => capitalize(format(addDays(base, i), style === 'short' ? 'EEEEEE' : 'EEEEE', { locale: uk })));
 }
 
 export function greetingFor(date: Date): string {

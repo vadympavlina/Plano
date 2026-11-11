@@ -1,19 +1,7 @@
 import type { Backend } from '@/lib/backend/types';
 import { stripUndefined } from '@/lib/validation/parse';
 import { trackWrite } from '@/services/sync';
-import type {
-  Category,
-  CalendarEvent,
-  Goal,
-  Habit,
-  IntegrationState,
-  Note,
-  Profile,
-  Project,
-  Settings,
-  Task,
-  UserData,
-} from '@/types';
+import type { Category, CalendarEvent, Goal, Habit, IntegrationState, Note, Profile, Project, Settings, Task, UserData } from '@/types';
 
 export const nowIso = () => new Date().toISOString();
 
@@ -53,9 +41,7 @@ function collectionRepo<T extends Entity>(backend: Backend, base: string, name: 
       return { id, write };
     },
     update(id, patch) {
-      return trackWrite(`Оновлення ${label}`, () =>
-        backend.update(`${path}/${id}`, toPatch({ ...patch, updatedAt: nowIso() })),
-      );
+      return trackWrite(`Оновлення ${label}`, () => backend.update(`${path}/${id}`, toPatch({ ...patch, updatedAt: nowIso() })));
     },
     remove(id) {
       return trackWrite(`Видалення ${label}`, () => backend.remove(`${path}/${id}`));

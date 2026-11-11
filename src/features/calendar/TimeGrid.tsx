@@ -74,7 +74,19 @@ function DayRing({ done, total }: { done: number; total: number }) {
   return (
     <svg width="20" height="20" viewBox="0 0 20 20" className="shrink-0" role="img" aria-label={total ? `Виконано ${done} з ${total}` : 'Задач немає'}>
       <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.4" className="stroke-line" />
-      {share > 0 && <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.4" strokeLinecap="round" strokeDasharray={`${c * share} ${c}`} transform="rotate(-90 10 10)" className={share === 1 ? 'stroke-success' : 'stroke-primary'} />}
+      {share > 0 && (
+        <circle
+          cx="10"
+          cy="10"
+          r={r}
+          fill="none"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeDasharray={`${c * share} ${c}`}
+          transform="rotate(-90 10 10)"
+          className={share === 1 ? 'stroke-success' : 'stroke-primary'}
+        />
+      )}
     </svg>
   );
 }
@@ -250,7 +262,11 @@ export function TimeGrid({
     const start = Math.max(0, dropMinute(e.clientY));
     const day = days[dayIndex];
     void actions.tasks
-      .update(task.id, { ...(task.dueDate || !task.startDate ? { dueDate: day } : { startDate: day }), startTime: minutesToTime(start), endTime: minutesToTime(Math.min(start + 60, DAY_END - 1)) })
+      .update(task.id, {
+        ...(task.dueDate || !task.startDate ? { dueDate: day } : { startDate: day }),
+        startTime: minutesToTime(start),
+        endTime: minutesToTime(Math.min(start + 60, DAY_END - 1)),
+      })
       .catch(() => undefined);
   };
   const clearLongPress = () => {
@@ -469,34 +485,51 @@ export function TimeGrid({
           })}
         </div>
       ) : (
-      <div className="flex">
-        <div className="w-12 shrink-0 sm:w-14" />
-        <div className="grid flex-1" style={gridCols}>
-          {days.map((d) => {
-            const isToday = d === today;
-            const p = dayProgress.get(d);
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => onSelectDay(d)}
-                className={cn('flex items-center justify-between gap-1.5 px-2.5 py-3 text-left transition-colors hover:bg-surface-2/60 lg:px-3', days.length > 3 && 'justify-center px-1 py-2.5')}
-                aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
-              >
-                <span className={cn('min-w-0 truncate text-[13.5px] font-bold', days.length > 3 && 'flex w-full flex-col items-center gap-0.5 text-[12px] leading-none')}>
-                  <span className={cn('capitalize', isToday && 'text-primary')}>{isToday && days.length <= 3 ? 'Сьогодні' : formatDateKey(d, 'EEEEEE')}</span>
-                  <span className={cn('font-medium', days.length <= 3 && 'ml-1.5', isToday ? 'text-primary' : 'text-muted', days.length > 3 && 'text-[15px] font-bold')}>{Number(d.slice(8))}</span>
-                </span>
-                {days.length <= 3 && (
-                  <span className="hidden sm:block">
-                    <DayRing done={p?.done ?? 0} total={p?.total ?? 0} />
+        <div className="flex">
+          <div className="w-12 shrink-0 sm:w-14" />
+          <div className="grid flex-1" style={gridCols}>
+            {days.map((d) => {
+              const isToday = d === today;
+              const p = dayProgress.get(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => onSelectDay(d)}
+                  className={cn(
+                    'flex items-center justify-between gap-1.5 px-2.5 py-3 text-left transition-colors hover:bg-surface-2/60 lg:px-3',
+                    days.length > 3 && 'justify-center px-1 py-2.5',
+                  )}
+                  aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
+                >
+                  <span
+                    className={cn(
+                      'min-w-0 truncate text-[13.5px] font-bold',
+                      days.length > 3 && 'flex w-full flex-col items-center gap-0.5 text-[12px] leading-none',
+                    )}
+                  >
+                    <span className={cn('capitalize', isToday && 'text-primary')}>{isToday && days.length <= 3 ? 'Сьогодні' : formatDateKey(d, 'EEEEEE')}</span>
+                    <span
+                      className={cn(
+                        'font-medium',
+                        days.length <= 3 && 'ml-1.5',
+                        isToday ? 'text-primary' : 'text-muted',
+                        days.length > 3 && 'text-[15px] font-bold',
+                      )}
+                    >
+                      {Number(d.slice(8))}
+                    </span>
                   </span>
-                )}
-              </button>
-            );
-          })}
+                  {days.length <= 3 && (
+                    <span className="hidden sm:block">
+                      <DayRing done={p?.done ?? 0} total={p?.total ?? 0} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
       )}
 
       {/* All-day row: always present so all-day events can be drawn here */}
@@ -550,7 +583,10 @@ export function TimeGrid({
                     draggable={t.status !== 'completed'}
                     onDragStart={(e) => startTaskDrag(e, t.id)}
                     onClick={() => openTask(t.id)}
-                    className={cn('flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink max-sm:py-1.5', t.status === 'completed' && 'text-subtle line-through')}
+                    className={cn(
+                      'flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink max-sm:py-1.5',
+                      t.status === 'completed' && 'text-subtle line-through',
+                    )}
                     title={`Задача: ${t.title}`}
                   >
                     <TaskTick task={t} color={taskColor(t)} size={14} />
@@ -583,7 +619,10 @@ export function TimeGrid({
             {HOURS.slice(1).map((h) => (
               <span
                 key={h}
-                className={cn('absolute right-2 -translate-y-1/2 text-[11.5px] tabular-nums text-subtle', showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible')}
+                className={cn(
+                  'absolute right-2 -translate-y-1/2 text-[11.5px] tabular-nums text-subtle',
+                  showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible',
+                )}
                 style={{ top: h * HOUR_PX }}
               >
                 {formatTime(minutesToTime(h * 60), settings.timeFormat).replace(':00', settings.timeFormat === '12h' ? '' : ':00')}
@@ -692,10 +731,20 @@ export function TimeGrid({
                     >
                       <div className={cn('flex gap-2.5', short ? 'items-center' : 'items-start')}>
                         <span className={cn(!short && 'pt-0.5')}>
-                          {item.kind === 'task' ? <TaskTick task={item.task} color={item.color} size={short ? 13 : 16} /> : <Marker category={item.category} color={item.color} />}
+                          {item.kind === 'task' ? (
+                            <TaskTick task={item.task} color={item.color} size={short ? 13 : 16} />
+                          ) : (
+                            <Marker category={item.category} color={item.color} />
+                          )}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className={cn('flex items-center gap-1 truncate font-semibold leading-tight', single ? 'text-[14.5px]' : 'text-[12.5px]', done && 'text-subtle line-through')}>
+                          <p
+                            className={cn(
+                              'flex items-center gap-1 truncate font-semibold leading-tight',
+                              single ? 'text-[14.5px]' : 'text-[12.5px]',
+                              done && 'text-subtle line-through',
+                            )}
+                          >
                             <span className="truncate">{item.title}</span>
                             {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-3 w-3 shrink-0 opacity-50" />}
                             {short && <span className="ml-auto shrink-0 pl-1 text-[12px] font-medium tabular-nums text-muted">{fmt(start)}</span>}
@@ -704,7 +753,9 @@ export function TimeGrid({
                             <p className={cn('mt-0.5 truncate tabular-nums text-muted', single ? 'text-[12.5px]' : 'text-[11.5px]')}>
                               {fmt(start)} – {fmt(end)}
                               {end - start >= 30 && ` · ${formatDuration(end - start)}`}
-                              {item.kind === 'task' && item.task.subtasks.length > 0 && ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}
+                              {item.kind === 'task' &&
+                                item.task.subtasks.length > 0 &&
+                                ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}
                             </p>
                           )}
                           {!short && single && item.kind === 'event' && item.occurrence.event.location && (

@@ -29,7 +29,13 @@ function renderLine(line: string, key: number): ReactNode {
   for (const m of clean.matchAll(URL_RE)) {
     parts.push(clean.slice(last, m.index));
     parts.push(
-      <a key={m.index} href={m[0]} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline">
+      <a
+        key={m.index}
+        href={m[0]}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-0.5 font-medium text-primary hover:underline"
+      >
         {linkLabel(m[0])}
         <ExternalLink className="h-3 w-3" />
       </a>,

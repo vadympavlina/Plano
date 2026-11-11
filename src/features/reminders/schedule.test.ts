@@ -4,9 +4,43 @@ import type { CalendarEvent, Habit, Task, UserData } from '@/types';
 import { buildReminders } from './schedule';
 
 const T0 = '2025-04-01T00:00:00.000Z';
-const ev = { id: 'e', title: 'Зустріч', date: '2025-04-07', allDay: false, startTime: '10:00', endTime: '11:00', exdates: [], source: 'plano', createdAt: T0, updatedAt: T0 } as CalendarEvent;
-const task = { id: 't', title: 'Звіт', status: 'todo', priority: 'medium', subtasks: [], tags: [], dueDate: '2025-04-07', startTime: '15:00', createdAt: T0, updatedAt: T0 } as Task;
-const habit = { id: 'h', name: 'Вода', icon: '💧', color: 'teal', schedule: [0, 1, 2, 3, 4, 5, 6], startDate: '2025-04-01', goalType: 'check', target: 1, archived: false, createdAt: T0, updatedAt: T0 } as Habit;
+const ev = {
+  id: 'e',
+  title: 'Зустріч',
+  date: '2025-04-07',
+  allDay: false,
+  startTime: '10:00',
+  endTime: '11:00',
+  exdates: [],
+  source: 'plano',
+  createdAt: T0,
+  updatedAt: T0,
+} as CalendarEvent;
+const task = {
+  id: 't',
+  title: 'Звіт',
+  status: 'todo',
+  priority: 'medium',
+  subtasks: [],
+  tags: [],
+  dueDate: '2025-04-07',
+  startTime: '15:00',
+  createdAt: T0,
+  updatedAt: T0,
+} as Task;
+const habit = {
+  id: 'h',
+  name: 'Вода',
+  icon: '💧',
+  color: 'teal',
+  schedule: [0, 1, 2, 3, 4, 5, 6],
+  startDate: '2025-04-01',
+  goalType: 'check',
+  target: 1,
+  archived: false,
+  createdAt: T0,
+  updatedAt: T0,
+} as Habit;
 const data = (settings = {}, logs = {}) =>
   ({ settings: { ...DEFAULT_SETTINGS, ...settings }, events: { e: ev }, tasks: { t: task }, habits: { h: habit }, habitLogs: logs }) as unknown as UserData;
 const now = new Date(2025, 3, 7, 7, 0); // 7 Apr, 07:00 local
@@ -24,7 +58,10 @@ describe('buildReminders', () => {
     expect(today[0].body).toBe('1 задача · 1 подія, перша о 10:00');
   });
   it('respects switches and done habits, and never schedules the past', () => {
-    const r = buildReminders(data({ remindEventsMin: 0, remindTasks: false, digestAt: '', eveningAt: '' }, { h: { '2025-04-07': 1 } }), new Date(2025, 3, 7, 22, 0));
+    const r = buildReminders(
+      data({ remindEventsMin: 0, remindTasks: false, digestAt: '', eveningAt: '' }, { h: { '2025-04-07': 1 } }),
+      new Date(2025, 3, 7, 22, 0),
+    );
     expect(r.every((x) => x.tag?.startsWith('habits:') && x.at > new Date(2025, 3, 7, 22, 0).getTime())).toBe(true);
     expect(r.some((x) => x.tag === 'habits:2025-04-07')).toBe(false);
   });
@@ -32,7 +69,16 @@ describe('buildReminders', () => {
 
 describe('per-item reminders', () => {
   it('uses the item reminder, turns it off with 0, and reminds all-day events only when asked', () => {
-    const allDay = { ...ev, id: 'b', title: 'ДН', allDay: true, startTime: undefined, endTime: undefined, date: '2025-04-08', remindMin: 1440 } as CalendarEvent;
+    const allDay = {
+      ...ev,
+      id: 'b',
+      title: 'ДН',
+      allDay: true,
+      startTime: undefined,
+      endTime: undefined,
+      date: '2025-04-08',
+      remindMin: 1440,
+    } as CalendarEvent;
     const d = { ...data(), events: { e: { ...ev, remindMin: 60 }, b: allDay }, tasks: { t: { ...task, remindMin: 0 } } } as unknown as UserData;
     const r = buildReminders(d, now);
     const at = (tag: string) => r.find((x) => x.tag === tag)?.at;

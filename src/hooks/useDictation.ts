@@ -13,11 +13,15 @@ interface Recognition {
 }
 type RecognitionCtor = new () => Recognition;
 
-const Ctor = (typeof window !== 'undefined' && ((window as unknown as Record<string, unknown>).SpeechRecognition ?? (window as unknown as Record<string, unknown>).webkitSpeechRecognition)) as RecognitionCtor | undefined;
+const Ctor = (typeof window !== 'undefined' &&
+  ((window as unknown as Record<string, unknown>).SpeechRecognition ?? (window as unknown as Record<string, unknown>).webkitSpeechRecognition)) as
+  RecognitionCtor | undefined;
 
 const nav = typeof navigator !== 'undefined' ? navigator : undefined;
 const isIOS = !!nav && (/iPhone|iPad|iPod/.test(nav.userAgent) || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1));
-const standalone = typeof window !== 'undefined' && (window.matchMedia?.('(display-mode: standalone)').matches || (nav as { standalone?: boolean } | undefined)?.standalone === true);
+const standalone =
+  typeof window !== 'undefined' &&
+  (window.matchMedia?.('(display-mode: standalone)').matches || (nav as { standalone?: boolean } | undefined)?.standalone === true);
 const BROKEN_KEY = 'plano:dictation-broken';
 const brokenBefore = () => {
   try {
@@ -54,7 +58,13 @@ export function useDictation(onText: (text: string, final: boolean) => void, onE
     r.continuous = false;
     r.onresult = (e) => {
       const parts = Array.from(e.results);
-      cb.current.onText(parts.map((p) => p[0].transcript).join(' ').trim(), parts.every((p) => p.isFinal));
+      cb.current.onText(
+        parts
+          .map((p) => p[0].transcript)
+          .join(' ')
+          .trim(),
+        parts.every((p) => p.isFinal),
+      );
     };
     r.onerror = (e) => {
       if (e.error === 'aborted' || e.error === 'no-speech') return;

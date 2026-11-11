@@ -49,7 +49,7 @@ function Group({ id, label, to, onAdd, children, big }: { id: string; label: str
   return (
     <div className="mt-4">
       <div className={cn('mb-1 flex items-center gap-1 px-3.5 font-semibold text-sidebar-muted', big ? 'text-[12.5px]' : 'text-[11.5px]')}>
-        <button type="button" onClick={to ? () => navigate(to) : toggle} className="hover:text-white">
+        <button type="button" onClick={to ? () => void navigate(to) : toggle} className="hover:text-white">
           {label}
         </button>
         <button type="button" onClick={toggle} aria-label={closed ? `Розгорнути «${label}»` : `Згорнути «${label}»`} className="rounded p-0.5 hover:text-white">
@@ -72,7 +72,7 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
   const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const go = (to: string) => () => {
-    navigate(to);
+    void navigate(to);
     onNavigate?.();
   };
   const { tasks, habits } = useCollections();
@@ -97,9 +97,16 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
           <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate} className={({ isActive }) => itemCls(isActive, !!big)}>
             {({ isActive }) => (
               <>
-                <Icon className={cn('shrink-0', big ? 'h-5 w-5' : 'h-[18px] w-[18px]', isActive ? 'text-primary-bright' : 'text-sidebar-muted')} strokeWidth={isActive ? 2.1 : 1.9} />
+                <Icon
+                  className={cn('shrink-0', big ? 'h-5 w-5' : 'h-[18px] w-[18px]', isActive ? 'text-primary-bright' : 'text-sidebar-muted')}
+                  strokeWidth={isActive ? 2.1 : 1.9}
+                />
                 <span className="min-w-0 flex-1 truncate">{label}</span>
-                {!!counts[to] && <span className={cn('rounded-full px-2 text-[12px] font-semibold tabular-nums', isActive ? 'bg-white/15 text-white' : 'text-sidebar-muted')}>{counts[to]}</span>}
+                {!!counts[to] && (
+                  <span className={cn('rounded-full px-2 text-[12px] font-semibold tabular-nums', isActive ? 'bg-white/15 text-white' : 'text-sidebar-muted')}>
+                    {counts[to]}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
@@ -121,7 +128,11 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
         {categories.map((c) => (
           <NavLink key={c.id} to={`/tasks?category=${c.id}`} onClick={onNavigate} className={() => subCls(pathname === '/tasks' && categoryId === c.id, !!big)}>
             <span className="flex w-4 shrink-0 justify-center" style={{ color: colorOf(c.color) }}>
-              {categoryIcon(c) ? <CategoryMark category={c} className="h-4 w-4" /> : <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorOf(c.color) }} />}
+              {categoryIcon(c) ? (
+                <CategoryMark category={c} className="h-4 w-4" />
+              ) : (
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colorOf(c.color) }} />
+              )}
             </span>
             <span className="min-w-0 flex-1 truncate">{c.name}</span>
           </NavLink>

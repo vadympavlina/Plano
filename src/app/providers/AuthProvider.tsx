@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let cancelled = false;
     let backend: Backend | null = null;
-    const unsub = watchAuth(async (user) => {
+    const handle = async (user: Parameters<Parameters<typeof watchAuth>[0]>[0]) => {
       if (cancelled) return;
       if (!user) {
         resetSyncState();
@@ -69,7 +69,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (e) {
         if (!cancelled) setState({ status: 'error', message: (e as Error).message });
       }
-    });
+    };
+    const unsub = watchAuth((user) => void handle(user));
     return () => {
       cancelled = true;
       unsub();

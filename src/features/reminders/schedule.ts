@@ -47,11 +47,13 @@ export function buildReminders(data: UserData, now: Date): Reminder[] {
     const d = taskDate(k);
     if (!d || d < today || d > addDaysKey(end, 1)) continue;
     const m = k.remindMin ?? (s.remindTasks && k.startTime ? 0 : undefined);
-    if (m === undefined || (k.remindMin === 0)) continue;
+    if (m === undefined || k.remindMin === 0) continue;
     add({
       at: combineDateTime(d, k.startTime ?? '09:00').getTime() - m * 60_000,
       title: k.title,
-      body: k.startTime ? `Задача на ${t(k.startTime)}${m ? ` · через ${ahead(m)}` : ''}` : `Задача на ${d === today ? 'сьогодні' : 'день'}${m ? ` · через ${ahead(m)}` : ''}`,
+      body: k.startTime
+        ? `Задача на ${t(k.startTime)}${m ? ` · через ${ahead(m)}` : ''}`
+        : `Задача на ${d === today ? 'сьогодні' : 'день'}${m ? ` · через ${ahead(m)}` : ''}`,
       url: '#/tasks?list=today',
       tag: `task:${k.id}`,
     });

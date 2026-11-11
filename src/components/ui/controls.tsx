@@ -81,7 +81,8 @@ export function Stepper({
       >
         <Minus className="h-3.5 w-3.5" />
       </button>
-      <input autoComplete="off"
+      <input
+        autoComplete="off"
         id={id}
         inputMode="decimal"
         aria-label={ariaLabel}
@@ -108,7 +109,6 @@ export function Stepper({
     </div>
   );
 }
-
 
 /** On/off switch (settings, "all day"). */
 export function Switch({
@@ -138,7 +138,12 @@ export function Switch({
         className,
       )}
     >
-      <span className={cn('absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.3)] transition-transform duration-200', checked && 'translate-x-[18px]')} />
+      <span
+        className={cn(
+          'absolute left-[3px] top-[3px] h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.3)] transition-transform duration-200',
+          checked && 'translate-x-[18px]',
+        )}
+      />
     </button>
   );
 }

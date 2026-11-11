@@ -33,10 +33,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
 
   const openTaskForm = useCallback((opts?: { task?: Task; defaults?: Partial<Task> }) => setTaskEditor(opts ?? {}), []);
   const openTask = useCallback((id: string) => setTaskId(id), []);
-  const openEventForm = useCallback(
-    (opts?: { event?: CalendarEvent; defaults?: Partial<CalendarEvent> }) => setEventEditor(opts ?? {}),
-    [],
-  );
+  const openEventForm = useCallback((opts?: { event?: CalendarEvent; defaults?: Partial<CalendarEvent> }) => setEventEditor(opts ?? {}), []);
   const openEvent = useCallback((id: string, date?: DateKey) => setEventDetail({ id, date }), []);
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const openQuickAdd = useCallback((preset?: CapturePreset) => setQuick({ preset }), []);
@@ -50,16 +47,10 @@ export function UIProvider({ children }: { children: ReactNode }) {
     <UIContext.Provider value={value}>
       {children}
       <Suspense fallback={null}>
-        {taskEditor && (
-          <TaskFormDialog task={taskEditor.task} defaults={taskEditor.defaults} onClose={() => setTaskEditor(null)} />
-        )}
+        {taskEditor && <TaskFormDialog task={taskEditor.task} defaults={taskEditor.defaults} onClose={() => setTaskEditor(null)} />}
         {taskId && <TaskDetailSheet taskId={taskId} onClose={() => setTaskId(null)} />}
-        {eventEditor && (
-          <EventFormDialog event={eventEditor.event} defaults={eventEditor.defaults} onClose={() => setEventEditor(null)} />
-        )}
-        {eventDetail && (
-          <EventDetailDialog eventId={eventDetail.id} date={eventDetail.date} onClose={() => setEventDetail(null)} />
-        )}
+        {eventEditor && <EventFormDialog event={eventEditor.event} defaults={eventEditor.defaults} onClose={() => setEventEditor(null)} />}
+        {eventDetail && <EventDetailDialog eventId={eventDetail.id} date={eventDetail.date} onClose={() => setEventDetail(null)} />}
         {searchOpen && <SearchCommand onClose={() => setSearchOpen(false)} />}
         {quick && <QuickAddSheet preset={quick.preset} onClose={() => setQuick(null)} />}
       </Suspense>

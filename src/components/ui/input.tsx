@@ -9,39 +9,37 @@ const fieldBase =
  * Text field. With `icon` it gets a leading glyph (search fields); with `onValueChange` and
  * type="search" it also shows a clear button.
  */
-export const Input = forwardRef<
-  HTMLInputElement,
-  InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode; onValueChange?: (value: string) => void }
->(function Input({ className, icon, onValueChange, ...props }, ref) {
-  const field = <input ref={ref} autoComplete="off" className={cn(fieldBase, 'h-10', icon && 'pl-10', className)} {...props} />;
-  if (!icon) return field;
-  const clearable = props.type === 'search' && !!onValueChange && !!props.value && !props.disabled;
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
-      {field}
-      {clearable && (
-        <button
-          type="button"
-          aria-label="Очистити"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-subtle hover:text-ink"
-          onClick={() => onValueChange?.('')}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      )}
-    </div>
-  );
-});
+export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode; onValueChange?: (value: string) => void }>(
+  function Input({ className, icon, onValueChange, ...props }, ref) {
+    const field = <input ref={ref} autoComplete="off" className={cn(fieldBase, 'h-10', icon && 'pl-10', className)} {...props} />;
+    if (!icon) return field;
+    const clearable = props.type === 'search' && !!onValueChange && !!props.value && !props.disabled;
+    return (
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-subtle [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        {field}
+        {clearable && (
+          <button
+            type="button"
+            aria-label="Очистити"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-subtle hover:text-ink"
+            onClick={() => onValueChange?.('')}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
+    );
+  },
+);
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea(
-  { className, ...props },
-  ref,
-) {
+export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement>>(function Textarea({ className, ...props }, ref) {
   return <textarea ref={ref} autoComplete="off" className={cn(fieldBase, 'min-h-[84px] resize-y py-2.5 leading-relaxed', className)} {...props} />;
 });
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
+  // A generic label: the caller ties it to its field with htmlFor or by wrapping.
+  // eslint-disable-next-line jsx-a11y/label-has-associated-control
   return <label className={cn('mb-1.5 block text-[13px] font-medium text-ink', className)} {...props} />;
 }
 

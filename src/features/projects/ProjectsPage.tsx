@@ -34,14 +34,21 @@ function ProjectCard({ project, today }: { project: Project; today: DateKey }) {
   const open = prog.total - prog.done;
   const finished = project.status === 'completed' || project.status === 'archived';
   const hint = project.targetDate && !finished ? deadlineHint(project.targetDate, today) : undefined;
-  const toneClass = hint?.tone === 'danger' ? 'bg-danger/10 text-danger' : hint?.tone === 'warning' ? 'bg-warning/15 text-warning-ink' : 'bg-surface text-muted';
+  const toneClass =
+    hint?.tone === 'danger' ? 'bg-danger/10 text-danger' : hint?.tone === 'warning' ? 'bg-warning/15 text-warning-ink' : 'bg-surface text-muted';
 
   return (
     <Link
       to={`/projects/${project.id}`}
-      className={cn('group flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-surface-2/70 transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-surface-2 motion-reduce:hover:translate-y-0', finished && 'opacity-65')}
+      className={cn(
+        'group flex min-w-0 flex-col overflow-hidden rounded-[24px] bg-surface-2/70 transition-[background-color,transform] hover:-translate-y-0.5 hover:bg-surface-2 motion-reduce:hover:translate-y-0',
+        finished && 'opacity-65',
+      )}
     >
-      <div className="h-[72px] sm:h-20" style={{ background: project.cover ? coverGradient(project.cover, 0.5, 0.2) : `linear-gradient(120deg, ${color}2e, ${color}0f)` }} />
+      <div
+        className="h-[72px] sm:h-20"
+        style={{ background: project.cover ? coverGradient(project.cover, 0.5, 0.2) : `linear-gradient(120deg, ${color}2e, ${color}0f)` }}
+      />
       <div className="flex flex-1 flex-col px-4 pb-4">
         <span className="-mt-7 flex h-12 w-12 items-center justify-center rounded-2xl bg-surface shadow-soft" style={{ color }}>
           <LineIcon icon={project.icon} fallback={FolderKanban} className="h-[22px] w-[22px]" />
@@ -51,20 +58,42 @@ function ProjectCard({ project, today }: { project: Project; today: DateKey }) {
 
         <div className="mt-3">
           <div className="mb-1.5 flex items-baseline justify-between gap-2 text-[12px]">
-            <span className="text-muted">{prog.total ? `${prog.done} з ${prog.total} ${plural(prog.total, ['задачі', 'задач', 'задач'])}` : 'Задач поки немає'}</span>
+            <span className="text-muted">
+              {prog.total ? `${prog.done} з ${prog.total} ${plural(prog.total, ['задачі', 'задач', 'задач'])}` : 'Задач поки немає'}
+            </span>
             <span className="font-bold tabular-nums">{prog.percent}%</span>
           </div>
-          <div className="h-2 overflow-hidden rounded-full bg-surface" role="progressbar" aria-valuenow={prog.percent} aria-valuemin={0} aria-valuemax={100} aria-label={`Прогрес: ${project.name}`}>
-            <div className="h-full w-full rounded-full transition-transform duration-500 motion-reduce:transition-none" style={{ transform: `translateX(${prog.percent - 100}%)`, backgroundColor: color }} />
+          <div
+            className="h-2 overflow-hidden rounded-full bg-surface"
+            role="progressbar"
+            aria-valuenow={prog.percent}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`Прогрес: ${project.name}`}
+          >
+            <div
+              className="h-full w-full rounded-full transition-transform duration-500 motion-reduce:transition-none"
+              style={{ transform: `translateX(${prog.percent - 100}%)`, backgroundColor: color }}
+            />
           </div>
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', STATUS_PILL[project.status])}>{PROJECT_STATUS_LABEL[project.status]}</span>
+          <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', STATUS_PILL[project.status])}>
+            {PROJECT_STATUS_LABEL[project.status]}
+          </span>
           {hint && <span className={cn('rounded-full px-2.5 py-1 text-[11.5px] font-semibold', toneClass)}>{hint.text}</span>}
-          {!hint && project.targetDate && <span className="rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted">до {formatDateKey(project.targetDate, 'd MMM')}</span>}
-          {prog.overdue > 0 && <span className="rounded-full bg-danger/10 px-2.5 py-1 text-[11.5px] font-semibold text-danger">прострочено {prog.overdue}</span>}
-          {open > 0 && <span className="rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted">{open} {plural(open, ['відкрита', 'відкриті', 'відкритих'])}</span>}
+          {!hint && project.targetDate && (
+            <span className="rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted">до {formatDateKey(project.targetDate, 'd MMM')}</span>
+          )}
+          {prog.overdue > 0 && (
+            <span className="rounded-full bg-danger/10 px-2.5 py-1 text-[11.5px] font-semibold text-danger">прострочено {prog.overdue}</span>
+          )}
+          {open > 0 && (
+            <span className="rounded-full bg-surface px-2.5 py-1 text-[11.5px] font-medium text-muted">
+              {open} {plural(open, ['відкрита', 'відкриті', 'відкритих'])}
+            </span>
+          )}
         </div>
       </div>
     </Link>
@@ -84,7 +113,10 @@ export default function ProjectsPage() {
     return c;
   }, [projects]);
   const openTasks = useMemo(
-    () => tasks.filter((t) => t.projectId && (t.status === 'todo' || t.status === 'in_progress') && projects.some((p) => p.id === t.projectId && p.status === 'active')).length,
+    () =>
+      tasks.filter(
+        (t) => t.projectId && (t.status === 'todo' || t.status === 'in_progress') && projects.some((p) => p.id === t.projectId && p.status === 'active'),
+      ).length,
     [tasks, projects],
   );
 
@@ -102,7 +134,8 @@ export default function ProjectsPage() {
       <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-3">
         <h1 className="text-[32px] font-extrabold leading-[1.05] tracking-tight sm:text-[38px]">Проєкти</h1>
         <span className="text-[13.5px] text-muted">
-          {counts.active ?? 0} {plural(counts.active ?? 0, ['активний', 'активні', 'активних'])} · {openTasks} {plural(openTasks, ['відкрита задача', 'відкриті задачі', 'відкритих задач'])}
+          {counts.active ?? 0} {plural(counts.active ?? 0, ['активний', 'активні', 'активних'])} · {openTasks}{' '}
+          {plural(openTasks, ['відкрита задача', 'відкриті задачі', 'відкритих задач'])}
         </span>
         <div className="flex w-full items-center gap-2 sm:ml-auto sm:w-auto">
           <div className="no-scrollbar min-w-0 flex-1 overflow-x-auto sm:flex-none">

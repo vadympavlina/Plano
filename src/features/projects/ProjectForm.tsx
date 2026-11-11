@@ -43,10 +43,20 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
       <DialogContent title={project ? 'Редагувати проєкт' : 'Новий проєкт'} preventDismiss={dirty}>
         <form onSubmit={onSubmit} noValidate className="space-y-4">
           <Field label="Назва" error={visible.name}>
-            {(p) => <Input {...p} autoFocus maxLength={120} placeholder="напр. EdFlow, Ремонт" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />}
+            {(p) => (
+              <Input {...p} autoFocus maxLength={120} placeholder="напр. EdFlow, Ремонт" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />
+            )}
           </Field>
           <Field label="Опис">
-            {(p) => <Textarea {...p} rows={3} placeholder="Про що цей проєкт?" value={draft.description ?? ''} onChange={(e) => patch({ description: e.target.value })} />}
+            {(p) => (
+              <Textarea
+                {...p}
+                rows={3}
+                placeholder="Про що цей проєкт?"
+                value={draft.description ?? ''}
+                onChange={(e) => patch({ description: e.target.value })}
+              />
+            )}
           </Field>
           <div>
             <p className="mb-1.5 text-[13px] font-medium">Колір</p>
@@ -54,18 +64,20 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Статус">
+              {(p) => <Select {...p} value={draft.status} onChange={(status) => patch({ status })} options={projectStatusOptions} />}
+            </Field>
+            <Field label="Дата початку">{(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}</Field>
+            <Field label="Цільова дата" error={visible.targetDate}>
               {(p) => (
-<Select {...p} value={draft.status} onChange={(status) => patch({ status })} options={projectStatusOptions} />
+                <DatePicker {...p} placeholder="Без дати" min={draft.startDate} value={draft.targetDate} onChange={(targetDate) => patch({ targetDate })} />
               )}
             </Field>
-            <Field label="Дата початку">
-              {(p) => <DatePicker {...p} value={draft.startDate} onChange={(startDate) => patch({ startDate })} />}
-            </Field>
-            <Field label="Цільова дата" error={visible.targetDate}>
-              {(p) => <DatePicker {...p} placeholder="Без дати" min={draft.startDate} value={draft.targetDate} onChange={(targetDate) => patch({ targetDate })} />}
-            </Field>
           </div>
-          {submitError && <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">{submitError}</p>}
+          {submitError && (
+            <p role="alert" className="rounded-lg bg-danger/10 px-3 py-2 text-sm text-danger">
+              {submitError}
+            </p>
+          )}
           <DialogFooter>
             <Button variant="outline" onClick={onClose} disabled={saving}>
               Скасувати

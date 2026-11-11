@@ -91,11 +91,37 @@ export const LINE_ICONS: Record<string, LucideIcon> = {
 
 // Categories and projects saved with an emoji before icons became line icons.
 const FROM_EMOJI: Record<string, string> = {
-  '💼': 'briefcase', '🏠': 'house', '💪': 'dumbbell', '📚': 'book-open', '💡': 'lightbulb', '📝': 'notebook-pen', '📌': 'pin',
-  '🎯': 'target', '🚀': 'rocket', '🛒': 'shopping-cart', '✈️': 'plane', '🧳': 'luggage', '🍳': 'utensils', '🧘': 'flower-2',
-  '🎨': 'palette', '🎵': 'music', '🎬': 'clapperboard', '📷': 'camera', '💻': 'laptop', '🧠': 'brain', '❤️': 'heart', '⭐': 'star',
-  '🔥': 'flame', '🌱': 'sprout', '☕': 'coffee', '🗓️': 'calendar', '💰': 'wallet', '🛠️': 'wrench', '📈': 'trending-up',
-  '✅': 'circle-check', '🎉': 'party-popper',
+  '💼': 'briefcase',
+  '🏠': 'house',
+  '💪': 'dumbbell',
+  '📚': 'book-open',
+  '💡': 'lightbulb',
+  '📝': 'notebook-pen',
+  '📌': 'pin',
+  '🎯': 'target',
+  '🚀': 'rocket',
+  '🛒': 'shopping-cart',
+  '✈️': 'plane',
+  '🧳': 'luggage',
+  '🍳': 'utensils',
+  '🧘': 'flower-2',
+  '🎨': 'palette',
+  '🎵': 'music',
+  '🎬': 'clapperboard',
+  '📷': 'camera',
+  '💻': 'laptop',
+  '🧠': 'brain',
+  '❤️': 'heart',
+  '⭐': 'star',
+  '🔥': 'flame',
+  '🌱': 'sprout',
+  '☕': 'coffee',
+  '🗓️': 'calendar',
+  '💰': 'wallet',
+  '🛠️': 'wrench',
+  '📈': 'trending-up',
+  '✅': 'circle-check',
+  '🎉': 'party-popper',
 };
 
 /** Icon for a stored key (or a legacy emoji). */
@@ -138,7 +164,19 @@ export function CategoryChip({ category, compact, className }: { category: Categ
 }
 
 /** Grid of line icons to pick from (categories in Settings, the project page). */
-export function LineIconPicker({ value, color, label, onChange, children }: { value?: string; color: string; label: string; onChange: (icon: string | undefined) => void; children: ReactNode }) {
+export function LineIconPicker({
+  value,
+  color,
+  label,
+  onChange,
+  children,
+}: {
+  value?: string;
+  color: string;
+  label: string;
+  onChange: (icon: string | undefined) => void;
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const current = lineIcon(value);
   const pick = (icon: string | undefined) => {
@@ -168,7 +206,11 @@ export function LineIconPicker({ value, color, label, onChange, children }: { va
           ))}
         </div>
         {current && (
-          <button type="button" onClick={() => pick(undefined)} className="mt-2 w-full rounded-lg py-1.5 text-[12.5px] text-muted hover:bg-surface-2 hover:text-ink">
+          <button
+            type="button"
+            onClick={() => pick(undefined)}
+            className="mt-2 w-full rounded-lg py-1.5 text-[12.5px] text-muted hover:bg-surface-2 hover:text-ink"
+          >
             Без іконки
           </button>
         )}
