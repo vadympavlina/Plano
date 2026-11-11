@@ -27,6 +27,9 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
-  { files: ['e2e/**/*.ts', 'scripts/**/*.mjs', '*.config.{js,ts}', 'worker/**/*.ts'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
+  {
+    files: ['e2e/**/*.ts', 'rules-test/**/*.ts', 'scripts/**/*.mjs', '*.config.{js,ts}', 'worker/**/*.ts'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
   prettier,
 );

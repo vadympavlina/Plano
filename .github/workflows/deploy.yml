@@ -133,6 +133,29 @@ jobs:
         with:
           path: dist
 
+  # Security rules of the Realtime Database, tested against the Firebase emulator (needs Java).
+  # Runs next to the build; a failure shows as a red check on the commit but does not hold the deploy,
+  # because the emulator and its tools are downloaded on every run and a network hiccup must not block it.
+  rules:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: Cache the emulator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ hashFiles('package.json') }}
+      - run: npm run test:rules
+
   deploy:
     if: ${{ !cancelled() && github.event_name != 'pull_request' && needs.build.result == 'success' }}
     needs: build
