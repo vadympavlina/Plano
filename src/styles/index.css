@@ -106,6 +106,13 @@
     @apply ring-0 ring-offset-0;
   }
 
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+
   ::selection {
     background: rgb(var(--primary) / 0.2);
   }

@@ -395,7 +395,7 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
           {categoryIcon(category) ? <CategoryIcon category={category} className="h-[18px] w-[18px]" /> : <SmilePlus className="h-4 w-4 text-subtle" />}
         </span>
       </LineIconPicker>
-      <input
+      <input autoComplete="off"
         className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-none hover:bg-surface-2 focus:bg-surface-2"
         aria-label="Назва категорії"
         value={name}
@@ -460,7 +460,7 @@ function CategoriesSection() {
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-dashed border-subtle text-subtle">
           <Plus className="h-3.5 w-3.5" />
         </span>
-        <input
+        <input autoComplete="off"
           className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] outline-none placeholder:text-subtle hover:bg-surface-2 focus:bg-surface-2"
           placeholder="Нова категорія"
           aria-label="Назва нової категорії"
@@ -822,7 +822,7 @@ export default function SettingsPage() {
         <aside className="lg:sticky lg:top-0 lg:w-56 lg:shrink-0 lg:self-start">
           <label className="mb-3 flex h-10 items-center gap-2 rounded-full bg-surface-2 px-3.5 text-[13px] focus-within:ring-2 focus-within:ring-primary/20">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
-            <input
+            <input autoComplete="off"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Знайти налаштування"

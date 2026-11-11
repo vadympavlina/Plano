@@ -206,7 +206,7 @@ export function NoteEditor({ note }: { note: Note }) {
           </div>
         </div>
 
-        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
+        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="mx-auto w-full max-w-[760px] px-5 pb-16 sm:px-10">
             {/* Cover + icon */}
             {coverColor ? (
@@ -242,7 +242,7 @@ export function NoteEditor({ note }: { note: Note }) {
               </div>
             </div>
 
-            <input
+            <input autoComplete="off"
               value={title}
               onChange={(e) => change({ title: e.target.value })}
               placeholder="Без назви"

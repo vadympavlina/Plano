@@ -81,7 +81,7 @@ export function Stepper({
       >
         <Minus className="h-3.5 w-3.5" />
       </button>
-      <input
+      <input autoComplete="off"
         id={id}
         inputMode="decimal"
         aria-label={ariaLabel}

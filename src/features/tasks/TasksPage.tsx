@@ -76,12 +76,12 @@ function GroupSection({ title, count, tone, children }: { title: string; count: 
   return (
     <section className={cn('grid gap-x-6 gap-y-1 border-t border-line py-4 first:border-t-0 first:pt-1', title && 'sm:grid-cols-[150px_1fr]')}>
       {title && (
-        <h3 className="px-3 sm:pt-2.5">
+        <h2 className="px-3 sm:pt-2.5">
           <span className={cn('block text-[15px] font-bold capitalize', tone === 'danger' && 'text-danger')}>{title}</span>
           <span className="mt-0.5 block text-[12px] font-medium text-muted">
             {count} {plural(count, ['задача', 'задачі', 'задач'])}
           </span>
-        </h3>
+        </h2>
       )}
       <div className="min-w-0">{children}</div>
     </section>
@@ -223,7 +223,7 @@ export default function TasksPage() {
                 <span className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 border-dashed border-subtle/70 text-subtle">
                   <Plus className="h-3 w-3" strokeWidth={3} />
                 </span>
-                <input
+                <input autoComplete="off"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   aria-label="Нова задача"

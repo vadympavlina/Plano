@@ -13,7 +13,7 @@ export const Input = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode; onValueChange?: (value: string) => void }
 >(function Input({ className, icon, onValueChange, ...props }, ref) {
-  const field = <input ref={ref} className={cn(fieldBase, 'h-10', icon && 'pl-10', className)} {...props} />;
+  const field = <input ref={ref} autoComplete="off" className={cn(fieldBase, 'h-10', icon && 'pl-10', className)} {...props} />;
   if (!icon) return field;
   const clearable = props.type === 'search' && !!onValueChange && !!props.value && !props.disabled;
   return (
@@ -38,7 +38,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
   { className, ...props },
   ref,
 ) {
-  return <textarea ref={ref} className={cn(fieldBase, 'min-h-[84px] resize-y py-2.5 leading-relaxed', className)} {...props} />;
+  return <textarea ref={ref} autoComplete="off" className={cn(fieldBase, 'min-h-[84px] resize-y py-2.5 leading-relaxed', className)} {...props} />;
 });
 
 export function Label({ className, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {

@@ -98,7 +98,7 @@ export function DialogContent({
           </DialogPrimitive.Close>
         </div>
         </div>
-        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
+        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );
@@ -168,7 +168,7 @@ export function SheetContent({
           <div className="ml-auto flex items-center gap-1">{headerActions}</div>
         </div>
         </div>
-        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-5 pb-6 md:px-6">{children}</div>
+        <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-6 md:px-6">{children}</div>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>
   );

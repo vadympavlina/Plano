@@ -122,6 +122,14 @@ function LayoutInner() {
   return (
     <PanelSlot.Provider value={{ el: panelEl, mount }}>
       <div className="flex min-h-dvh flex-col pt-safe text-sidebar-fg lg:h-dvh lg:overflow-hidden" style={{ '--page-h': pageH } as React.CSSProperties}>
+        {/* Keyboard: the first Tab stop jumps over the menu to the page (a button, not #anchor: the hash is the route). */}
+        <button
+          type="button"
+          onClick={() => scroller.current?.focus()}
+          className="fixed left-3 top-3 z-[80] -translate-y-24 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-pop focus:translate-y-0"
+        >
+          Перейти до вмісту
+        </button>
         {banner && (
           <div className="flex h-9 shrink-0 items-center gap-2 bg-sidebar-active px-4 text-xs text-sidebar-fg sm:px-8">
             <Info className="h-3.5 w-3.5 shrink-0 text-primary-bright" />
@@ -156,7 +164,9 @@ function LayoutInner() {
           <div className="flex min-w-0 flex-1 gap-2.5 px-2 pr-[max(8px,env(safe-area-inset-right))] lg:pb-3.5 lg:pl-2 lg:pr-[max(14px,env(safe-area-inset-right))]">
             <main
               ref={scroller}
+              tabIndex={-1}
               className={cn(
+                'outline-none focus-visible:ring-0',
                 'min-w-0 flex-1 rounded-t-[26px] bg-surface text-ink lg:overflow-y-auto lg:rounded-[24px]',
                 'pb-[calc(110px+max(12px,env(safe-area-inset-bottom)))] lg:pb-0',
               )}

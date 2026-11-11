@@ -139,7 +139,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
           <DialogPrimitive.Description className="sr-only">Пошук задач, подій, проєктів, нотаток, цілей і звичок</DialogPrimitive.Description>
           <div className="flex items-center gap-3 border-b border-line px-4">
             <Search className="h-4 w-4 shrink-0 text-subtle" />
-            <input
+            <input autoComplete="off"
               autoFocus
               value={query}
               onChange={(e) => {
@@ -156,7 +156,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
             />
             <Kbd>Esc</Kbd>
           </div>
-          <div id="search-results" role="listbox" className="scrollbar-thin min-h-0 flex-1 overflow-y-auto p-2">
+          <div id="search-results" role="listbox" className="scrollbar-thin overscroll-contain min-h-0 flex-1 overflow-y-auto p-2">
             {results.length === 0 && <p className="px-3 py-10 text-center text-sm text-muted">Нічого не знайдено за запитом «{query}».</p>}
             {results.map((r, i) => {
               const header = r.group !== lastGroup ? r.group : null;

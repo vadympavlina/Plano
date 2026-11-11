@@ -50,7 +50,7 @@ function HabitCard({ habit }: { habit: Habit }) {
           {habit.icon}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-[16px] font-bold tracking-tight">{habit.name}</h3>
+          <h2 className="truncate text-[16px] font-bold tracking-tight">{habit.name}</h2>
           <p className="truncate text-[12.5px] text-muted">
             {bad
               ? habit.goalType === 'count'

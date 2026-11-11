@@ -205,7 +205,7 @@ export function TimePicker({
               if (parsed && !typedInvalid) pick(parsed);
             }}
           >
-            <input
+            <input autoComplete="off"
               autoFocus
               value={text}
               onChange={(e) => setText(e.target.value)}

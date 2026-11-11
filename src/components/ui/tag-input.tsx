@@ -45,6 +45,8 @@ export function TagInput({
         ))}
         <input
           id={id}
+          aria-label="Додати тег"
+          autoComplete="off"
           value={text}
           onChange={(e) => {
             const v = e.target.value;

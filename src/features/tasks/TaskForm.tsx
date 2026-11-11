@@ -119,7 +119,7 @@ export default function TaskFormDialog({
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
       <DialogContent quietTitle title={task ? 'Редагувати задачу' : 'Нова задача'} size="lg" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
         <form onSubmit={onSubmit} noValidate>
-          <input
+          <input autoComplete="off"
             autoFocus
             aria-label="Назва"
             aria-invalid={visible.title ? true : undefined}
@@ -234,7 +234,7 @@ export default function TaskFormDialog({
                       label={`Виконано: ${s.title}`}
                       onChange={() => patch({ subtasks: draft.subtasks.map((x) => (x.id === s.id ? { ...x, done: !x.done } : x)) })}
                     />
-                    <input
+                    <input autoComplete="off"
                       className={cn('min-w-0 flex-1 bg-transparent text-sm outline-none', s.done && 'text-subtle line-through')}
                       value={s.title}
                       aria-label={`Підзадача ${i + 1}`}
@@ -256,7 +256,7 @@ export default function TaskFormDialog({
               <button type="button" aria-label="Додати підзадачу" onClick={() => (newSubtask.trim() ? addSubtask() : subtaskInput.current?.focus())} className="flex h-[18px] w-[18px] items-center justify-center rounded-[5px] text-subtle hover:text-ink">
                 <Plus className="h-4 w-4" />
               </button>
-              <input
+              <input autoComplete="off"
                 ref={subtaskInput}
                 placeholder="Додати підзадачу"
                 value={newSubtask}
