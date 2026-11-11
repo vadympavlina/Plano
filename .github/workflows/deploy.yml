@@ -90,7 +90,15 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       # Real-browser checks (desktop + phone) on a local-preview build; a failure stops the deploy.
-      - run: npx playwright install --with-deps chromium
+      # The browser itself comes from Playwright's CDN. Its system libraries and fonts come from apt, whose
+      # mirrors are sometimes unreachable from the runner (the step then hung for 10 minutes and failed
+      # the whole deploy), so that part is best effort: the runner image already ships most of them.
+      - name: Install the test browser
+        run: npx playwright install chromium
+      - name: Install the browser's system libraries (best effort)
+        timeout-minutes: 4
+        continue-on-error: true
+        run: npx playwright install-deps chromium
       - run: npm run e2e
       - name: Build
         run: npm run build
