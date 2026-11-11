@@ -319,7 +319,7 @@ export function NoteEditor({ note }: { note: Note }) {
               placeholder="Без назви"
               aria-label="Назва нотатки"
               maxLength={300}
-              className="mt-3 w-full bg-transparent text-[28px] font-bold leading-tight tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[34px]"
+              className="mt-3 w-full bg-transparent text-[28px] font-bold leading-tight tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[34px]"
             />
 
             {/* Properties */}
@@ -360,7 +360,7 @@ export function NoteEditor({ note }: { note: Note }) {
             <div className="my-6 h-px bg-line" />
 
             {!preview && (
-              <div className="sticky top-0 z-10 -mx-2 mb-3 flex flex-wrap items-center gap-0.5 rounded-xl bg-surface/95 px-1 py-1 backdrop-blur">
+              <div className="sticky top-0 z-10 -mx-2 mb-3 flex flex-wrap items-center gap-0.5 rounded-xl bg-surface/95 px-1 py-1 backdrop-blur-sm">
                 {tools.map(({ icon: Icon, label, run }) => (
                   <Button key={label} variant="ghost" size="icon-sm" aria-label={label} title={label} onClick={run}>
                     <Icon className="h-4 w-4" />
@@ -385,7 +385,7 @@ export function NoteEditor({ note }: { note: Note }) {
                     startEditing();
                   }
                 }}
-                className={cn('prose-note min-h-[40vh] cursor-text text-[15.5px] leading-[1.75] text-ink outline-none', !content && 'text-muted')}
+                className={cn('prose-note min-h-[40vh] cursor-text text-[15.5px] leading-[1.75] text-ink outline-hidden', !content && 'text-muted')}
                 dangerouslySetInnerHTML={{ __html: html || '<p>Поки порожньо. Натисніть, щоб почати писати.</p>' }}
               />
             ) : (
@@ -396,7 +396,7 @@ export function NoteEditor({ note }: { note: Note }) {
                 onBlur={() => save.flush()}
                 placeholder={'Почніть писати…\n\nПрацює Markdown: **жирний**, *курсив*, ## заголовок, - список, - [ ] чекліст'}
                 aria-label="Текст нотатки"
-                className="min-h-[55vh] w-full resize-none bg-transparent text-[15.5px] leading-[1.75] text-ink outline-none placeholder:text-subtle"
+                className="min-h-[55vh] w-full resize-none bg-transparent text-[15.5px] leading-[1.75] text-ink outline-hidden placeholder:text-subtle"
               />
             )}
           </div>

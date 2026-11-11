@@ -126,7 +126,7 @@ function LayoutInner() {
         <button
           type="button"
           onClick={() => scroller.current?.focus()}
-          className="fixed left-3 top-3 z-[80] -translate-y-24 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-pop focus:translate-y-0"
+          className="fixed left-3 top-3 z-80 -translate-y-24 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-pop focus:translate-y-0"
         >
           Перейти до вмісту
         </button>
@@ -169,7 +169,7 @@ function LayoutInner() {
               ref={scroller}
               tabIndex={-1}
               className={cn(
-                'outline-none focus-visible:ring-0',
+                'outline-hidden focus-visible:ring-0',
                 'min-w-0 flex-1 rounded-t-[26px] bg-surface text-ink lg:overflow-y-auto lg:rounded-[24px]',
                 'pb-[calc(110px+max(12px,env(safe-area-inset-bottom)))] lg:pb-0',
               )}

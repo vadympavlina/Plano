@@ -78,7 +78,7 @@ export default function NotesPage() {
   };
 
   return (
-    <div className="flex w-full gap-5 px-2 pb-6 lg:h-[var(--page-h)] lg:pb-0">
+    <div className="flex w-full gap-5 px-2 pb-6 lg:h-(--page-h) lg:pb-0">
       <nav aria-label="Нотатки" className={cn('flex w-full flex-col lg:w-[300px] lg:shrink-0', noteId && 'hidden lg:flex')}>
         <div className="mb-3 flex items-center justify-between px-1">
           <h1 className="text-[28px] font-extrabold leading-none tracking-tight">Нотатки</h1>

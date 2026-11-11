@@ -74,7 +74,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
                   onClick={() => patch(k === 'bad' ? { kind: 'bad', schedule: [0, 1, 2, 3, 4, 5, 6] } : { kind: undefined })}
                   className={cn(
                     'rounded-xl border-2 px-3 py-2 text-left transition-colors',
-                    on ? (k === 'bad' ? 'border-danger/60 bg-danger/[0.06]' : 'border-ink bg-surface-2') : 'border-line',
+                    on ? (k === 'bad' ? 'border-danger/60' : 'border-ink bg-surface-2') : 'border-line',
                   )}
                 >
                   <span className="block text-sm font-semibold">{t}</span>

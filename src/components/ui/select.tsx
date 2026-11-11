@@ -17,7 +17,7 @@ export type ControlVariant = 'field' | 'chip' | 'ghost';
 /** Shared trigger styles for custom controls (select, date, time). */
 export function triggerClass(variant: ControlVariant, opts: { invalid?: boolean; empty?: boolean } = {}) {
   return cn(
-    'group inline-flex min-w-0 items-center gap-2 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ink/30 disabled:pointer-events-none disabled:opacity-50',
+    'group inline-flex min-w-0 items-center gap-2 text-left outline-hidden transition-colors focus-visible:ring-2 focus-visible:ring-ink/30 disabled:pointer-events-none disabled:opacity-50',
     variant === 'field' &&
       'h-10 w-full rounded-[14px] bg-surface-2 px-3.5 text-sm hover:bg-line/50 data-[state=open]:bg-surface data-[state=open]:ring-2 data-[state=open]:ring-ink/15',
     variant === 'chip' && 'h-8 rounded-full bg-surface-2 px-3 text-[13px] font-medium hover:bg-line/70 data-[state=open]:bg-line/70',
@@ -28,7 +28,7 @@ export function triggerClass(variant: ControlVariant, opts: { invalid?: boolean;
 }
 
 export const popoverPanel =
-  'z-50 rounded-[20px] border border-line bg-surface p-1.5 text-sm text-ink shadow-pop outline-none origin-[var(--radix-select-content-transform-origin)] data-[state=open]:animate-scale-in data-[state=closed]:animate-pop-out';
+  'z-50 rounded-[20px] border border-line bg-surface p-1.5 text-sm text-ink shadow-pop outline-hidden origin-(--radix-select-content-transform-origin) data-[state=open]:animate-scale-in data-[state=closed]:animate-pop-out';
 
 interface SelectProps<T extends string> {
   value: T | undefined;
@@ -131,7 +131,7 @@ export function Select<T extends string>({
             );
             requestAnimationFrame(() => focusAt(idx));
           }}
-          className={cn(popoverPanel, 'min-w-[var(--radix-popover-trigger-width)] max-w-[min(340px,calc(100vw-24px))]', contentClassName)}
+          className={cn(popoverPanel, 'min-w-(--radix-popover-trigger-width) max-w-[min(340px,calc(100vw-24px))]', contentClassName)}
         >
           <div
             ref={listRef}
@@ -154,7 +154,7 @@ export function Select<T extends string>({
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left outline-none transition-colors hover:bg-surface-2 focus-visible:bg-surface-2',
+                    'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left outline-hidden transition-colors hover:bg-surface-2 focus-visible:bg-surface-2',
                     isSel && 'font-semibold',
                   )}
                 >

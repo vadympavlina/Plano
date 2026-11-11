@@ -223,9 +223,9 @@ export default function CalendarPage() {
   );
 
   return (
-    <div className="flex w-full flex-col lg:h-[var(--page-h)]">
+    <div className="flex w-full flex-col lg:h-(--page-h)">
       <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
-        <div className="min-w-[9.5rem] max-w-full flex-1">
+        <div className="min-w-38 max-w-full flex-1">
           {datePicker(
             <span className="block">
               <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">

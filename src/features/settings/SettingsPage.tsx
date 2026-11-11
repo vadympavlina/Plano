@@ -266,9 +266,9 @@ const THEMES: { value: ThemePreference; label: string; icon: typeof Sun }[] = [
 function ThemePreview({ theme }: { theme: ThemePreference }) {
   const half = (dark: boolean) => (
     <div className={cn('min-w-0 flex-1 overflow-hidden p-2', dark ? 'bg-[#151a2b]' : 'bg-[#eef1f6]')}>
-      <div className={cn('h-1.5 w-3/5 max-w-8 rounded', dark ? 'bg-white/30' : 'bg-[#cfd5df]')} />
+      <div className={cn('h-1.5 w-3/5 max-w-8 rounded-sm', dark ? 'bg-white/30' : 'bg-[#cfd5df]')} />
       <div className={cn('mt-2 h-5 rounded-md', dark ? 'bg-white/10' : 'bg-white')} />
-      <div className={cn('mt-1.5 h-1.5 w-4/5 max-w-10 rounded', dark ? 'bg-white/15' : 'bg-[#dde2ea]')} />
+      <div className={cn('mt-1.5 h-1.5 w-4/5 max-w-10 rounded-sm', dark ? 'bg-white/15' : 'bg-[#dde2ea]')} />
     </div>
   );
   return <div className="flex h-[68px] overflow-hidden rounded-xl">{theme === 'system' ? [half(false), half(true)] : half(theme === 'dark')}</div>;
@@ -444,7 +444,7 @@ function CategoryRow({ category, usage }: { category: Category; usage: number })
       </LineIconPicker>
       <input
         autoComplete="off"
-        className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-none hover:bg-surface-2 focus:bg-surface-2"
+        className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] font-medium outline-hidden hover:bg-surface-2 focus:bg-surface-2"
         aria-label="Назва категорії"
         value={name}
         maxLength={60}
@@ -523,7 +523,7 @@ function CategoriesSection() {
         </span>
         <input
           autoComplete="off"
-          className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] outline-none placeholder:text-subtle hover:bg-surface-2 focus:bg-surface-2"
+          className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] outline-hidden placeholder:text-subtle hover:bg-surface-2 focus:bg-surface-2"
           placeholder="Нова категорія"
           aria-label="Назва нової категорії"
           maxLength={60}
@@ -937,7 +937,7 @@ export default function SettingsPage() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Знайти налаштування"
               aria-label="Знайти налаштування"
-              className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-subtle"
+              className="min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-subtle"
             />
           </label>
           <nav aria-label="Розділи налаштувань" className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4 lg:mx-0 lg:flex-col lg:px-0">

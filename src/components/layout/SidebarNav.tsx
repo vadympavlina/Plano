@@ -25,13 +25,13 @@ const itemCls = (on: boolean, big: boolean) =>
   cn(
     'flex items-center gap-3 rounded-full px-3.5 font-medium transition-colors',
     big ? 'h-12 text-[16px]' : 'h-[38px] text-[14.5px]',
-    on ? 'bg-sidebar-active text-white' : 'text-[#cfcfd4] hover:bg-white/[0.06] hover:text-white',
+    on ? 'bg-sidebar-active text-white' : 'text-[#cfcfd4] hover:bg-white/6 hover:text-white',
   );
 const subCls = (on: boolean, big: boolean) =>
   cn(
     'flex items-center gap-2.5 rounded-full px-3.5 transition-colors',
     big ? 'h-11 text-[15px]' : 'h-8 text-[14px]',
-    on ? 'bg-sidebar-active text-white' : 'text-[#cfcfd4] hover:bg-white/[0.06] hover:text-white',
+    on ? 'bg-sidebar-active text-white' : 'text-[#cfcfd4] hover:bg-white/6 hover:text-white',
   );
 
 function Group({ id, label, to, onAdd, children, big }: { id: string; label: string; to?: string; onAdd?: () => void; children: ReactNode; big?: boolean }) {
@@ -52,11 +52,16 @@ function Group({ id, label, to, onAdd, children, big }: { id: string; label: str
         <button type="button" onClick={to ? () => void navigate(to) : toggle} className="hover:text-white">
           {label}
         </button>
-        <button type="button" onClick={toggle} aria-label={closed ? `Розгорнути «${label}»` : `Згорнути «${label}»`} className="rounded p-0.5 hover:text-white">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={closed ? `Розгорнути «${label}»` : `Згорнути «${label}»`}
+          className="rounded-sm p-0.5 hover:text-white"
+        >
           <ChevronDown className={cn('h-3 w-3 transition-transform', closed && '-rotate-90')} />
         </button>
         {onAdd && (
-          <button type="button" onClick={onAdd} aria-label={`Додати: ${label}`} className="ml-auto rounded p-1 hover:text-white">
+          <button type="button" onClick={onAdd} aria-label={`Додати: ${label}`} className="ml-auto rounded-sm p-1 hover:text-white">
             <Plus className="h-3.5 w-3.5" />
           </button>
         )}

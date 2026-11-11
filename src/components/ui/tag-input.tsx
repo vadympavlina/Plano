@@ -37,7 +37,7 @@ export function TagInput({
               type="button"
               aria-label={`Прибрати тег ${t}`}
               onClick={() => onChange(value.filter((x) => x !== t))}
-              className="relative flex h-4 w-4 items-center justify-center rounded text-subtle before:absolute before:-inset-3 before:content-[''] hover:bg-line hover:text-ink"
+              className="relative flex h-4 w-4 items-center justify-center rounded-sm text-subtle before:absolute before:-inset-3 before:content-[''] hover:bg-line hover:text-ink"
             >
               <X className="h-3 w-3" />
             </button>
@@ -63,7 +63,7 @@ export function TagInput({
           }}
           onBlur={() => text.trim() && add(text)}
           placeholder={value.length ? '' : placeholder}
-          className={cn('h-7 min-w-[90px] flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-subtle')}
+          className={cn('h-7 min-w-[90px] flex-1 bg-transparent px-1 text-sm outline-hidden placeholder:text-subtle')}
         />
       </div>
       {hints.length > 0 && (

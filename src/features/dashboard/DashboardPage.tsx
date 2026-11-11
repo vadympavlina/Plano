@@ -31,7 +31,7 @@ function salutation(now: Date) {
 /** A coloured count inside the summary sentence. */
 function Chip({ tone, icon, children }: { tone: 'red' | 'grey' | 'orange'; icon: ReactNode; children: ReactNode }) {
   const cls = {
-    red: 'bg-danger/12 text-danger',
+    red: 'text-danger',
     grey: 'bg-line/70 text-muted',
     orange: 'bg-warning/15 text-warning-ink',
   }[tone];
@@ -45,7 +45,7 @@ function Chip({ tone, icon, children }: { tone: 'red' | 'grey' | 'orange'; icon:
 
 const BAD_TONE = {
   clean: { box: 'border-solid border-success bg-success/10', badge: 'bg-success', text: 'text-success' },
-  near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning !text-[#1b1b1d]', text: 'text-warning-ink' },
+  near: { box: 'border-dashed border-warning bg-warning/10', badge: 'bg-warning text-[#1b1b1d]!', text: 'text-warning-ink' },
   slip: { box: 'border-solid border-danger bg-danger/10', badge: 'bg-danger', text: 'text-danger' },
 };
 
@@ -442,7 +442,7 @@ export default function DashboardPage() {
             onChange={(e) => setDraft(e.target.value)}
             aria-label="Нова задача у вхідні"
             placeholder="Нова задача"
-            className="-my-2 min-w-0 flex-1 bg-transparent py-2 text-[15.5px] font-medium outline-none placeholder:font-normal placeholder:text-subtle"
+            className="-my-2 min-w-0 flex-1 bg-transparent py-2 text-[15.5px] font-medium outline-hidden placeholder:font-normal placeholder:text-subtle"
           />
         </form>
         {inbox.overdue.length > 0 && (

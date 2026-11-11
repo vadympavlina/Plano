@@ -141,10 +141,10 @@ export const SmartField = forwardRef<
   mirror.push(value.slice(at) + '​');
 
   // 16px on phones: iOS zooms into smaller inputs.
-  const text = big ? 'text-[19px] leading-[1.5]' : 'text-[16px] leading-[1.5] sm:text-[15px] sm:leading-[1.6]';
+  const text = big ? 'text-[19px] leading-normal' : 'text-[16px] leading-normal sm:text-[15px] sm:leading-[1.6]';
   return (
     <div className={cn('relative min-w-0 flex-1', className)}>
-      <div aria-hidden className={cn('pointer-events-none absolute inset-0 whitespace-pre-wrap break-words py-2 text-ink', text)}>
+      <div aria-hidden className={cn('pointer-events-none absolute inset-0 whitespace-pre-wrap wrap-break-word py-2 text-ink', text)}>
         {mirror}
       </div>
       <textarea
@@ -169,7 +169,7 @@ export const SmartField = forwardRef<
         onBlur={() => setTimeout(() => setClosed(true), 150)}
         onFocus={() => setClosed(false)}
         className={cn(
-          'relative block w-full resize-none overflow-hidden whitespace-pre-wrap break-words bg-transparent py-2 text-transparent caret-ink outline-none placeholder:text-subtle',
+          'relative block w-full resize-none overflow-hidden whitespace-pre-wrap wrap-break-word bg-transparent py-2 text-transparent caret-ink outline-hidden placeholder:text-subtle',
           text,
         )}
       />

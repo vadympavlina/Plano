@@ -129,7 +129,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
             maxLength={300}
             onChange={(e) => patch({ title: e.target.value })}
             onBlur={applySmart}
-            className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
           <Textarea
@@ -239,7 +239,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
                     />
                     <input
                       autoComplete="off"
-                      className={cn('min-w-0 flex-1 bg-transparent text-sm outline-none', s.done && 'text-subtle line-through')}
+                      className={cn('min-w-0 flex-1 bg-transparent text-sm outline-hidden', s.done && 'text-subtle line-through')}
                       value={s.title}
                       aria-label={`Підзадача ${i + 1}`}
                       onChange={(e) => patch({ subtasks: draft.subtasks.map((x) => (x.id === s.id ? { ...x, title: e.target.value } : x)) })}
@@ -278,7 +278,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
                     addSubtask();
                   }
                 }}
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-subtle"
+                className="min-w-0 flex-1 bg-transparent text-sm outline-hidden placeholder:text-subtle"
               />
             </div>
           </section>

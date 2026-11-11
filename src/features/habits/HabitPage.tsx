@@ -129,7 +129,7 @@ export default function HabitPage() {
   };
 
   return (
-    <div className="flex w-full gap-5 px-2 pb-8 lg:h-[var(--page-h)] lg:pb-0">
+    <div className="flex w-full gap-5 px-2 pb-8 lg:h-(--page-h) lg:pb-0">
       {/* Habit list */}
       <nav aria-label="Звички" className="hidden w-[290px] shrink-0 flex-col lg:flex">
         <div className="mb-3 flex items-center justify-between px-1">
@@ -189,7 +189,7 @@ export default function HabitPage() {
                 )}
                 style={done ? { backgroundColor: color, color: onColor(color) } : { borderColor: tint(color, 0.5), color: inkOf(color) }}
               >
-                <Check className="h-4 w-4 stroke-[3]" />{' '}
+                <Check className="h-4 w-4 stroke-3" />{' '}
                 {bad ? (done ? 'Сьогодні без зривів · позначити зрив' : 'Зрив сьогодні · скасувати') : done ? 'Виконано сьогодні' : 'Відмітити сьогодні'}
               </button>
             )}

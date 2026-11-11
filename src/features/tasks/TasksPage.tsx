@@ -256,7 +256,7 @@ export default function TasksPage() {
                   onChange={(e) => setDraft(e.target.value)}
                   aria-label="Нова задача"
                   placeholder={scopeList === 'today' ? 'Нова задача на сьогодні' : 'Нова задача'}
-                  className="-my-2 min-w-0 flex-1 bg-transparent py-2 text-[15.5px] font-medium outline-none placeholder:font-normal placeholder:text-subtle"
+                  className="-my-2 min-w-0 flex-1 bg-transparent py-2 text-[15.5px] font-medium outline-hidden placeholder:font-normal placeholder:text-subtle"
                 />
               </form>
             )}

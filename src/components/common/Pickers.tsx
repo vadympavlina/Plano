@@ -23,11 +23,11 @@ export function CoverPicker({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         {children ? (
-          <button type="button" aria-label={label} className="rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ink/30">
+          <button type="button" aria-label={label} className="rounded-lg outline-hidden focus-visible:ring-2 focus-visible:ring-ink/30">
             {children}
           </button>
         ) : (
-          <button type="button" className="rounded-lg bg-surface/85 px-3 py-2 text-[12px] font-medium text-ink shadow-soft backdrop-blur hover:bg-surface">
+          <button type="button" className="rounded-lg bg-surface/85 px-3 py-2 text-[12px] font-medium text-ink shadow-soft backdrop-blur-sm hover:bg-surface">
             Змінити обкладинку
           </button>
         )}

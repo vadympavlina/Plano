@@ -165,7 +165,7 @@ export default function ProjectPage() {
             <div className="flex w-full items-center gap-2 sm:w-auto">
               <Select
                 variant="chip"
-                className="h-9 min-w-[7.5rem] flex-1 sm:flex-none"
+                className="h-9 min-w-30 flex-1 sm:flex-none"
                 aria-label="Статус проєкту"
                 value={project.status}
                 onChange={(status) => void actions.projects.update(project.id, { status }).catch(() => undefined)}

@@ -218,7 +218,7 @@ export function TimePicker({
               placeholder="Введіть, напр. 930"
               aria-label="Ввести час"
               aria-invalid={typedInvalid || undefined}
-              className="mb-1.5 h-9 w-full rounded-lg border border-line bg-surface-2 px-2.5 text-sm tabular-nums outline-none placeholder:text-subtle focus:border-primary focus:bg-surface aria-[invalid=true]:border-danger"
+              className="mb-1.5 h-9 w-full rounded-lg border border-line bg-surface-2 px-2.5 text-sm tabular-nums outline-hidden placeholder:text-subtle focus:border-primary focus:bg-surface aria-invalid:border-danger"
             />
           </form>
           {parsed && !typedInvalid && (
@@ -242,7 +242,7 @@ export function TimePicker({
                   data-time={s}
                   onClick={() => pick(s)}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm tabular-nums outline-none transition-colors hover:bg-surface-2 focus-visible:bg-surface-2',
+                    'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm tabular-nums outline-hidden transition-colors hover:bg-surface-2 focus-visible:bg-surface-2',
                     sel && 'bg-accent text-surface hover:bg-accent focus-visible:bg-accent',
                   )}
                 >

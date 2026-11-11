@@ -57,9 +57,9 @@ export function EventDescription({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="min-w-0 rounded-xl bg-surface-2 p-3 text-[13px] leading-relaxed text-muted">
-      <div className={long && !open ? 'relative max-h-[9.5rem] overflow-hidden' : undefined} style={{ overflowWrap: 'anywhere' }}>
+      <div className={long && !open ? 'relative max-h-38 overflow-hidden' : undefined} style={{ overflowWrap: 'anywhere' }}>
         {lines.map(renderLine)}
-        {long && !open && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-surface-2 to-transparent" />}
+        {long && !open && <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-linear-to-t from-surface-2 to-transparent" />}
       </div>
       {long && (
         <button type="button" onClick={() => setOpen((o) => !o)} className="mt-1.5 text-[12.5px] font-semibold text-ink hover:underline">

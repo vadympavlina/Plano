@@ -20,7 +20,7 @@ type Filter = ProjectStatus | 'all';
 const ORDER: ProjectStatus[] = ['active', 'on_hold', 'completed', 'archived'];
 const GROUP_LABEL: Record<ProjectStatus, string> = { active: 'Активні', on_hold: 'На паузі', completed: 'Завершені', archived: 'В архіві' };
 const STATUS_PILL: Record<ProjectStatus, string> = {
-  active: 'bg-success/12 text-success',
+  active: 'text-success',
   on_hold: 'bg-warning/15 text-warning-ink',
   completed: 'bg-surface text-muted',
   archived: 'bg-surface text-subtle',

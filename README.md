@@ -31,7 +31,7 @@ Plano — приватний персональний центр планува�
 
 ## Технології
 
-React 19 + TypeScript (strict) · Vite 6 · Tailwind CSS 3 · Radix UI · Lucide · Firebase Authentication
+React 19 + TypeScript 6 (strict) · Vite 8 · Tailwind CSS 4 · Radix UI · Lucide · Firebase Authentication
 (email + пароль) + Realtime Database · React Router (HashRouter) · date-fns · zod 4 · vite-plugin-pwa (Workbox) ·
 Cloudflare Worker (токени Google, push, збір помилок) · GitHub Pages + GitHub Actions.
 

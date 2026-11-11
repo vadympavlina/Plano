@@ -32,7 +32,7 @@ export function Checkbox({
           checked ? 'border-accent bg-accent text-surface' : 'border-subtle/70 bg-surface hover:border-ink',
         )}
       >
-        <Check className={cn('h-3 w-3 stroke-[3] transition-transform', checked ? 'scale-100' : 'scale-0')} />
+        <Check className={cn('h-3 w-3 stroke-3 transition-transform', checked ? 'scale-100' : 'scale-0')} />
       </button>
       {children}
     </label>
@@ -94,7 +94,7 @@ export function Stepper({
           const n = Number(raw);
           if (Number.isFinite(n)) onChange(clamp(n));
         }}
-        className="h-full w-full min-w-0 bg-transparent text-center text-sm font-semibold tabular-nums outline-none"
+        className="h-full w-full min-w-0 bg-transparent text-center text-sm font-semibold tabular-nums outline-hidden"
       />
       {suffix && <span className="shrink-0 pr-1 text-xs text-muted">{suffix}</span>}
       <button

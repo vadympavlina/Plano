@@ -185,7 +185,7 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
               onBlur={applySmart}
-              className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-none placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
           {visible.title && (

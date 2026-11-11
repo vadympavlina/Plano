@@ -173,7 +173,7 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
     'flex items-center gap-1.5',
     sheet
       ? 'flex-wrap'
-      : 'no-scrollbar -mr-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]',
+      : 'no-scrollbar -mr-1.5 overflow-x-auto pr-6 mask-[linear-gradient(90deg,#000_85%,transparent)] sm:mr-0 sm:flex-wrap sm:overflow-visible sm:pr-0 sm:mask-none',
   );
   const chips = c.chips.filter((x) => x.type !== 'kind' && !(x.type === 'date' && !x.label.startsWith('по ')));
   const row = c.lines ? (
@@ -225,7 +225,12 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
             {x.category ? <CategoryIcon category={x.category} /> : I && <I className="h-3.5 w-3.5" />}
             <span className="max-w-[180px] truncate">{x.label}</span>
             {(x.spans.length > 0 || x.type === 'time' || x.type === 'date') && (
-              <button type="button" aria-label={`Прибрати «${x.label}»`} onClick={() => c.removeChip(x)} className="rounded p-0.5 opacity-60 hover:opacity-100">
+              <button
+                type="button"
+                aria-label={`Прибрати «${x.label}»`}
+                onClick={() => c.removeChip(x)}
+                className="rounded-sm p-0.5 opacity-60 hover:opacity-100"
+              >
                 <X className="h-3 w-3" />
               </button>
             )}

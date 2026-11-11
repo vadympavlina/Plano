@@ -74,7 +74,7 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
           </span>
         ) : (
           <span className="flex items-center justify-center rounded-full bg-danger text-on-fill" style={{ width: size, height: size }}>
-            <X className="h-5 w-5 stroke-[3]" />
+            <X className="h-5 w-5 stroke-3" />
           </span>
         )}
         {habit.goalType === 'count' && value > 0 && (
@@ -105,7 +105,7 @@ export function HabitQuickButton({ habit, today, size = 44 }: { habit: Habit; to
     >
       {done ? (
         <span className="flex items-center justify-center rounded-full" style={{ width: size, height: size, backgroundColor: color, color: onColor(color) }}>
-          <Check className="h-5 w-5 stroke-[3]" />
+          <Check className="h-5 w-5 stroke-3" />
         </span>
       ) : habit.goalType === 'count' ? (
         <Ring value={value / Math.max(1, habit.target)} size={size} stroke={4} color={color}>

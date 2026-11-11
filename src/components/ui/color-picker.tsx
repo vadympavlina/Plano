@@ -21,7 +21,7 @@ export function ColorPicker({ value, onChange }: { value: ColorKey; onChange: (c
           )}
           style={{ backgroundColor: COLORS[key].solid, ['--tw-ring-color' as string]: COLORS[key].solid }}
         >
-          {value === key && <Check className="h-3.5 w-3.5 stroke-[3]" style={{ color: onColor(COLORS[key].solid) }} />}
+          {value === key && <Check className="h-3.5 w-3.5 stroke-3" style={{ color: onColor(COLORS[key].solid) }} />}
         </button>
       ))}
     </div>

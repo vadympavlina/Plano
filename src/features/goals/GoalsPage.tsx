@@ -72,8 +72,8 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
 }
 
 const PACE_PILL: Record<Pace, string> = {
-  done: 'bg-success/12 text-success',
-  ahead: 'bg-success/12 text-success',
+  done: 'text-success',
+  ahead: 'text-success',
   on_track: 'bg-primary/10 text-primary',
   behind: 'bg-warning/15 text-warning-ink',
   overdue: 'bg-danger/10 text-danger',
@@ -160,7 +160,7 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
         </div>
         {expectedPct != null && pace !== 'done' && (
           <span
-            className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded bg-ink/45"
+            className="absolute -top-1 h-[18px] w-[2px] -translate-x-1/2 rounded-sm bg-ink/45"
             style={{ left: `${expectedPct}%` }}
             title={`Де треба бути сьогодні: ${fmt(Math.round(expected!))} ${goal.unit ?? ''}`}
           />
@@ -198,7 +198,7 @@ function GoalCard({ goal, onEdit, onProgress }: { goal: Goal; onEdit: () => void
             <ul className="scrollbar-thin mb-3 max-h-48 space-y-1.5 overflow-y-auto text-[13px]">
               {[...goal.history].reverse().map((h) => (
                 <li key={h.id} className="flex items-baseline gap-3">
-                  <span className="w-[5.5rem] shrink-0 text-muted">{new Date(h.date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })}</span>
+                  <span className="w-22 shrink-0 text-muted">{new Date(h.date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })}</span>
                   <span className="shrink-0 font-semibold tabular-nums" style={{ color }}>
                     {fmt(h.value)} {goal.unit}
                   </span>

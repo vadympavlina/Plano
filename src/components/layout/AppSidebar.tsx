@@ -18,7 +18,7 @@ export function SidebarFooter() {
         trigger={
           <button
             type="button"
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full p-1.5 pr-3 text-left transition-colors hover:bg-white/[0.06]"
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full p-1.5 pr-3 text-left transition-colors hover:bg-white/6"
             aria-label="Меню акаунта"
           >
             <Avatar name={profile.name} src={profile.avatarUrl} />
@@ -39,7 +39,7 @@ export function SidebarFooter() {
         className={({ isActive }) =>
           cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors',
-            isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-muted hover:bg-white/[0.06] hover:text-white',
+            isActive ? 'bg-sidebar-active text-white' : 'text-sidebar-muted hover:bg-white/6 hover:text-white',
           )
         }
       >

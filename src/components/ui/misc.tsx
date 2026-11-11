@@ -79,7 +79,7 @@ export function CheckCircle({
       )}
       style={checked && color ? { backgroundColor: color } : undefined}
     >
-      <Check className={cn('h-3 w-3 stroke-[3] transition-transform', checked ? 'scale-100' : 'scale-0')} />
+      <Check className={cn('h-3 w-3 stroke-3 transition-transform', checked ? 'scale-100' : 'scale-0')} />
     </button>
   );
 }
@@ -145,7 +145,7 @@ export function Segmented<T extends string>({
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[11.5px] font-medium text-muted">{children}</kbd>;
+  return <kbd className="rounded-sm border border-line bg-surface-2 px-1.5 py-0.5 font-sans text-[11.5px] font-medium text-muted">{children}</kbd>;
 }
 
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {

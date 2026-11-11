@@ -638,7 +638,7 @@ export function TimeGrid({
             onPointerLeave={() => setHover(null)}
           >
             {showsToday && !single && (
-              <div className="pointer-events-none absolute inset-x-0 z-[5] h-px bg-danger/30" style={{ top: (nowMinutes / 60) * HOUR_PX }} aria-hidden />
+              <div className="pointer-events-none absolute inset-x-0 z-5 h-px bg-danger/30" style={{ top: (nowMinutes / 60) * HOUR_PX }} aria-hidden />
             )}
             {/* hour and half-hour lines */}
             <div className="pointer-events-none absolute inset-0" aria-hidden>
@@ -714,7 +714,7 @@ export function TimeGrid({
                         }
                       }}
                       className={cn(
-                        'group/ev absolute z-[1] overflow-hidden text-left transition-shadow hover:shadow-soft',
+                        'group/ev absolute z-1 overflow-hidden text-left transition-shadow hover:shadow-soft',
                         single && item.kind === 'event' ? 'rounded-2xl border-l-[5px]' : 'rounded-xl bg-surface-2',
                         short ? 'px-2 py-0.5' : single ? 'px-3.5 py-2.5' : 'px-2.5 py-2',
                         item.draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
@@ -773,7 +773,7 @@ export function TimeGrid({
                         <div
                           aria-hidden
                           onPointerDown={(e) => onItemPointerDown(e, item, dayIndex, 'resize')}
-                          className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize touch-none [@media(pointer:coarse)]:hidden items-end justify-center pb-0.5 opacity-0 transition-opacity group-hover/ev:opacity-100"
+                          className="absolute inset-x-0 bottom-0 flex h-2.5 cursor-ns-resize touch-none pointer-coarse:hidden items-end justify-center pb-0.5 opacity-0 transition-opacity group-hover/ev:opacity-100"
                         >
                           <span className="h-[3px] w-6 rounded-full bg-ink/25" />
                         </div>
@@ -823,7 +823,7 @@ export function TimeGrid({
                 {c.day === today && (
                   <div className="pointer-events-none absolute inset-x-0 z-0" style={{ top: (nowMinutes / 60) * HOUR_PX - 1 }} aria-hidden>
                     <div className="relative h-[2px] bg-danger">
-                      <span className="absolute -left-[5px] -top-[4px] h-2.5 w-2.5 rounded-full bg-danger" />
+                      <span className="absolute left-[-5px] top-[-4px] h-2.5 w-2.5 rounded-full bg-danger" />
                     </div>
                   </div>
                 )}

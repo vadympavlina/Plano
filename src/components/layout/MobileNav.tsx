@@ -55,8 +55,8 @@ export function MobileNav() {
           tint="rgb(var(--primary))"
           aria-label="Швидко додати"
           onClick={() => openQuickAdd()}
-          icon={<Plus className="!h-6 !w-6" strokeWidth={2.4} />}
-          className="!h-[62px] !w-[62px] shrink-0 !rounded-full"
+          icon={<Plus className="h-6! w-6!" strokeWidth={2.4} />}
+          className="h-[62px]! w-[62px]! shrink-0 rounded-full!"
         />
       </div>
     </nav>
@@ -86,7 +86,7 @@ export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChan
         <DialogPrimitive.Content
           ref={panel}
           {...drag}
-          className="fixed inset-y-0 left-0 z-50 flex touch-pan-y w-[min(330px,88vw)] flex-col rounded-r-[30px] bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-none enter-drawer"
+          className="fixed inset-y-0 left-0 z-50 flex touch-pan-y w-[min(330px,88vw)] flex-col rounded-r-[30px] bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-hidden enter-drawer"
         >
           <DialogPrimitive.Title className="sr-only">Меню</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">Розділи, проєкти та категорії</DialogPrimitive.Description>

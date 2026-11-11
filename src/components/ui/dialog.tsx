@@ -70,7 +70,7 @@ export function DialogContent({
         onEscapeKeyDown={block}
         aria-describedby={description ? undefined : undefined}
         className={cn(
-          'fixed z-50 flex max-h-[92dvh] w-full flex-col border border-line bg-surface shadow-pop focus:outline-none enter-dialog',
+          'fixed z-50 flex max-h-[92dvh] w-full flex-col border border-line bg-surface shadow-pop focus:outline-hidden enter-dialog',
           'inset-x-0 bottom-0 rounded-t-[22px] pb-safe',
           'sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[86vh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-card sm:pb-0',
           sizes[size],
@@ -148,7 +148,7 @@ export function SheetContent({
       <DialogPrimitive.Content
         ref={sheet}
         className={cn(
-          'fixed z-50 flex flex-col border-line bg-surface shadow-pop focus:outline-none enter-side',
+          'fixed z-50 flex flex-col border-line bg-surface shadow-pop focus:outline-hidden enter-side',
           'inset-x-0 bottom-0 max-h-[92dvh] rounded-t-[22px] border-t pb-safe',
           'md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[440px] md:rounded-none md:border-l md:border-t-0 md:pb-0',
           className,

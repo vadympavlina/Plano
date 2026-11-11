@@ -88,7 +88,7 @@ export default function EventDetailDialog({ eventId, date, onClose }: { eventId:
             </p>
           )}
           {event.location && (
-            <p className="flex items-start gap-3 break-words [overflow-wrap:anywhere]">
+            <p className="flex items-start gap-3 wrap-break-word wrap-anywhere">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted" />
               <span className="min-w-0">{event.location}</span>
             </p>

@@ -153,7 +153,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
               aria-expanded
               aria-controls="search-results"
               aria-activedescendant={results[clamped] ? `sr-${results[clamped].id}` : undefined}
-              className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-subtle"
+              className="h-14 min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-hidden placeholder:text-subtle"
             />
             <Kbd>Esc</Kbd>
           </div>
@@ -182,7 +182,7 @@ export default function SearchCommand({ onClose }: { onClose: () => void }) {
                       <span className="block truncate font-medium text-ink">{r.title}</span>
                       {r.subtitle && <span className="block truncate text-xs text-muted">{r.subtitle}</span>}
                     </span>
-                    {i === clamped && <CornerDownLeft className="!h-3.5 !w-3.5" />}
+                    {i === clamped && <CornerDownLeft className="h-3.5! w-3.5!" />}
                   </button>
                 </div>
               );
