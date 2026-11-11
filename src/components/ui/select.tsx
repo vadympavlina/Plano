@@ -28,7 +28,7 @@ export function triggerClass(variant: ControlVariant, opts: { invalid?: boolean;
 }
 
 export const popoverPanel =
-  'z-50 rounded-[20px] border border-line bg-surface p-1.5 text-sm text-ink shadow-pop outline-none data-[state=open]:animate-scale-in';
+  'z-50 rounded-[20px] border border-line bg-surface p-1.5 text-sm text-ink shadow-pop outline-none origin-[var(--radix-select-content-transform-origin)] data-[state=open]:animate-scale-in data-[state=closed]:animate-pop-out';
 
 interface SelectProps<T extends string> {
   value: T | undefined;

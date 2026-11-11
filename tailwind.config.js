@@ -45,12 +45,14 @@ export default {
         'fade-in': { from: { opacity: '0' }, to: { opacity: '1' } },
         // Individual transform properties (scale / translate) so the animation never
         // overrides the element's own centering transform.
+        'pop-out': { from: { opacity: '1', scale: '1' }, to: { opacity: '0', scale: '0.97' } },
         'scale-in': { from: { opacity: '0', scale: '0.97' }, to: { opacity: '1', scale: '1' } },
         // Opacity only: a transform would re-anchor fixed elements inside the page while it runs.
         'page-in': { from: { opacity: '0' }, to: { opacity: '1' } },
       },
       animation: {
         'fade-in': 'fade-in 150ms ease-out',
+        'pop-out': 'pop-out 110ms ease-in forwards',
         'scale-in': 'scale-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1)',
         'page-in': 'page-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
       },

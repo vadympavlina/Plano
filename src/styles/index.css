@@ -224,6 +224,10 @@ img:not([draggable='true']) {
     animation-name: fade-in !important;
     animation-duration: 120ms !important;
   }
+  [class*='animate-pop-out'] {
+    animation-name: exit-fade !important;
+    animation-duration: 100ms !important;
+  }
   .animate-ping,
   .animate-pulse {
     animation: none !important;
