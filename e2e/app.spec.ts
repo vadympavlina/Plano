@@ -321,3 +321,42 @@ test('phone: a swipe from the left edge opens the menu', async ({ page, isMobile
   await touch('touchEnd');
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+
+test('long lists: only the rows near the screen are mounted, and the whole list is still reachable', async ({ page }) => {
+  await start(page);
+  await page.waitForFunction(() => !!JSON.parse(localStorage.getItem('plano:preview:data') ?? '{}').users);
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('plano:preview:data')!);
+    const now = new Date().toISOString();
+    const tasks: Record<string, unknown> = {};
+    for (let i = 0; i < 1500; i++) {
+      tasks[`l${i}`] = {
+        id: `l${i}`,
+        title: `Довгий список ${String(i).padStart(4, '0')}`,
+        status: 'todo',
+        priority: 'medium',
+        subtasks: [],
+        tags: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+    }
+    Object.assign(raw.users.preview.tasks ?? (raw.users.preview.tasks = {}), tasks);
+    localStorage.setItem('plano:preview:data', JSON.stringify(raw));
+  });
+  await page.goto('/#/tasks?list=inbox');
+  await page.reload();
+  const rows = page.getByRole('checkbox', { name: /Виконати «Довгий список/ });
+  await expect(rows.first()).toBeVisible();
+  // Not all 1500 rows are in the DOM...
+  expect(await rows.count()).toBeLessThan(400);
+  // ...and scrolling to the end brings the last ones in, while the first ones are dropped.
+  await page.evaluate(() => {
+    const m = document.querySelector('main');
+    const scroller = m && m.scrollHeight > m.clientHeight + 10 ? m : document.scrollingElement!;
+    scroller.scrollTo({ top: scroller.scrollHeight });
+  });
+  await expect(page.getByText('Довгий список 1499').first()).toBeVisible({ timeout: 10_000 });
+  expect(await rows.count()).toBeLessThan(400);
+  await expect(page.getByText('Довгий список 0000')).toHaveCount(0);
+});
