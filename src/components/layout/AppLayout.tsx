@@ -7,7 +7,8 @@ import { AppBadge } from '@/app/AppBadge';
 import { ShareTarget } from '@/app/ShareTarget';
 import { AppSidebar } from './AppSidebar';
 import { AppHeader } from './AppHeader';
-import { MobileDrawer, MobileNav } from './MobileNav';
+import { MobileNav } from './MobileNav';
+import { MobileDrawer } from './MobileDrawer';
 import { PanelSlot } from './RightPanel';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { UIProvider, useUI } from '@/app/providers/UIProvider';
@@ -52,29 +53,6 @@ function LayoutInner() {
     setPanels((n) => n + 1);
     return () => setPanels((n) => n - 1);
   }, []);
-
-  // Phones: swipe right from the left edge to open the menu (the drawer closes with a swipe left).
-  // A thin strip owns the edge with touch-action: pan-y, so the browser leaves the sideways move to us.
-  const edge = useRef<{ x: number; y: number } | null>(null);
-  const edgeHandlers = {
-    onPointerDown: (e: React.PointerEvent) => {
-      if (e.pointerType !== 'touch' || menuOpen || document.querySelector('[role=dialog]')) return;
-      edge.current = { x: e.clientX, y: e.clientY };
-      e.currentTarget.setPointerCapture(e.pointerId);
-    },
-    onPointerMove: (e: React.PointerEvent) => {
-      const s = edge.current;
-      if (!s) return;
-      const dx = e.clientX - s.x;
-      if (Math.abs(e.clientY - s.y) > 24 && Math.abs(e.clientY - s.y) > dx) edge.current = null;
-      else if (dx > 48) {
-        edge.current = null;
-        setMenuOpen(true);
-      }
-    },
-    onPointerUp: () => void (edge.current = null),
-    onPointerCancel: () => void (edge.current = null),
-  };
 
   useEffect(() => {
     try {
@@ -197,7 +175,6 @@ function LayoutInner() {
           </div>
         </div>
       </div>
-      <div aria-hidden className="fixed inset-y-0 left-0 z-30 w-4 touch-pan-y lg:hidden" {...edgeHandlers} />
       <MobileNav />
       <MobileDrawer open={menuOpen} onOpenChange={setMenuOpen} />
     </PanelSlot.Provider>

@@ -360,3 +360,36 @@ test('long lists: only the rows near the screen are mounted, and the whole list 
   expect(await rows.count()).toBeLessThan(400);
   await expect(page.getByText('Довгий список 0000')).toHaveCount(0);
 });
+
+test('phone: pulling the menu from the left edge follows the finger, and only a far or fast pull opens it', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'touch gestures');
+  await start(page);
+  const menu = page.locator('[data-menu]');
+  await expect(menu).toBeHidden();
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: string, x?: number) =>
+    cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
+  const width = (await menu.evaluate((e) => (e as HTMLElement).offsetWidth)) || 330;
+  // Pull to 100px and hold: the panel is out by about that much (1:1), still not "open".
+  await touch('touchStart', 6);
+  for (const x of [30, 60, 100]) {
+    await touch('touchMove', x);
+    await page.waitForTimeout(60);
+  }
+  const shown = await menu.evaluate((e) => parseFloat((e as HTMLElement).style.translate) + (e as HTMLElement).offsetWidth);
+  expect(shown).toBeGreaterThan(80);
+  expect(shown).toBeLessThan(110);
+  await page.waitForTimeout(250);
+  await touch('touchEnd');
+  // Let go slowly at 100px of 330: it goes back.
+  await expect(menu).toBeHidden();
+  // A quick flick, even a short one, opens it.
+  await touch('touchStart', 6);
+  await touch('touchMove', 70);
+  await page.waitForTimeout(40);
+  await touch('touchMove', 130);
+  await touch('touchEnd');
+  await expect(menu).toBeVisible();
+  await expect.poll(() => menu.evaluate((e) => (e as HTMLElement).style.translate)).toBe('');
+  expect(width).toBeGreaterThan(200);
+});

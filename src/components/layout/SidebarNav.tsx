@@ -96,7 +96,7 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
   const categoryId = new URLSearchParams(search).get('category');
 
   return (
-    <nav aria-label="Розділи" className="scrollbar-thin flex-1 overflow-y-auto pb-3">
+    <nav aria-label="Розділи" className="scrollbar-thin flex-1 touch-pan-y overflow-y-auto pb-3">
       <div className="space-y-0.5">
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate} className={({ isActive }) => itemCls(isActive, !!big)}>

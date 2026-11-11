@@ -56,3 +56,11 @@ for (const theme of ['light', 'dark'] as const) {
     });
   });
 }
+
+test('axe: the phone menu, opened', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'the menu drawer is a phone control');
+  await startSeeded(page, 'light');
+  await page.getByRole('button', { name: 'Меню', exact: true }).tap();
+  await page.getByRole('dialog', { name: 'Меню' }).waitFor();
+  await scan(page);
+});

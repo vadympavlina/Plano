@@ -1,12 +1,6 @@
-import { useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { CalendarDays, NotebookPen, Plus, Search, SquareCheck, Sun, X } from 'lucide-react';
-import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { CalendarDays, NotebookPen, Plus, SquareCheck, Sun } from 'lucide-react';
 import { useUI } from '@/app/providers/UIProvider';
-import { Logo } from '@/components/common/Logo';
-import { useDragDismiss } from '@/lib/gesture/useDragDismiss';
-import { SidebarNav } from './SidebarNav';
-import { SidebarFooter } from './AppSidebar';
 
 const TABS = [
   { to: '/', label: 'Сьогодні', icon: Sun },
@@ -59,65 +53,5 @@ export function MobileNav() {
         </button>
       </div>
     </nav>
-  );
-}
-
-/** Phone: the full menu from the top bar's menu button — sections with counters, projects, categories, the account. */
-export function MobileDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
-  const { openQuickAdd, openSearch } = useUI();
-  const close = () => onOpenChange(false);
-  // Drag the drawer left to close it: it follows the finger 1:1, then a spring finishes the job.
-  const panel = useRef<HTMLDivElement>(null);
-  const shade = useRef<HTMLDivElement>(null);
-  const drag = useDragDismiss({
-    target: panel,
-    overlay: shade,
-    axis: 'x',
-    dir: -1,
-    lockAfter: 12,
-    distance: 0.4,
-    onDismiss: close,
-  });
-  return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay ref={shade} className="fixed inset-0 z-50 bg-black/60 enter-fade" />
-        <DialogPrimitive.Content
-          ref={panel}
-          {...drag}
-          className="fixed inset-y-0 left-0 z-50 flex touch-pan-y w-[min(330px,88vw)] flex-col rounded-r-[30px] bg-sidebar px-3 pb-[max(14px,env(safe-area-inset-bottom))] pt-[max(14px,env(safe-area-inset-top))] text-sidebar-fg shadow-pop outline-hidden enter-drawer"
-        >
-          <DialogPrimitive.Title className="sr-only">Меню</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">Розділи, проєкти та категорії</DialogPrimitive.Description>
-          <div className="mb-3 flex h-11 items-center justify-between pl-2">
-            <Logo tone="light" className="text-white" />
-            <DialogPrimitive.Close
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-active text-[#cfcfd4] hover:text-white"
-              aria-label="Закрити меню"
-            >
-              <X className="h-5 w-5" />
-            </DialogPrimitive.Close>
-          </div>
-          <div className="mb-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => (close(), openSearch())}
-              className="flex h-11 items-center gap-2 rounded-full bg-sidebar-active px-4 text-[14px] text-sidebar-muted transition-colors hover:text-white"
-            >
-              <Search className="h-4 w-4" /> Пошук
-            </button>
-            <button
-              type="button"
-              onClick={() => (close(), openQuickAdd())}
-              className="flex h-11 items-center justify-center gap-2 rounded-full bg-[#f4f3f1] px-4 text-[14px] font-semibold text-[#161618] transition-colors hover:bg-white"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2.4} /> Створити
-            </button>
-          </div>
-          <SidebarNav big onNavigate={close} />
-          <SidebarFooter />
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
   );
 }

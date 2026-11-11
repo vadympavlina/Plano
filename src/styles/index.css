@@ -218,23 +218,6 @@
   }
 }
 
-@utility enter-drawer {
-  translate: 0 0;
-  transition: translate 450ms cubic-bezier(0.32, 0.72, 0, 1);
-  transition-duration: 340ms;
-  @starting-style {
-    translate: -100% 0;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    transition: opacity 120ms linear;
-    @starting-style {
-      translate: 0 0;
-      scale: 1;
-      opacity: 0;
-    }
-  }
-}
-
 @utility enter-pop {
   opacity: 1;
   scale: 1;
@@ -544,11 +527,6 @@
     translate: 0 100%;
   }
 }
-@keyframes exit-drawer {
-  to {
-    translate: -100% 0;
-  }
-}
 @keyframes exit-side {
   to {
     translate: 100% 0;
@@ -565,9 +543,6 @@
 }
 .enter-sheet[data-state='closed'] {
   animation: exit-sheet 260ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
-}
-.enter-drawer[data-state='closed'] {
-  animation: exit-drawer 240ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 .enter-side[data-state='closed'] {
   animation: exit-sheet 260ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
@@ -587,7 +562,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .enter-sheet[data-state='closed'],
-  .enter-drawer[data-state='closed'],
   .enter-side[data-state='closed'],
   .enter-dialog[data-state='closed'] {
     animation: exit-fade 100ms linear forwards !important;
