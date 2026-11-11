@@ -92,7 +92,7 @@ describe('handle', () => {
     const f2 = google({ access_token: 'at2', expires_in: 3599 });
     const res2 = await handle(req('/token', { grant: out.grant }), env, verify);
     expect(await res2.json()).toEqual({ accessToken: 'at2', expiresIn: 3599 });
-    expect(String(f2.mock.calls[0][1]?.body)).toContain('refresh_token=rt1');
+    expect(String(f2.mock.calls.at(-1)?.[1]?.body)).toContain('refresh_token=rt1');
   });
 
   it('reports a missing refresh token and revoked grants', async () => {
