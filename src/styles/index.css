@@ -603,19 +603,3 @@
     font-size: 16px !important;
   }
 }
-
-/* Outside any @layer on purpose: glisse's own (unlayered) styles must lose to these variables. */
-/* Liquid Glass (glisse) is kept only for the phone's floating tab bar. */
-.glass-dock {
-  --lg-fill: rgb(var(--primary));
-  /* Smoked glass: dark enough to stay dark over the white card. */
-  --lg-glass: #131316e8;
-  --lg-glass-active: #2e2e34d9;
-  --lg-edge: #ffffff26;
-  --lg-lens: #ffffff1a;
-  --lg-selection: #ffffff2e;
-}
-.glass-dock .lg-tab,
-.glass-dock .lg-tab-copy {
-  font-size: 11.5px;
-}
