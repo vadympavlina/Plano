@@ -19,6 +19,7 @@ import type { Subtask, Task } from '@/types';
 import { ReminderSelect } from '@/features/reminders/ReminderSelect';
 import { useSmartTitle } from '@/features/capture/useSmartTitle';
 import { SmartTitleHint } from '@/features/capture/SmartTitleHint';
+import { canAutoFocus } from '@/lib/utils/pointer';
 
 type Draft = Omit<Task, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -121,10 +122,10 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
         <form onSubmit={onSubmit} noValidate>
           <input
             autoComplete="off"
-            autoFocus
+            autoFocus={canAutoFocus()}
             aria-label="Назва"
             aria-invalid={visible.title ? true : undefined}
-            placeholder="Що потрібно зробити?"
+            placeholder="Що потрібно зробити…"
             value={draft.title}
             maxLength={300}
             onChange={(e) => patch({ title: e.target.value })}
@@ -135,7 +136,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
           <Textarea
             aria-label="Опис"
             rows={2}
-            placeholder="Додайте опис"
+            placeholder="Додайте опис…"
             value={draft.description ?? ''}
             onChange={(e) => patch({ description: e.target.value })}
             className="mt-1 min-h-0 resize-none rounded-none bg-transparent px-0 text-[14px] text-muted shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
@@ -268,7 +269,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
               <input
                 autoComplete="off"
                 ref={subtaskInput}
-                placeholder="Додати підзадачу"
+                placeholder="Додати підзадачу…"
                 value={newSubtask}
                 aria-label="Нова підзадача"
                 onChange={(e) => setNewSubtask(e.target.value)}

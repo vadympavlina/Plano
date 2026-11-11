@@ -14,6 +14,7 @@ import { useFormDialog } from '@/hooks/useFormDialog';
 import { todayKey } from '@/lib/date';
 import { GOAL_STATUSES, type Goal } from '@/types';
 import { GOAL_STATUS_LABEL } from './logic';
+import { canAutoFocus } from '@/lib/utils/pointer';
 
 type Draft = Omit<Goal, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -57,9 +58,9 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
             {(p) => (
               <Input
                 {...p}
-                autoFocus
+                autoFocus={canAutoFocus()}
                 maxLength={200}
-                placeholder="напр. Прочитати 12 книжок цього року"
+                placeholder="напр. Прочитати 12 книжок цього року…"
                 value={draft.title}
                 onChange={(e) => patch({ title: e.target.value })}
               />
@@ -76,7 +77,7 @@ export function GoalForm({ goal, onClose }: { goal?: Goal; onClose: () => void }
               {(p) => <Stepper {...p} min={0} value={draft.targetValue} onChange={(targetValue) => patch({ targetValue })} />}
             </Field>
             <Field label="Одиниця" className="col-span-2 sm:col-span-1">
-              {(p) => <Input {...p} placeholder="книжки, км, %" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
+              {(p) => <Input {...p} placeholder="напр. книжки, км, %…" value={draft.unit ?? ''} onChange={(e) => patch({ unit: e.target.value })} />}
             </Field>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

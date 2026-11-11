@@ -215,7 +215,7 @@ export function TimePicker({
               value={text}
               onChange={(e) => setText(e.target.value)}
               inputMode="numeric"
-              placeholder="Введіть, напр. 930"
+              placeholder="Введіть, напр. 930…"
               aria-label="Ввести час"
               aria-invalid={typedInvalid || undefined}
               className="mb-1.5 h-9 w-full rounded-lg border border-line bg-surface-2 px-2.5 text-sm tabular-nums outline-hidden placeholder:text-subtle focus:border-primary focus:bg-surface aria-invalid:border-danger"

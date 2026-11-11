@@ -11,6 +11,7 @@ import { useFormDialog } from '@/hooks/useFormDialog';
 import { todayKey } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { Habit } from '@/types';
+import { canAutoFocus } from '@/lib/utils/pointer';
 
 type Draft = Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>;
 const ICONS = ['🏋️', '📚', '💧', '🧠', '🚶', '🧘', '🥗', '😴', '✍️', '🎸', '💊', '🌱', '🚬', '🍬', '📱', '🍺', '☕'];
@@ -87,7 +88,7 @@ export function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => vo
             {(p) => (
               <Input
                 {...p}
-                autoFocus
+                autoFocus={canAutoFocus()}
                 maxLength={120}
                 placeholder={draft.kind === 'bad' ? 'напр. Курити, Солодке, Соцмережі' : 'напр. Прочитати 20 сторінок'}
                 value={draft.name}

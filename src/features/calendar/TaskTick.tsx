@@ -29,7 +29,7 @@ export function TaskTick({ task, color, size = 14 }: { task: Task; color: string
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
       className={cn(
-        'relative flex shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-2 before:content-[""]',
+        'relative flex shrink-0 cursor-pointer items-center justify-center rounded-full border-[1.5px] transition-colors before:absolute before:-inset-3 before:content-[""]',
         done ? 'border-transparent bg-success text-on-fill' : 'bg-surface hover:bg-surface-2',
       )}
       style={{ width: size, height: size, borderColor: done ? undefined : color }}

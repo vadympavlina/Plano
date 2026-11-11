@@ -441,7 +441,7 @@ export default function DashboardPage() {
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             aria-label="Нова задача у вхідні"
-            placeholder="Нова задача"
+            placeholder="Нова задача…"
             className="-my-2 min-w-0 flex-1 bg-transparent py-2 text-[15.5px] font-medium outline-hidden placeholder:font-normal placeholder:text-subtle"
           />
         </form>

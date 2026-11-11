@@ -10,6 +10,7 @@ import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
 import type { Project } from '@/types';
 import { todayKey } from '@/lib/date';
+import { canAutoFocus } from '@/lib/utils/pointer';
 
 type Draft = Omit<Project, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -44,7 +45,14 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
         <form onSubmit={onSubmit} noValidate className="space-y-4">
           <Field label="Назва" error={visible.name}>
             {(p) => (
-              <Input {...p} autoFocus maxLength={120} placeholder="напр. EdFlow, Ремонт" value={draft.name} onChange={(e) => patch({ name: e.target.value })} />
+              <Input
+                {...p}
+                autoFocus={canAutoFocus()}
+                maxLength={120}
+                placeholder="напр. EdFlow, Ремонт…"
+                value={draft.name}
+                onChange={(e) => patch({ name: e.target.value })}
+              />
             )}
           </Field>
           <Field label="Опис">
@@ -52,7 +60,7 @@ export function ProjectForm({ project, onClose, onCreated }: { project?: Project
               <Textarea
                 {...p}
                 rows={3}
-                placeholder="Про що цей проєкт?"
+                placeholder="Про що цей проєкт…"
                 value={draft.description ?? ''}
                 onChange={(e) => patch({ description: e.target.value })}
               />

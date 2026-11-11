@@ -347,7 +347,7 @@ export function NoteEditor({ note }: { note: Note }) {
                   .map((t) => t.trim())
                   .filter(Boolean)}
                 onChange={(tags) => change({ tags: tags.join(', ') })}
-                placeholder="Додати тег"
+                placeholder="Додати тег…"
               />
               <span className="flex items-center gap-2 text-muted">
                 <Clock className="h-4 w-4" /> Змінено

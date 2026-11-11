@@ -231,7 +231,7 @@ function TaskDetailInner({ task, onClose, panel }: { task: Task; onClose: () => 
           }}
         >
           <Input
-            placeholder="+ Додати підзадачу"
+            placeholder="Додати підзадачу…"
             aria-label="Нова підзадача"
             className="h-9 border-dashed"
             value={newSubtask}

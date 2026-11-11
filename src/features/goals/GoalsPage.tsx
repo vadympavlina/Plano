@@ -55,7 +55,7 @@ function ProgressDialog({ goal, onClose }: { goal: Goal; onClose: () => void }) 
             Мета: {goal.targetValue} {goal.unit}
           </p>
           <Field label="Нотатка (необов’язково)">
-            {(p) => <Input {...p} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Що змінилося?" />}
+            {(p) => <Input {...p} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Що змінилося…" />}
           </Field>
           <DialogFooter>
             <Button variant="outline" onClick={onClose}>

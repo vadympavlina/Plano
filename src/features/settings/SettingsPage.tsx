@@ -524,7 +524,7 @@ function CategoriesSection() {
         <input
           autoComplete="off"
           className="h-9 min-w-0 flex-1 rounded-lg bg-transparent px-2 text-[14px] outline-hidden placeholder:text-subtle hover:bg-surface-2 focus:bg-surface-2"
-          placeholder="Нова категорія"
+          placeholder="Нова категорія…"
           aria-label="Назва нової категорії"
           maxLength={60}
           value={name}
@@ -935,7 +935,7 @@ export default function SettingsPage() {
               autoComplete="off"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Знайти налаштування"
+              placeholder="Знайти налаштування…"
               aria-label="Знайти налаштування"
               className="min-w-0 flex-1 bg-transparent outline-hidden placeholder:text-subtle"
             />

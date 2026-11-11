@@ -219,7 +219,7 @@ export default function TasksPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onValueChange={setQuery}
-            placeholder="Пошук задач"
+            placeholder="Пошук задач…"
             aria-label="Пошук задач"
             className="h-9 rounded-full"
           />
@@ -232,7 +232,7 @@ export default function TasksPage() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onValueChange={setQuery}
-          placeholder="Пошук задач"
+          placeholder="Пошук задач…"
           aria-label="Пошук задач"
           className="h-9 rounded-full"
         />

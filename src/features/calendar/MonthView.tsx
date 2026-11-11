@@ -100,7 +100,7 @@ export function MonthView({
                   onClick={() => onSelectDay(d)}
                   aria-label={`Відкрити ${d}`}
                   className={cn(
-                    'pointer-events-auto flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors hover:bg-surface-2',
+                    'pointer-events-auto flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-xs tabular-nums transition-colors before:absolute before:inset-0 before:content-[""] hover:bg-surface-2 sm:before:hidden',
                     isToday ? 'bg-primary font-bold text-primary-fg hover:bg-primary' : inMonth ? 'font-semibold text-ink' : 'text-subtle',
                   )}
                 >

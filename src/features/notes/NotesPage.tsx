@@ -90,7 +90,7 @@ export default function NotesPage() {
           type="search"
           icon={<Search />}
           className="mb-2 h-9"
-          placeholder="Пошук нотаток"
+          placeholder="Пошук нотаток…"
           aria-label="Пошук нотаток"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

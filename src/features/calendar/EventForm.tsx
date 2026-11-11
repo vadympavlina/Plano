@@ -24,6 +24,7 @@ import { deviceTimeZone, formatDuration, formatTimeRange, minutesToTime, diffDay
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 import type { CalendarEvent } from '@/types';
 import { findConflicts } from './logic';
+import { canAutoFocus } from '@/lib/utils/pointer';
 
 type Draft = Omit<CalendarEvent, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -177,10 +178,10 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
               aria-hidden
             />
             <input
-              autoFocus
+              autoFocus={canAutoFocus()}
               aria-label="Назва"
               aria-invalid={visible.title ? true : undefined}
-              placeholder="Назва події"
+              placeholder="Назва події…"
               maxLength={300}
               value={draft.title}
               onChange={(e) => patch({ title: e.target.value })}
@@ -350,7 +351,7 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
             <Row icon={<MapPin />} label="Місце">
               <Input
                 aria-label="Місце"
-                placeholder="Місце"
+                placeholder="Місце…"
                 value={draft.location ?? ''}
                 onChange={(e) => patch({ location: e.target.value })}
                 className={bareInput}
@@ -362,7 +363,7 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
                 aria-invalid={visible.url ? true : undefined}
                 type="url"
                 inputMode="url"
-                placeholder="Посилання на зустріч"
+                placeholder="Посилання на зустріч…"
                 value={draft.url ?? ''}
                 onChange={(e) => patch({ url: e.target.value })}
                 className={bareInput}
@@ -377,7 +378,7 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
               <Textarea
                 aria-label="Опис"
                 rows={2}
-                placeholder="Нотатки"
+                placeholder="Нотатки…"
                 value={draft.description ?? ''}
                 onChange={(e) => patch({ description: e.target.value })}
                 className="min-h-[60px] resize-none rounded-none bg-transparent px-0 py-2 shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
