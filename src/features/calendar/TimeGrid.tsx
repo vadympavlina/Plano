@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
+import { useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { MapPin, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
@@ -14,82 +13,10 @@ import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
 import { expandEvents, layoutDay, occurrencesOnDay, selectionRange, type EventOccurrence } from './logic';
 import { buildTimedItems, eventColor, type GridItem } from './items';
-
-/** Pixels per hour: the day view is roomier than the multi-day views. */
-const HOUR_PX_DAY = 68;
-const HOUR_PX_MULTI = 52;
-const SNAP = 15;
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const LONG_PRESS_MS = 350;
-const DAY_END = 24 * 60;
-
-type EventItem = Extract<GridItem, { kind: 'event' }>;
-
-interface DragState {
-  mode: 'move' | 'resize';
-  item: EventItem;
-  pointerId: number;
-  startX: number;
-  startY: number;
-  dayIndex: number;
-  deltaMin: number;
-  deltaDays: number;
-  moved: boolean;
-}
-
-/** Range being drawn on the time grid to create an event. */
-interface Selection {
-  pointerId: number;
-  dayIndex: number;
-  anchor: number;
-  pointer: number;
-  startY: number;
-  startX: number;
-  /** Touch selections start only after a long press. */
-  active: boolean;
-  moved: boolean;
-}
-
-/** Range of days being drawn in the all-day row. */
-interface DaySelection {
-  pointerId: number;
-  from: number;
-  to: number;
-}
-
-/** Leading mark of an event: its category icon, or a dot in the category colour. */
-function Marker({ category, color }: { category?: import('@/types').Category; color: string }) {
-  return categoryIcon(category) ? (
-    <CategoryIcon category={category} className="h-3.5 w-3.5" color={color} />
-  ) : (
-    <span className="mx-[3px] block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden />
-  );
-}
-
-/** A small ring of a day's finished tasks. */
-function DayRing({ done, total }: { done: number; total: number }) {
-  const r = 7;
-  const c = 2 * Math.PI * r;
-  const share = total ? done / total : 0;
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" className="shrink-0" role="img" aria-label={total ? `Виконано ${done} з ${total}` : 'Задач немає'}>
-      <circle cx="10" cy="10" r={r} fill="none" strokeWidth="2.4" className="stroke-line" />
-      {share > 0 && (
-        <circle
-          cx="10"
-          cy="10"
-          r={r}
-          fill="none"
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeDasharray={`${c * share} ${c}`}
-          transform="rotate(-90 10 10)"
-          className={share === 1 ? 'stroke-success' : 'stroke-primary'}
-        />
-      )}
-    </svg>
-  );
-}
+import { DAY_END, HOURS, HOUR_PX_DAY, HOUR_PX_MULTI, LONG_PRESS_MS, SNAP, type DaySelection, type DragState, type Selection } from './timeGridModel';
+import { Marker } from './TimeGridParts';
+import { GridHeader } from './TimeGridHeader';
+import { useBlockTouchScroll, usePageSwipe, useScrollToUsefulHour } from './useTimeGridScroll';
 
 export function TimeGrid({
   days,
@@ -160,60 +87,9 @@ export function TimeGrid({
 
   // Scroll to a useful hour: the earliest item in view, or shortly before now.
   const earliest = Math.min(...columns.flatMap((c) => c.positioned.map((p) => p.item.start)), DAY_END);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const base = days.includes(today) ? Math.max(0, now.getHours() - 2) : 7;
-    const hour = Math.min(base, Math.floor(earliest / 60));
-    const apply = () => {
-      el.scrollTop = Math.max(0, hour * HOUR_PX - 16);
-    };
-    apply();
-    // Mobile Safari can lay the scroller out after the first effect; apply again once it has a size.
-    const raf = requestAnimationFrame(apply);
-    let done = el.clientHeight > 0 && el.scrollTop > 0;
-    const ro = new ResizeObserver(() => {
-      if (done || el.clientHeight === 0) return;
-      done = true;
-      apply();
-    });
-    ro.observe(el);
-    setDraftSlot(null);
-    // Layout can settle a moment later (fonts, the page's own height): retry while still at the top.
-    const retries = [60, 250, 700].map((ms) => setTimeout(() => el.scrollTop === 0 && hour > 0 && apply(), ms));
-    return () => {
-      cancelAnimationFrame(raf);
-      retries.forEach(clearTimeout);
-      ro.disconnect();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days[0], days.length]);
+  useScrollToUsefulHour({ scrollRef, days, today, now, earliest, hourPx: HOUR_PX, onSettle: () => setDraftSlot(null) });
 
-  // Swipe left/right to page through days (touch only, ignored while drawing a selection).
-  const swipeRef = useRef(onSwipe);
-  swipeRef.current = onSwipe;
-  useEffect(() => {
-    const el = scrollRef.current?.parentElement;
-    if (!el) return;
-    let start: { x: number; y: number; t: number } | null = null;
-    const onStart = (e: TouchEvent) => {
-      start = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() } : null;
-    };
-    const onEnd = (e: TouchEvent) => {
-      if (!start || blockScroll.current) return (start = null);
-      const t = e.changedTouches[0];
-      const dx = t.clientX - start.x;
-      const dy = t.clientY - start.y;
-      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.6 && Date.now() - start.t < 700) swipeRef.current?.(dx < 0 ? 1 : -1);
-      start = null;
-    };
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchend', onEnd, { passive: true });
-    return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchend', onEnd);
-    };
-  }, []);
+  usePageSwipe(scrollRef, blockScroll, onSwipe);
 
   // Day view: a week strip replaces the single big day header.
   const strip = useMemo(() => {
@@ -228,15 +104,7 @@ export function TimeGrid({
   }, [single, days, settings.weekStartsOn, events, tasks]);
 
   // While a touch selection or drag is in progress, stop the page from scrolling.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const onTouchMove = (e: TouchEvent) => {
-      if (blockScroll.current) e.preventDefault();
-    };
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
-    return () => el.removeEventListener('touchmove', onTouchMove);
-  }, []);
+  useBlockTouchScroll(scrollRef, blockScroll);
 
   const minuteAt = (clientY: number) => {
     const rect = columnsRef.current!.getBoundingClientRect();
@@ -455,82 +323,7 @@ export function TimeGrid({
 
   return (
     <div className="flex h-full min-h-0 select-none flex-col">
-      {/* Day headers */}
-      {strip ? (
-        <div className="grid grid-cols-7 gap-0.5 border-b border-line/70 px-1 pb-1 sm:px-3 sm:py-1.5">
-          {strip.map(({ d, marked }) => {
-            const on = d === days[0];
-            const isToday = d === today;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => onSelectDay(d)}
-                aria-pressed={on}
-                aria-label={formatDateKey(d, 'EEEE, d MMMM')}
-                className={cn('flex flex-col items-center gap-0 rounded-xl py-0.5 transition-colors sm:gap-0.5 sm:py-1', !on && 'hover:bg-surface-2')}
-              >
-                <span className={cn('text-[12px] font-medium', isToday ? 'text-primary' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
-                <span
-                  className={cn(
-                    'flex h-8 w-8 items-center justify-center rounded-full text-[15px] font-semibold tabular-nums transition-colors max-sm:h-7 max-sm:w-7',
-                    on ? (isToday ? 'bg-primary text-primary-fg' : 'bg-accent text-surface') : isToday ? 'text-primary' : 'text-ink',
-                  )}
-                >
-                  {Number(d.slice(8))}
-                </span>
-                <span className={cn('h-1 w-1 rounded-full', marked && !on ? 'bg-subtle' : 'bg-transparent')} />
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="flex">
-          <div className="w-12 shrink-0 sm:w-14" />
-          <div className="grid flex-1" style={gridCols}>
-            {days.map((d) => {
-              const isToday = d === today;
-              const p = dayProgress.get(d);
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => onSelectDay(d)}
-                  className={cn(
-                    'flex items-center justify-between gap-1.5 px-2.5 py-3 text-left transition-colors hover:bg-surface-2/60 lg:px-3',
-                    days.length > 3 && 'justify-center px-1 py-2.5',
-                  )}
-                  aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
-                >
-                  <span
-                    className={cn(
-                      'min-w-0 truncate text-[13.5px] font-bold',
-                      days.length > 3 && 'flex w-full flex-col items-center gap-0.5 text-[12px] leading-none',
-                    )}
-                  >
-                    <span className={cn('capitalize', isToday && 'text-primary')}>{isToday && days.length <= 3 ? 'Сьогодні' : formatDateKey(d, 'EEEEEE')}</span>
-                    <span
-                      className={cn(
-                        'font-medium',
-                        days.length <= 3 && 'ml-1.5',
-                        isToday ? 'text-primary' : 'text-muted',
-                        days.length > 3 && 'text-[15px] font-bold',
-                      )}
-                    >
-                      {Number(d.slice(8))}
-                    </span>
-                  </span>
-                  {days.length <= 3 && (
-                    <span className="hidden sm:block">
-                      <DayRing done={p?.done ?? 0} total={p?.total ?? 0} />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <GridHeader strip={strip} days={days} today={today} dayProgress={dayProgress} gridCols={gridCols} onSelectDay={onSelectDay} />
 
       {/* All-day row: always present so all-day events can be drawn here */}
       <div className="flex border-b border-line/70">
