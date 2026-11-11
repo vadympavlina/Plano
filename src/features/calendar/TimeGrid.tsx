@@ -577,21 +577,20 @@ export function TimeGrid({
                   );
                 })}
                 {c.untimedTasks.map((t) => (
-                  <button
+                  <div
                     key={t.id}
-                    type="button"
                     draggable={t.status !== 'completed'}
                     onDragStart={(e) => startTaskDrag(e, t.id)}
-                    onClick={() => openTask(t.id)}
                     className={cn(
-                      'flex w-full items-center gap-2 truncate rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold text-ink max-sm:py-1.5',
+                      'flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-[12px] font-semibold text-ink max-sm:py-1.5',
                       t.status === 'completed' && 'text-subtle line-through',
                     )}
-                    title={`Задача: ${t.title}`}
                   >
                     <TaskTick task={t} color={taskColor(t)} size={14} />
-                    <span className="truncate">{t.title}</span>
-                  </button>
+                    <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left" title={`Задача: ${t.title}`}>
+                      {t.title}
+                    </button>
+                  </div>
                 ))}
                 {selected && c.allDay.length === 0 && c.untimedTasks.length === 0 && (
                   <span className="pointer-events-none block truncate px-1.5 py-1 text-[12px] font-medium text-primary">
@@ -696,7 +695,8 @@ export function TimeGrid({
                   return (
                     <div
                       key={item.key}
-                      role="button"
+                      // A task block contains its own tick button, so it cannot itself be a button.
+                      role={item.kind === 'task' ? 'group' : 'button'}
                       tabIndex={0}
                       aria-label={`${item.title}, ${fmt(start)} – ${fmt(end)}`}
                       onPointerDown={(e) => onItemPointerDown(e, item, dayIndex, 'move')}

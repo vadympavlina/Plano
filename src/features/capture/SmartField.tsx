@@ -147,8 +147,6 @@ export const SmartField = forwardRef<
       <div aria-hidden className={cn('pointer-events-none absolute inset-0 whitespace-pre-wrap break-words py-2 text-ink', text)}>
         {mirror}
       </div>
-      {/* aria-expanded reports the suggestions popup on a multi-line textbox (a combobox role would claim a single line). */}
-      {/* eslint-disable-next-line jsx-a11y/role-supports-aria-props */}
       <textarea
         ref={area}
         rows={1}
@@ -156,7 +154,6 @@ export const SmartField = forwardRef<
         autoFocus={autoFocus}
         aria-label={label}
         aria-autocomplete="list"
-        aria-expanded={open}
         maxLength={300}
         placeholder={placeholder}
         spellCheck={false}

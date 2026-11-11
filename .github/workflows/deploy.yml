@@ -92,16 +92,33 @@ jobs:
       - run: npm run format:check
       - run: npm test
       # Real-browser checks (desktop + phone) on a local-preview build; a failure stops the deploy.
-      # The browser itself comes from Playwright's CDN. Its system libraries and fonts come from apt, whose
-      # mirrors are sometimes unreachable from the runner (the step then hung for 10 minutes and failed
-      # the whole deploy), so that part is best effort: the runner image already ships most of them.
+      # The browser comes from Playwright's CDN and is cached between runs (keyed by the lockfile, which
+      # pins the Playwright version). Its system libraries are already on the runner image: installing
+      # them through apt is what hung for 10 minutes when the Ubuntu mirrors were unreachable.
+      - name: Cache the test browser
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
       - name: Install the test browser
+        if: steps.pw-cache.outputs.cache-hit != 'true'
         run: npx playwright install chromium
-      - name: Install the browser's system libraries (best effort)
-        timeout-minutes: 4
-        continue-on-error: true
-        run: npx playwright install-deps chromium
+      # Behaviour and accessibility (axe) on desktop and phone profiles; a failure stops the deploy.
       - run: npm run e2e
+      # Screenshots against the committed baselines. Informational: it reports a changed look but does
+      # not block a deploy (renders can differ slightly between machines). Diffs are kept as an artifact.
+      - name: Visual regression (informational)
+        id: visual
+        continue-on-error: true
+        run: npm run e2e:visual
+      - name: Keep the visual diffs
+        if: steps.visual.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diffs
+          path: test-results
+          retention-days: 14
       - name: Build
         run: npm run build
         env:

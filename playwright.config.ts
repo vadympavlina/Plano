@@ -6,6 +6,7 @@ export default defineConfig({
   timeout: 30_000,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
+  expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.02 } },
   use: { baseURL: 'http://localhost:4173/', locale: 'uk-UA', timezoneId: 'Europe/Kyiv' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },

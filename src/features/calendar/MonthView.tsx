@@ -146,15 +146,12 @@ export function MonthView({
                       <span className="truncate font-medium text-ink">{it.o.event.title}</span>
                     </button>
                   ) : (
-                    <button
+                    <div
                       key={it.t.id}
-                      type="button"
-                      onClick={() => openTask(it.t.id)}
                       className={cn(
-                        'flex w-full items-center gap-1 truncate rounded-lg px-1 py-0.5 text-left text-[12px] font-medium text-ink',
+                        'flex w-full items-center gap-1 rounded-lg px-1 py-0.5 text-[12px] font-medium text-ink',
                         it.t.status === 'completed' && 'text-subtle line-through',
                       )}
-                      title={`Задача: ${it.t.title}`}
                     >
                       <TaskTick task={it.t} color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')} size={11} />
                       <CategoryIcon
@@ -162,8 +159,10 @@ export function MonthView({
                         className="h-3 w-3"
                         color={colorOf(categoryById(it.t.categoryId)?.color ?? 'slate')}
                       />
-                      <span className="truncate">{it.t.title}</span>
-                    </button>
+                      <button type="button" onClick={() => openTask(it.t.id)} className="min-w-0 flex-1 truncate text-left" title={`Задача: ${it.t.title}`}>
+                        {it.t.title}
+                      </button>
+                    </div>
                   ),
                 )}
                 {extra > 0 && (
