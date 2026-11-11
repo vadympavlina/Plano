@@ -53,6 +53,29 @@ function LayoutInner() {
     return () => setPanels((n) => n - 1);
   }, []);
 
+  // Phones: swipe right from the left edge to open the menu (the drawer closes with a swipe left).
+  // A thin strip owns the edge with touch-action: pan-y, so the browser leaves the sideways move to us.
+  const edge = useRef<{ x: number; y: number } | null>(null);
+  const edgeHandlers = {
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.pointerType !== 'touch' || menuOpen || document.querySelector('[role=dialog]')) return;
+      edge.current = { x: e.clientX, y: e.clientY };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      const s = edge.current;
+      if (!s) return;
+      const dx = e.clientX - s.x;
+      if (Math.abs(e.clientY - s.y) > 24 && Math.abs(e.clientY - s.y) > dx) edge.current = null;
+      else if (dx > 48) {
+        edge.current = null;
+        setMenuOpen(true);
+      }
+    },
+    onPointerUp: () => void (edge.current = null),
+    onPointerCancel: () => void (edge.current = null),
+  };
+
   useEffect(() => {
     try {
       localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
@@ -111,7 +134,25 @@ function LayoutInner() {
         )}
         <AppHeader onToggleSidebar={() => setCollapsed((c) => !c)} onOpenMenu={() => setMenuOpen(true)} />
         <div className="flex min-h-0 flex-1">
-          {!collapsed && <AppSidebar />}
+          {/* Always mounted: it slides out (translate + fade) while its column closes, so opening and
+              closing is a motion, not a jump. Collapsed, it is inert (no focus, no clicks). */}
+          <div
+            aria-hidden={collapsed || undefined}
+            inert={collapsed}
+            className={cn(
+              'hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none lg:block',
+              collapsed ? 'w-0' : 'w-[250px]',
+            )}
+          >
+            <div
+              className={cn(
+                'flex h-full w-[250px] transition-[translate,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-opacity',
+                collapsed && '-translate-x-8 opacity-0',
+              )}
+            >
+              <AppSidebar />
+            </div>
+          </div>
           <div className="flex min-w-0 flex-1 gap-2.5 px-2 pr-[max(8px,env(safe-area-inset-right))] lg:pb-3.5 lg:pl-2 lg:pr-[max(14px,env(safe-area-inset-right))]">
             <main
               ref={scroller}
@@ -143,6 +184,7 @@ function LayoutInner() {
           </div>
         </div>
       </div>
+      <div aria-hidden className="fixed inset-y-0 left-0 z-30 w-4 touch-pan-y lg:hidden" {...edgeHandlers} />
       <MobileNav />
       <MobileDrawer open={menuOpen} onOpenChange={setMenuOpen} />
     </PanelSlot.Provider>

@@ -274,3 +274,30 @@ test('pwa: the manifest declares install, share and shortcut metadata', async ({
   expect(m.icons.some((i: { purpose?: string }) => i.purpose === 'maskable')).toBe(true);
   expect(m.screenshots.some((s: { form_factor?: string }) => s.form_factor === 'wide')).toBe(true);
 });
+
+test('desktop: the sidebar button collapses and restores the menu', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop sidebar');
+  await start(page);
+  const nav = page.locator('aside[aria-label="Головна навігація"]');
+  await expect(nav).toBeVisible();
+  await page.locator('[class*="h-[72px]"] button').first().click();
+  // Collapsed: it slides out and is no longer reachable by keyboard or pointer.
+  await expect(page.locator('div[inert]').filter({ has: nav })).toHaveCount(1);
+  await expect.poll(() => page.locator('div[inert]').first().evaluate((e) => e.getBoundingClientRect().width)).toBe(0);
+  await page.locator('[class*="h-[72px]"] button').first().click();
+  await expect(nav).toBeVisible();
+});
+
+test('phone: a swipe from the left edge opens the menu', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'touch gestures');
+  await start(page);
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: string, x?: number) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: 400, id: 1 }] });
+  await touch('touchStart', 8);
+  for (const x of [30, 52, 74]) {
+    await touch('touchMove', x);
+    await page.waitForTimeout(40);
+  }
+  await touch('touchEnd');
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
