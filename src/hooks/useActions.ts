@@ -43,6 +43,13 @@ export function useActions() {
       },
       reschedule: (task: Task, date: DateKey | undefined) =>
         repos.tasks.update(task.id, task.dueDate || !task.startDate ? { dueDate: date } : { startDate: date }),
+      /** Puts a task on a day (and, if given, a time slot); the date field it already uses is the one that moves. */
+      place: (task: Task, date: DateKey, startTime?: string, endTime?: string) =>
+        repos.tasks.update(task.id, {
+          ...(task.dueDate || !task.startDate ? { dueDate: date } : { startDate: date }),
+          startTime,
+          endTime,
+        }),
       toggleSubtask(task: Task, subtaskId: string) {
         const subtasks = task.subtasks.map((s) => (s.id === subtaskId ? { ...s, done: !s.done } : s));
         return repos.tasks.update(task.id, { subtasks });

@@ -1,12 +1,14 @@
-import { useMemo, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useMemo, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
+import { useActions } from '@/hooks/useActions';
+import { useData } from '@/app/providers/DataProvider';
 import { useToday } from '@/hooks/useNow';
 import { formatTime, monthGrid, weekdayLabels } from '@/lib/date';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
-import { TaskTick } from './TaskTick';
+import { TASK_DRAG, TaskTick, startTaskDrag } from './TaskTick';
 import type { DateKey, Task } from '@/types';
 import { occurrencesOnDay, type EventOccurrence } from './logic';
 import { eventColor } from './items';
@@ -32,6 +34,23 @@ export function MonthView({
   const month = anchor.slice(0, 7);
   const labels = weekdayLabels(settings.weekStartsOn);
   const weeks = days.length / 7;
+  const actions = useActions();
+  const { data } = useData();
+  /** A task being dragged over a day cell (desktop): that day lights up and the task moves there on drop, keeping its time. */
+  const [dropDay, setDropDay] = useState<number | null>(null);
+  const onDayDragOver = (e: DragEvent, index: number) => {
+    if (!e.dataTransfer.types.includes(TASK_DRAG)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dropDay !== index) setDropDay(index);
+  };
+  const onDayDrop = (e: DragEvent, index: number) => {
+    const task = data.tasks[e.dataTransfer.getData(TASK_DRAG)];
+    setDropDay(null);
+    if (!task) return;
+    e.preventDefault();
+    void actions.tasks.reschedule(task, days[index]).catch(() => undefined);
+  };
   const [range, setRange] = useState<{ pointerId: number; from: number; to: number } | null>(null);
 
   // Drag across empty space in day cells to create a (multi-day) all-day event; a click creates one for that day.
@@ -88,10 +107,13 @@ export function MonthView({
               key={d}
               data-month-index={index}
               onPointerDown={(e) => onDown(e, index)}
+              onDragOver={(e) => onDayDragOver(e, index)}
+              onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDropDay(null)}
+              onDrop={(e) => onDayDrop(e, index)}
               className={cn(
                 'relative min-w-0 cursor-cell rounded-xl p-1 transition-colors sm:rounded-2xl sm:p-2',
                 inMonth ? 'bg-surface-2/70' : 'bg-surface-2/30',
-                index >= lo && index <= hi ? 'bg-primary/10' : inMonth && 'hover:bg-surface-2',
+                (index >= lo && index <= hi) || dropDay === index ? 'bg-primary/10' : inMonth && 'hover:bg-surface-2',
               )}
             >
               <div className="pointer-events-none mb-1 flex items-center justify-between">
@@ -148,6 +170,8 @@ export function MonthView({
                   ) : (
                     <div
                       key={it.t.id}
+                      draggable={it.t.status !== 'completed'}
+                      onDragStart={(e) => startTaskDrag(e, it.t.id)}
                       className={cn(
                         'flex w-full items-center gap-1 rounded-lg px-1 py-0.5 text-[12px] font-medium text-ink',
                         it.t.status === 'completed' && 'text-subtle line-through',

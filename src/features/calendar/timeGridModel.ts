@@ -8,11 +8,12 @@ export const HOURS = Array.from({ length: 24 }, (_, i) => i);
 export const LONG_PRESS_MS = 350;
 export const DAY_END = 24 * 60;
 
-export type EventItem = Extract<GridItem, { kind: 'event' }>;
+/** Anything on the grid that can be moved: a one-off event or a task with a time. */
+export type MovableItem = GridItem;
 
 export interface DragState {
   mode: 'move' | 'resize';
-  item: EventItem;
+  item: MovableItem;
   pointerId: number;
   startX: number;
   startY: number;

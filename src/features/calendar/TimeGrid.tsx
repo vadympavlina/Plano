@@ -129,13 +129,22 @@ export function TimeGrid({
     e.preventDefault();
     const start = Math.max(0, dropMinute(e.clientY));
     const day = days[dayIndex];
-    void actions.tasks
-      .update(task.id, {
-        ...(task.dueDate || !task.startDate ? { dueDate: day } : { startDate: day }),
-        startTime: minutesToTime(start),
-        endTime: minutesToTime(Math.min(start + 60, DAY_END - 1)),
-      })
-      .catch(() => undefined);
+    void actions.tasks.place(task, day, minutesToTime(start), minutesToTime(Math.min(start + 60, DAY_END - 1))).catch(() => undefined);
+  };
+  /** An untimed task dragged over the all-day row: the day it would move to. */
+  const [dropDay, setDropDay] = useState<number | null>(null);
+  const onDayDragOver = (e: DragEvent, dayIndex: number) => {
+    if (!e.dataTransfer.types.includes(TASK_DRAG)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dropDay !== dayIndex) setDropDay(dayIndex);
+  };
+  const onDayDrop = (e: DragEvent, dayIndex: number) => {
+    const task = data.tasks[e.dataTransfer.getData(TASK_DRAG)];
+    setDropDay(null);
+    if (!task) return;
+    e.preventDefault();
+    void actions.tasks.place(task, days[dayIndex]).catch(() => undefined);
   };
   const clearLongPress = () => {
     if (longPress.current) clearTimeout(longPress.current);
@@ -217,7 +226,9 @@ export function TimeGrid({
 
   const onItemPointerDown = (e: ReactPointerEvent, item: GridItem, dayIndex: number, mode: DragState['mode']) => {
     // Touch never moves events: on phones a scroll too easily turns into a drag.
-    if (item.kind !== 'event' || !item.draggable || e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    if (!item.draggable || e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    // The tick inside a task block is a button of its own: let it be clicked.
+    if ((e.target as HTMLElement).closest('button,[role=checkbox]')) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
     blockScroll.current = true;
@@ -286,23 +297,25 @@ export function TimeGrid({
     blockScroll.current = false;
     const { mode, item, deltaMin, deltaDays, moved } = drag;
     setDrag(null);
-    const ev = item.occurrence.event;
     // A plain click opens the event (onClick); only a real drag swallows that click.
     if (!moved) return;
     suppressClick.current = true;
     if (deltaMin === 0 && deltaDays === 0) return;
+    const day = item.kind === 'event' ? item.occurrence.date : days[drag.dayIndex];
+    const put = (date: DateKey, start: string, end: string) =>
+      item.kind === 'event' ? actions.events.move(item.occurrence.event, date, start, end) : actions.tasks.place(item.task, date, start, end);
     if (mode === 'resize') {
       const end = minutesToTime(Math.min(item.end + deltaMin, DAY_END - 1));
-      void actions.events.move(ev, item.occurrence.date, minutesToTime(item.start), end).then(
+      void put(day, minutesToTime(item.start), end).then(
         () => toast.success(`Тривалість: ${formatDuration(item.end + deltaMin - item.start)}`),
         () => undefined,
       );
       return;
     }
-    const date = addDaysKey(item.occurrence.date, deltaDays);
+    const date = addDaysKey(day, deltaDays);
     const start = minutesToTime(item.start + deltaMin);
     const end = minutesToTime(Math.min(item.end + deltaMin, DAY_END - 1));
-    void actions.events.move(ev, date, start, end).then(
+    void put(date, start, end).then(
       () => toast.success(`Перенесено: ${formatDateKey(date, 'EEEEEE, d MMM')} · ${formatTime(start, settings.timeFormat)}`),
       () => undefined,
     );
@@ -348,10 +361,13 @@ export function TimeGrid({
               <div
                 key={c.day}
                 onPointerDown={(e) => onAllDayPointerDown(e, index)}
+                onDragOver={(e) => onDayDragOver(e, index)}
+                onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDropDay(null)}
+                onDrop={(e) => onDayDrop(e, index)}
                 title="Натисніть або протягніть, щоб додати подію на весь день"
                 className={cn(
                   'scrollbar-thin max-h-[116px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line/60 p-1 transition-colors max-sm:max-h-[92px]',
-                  selected ? 'bg-primary/10' : 'hover:bg-surface-2/50',
+                  selected || dropDay === index ? 'bg-primary/10' : 'hover:bg-surface-2/50',
                 )}
               >
                 {c.allDay.map((o) => {
@@ -562,7 +578,7 @@ export function TimeGrid({
                           )}
                         </div>
                       </div>
-                      {item.kind === 'event' && item.draggable && (
+                      {item.draggable && (
                         <div
                           aria-hidden
                           onPointerDown={(e) => onItemPointerDown(e, item, dayIndex, 'resize')}

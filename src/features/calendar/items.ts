@@ -5,7 +5,7 @@ import { eventMinutes, taskMinutes, type EventOccurrence, type TimedItem } from 
 export type GridItem = TimedItem &
   (
     | { kind: 'event'; occurrence: EventOccurrence; title: string; category?: Category; color: string; draggable: boolean }
-    | { kind: 'task'; task: Task; title: string; category?: Category; color: string; draggable: false }
+    | { kind: 'task'; task: Task; title: string; category?: Category; color: string; draggable: boolean }
   );
 
 /** Events from Google calendars we may only read (no edits, no drag, nothing sent back). */
@@ -49,7 +49,7 @@ export function buildTimedItems(
       title: t.title,
       category: categoryById(t.categoryId),
       color: colorOf(categoryById(t.categoryId)?.color ?? 'slate'),
-      draggable: false,
+      draggable: t.status !== 'completed',
     });
   }
   return items;
