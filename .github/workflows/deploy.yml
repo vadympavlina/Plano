@@ -106,11 +106,10 @@ jobs:
         run: npx playwright install chromium
       # Behaviour and accessibility (axe) on desktop and phone profiles; a failure stops the deploy.
       - run: npm run e2e
-      # Screenshots against the committed baselines. Informational: it reports a changed look but does
-      # not block a deploy (renders can differ slightly between machines). Diffs are kept as an artifact.
-      - name: Visual regression (informational)
+      # Screenshots against the committed baselines (2% of pixels may differ). A changed look stops the
+      # deploy; the diffs are kept as an artifact. Intended change? npm run e2e:visual:update, commit.
+      - name: Visual regression
         id: visual
-        continue-on-error: true
         run: npm run e2e:visual
       - name: Keep the visual diffs
         if: steps.visual.outcome == 'failure'

@@ -111,7 +111,7 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: 'node',
-      include: ['src/**/*.test.ts', 'worker/src/**/*.test.ts'],
+      include: ['src/**/*.test.{ts,tsx}', 'worker/src/**/*.test.ts'],
       alias: { 'cloudflare:workers': fileURLToPath(new URL('./worker/src/cf-stub.ts', import.meta.url)) },
     },
   };

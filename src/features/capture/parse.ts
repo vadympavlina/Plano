@@ -1,5 +1,28 @@
-import { addDaysKey, fromDateKey, minutesToTime, toDateKey } from '@/lib/date';
+import { addDaysKey, minutesToTime, toDateKey } from '@/lib/date';
 import type { DateKey, Priority, RecurrenceRule, TimeString } from '@/types';
+import {
+  B,
+  E,
+  NUM,
+  IN,
+  DAY_STEMS,
+  DAY_PLURAL,
+  DAY_SHORT,
+  DAY_EN,
+  dayIndex,
+  MONTH_RX,
+  monthIndex,
+  HOURS_LOC,
+  HOURS_ACC,
+  hourOf,
+  RT,
+  NUMW,
+  num,
+  PART,
+  T,
+  EVENT_RX,
+} from './words';
+import { dow, nextDow, nextWeekDow, thisWeekDow, addMonths, monthStart, dayMonth, nextMonthDay } from './dates';
 
 /**
  * Quick-capture parsing: «Зустріч з Олею завтра о 15 на годину #робота» →
@@ -44,94 +67,6 @@ export interface ParsedQuick {
   spans: Span[];
 }
 
-// Word boundaries that work for Cyrillic (\b doesn't).
-const B = "(?<![\\p{L}\\d'#@])";
-const E = "(?![\\p{L}\\d'])";
-const NUM = '(\\d{1,2})';
-const IN = '(?:(?:до|на|в|у|во|к)\\s+)'; // prepositions before a day or date
-
-/** Weekday stems, index = JS day (0 = Sunday): «у середу», «до середи», «щосереди», ru «в среду». */
-const DAY_STEMS = [
-  'неділ[юяіь]|воскресень[еяю]|воскресенья',
-  'понеділ(?:ок|ка)|понедельник(?:а)?',
-  'вівтор(?:ок|ка)|вторник(?:а)?',
-  'серед[уиа]|сред[ауы]',
-  'четвер(?:га)?|четверг(?:а)?',
-  "п'ятниц[юіяь]|пятниц[уыа]",
-  'субот[уиа]|суббот[уыа]',
-];
-const DAY_RX = DAY_STEMS.map((s) => new RegExp(`^(?:${s})$`, 'iu'));
-const DAY_PLURAL = ['неділях', 'понеділках', 'вівторках', 'середах', 'четвергах', "п'ятницях", 'суботах'];
-const DAY_SHORT = ['нд', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
-const DAY_EN = ['sun(?:day)?', 'mon(?:day)?', 'tue(?:sday)?', 'wed(?:nesday)?', 'thu(?:rsday)?', 'fri(?:day)?', 'sat(?:urday)?'];
-const dayIndex = (w: string) => {
-  const s = w.toLowerCase();
-  const short = DAY_SHORT.indexOf(s);
-  if (short >= 0) return short;
-  const en = DAY_EN.findIndex((p) => new RegExp(`^${p}$`, 'i').test(s));
-  return en >= 0 ? en : DAY_RX.findIndex((r) => r.test(s));
-};
-// Genitive and short forms only, so «2 червоних яблука» isn't read as June.
-const MONTHS = [
-  ['січня', 'січ', 'января', 'jan'],
-  ['лютого', 'лют', 'февраля', 'feb'],
-  ['березня', 'бер', 'марта', 'mar'],
-  ['квітня', 'квіт', 'апреля', 'apr'],
-  ['травня', 'трав', 'мая', 'may'],
-  ['червня', 'черв', 'июня', 'jun'],
-  ['липня', 'лип', 'июля', 'jul'],
-  ['серпня', 'серп', 'августа', 'aug'],
-  ['вересня', 'вер', 'сентября', 'sep'],
-  ['жовтня', 'жовт', 'октября', 'oct'],
-  ['листопада', 'лист', 'ноября', 'nov'],
-  ['грудня', 'груд', 'декабря', 'dec'],
-];
-const MONTH_RX = `(${MONTHS.flat().join('|')})\\.?`;
-const monthIndex = (word: string) => MONTHS.findIndex((forms) => forms.includes(word.toLowerCase()));
-// Spoken hours: «о третій», «о пів на восьму».
-const HOURS_LOC = ['першій', 'другій', 'третій', 'четвертій', "п'ятій", 'шостій', 'сьомій', 'восьмій', "дев'ятій", 'десятій', 'одинадцятій', 'дванадцятій'];
-const HOURS_ACC = ['першу', 'другу', 'третю', 'четверту', "п'яту", 'шосту', 'сьому', 'восьму', "дев'яту", 'десяту', 'одинадцяту', 'дванадцяту'];
-const HOURS_GEN = ['першої', 'другої', 'третьої', 'четвертої', "п'ятої", 'шостої', 'сьомої', 'восьмої', "дев'ятої", 'десятої', 'одинадцятої', 'дванадцятої'];
-/** An hour as digits or a spoken word («третьої», «третій»). */
-const hourOf = (w: string) => (/^\d/.test(w) ? Number(w) : Math.max(HOURS_GEN.indexOf(w.toLowerCase()), HOURS_LOC.indexOf(w.toLowerCase())) + 1);
-const RT = `(\\d{1,2}|${[...HOURS_GEN, ...HOURS_LOC].join('|')})(?:[:.](\\d{2}))?`;
-const WORD_NUM: Record<string, number> = {
-  один: 1,
-  одну: 1,
-  одна: 1,
-  два: 2,
-  дві: 2,
-  двох: 2,
-  три: 3,
-  трьох: 3,
-  чотири: 4,
-  "п'ять": 5,
-  шість: 6,
-  сім: 7,
-  вісім: 8,
-  "дев'ять": 9,
-  десять: 10,
-  пару: 2,
-  кілька: 3,
-  декілька: 3,
-  пять: 5,
-  шесть: 6,
-  семь: 7,
-  восемь: 8,
-  девять: 9,
-  две: 2,
-  четыре: 4,
-};
-const NUMW = `(\\d+|${Object.keys(WORD_NUM).join('|')})`;
-const num = (s?: string) => (s == null ? 1 : (WORD_NUM[s.toLowerCase()] ?? Number(s)));
-const PART = '(?:\\s*(ранку|вечора|дня|ночі|утра|вечера|ночи|am|pm))?';
-const T = `${NUM}(?:[:.](\\d{2})|\\s+(\\d{2})(?=\\s*(?:год|$)))?`; // 15, 15:30, 15.30, «15 30 год»
-// Events, not tasks, when the title names one and there's a time.
-const EVENT_WORDS =
-  "зустріч|нарад|дзвін|созвон|колл|call|meeting|мітинг|вебінар|лекці|семінар|урок|прийом|лікар|стоматолог|співбесід|інтерв'ю|презентаці|конференці|концерт|кіно|театр|вечер[яюі]|обід|сніданок|рейс|поїзд|потяг|літак|день народження|свят|встреч|совещан|врач|бронь|візит|сесі|тренування з";
-
-const EVENT_RX = new RegExp(`${B}(?:${EVENT_WORDS})`, 'iu');
-
 interface Ctx {
   s: string;
   used: boolean[];
@@ -164,43 +99,6 @@ function claim(c: Ctx, source: string, type: SpanType, fn: (m: RegExpExecArray) 
     c.out.spans.push({ start, end, type });
     if (once) return;
   }
-}
-
-const dow = (key: DateKey) => fromDateKey(key).getDay();
-/** Next date (today included) that falls on weekday `d`. */
-const nextDow = (today: DateKey, d: number) => addDaysKey(today, (d - dow(today) + 7) % 7);
-/** Weekday `d` of next week (weeks start on Monday). */
-const nextWeekDow = (today: DateKey, d: number) => addDaysKey(today, 7 - ((dow(today) + 6) % 7) + ((d + 6) % 7));
-const thisWeekDow = (today: DateKey, d: number) => addDaysKey(today, ((d + 6) % 7) - ((dow(today) + 6) % 7));
-const addMonths = (key: DateKey, n: number) => {
-  const d = fromDateKey(key);
-  const day = d.getDate();
-  d.setDate(1);
-  d.setMonth(d.getMonth() + n);
-  d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
-  return toDateKey(d);
-};
-const monthStart = (key: DateKey) => key.slice(0, 8) + '01';
-/** Day and month (and maybe year) → a date; without a year the next such date from today. */
-function dayMonth(today: DateKey, day: number, month: number, year?: number): DateKey | undefined {
-  const y0 = year ?? Number(today.slice(0, 4));
-  const make = (y: number) => {
-    const d = new Date(y, month - 1, day);
-    return d.getMonth() === month - 1 && d.getDate() === day ? toDateKey(d) : undefined;
-  };
-  const k = make(y0);
-  if (!k) return undefined;
-  return !year && k < today ? make(y0 + 1) : k;
-}
-/** Next date (today included) with this day of the month. */
-function nextMonthDay(today: DateKey, day: number): DateKey | undefined {
-  if (day < 1 || day > 31) return undefined;
-  for (let i = 0; i < 13; i++) {
-    const base = addMonths(monthStart(today), i);
-    const k = dayMonth(base, day, Number(base.slice(5, 7)), Number(base.slice(0, 4)));
-    if (k && k >= today) return k;
-  }
-  return undefined;
 }
 
 function setTime(c: Ctx, h: number, min: number, part?: string) {
