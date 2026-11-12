@@ -7,12 +7,12 @@ const stored = (page: Page, id: string) =>
     return raw.users.preview.tasks[id] as { dueDate?: string; startTime?: string; endTime?: string };
   }, id);
 
-test.beforeEach(async ({ page, isMobile }) => {
-  test.skip(isMobile, 'moving by pointer is for mouse and pen; a finger scrolls');
+test.beforeEach(async ({ page }) => {
   await startSeeded(page);
 });
 
-test('calendar: a timed task is dragged to another hour, and stretched', async ({ page }) => {
+test('calendar: a timed task is dragged to another hour, and stretched', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'mouse');
   await open(page, '/calendar?view=day');
   const block = page.getByRole('group', { name: /Подзвонити мамі/ });
   await expect(block).toBeVisible();
@@ -38,7 +38,8 @@ test('calendar: a timed task is dragged to another hour, and stretched', async (
   await expect.poll(async () => (await stored(page, 't3')).endTime).toBe('18:00');
 });
 
-test('calendar: a task is dragged to another day in the week and in the month', async ({ page }) => {
+test('calendar: a task is dragged to another day in the week and in the month', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'mouse');
   await open(page, '/calendar?view=week');
   const block = page.getByRole('group', { name: /Подзвонити мамі/ });
   await block.scrollIntoViewIfNeeded();
@@ -61,4 +62,47 @@ test('calendar: a task is dragged to another day in the week and in the month', 
   await chip.dragTo(target);
   await expect.poll(async () => (await stored(page, 't3')).dueDate).not.toBe(dueBefore);
   await expect.poll(async () => (await stored(page, 't3')).startTime).toBe('19:00');
+});
+
+test.describe('with a finger', () => {
+  test.beforeEach(({ isMobile }) => test.skip(!isMobile, 'touch'));
+
+  const finger = async (page: Page) => {
+    const cdp = await page.context().newCDPSession(page);
+    return (type: 'touchStart' | 'touchMove' | 'touchEnd', x?: number, y?: number) =>
+      cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{ x: x!, y: y!, id: 1 }] });
+  };
+
+  test('a long press picks a task block up and carries it to another hour', async ({ page }) => {
+    await open(page, '/calendar?view=day');
+    const block = page.getByRole('group', { name: /Подзвонити мамі/ });
+    await block.scrollIntoViewIfNeeded();
+    const b = (await block.boundingBox())!;
+    const touch = await finger(page);
+    const x = b.x + b.width - 30;
+    const y = b.y + b.height / 2;
+    await touch('touchStart', x, y);
+    await page.waitForTimeout(600); // rests: picked up
+    // 68 px per hour: two hours up, in small steps like a real finger.
+    for (let i = 1; i <= 8; i++) await touch('touchMove', x, y - i * 17);
+    await touch('touchEnd');
+    await expect.poll(async () => (await stored(page, 't3')).startTime).toBe('17:00');
+    // Letting go did not open the task.
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('a quick swipe over a block scrolls the grid instead of moving the task', async ({ page }) => {
+    await open(page, '/calendar?view=day');
+    const block = page.getByRole('group', { name: /Подзвонити мамі/ });
+    await block.scrollIntoViewIfNeeded();
+    const b = (await block.boundingBox())!;
+    const touch = await finger(page);
+    const x = b.x + b.width - 30;
+    const y = b.y + b.height / 2;
+    await touch('touchStart', x, y);
+    for (let i = 1; i <= 6; i++) await touch('touchMove', x, y - i * 14);
+    await touch('touchEnd');
+    await page.waitForTimeout(400);
+    expect((await stored(page, 't3')).startTime).toBe('19:00');
+  });
 });

@@ -6,6 +6,8 @@ export const HOUR_PX_MULTI = 52;
 export const SNAP = 15;
 export const HOURS = Array.from({ length: 24 }, (_, i) => i);
 export const LONG_PRESS_MS = 350;
+/** A finger has to rest this long on a block before it can be carried. */
+export const PICK_UP_MS = 380;
 export const DAY_END = 24 * 60;
 
 /** Anything on the grid that can be moved: a one-off event or a task with a time. */
@@ -21,6 +23,8 @@ export interface DragState {
   deltaMin: number;
   deltaDays: number;
   moved: boolean;
+  /** Scroll position when the drag began: scrolling while dragging counts as movement. */
+  startScroll: number;
 }
 
 /** Range being drawn on the time grid to create an event. */

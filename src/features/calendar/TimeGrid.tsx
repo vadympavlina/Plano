@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { MapPin, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
@@ -13,7 +13,18 @@ import { toast } from '@/components/ui/toast';
 import type { DateKey, Task } from '@/types';
 import { expandEvents, layoutDay, occurrencesOnDay, selectionRange, type EventOccurrence } from './logic';
 import { buildTimedItems, eventColor, type GridItem } from './items';
-import { DAY_END, HOURS, HOUR_PX_DAY, HOUR_PX_MULTI, LONG_PRESS_MS, SNAP, type DaySelection, type DragState, type Selection } from './timeGridModel';
+import {
+  DAY_END,
+  HOURS,
+  HOUR_PX_DAY,
+  HOUR_PX_MULTI,
+  LONG_PRESS_MS,
+  PICK_UP_MS,
+  SNAP,
+  type DaySelection,
+  type DragState,
+  type Selection,
+} from './timeGridModel';
 import { Marker } from './TimeGridParts';
 import { GridHeader } from './TimeGridHeader';
 import { useBlockTouchScroll, usePageSwipe, useScrollToUsefulHour } from './useTimeGridScroll';
@@ -224,36 +235,134 @@ export function TimeGrid({
 
   // ---- moving and resizing events ------------------------------------------
 
-  const onItemPointerDown = (e: ReactPointerEvent, item: GridItem, dayIndex: number, mode: DragState['mode']) => {
-    // Touch never moves events: on phones a scroll too easily turns into a drag.
-    if (!item.draggable || e.pointerType === 'touch' || (e.pointerType === 'mouse' && e.button !== 0)) return;
-    // The tick inside a task block is a button of its own: let it be clicked.
-    if ((e.target as HTMLElement).closest('button,[role=checkbox]')) return;
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture(e.pointerId);
+  /** Touch: a finger resting on a block (not scrolling) picks it up. */
+  const hold = useRef<{ pointerId: number; x: number; y: number; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const clearHold = () => {
+    if (hold.current) clearTimeout(hold.current.timer);
+    hold.current = null;
+  };
+  /** Where the pointer is now, for the edge auto-scroll while dragging. */
+  const lastPoint = useRef({ x: 0, y: 0 });
+  const dragRef = useRef<DragState | null>(null);
+  dragRef.current = drag;
+
+  const beginDrag = (
+    target: HTMLElement,
+    e: { pointerId: number; clientX: number; clientY: number },
+    item: GridItem,
+    dayIndex: number,
+    mode: DragState['mode'],
+  ) => {
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch {
+      /* pointer already gone */
+    }
     blockScroll.current = true;
     setHover(null);
-    setDrag({ mode, item, pointerId: e.pointerId, startX: e.clientX, startY: e.clientY, dayIndex, deltaMin: 0, deltaDays: 0, moved: false });
+    lastPoint.current = { x: e.clientX, y: e.clientY };
+    setDrag({
+      mode,
+      item,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      dayIndex,
+      deltaMin: 0,
+      deltaDays: 0,
+      moved: false,
+      startScroll: scrollRef.current?.scrollTop ?? 0,
+    });
   };
 
-  const onPointerMove = (e: ReactPointerEvent) => {
-    if (drag && e.pointerId === drag.pointerId) {
-      const dy = e.clientY - drag.startY;
-      const dx = e.clientX - drag.startX;
-      const moved = drag.moved || Math.abs(dy) > 4 || Math.abs(dx) > 6;
-      let deltaMin = Math.round(((dy / HOUR_PX) * 60) / SNAP) * SNAP;
-      let deltaDays = 0;
-      if (drag.mode === 'resize') {
-        deltaMin = Math.max(drag.item.start + SNAP - drag.item.end, Math.min(deltaMin, DAY_END - drag.item.end));
-      } else {
-        deltaMin = Math.max(-drag.item.start, Math.min(deltaMin, DAY_END - drag.item.end));
-        if (!single && columnsRef.current) {
-          deltaDays = Math.round(dx / (columnsRef.current.getBoundingClientRect().width / days.length));
-          deltaDays = Math.max(-drag.dayIndex, Math.min(deltaDays, days.length - 1 - drag.dayIndex));
+  const onItemPointerDown = (e: ReactPointerEvent, item: GridItem, dayIndex: number, mode: DragState['mode']) => {
+    if (!item.draggable || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    // The tick inside a task block is a button of its own: let it be clicked.
+    if ((e.target as HTMLElement).closest('button,[role=checkbox]')) return;
+    if (e.pointerType === 'touch') {
+      // A finger scrolls first: only a press that stays put picks the block up (the resize handle is mouse-only).
+      if (mode === 'resize') return;
+      e.stopPropagation();
+      const target = e.currentTarget as HTMLElement;
+      const point = { pointerId: e.pointerId, clientX: e.clientX, clientY: e.clientY };
+      clearHold();
+      lastPoint.current = { x: e.clientX, y: e.clientY };
+      hold.current = {
+        pointerId: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        timer: setTimeout(() => {
+          hold.current = null;
+          navigator.vibrate?.(10);
+          beginDrag(target, { ...point, clientX: lastPoint.current.x, clientY: lastPoint.current.y }, item, dayIndex, 'move');
+          // Picked up: it counts as a drag at once, so letting go without moving does not open the block.
+          setDrag((d) => (d ? { ...d, moved: true } : d));
+        }, PICK_UP_MS),
+      };
+      return;
+    }
+    e.stopPropagation();
+    beginDrag(e.currentTarget as HTMLElement, e, item, dayIndex, mode);
+  };
+
+  /** Works out how far the dragged block has moved (pointer travel plus scrolling) and re-renders only when a step changes. */
+  const refreshDrag = (d: DragState, x: number, y: number) => {
+    const dy = y - d.startY + ((scrollRef.current?.scrollTop ?? 0) - d.startScroll);
+    const dx = x - d.startX;
+    const moved = d.moved || Math.abs(dy) > 4 || Math.abs(dx) > 6;
+    let deltaMin = Math.round(((dy / HOUR_PX) * 60) / SNAP) * SNAP;
+    let deltaDays = 0;
+    if (d.mode === 'resize') {
+      deltaMin = Math.max(d.item.start + SNAP - d.item.end, Math.min(deltaMin, DAY_END - d.item.end));
+    } else {
+      deltaMin = Math.max(-d.item.start, Math.min(deltaMin, DAY_END - d.item.end));
+      if (!single && columnsRef.current) {
+        deltaDays = Math.round(dx / (columnsRef.current.getBoundingClientRect().width / days.length));
+        deltaDays = Math.max(-d.dayIndex, Math.min(deltaDays, days.length - 1 - d.dayIndex));
+      }
+    }
+    // The block moves in 15-minute steps: re-render only when a step changes, not on every pixel.
+    if (deltaMin !== d.deltaMin || deltaDays !== d.deltaDays || moved !== d.moved) setDrag({ ...d, deltaMin, deltaDays, moved });
+  };
+
+  // Near the top or bottom edge the grid scrolls by itself while a block is held there.
+  const dragging = drag?.moved === true;
+  useEffect(() => {
+    if (!dragging) return;
+    let raf = 0;
+    const tick = () => {
+      const el = scrollRef.current;
+      const d = dragRef.current;
+      if (el && d) {
+        const r = el.getBoundingClientRect();
+        const { x, y } = lastPoint.current;
+        const zone = 64;
+        const speed =
+          y < r.top + zone ? -Math.ceil(((r.top + zone - y) / zone) * 14) : y > r.bottom - zone ? Math.ceil(((y - (r.bottom - zone)) / zone) * 14) : 0;
+        if (speed) {
+          const before = el.scrollTop;
+          el.scrollTop = before + speed;
+          if (el.scrollTop !== before) refreshDrag(d, x, y);
         }
       }
-      // The block moves in 15-minute steps: re-render only when a step changes, not on every pixel.
-      if (deltaMin !== drag.deltaMin || deltaDays !== drag.deltaDays || moved !== drag.moved) setDrag({ ...drag, deltaMin, deltaDays, moved });
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+    // refreshDrag only reads refs and stable values of this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragging]);
+
+  const onPointerMove = (e: ReactPointerEvent) => {
+    if (hold.current && e.pointerId === hold.current.pointerId) {
+      lastPoint.current = { x: e.clientX, y: e.clientY };
+      // Moving before the press has lasted long enough means the person is scrolling.
+      if (Math.hypot(e.clientX - hold.current.x, e.clientY - hold.current.y) > 8) clearHold();
+      return;
+    }
+    if (drag && e.pointerId === drag.pointerId) {
+      lastPoint.current = { x: e.clientX, y: e.clientY };
+      refreshDrag(drag, e.clientX, e.clientY);
       return;
     }
     if (sel && e.pointerId === sel.pointerId) {
@@ -283,6 +392,7 @@ export function TimeGrid({
   };
 
   const onPointerUp = (e: ReactPointerEvent) => {
+    if (hold.current && e.pointerId === hold.current.pointerId) clearHold();
     if (sel && e.pointerId === sel.pointerId) {
       if (sel.active || e.pointerType === 'mouse') finishSelection(sel);
       else {
@@ -294,12 +404,16 @@ export function TimeGrid({
       return;
     }
     if (!drag || e.pointerId !== drag.pointerId) return;
-    blockScroll.current = false;
+    // The page-swipe listener reads this on touchend, which comes a moment after pointerup.
+    if (e.pointerType === 'touch') setTimeout(() => (blockScroll.current = false), 80);
+    else blockScroll.current = false;
     const { mode, item, deltaMin, deltaDays, moved } = drag;
     setDrag(null);
     // A plain click opens the event (onClick); only a real drag swallows that click.
     if (!moved) return;
     suppressClick.current = true;
+    // ...and if no click follows (a long press that did not move), the next real click must not be eaten.
+    setTimeout(() => (suppressClick.current = false), 400);
     if (deltaMin === 0 && deltaDays === 0) return;
     const day = item.kind === 'event' ? item.occurrence.date : days[drag.dayIndex];
     const put = (date: DateKey, start: string, end: string) =>
@@ -323,6 +437,7 @@ export function TimeGrid({
 
   const onPointerCancel = () => {
     clearLongPress();
+    clearHold();
     blockScroll.current = false;
     setDrag(null);
     setSel(null);
@@ -509,6 +624,7 @@ export function TimeGrid({
                       tabIndex={0}
                       aria-label={`${item.title}, ${fmt(start)} – ${fmt(end)}`}
                       onPointerDown={(e) => onItemPointerDown(e, item, dayIndex, 'move')}
+                      onContextMenu={(e) => item.draggable && e.preventDefault()}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (suppressClick.current) return void (suppressClick.current = false);
@@ -523,11 +639,11 @@ export function TimeGrid({
                         }
                       }}
                       className={cn(
-                        'group/ev absolute z-1 overflow-hidden text-left transition-shadow hover:shadow-soft',
+                        'group/ev absolute z-1 overflow-hidden text-left transition-shadow [-webkit-touch-callout:none] hover:shadow-soft',
                         single && item.kind === 'event' ? 'rounded-2xl border-l-[5px]' : 'rounded-xl bg-surface-2',
                         short ? 'px-2 py-0.5' : single ? 'px-3.5 py-2.5' : 'px-2.5 py-2',
                         item.draggable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
-                        isDragging && drag.moved && 'z-20 opacity-90 shadow-pop',
+                        isDragging && drag.moved && 'z-20 scale-[1.02] opacity-90 shadow-pop',
                       )}
                       style={{
                         top,
