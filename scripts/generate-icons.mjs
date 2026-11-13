@@ -65,11 +65,10 @@ await mkdir('public/splash', { recursive: true });
 const links = [];
 for (const [w, h, r] of SPLASH) {
   const [W, H] = [w * r, h * r];
-  // The mascot fills the width along the bottom edge; nothing else (the app adds a spinner once it runs).
-  const duck = await sharp(TRANSPARENT).resize(W, W, { kernel: 'lanczos3' }).png().toBuffer();
+  const d = Math.round(W * 0.34);
   const name = `splash/${W}x${H}.png`;
   const png = await sharp({ create: { width: W, height: H, channels: 4, background: '#0D0D0F' } })
-    .composite([{ input: duck, left: 0, top: H - W }])
+    .composite([{ input: await icon(d, 1, 0.22), left: (W - d) >> 1, top: (H - d) >> 1 }])
     .png({ compressionLevel: 9, palette: true })
     .toBuffer();
   await writeFile(`public/${name}`, png);
@@ -82,6 +81,4 @@ await writeFile(
   'index.html',
   html.replace(/ *<!-- splash:start -->[\s\S]*<!-- splash:end -->/, `    <!-- splash:start -->\n${links.join('\n')}\n    <!-- splash:end -->`),
 );
-// The same mascot for the in-app loading screen (full width on a phone, centred on a desktop).
-await writeFile('public/splash-duck.webp', await sharp(TRANSPARENT).resize(960, 960, { kernel: 'lanczos3' }).webp({ quality: 74, effort: 6 }).toBuffer());
 console.log('icons written');

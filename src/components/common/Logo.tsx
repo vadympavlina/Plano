@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils/cn';
 
-export const asset = (p: string) => `${import.meta.env.BASE_URL}${p}`;
+const asset = (p: string) => `${import.meta.env.BASE_URL}${p}`;
 
 /**
  * The Plano duck. On dark surfaces (`tone="light"`) it is the bare duck; elsewhere
