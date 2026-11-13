@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowRight, KeyRound, Loader2, ShieldAlert, Wrench } from 'lucide-react';
-import { AppIcon, Logo } from '@/components/common/Logo';
+import { ArrowRight, KeyRound, ShieldAlert, Wrench } from 'lucide-react';
+import { AppIcon, Logo, asset } from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/input';
 import { missingFirebaseKeys } from '@/lib/firebase/config';
@@ -26,11 +26,15 @@ function Shell({ children }: { children: ReactNode }) {
   );
 }
 
+/** The loading screen; the same markup and styles (index.html) as the one shown before the app's code arrives. */
 export function SplashScreen() {
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-5 bg-bg" role="status" aria-label="Завантаження Plano">
-      <AppIcon className="h-16 w-16 rounded-[18px]" />
-      <Loader2 className="h-4 w-4 animate-spin text-subtle" />
+    <div className="splash" role="status" aria-label="Завантаження Plano">
+      <img className="splash-duck" src={asset('splash-duck.webp')} width={960} height={960} alt="" />
+      <div className="splash-center">
+        <AppIcon className="splash-icon" />
+        <div className="splash-spin" />
+      </div>
     </div>
   );
 }
