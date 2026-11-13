@@ -31,8 +31,8 @@
     <style>
       /* Loading screen: the mascot fills the width along the bottom (a phone) or stands centred (a desktop);
          a spinner sits in the free space above it. Used by #boot below and by <SplashScreen>. */
-      .splash{position:relative;min-height:100dvh;overflow:hidden;background:#0d0d0f;color:#8b8b93;font-family:system-ui,sans-serif}
-      .splash-duck{position:absolute;left:50%;bottom:0;width:min(100vw,62dvh);aspect-ratio:1;transform:translateX(-50%);object-fit:cover;pointer-events:none;user-select:none}
+      .splash{position:fixed;inset:0;overflow:hidden;background:#0d0d0f;color:#8b8b93;font-family:system-ui,sans-serif}
+      .splash-duck{position:absolute;left:50%;bottom:-12px;width:min(100vw,62dvh);aspect-ratio:1;transform:translateX(-50%);object-fit:cover;pointer-events:none;user-select:none}
       @media (min-width:700px){.splash-duck{-webkit-mask-image:linear-gradient(to right,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(to right,transparent,#000 14%,#000 86%,transparent)}}
       .splash-center{position:absolute;left:0;right:0;top:42%;display:flex;flex-direction:column;align-items:center;gap:20px;transform:translateY(-50%)}
       .splash-spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:rgba(255,255,255,.7);animation:splash-spin .8s linear infinite}
