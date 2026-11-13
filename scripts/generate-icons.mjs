@@ -65,15 +65,11 @@ await mkdir('public/splash', { recursive: true });
 const links = [];
 for (const [w, h, r] of SPLASH) {
   const [W, H] = [w * r, h * r];
-  // The mascot fills the width along the bottom edge; the small app icon sits in the free space above it.
-  const d = Math.round(W * 0.2);
+  // The mascot fills the width along the bottom edge; nothing else (the app adds a spinner once it runs).
   const duck = await sharp(TRANSPARENT).resize(W, W, { kernel: 'lanczos3' }).png().toBuffer();
   const name = `splash/${W}x${H}.png`;
   const png = await sharp({ create: { width: W, height: H, channels: 4, background: '#0D0D0F' } })
-    .composite([
-      { input: duck, left: 0, top: H - W },
-      { input: await icon(d, 1, 0.22), left: (W - d) >> 1, top: Math.round(H * 0.42 - d / 2) },
-    ])
+    .composite([{ input: duck, left: 0, top: H - W }])
     .png({ compressionLevel: 9, palette: true })
     .toBuffer();
   await writeFile(`public/${name}`, png);

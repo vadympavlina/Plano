@@ -30,16 +30,15 @@
     <!-- splash:end -->
     <style>
       /* Loading screen: the mascot fills the width along the bottom (a phone) or stands centred (a desktop);
-         the app icon and a spinner sit in the free space above it. Used by #boot below and by <SplashScreen>. */
+         a spinner sits in the free space above it. Used by #boot below and by <SplashScreen>. */
       .splash{position:relative;min-height:100dvh;overflow:hidden;background:#0d0d0f;color:#8b8b93;font-family:system-ui,sans-serif}
       .splash-duck{position:absolute;left:50%;bottom:0;width:min(100vw,62dvh);aspect-ratio:1;transform:translateX(-50%);object-fit:cover;pointer-events:none;user-select:none}
       @media (min-width:700px){.splash-duck{-webkit-mask-image:linear-gradient(to right,transparent,#000 14%,#000 86%,transparent);mask-image:linear-gradient(to right,transparent,#000 14%,#000 86%,transparent)}}
       .splash-center{position:absolute;left:0;right:0;top:42%;display:flex;flex-direction:column;align-items:center;gap:20px;transform:translateY(-50%)}
-      .splash-icon{width:64px;height:64px;border-radius:18px;animation:boot 1.2s ease-in-out infinite alternate}
-      .splash-spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.18);border-top-color:rgba(255,255,255,.7);animation:splash-spin .8s linear infinite}
+      .splash-spin{width:28px;height:28px;border-radius:50%;border:3px solid rgba(255,255,255,.18);border-top-color:rgba(255,255,255,.7);animation:splash-spin .8s linear infinite}
       @keyframes boot{from{opacity:.55;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
       @keyframes splash-spin{to{transform:rotate(360deg)}}
-      @media (prefers-reduced-motion:reduce){.splash-icon{animation:none}.splash-spin{animation-duration:2s}}
+      @media (prefers-reduced-motion:reduce){.splash-spin{animation-duration:2s}}
     </style>
     <link rel="preload" as="image" href="%BASE_URL%splash-duck.webp" type="image/webp" />
     <title>Plano</title>
@@ -65,7 +64,6 @@
       <div id="boot" class="splash" role="status" aria-label="Завантаження Plano">
         <img class="splash-duck" src="%BASE_URL%splash-duck.webp" width="960" height="960" alt="" fetchpriority="high" />
         <div class="splash-center">
-          <img class="splash-icon" src="%BASE_URL%icons/icon-192.png" width="64" height="64" alt="" />
           <div class="splash-spin"></div>
         </div>
         <noscript>Для роботи Plano потрібен JavaScript.</noscript>

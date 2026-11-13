@@ -32,7 +32,6 @@ export function SplashScreen() {
     <div className="splash" role="status" aria-label="Завантаження Plano">
       <img className="splash-duck" src={asset('splash-duck.webp')} width={960} height={960} alt="" />
       <div className="splash-center">
-        <AppIcon className="splash-icon" />
         <div className="splash-spin" />
       </div>
     </div>
