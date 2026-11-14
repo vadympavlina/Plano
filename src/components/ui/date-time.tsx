@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import * as PP from '@radix-ui/react-popover';
 import { CalendarDays, Clock, X } from 'lucide-react';
 import { nextMonday } from 'date-fns';
 import { cn } from '@/lib/utils/cn';
@@ -18,10 +17,13 @@ import {
 } from '@/lib/date';
 import type { DateKey, TimeString } from '@/types';
 import { MiniCalendar } from './calendar';
-import { popoverPanel, triggerClass, type ControlVariant } from './select';
+import { Picker, PickerContent, PickerTrigger, useIsPhone } from './picker';
+import { popoverPanel, RowFace, triggerClass, type ControlVariant } from './select';
 
 interface CommonProps {
   variant?: ControlVariant;
+  /** Row variant: the line's title («Дата»). */
+  label?: string;
   className?: string;
   placeholder?: string;
   id?: string;
@@ -60,6 +62,7 @@ export function DatePicker({
   className,
   placeholder = 'Без дати',
   icon = <CalendarDays />,
+  label,
   disabled,
   ...aria
 }: CommonProps & {
@@ -71,6 +74,7 @@ export function DatePicker({
   icon?: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const phone = useIsPhone();
   const today = todayKey();
   const pick = (d: DateKey | undefined) => {
     onChange(d);
@@ -83,53 +87,66 @@ export function DatePicker({
   ];
 
   return (
-    <PP.Root open={open} onOpenChange={setOpen}>
-      <span className={cn('relative', variant === 'field' ? 'flex w-full' : 'inline-flex')}>
-        <PP.Trigger
+    <Picker open={open} onOpenChange={setOpen}>
+      <span className={cn('relative', variant === 'field' || variant === 'row' ? 'flex w-full' : 'inline-flex')}>
+        <PickerTrigger
           type="button"
           aria-haspopup="dialog"
           disabled={disabled}
-          className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), value && clearable && 'pr-8', className)}
+          className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), value && clearable && variant !== 'row' && 'pr-8', className)}
           {...aria}
         >
-          <span className="flex shrink-0 text-muted [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
-          <span className="min-w-0 flex-1 truncate">{value ? friendlyDate(value, today) : placeholder}</span>
-        </PP.Trigger>
-        {value && clearable && <ClearButton onClear={() => onChange(undefined)} label="Прибрати дату" />}
+          {variant === 'row' ? (
+            <RowFace icon={icon} label={label ?? placeholder} empty={!value} value={value ? friendlyDate(value, today) : placeholder} />
+          ) : (
+            <>
+              <span className="flex shrink-0 text-muted [&_svg]:h-4 [&_svg]:w-4">{icon}</span>
+              <span className="min-w-0 flex-1 truncate">{value ? friendlyDate(value, today) : placeholder}</span>
+            </>
+          )}
+        </PickerTrigger>
+        {value && clearable && variant !== 'row' && <ClearButton onClear={() => onChange(undefined)} label="Прибрати дату" />}
       </span>
-      <PP.Portal>
-        <PP.Content align="start" sideOffset={6} collisionPadding={12} className={cn(popoverPanel, 'w-[296px] p-3')}>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {quick
-              .filter(([, d]) => !min || d >= min)
-              .map(([label, d]) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => pick(d)}
-                  className={cn(
-                    'rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
-                    value === d ? 'bg-accent text-surface' : 'bg-surface-2 text-ink hover:bg-line/70',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            {clearable && value && (
+      <PickerContent title={label ?? aria['aria-label'] ?? 'Дата'} className={cn(popoverPanel, 'w-[296px] p-3')}>
+        <div className={cn('mb-3 flex flex-wrap gap-1.5', phone && 'mb-4 gap-2 px-2')}>
+          {quick
+            .filter(([, d]) => !min || d >= min)
+            .map(([label, d]) => (
               <button
+                key={label}
                 type="button"
-                onClick={() => pick(undefined)}
-                className="rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-muted hover:bg-surface-2"
+                onClick={() => pick(d)}
+                className={cn(
+                  'rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-colors',
+                  phone && 'h-11 rounded-full px-4 text-[14px]',
+                  value === d ? 'bg-accent text-surface' : 'bg-surface-2 text-ink hover:bg-line/70',
+                )}
               >
-                Без дати
+                {label}
               </button>
-            )}
-          </div>
-          <MiniCalendar selected={value ?? today} today={today} weekStartsOn={weekStartsOn} onSelect={pick} min={min} />
-          {value && <p className="mt-2 border-t border-line pt-2 text-center text-xs text-muted">{formatDateKey(value, 'EEEE, d MMMM yyyy')}</p>}
-        </PP.Content>
-      </PP.Portal>
-    </PP.Root>
+            ))}
+          {clearable && value && (
+            <button
+              type="button"
+              onClick={() => pick(undefined)}
+              className={cn('rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium text-muted hover:bg-surface-2', phone && 'h-11 rounded-full px-4 text-[14px]')}
+            >
+              Без дати
+            </button>
+          )}
+        </div>
+        <MiniCalendar
+          selected={value ?? today}
+          today={today}
+          weekStartsOn={weekStartsOn}
+          onSelect={pick}
+          min={min}
+          large={phone}
+          className={phone ? 'px-2 pb-2' : undefined}
+        />
+        {value && <p className="mt-2 border-t border-line pt-2 text-center text-xs text-muted">{formatDateKey(value, 'EEEE, d MMMM yyyy')}</p>}
+      </PickerContent>
+    </Picker>
   );
 }
 
@@ -144,10 +161,14 @@ export function TimePicker({
   variant = 'field',
   className,
   placeholder = 'Час',
+  label,
+  clearLabel = 'Без часу',
   disabled,
   ...aria
 }: CommonProps & {
   value: TimeString | undefined;
+  /** Row variant: the button in the sheet that removes the time. */
+  clearLabel?: string;
   onChange: (value: TimeString | undefined) => void;
   clearable?: boolean;
   /** When set (an end-time picker), only later times are offered, with durations. */
@@ -155,6 +176,7 @@ export function TimePicker({
   timeFormat?: '12h' | '24h';
 }) {
   const [open, setOpen] = useState(false);
+  const phone = useIsPhone();
   const [text, setText] = useState('');
   const listRef = useRef<HTMLDivElement>(null);
   const afterMin = after ? timeToMinutes(after) : null;
@@ -168,7 +190,10 @@ export function TimePicker({
     requestAnimationFrame(() => {
       const list = listRef.current;
       if (!list) return;
-      const target = value ?? (afterMin == null ? minutesToTime(Math.max(0, new Date().getHours() * 60 - 60)) : undefined);
+      // Nothing chosen yet: open near the coming quarter of an hour (an end time: right after the start).
+      const now = new Date();
+      const target =
+        value ?? (afterMin == null ? minutesToTime(Math.min(23 * 60 + 45, Math.ceil((now.getHours() * 60 + now.getMinutes()) / 15) * 15)) : undefined);
       const el =
         (target && list.querySelector<HTMLElement>(`[data-time="${target}"]`)) ||
         (target && slots.find((s) => s >= target) && list.querySelector<HTMLElement>(`[data-time="${slots.find((s) => s >= target)}"]`)) ||
@@ -184,78 +209,122 @@ export function TimePicker({
   };
 
   return (
-    <PP.Root open={open} onOpenChange={setOpen}>
-      <span className={cn('relative', variant === 'field' ? 'flex w-full' : 'inline-flex')}>
-        <PP.Trigger
+    <Picker open={open} onOpenChange={setOpen}>
+      <span className={cn('relative', variant === 'field' || variant === 'row' ? 'flex w-full' : 'inline-flex')}>
+        <PickerTrigger
           type="button"
           aria-haspopup="dialog"
           disabled={disabled}
-          className={cn(triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }), 'tabular-nums', value && clearable && 'pr-8', className)}
+          className={cn(
+            triggerClass(variant, { invalid: aria['aria-invalid'], empty: !value }),
+            'tabular-nums',
+            value && clearable && variant !== 'row' && 'pr-8',
+            className,
+          )}
           {...aria}
         >
-          <Clock className="h-4 w-4 shrink-0 text-muted" />
-          <span className="min-w-0 flex-1 truncate">{value ? formatTime(value, timeFormat) : placeholder}</span>
-        </PP.Trigger>
-        {value && clearable && <ClearButton onClear={() => onChange(undefined)} label="Прибрати час" />}
-      </span>
-      <PP.Portal>
-        <PP.Content align="start" sideOffset={6} collisionPadding={12} className={cn(popoverPanel, 'w-[200px] p-2')}>
-          <form
-            onSubmit={(e) => {
-              // The popover is portalled, but React still bubbles submit to an
-              // enclosing form (e.g. the task form) — stop it here.
-              e.preventDefault();
-              e.stopPropagation();
-              if (parsed && !typedInvalid) pick(parsed);
-            }}
-          >
-            <input
-              autoComplete="off"
-              autoFocus
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              inputMode="numeric"
-              placeholder="Введіть, напр. 930…"
-              aria-label="Ввести час"
-              aria-invalid={typedInvalid || undefined}
-              className="mb-1.5 h-9 w-full rounded-lg border border-line bg-surface-2 px-2.5 text-sm tabular-nums outline-hidden placeholder:text-subtle focus:border-primary focus:bg-surface aria-invalid:border-danger"
+          {variant === 'row' ? (
+            <RowFace
+              icon={<Clock />}
+              label={label ?? placeholder}
+              empty={!value}
+              value={
+                value ? (
+                  <>
+                    {formatTime(value, timeFormat)}
+                    {afterMin != null && <span className="ml-2 text-subtle">{formatDuration(Math.max(0, timeToMinutes(value) - afterMin))}</span>}
+                  </>
+                ) : (
+                  'Не вказано'
+                )
+              }
             />
-          </form>
-          {parsed && !typedInvalid && (
-            <button
-              type="button"
-              onClick={() => pick(parsed)}
-              className="mb-1 w-full rounded-lg bg-primary/10 px-2.5 py-2 text-left text-sm font-semibold text-primary"
-            >
-              {formatTime(parsed, timeFormat)}
-            </button>
+          ) : (
+            <>
+              <Clock className="h-4 w-4 shrink-0 text-muted" />
+              <span className="min-w-0 flex-1 truncate">{value ? formatTime(value, timeFormat) : placeholder}</span>
+            </>
           )}
-          <div ref={listRef} role="listbox" aria-label="Час" className="scrollbar-thin relative max-h-[240px] overflow-y-auto">
-            {slots.map((s) => {
-              const sel = s === value;
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  role="option"
-                  aria-selected={sel}
-                  data-time={s}
-                  onClick={() => pick(s)}
-                  className={cn(
-                    'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm tabular-nums outline-hidden transition-colors hover:bg-surface-2 focus-visible:bg-surface-2',
-                    sel && 'bg-accent text-surface hover:bg-accent focus-visible:bg-accent',
-                  )}
-                >
-                  <span>{formatTime(s, timeFormat)}</span>
-                  {afterMin != null && (
-                    <span className={cn('text-xs', sel ? 'text-surface/70' : 'text-subtle')}>{formatDuration(timeToMinutes(s) - afterMin)}</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </PP.Content>
-      </PP.Portal>
-    </PP.Root>
+        </PickerTrigger>
+        {value && clearable && variant !== 'row' && <ClearButton onClear={() => onChange(undefined)} label="Прибрати час" />}
+      </span>
+      <PickerContent title={label ?? aria['aria-label'] ?? 'Час'} className={cn(popoverPanel, 'w-[200px] p-2')}>
+        {clearable && value && variant === 'row' && (
+          <button
+            type="button"
+            onClick={() => {
+              onChange(undefined);
+              setOpen(false);
+            }}
+            className="mb-2 flex min-h-12 w-full items-center rounded-2xl bg-surface-2 px-4 text-left text-[16px] font-medium text-muted"
+          >
+            {clearLabel}
+          </button>
+        )}
+        <form
+          onSubmit={(e) => {
+            // The popover is portalled, but React still bubbles submit to an
+            // enclosing form (e.g. the task form) — stop it here.
+            e.preventDefault();
+            e.stopPropagation();
+            if (parsed && !typedInvalid) pick(parsed);
+          }}
+        >
+          <input
+            autoComplete="off"
+            autoFocus={!phone}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            inputMode="numeric"
+            placeholder="Введіть, напр. 930…"
+            aria-label="Ввести час"
+            aria-invalid={typedInvalid || undefined}
+            className={cn(
+              'mb-1.5 h-9 w-full rounded-lg border border-line bg-surface-2 px-2.5 text-sm tabular-nums outline-hidden placeholder:text-subtle focus:border-primary focus:bg-surface aria-invalid:border-danger',
+              phone && 'mb-2 h-12 rounded-2xl px-4 text-[16px]',
+            )}
+          />
+        </form>
+        {parsed && !typedInvalid && (
+          <button
+            type="button"
+            onClick={() => pick(parsed)}
+            className={cn(
+              'mb-1 w-full rounded-lg bg-primary/10 px-2.5 py-2 text-left text-sm font-semibold text-primary',
+              phone && 'min-h-12 rounded-2xl px-4 text-[16px]',
+            )}
+          >
+            {formatTime(parsed, timeFormat)}
+          </button>
+        )}
+        <div ref={listRef} role="listbox" aria-label="Час" className={cn('scrollbar-thin relative overflow-y-auto', phone ? 'max-h-[48dvh]' : 'max-h-[240px]')}>
+          {slots.map((s) => {
+            const sel = s === value;
+            return (
+              <button
+                key={s}
+                type="button"
+                role="option"
+                aria-selected={sel}
+                data-time={s}
+                onClick={() => pick(s)}
+                className={cn(
+                  'flex w-full items-center justify-between rounded-lg px-2.5 py-1.5 text-left text-sm tabular-nums outline-hidden transition-colors hover:bg-surface-2 focus-visible:bg-surface-2',
+                  phone && 'min-h-12 rounded-2xl px-4 text-[17px]',
+                  sel && 'bg-accent text-surface hover:bg-accent focus-visible:bg-accent',
+                )}
+              >
+                <span>{formatTime(s, timeFormat)}</span>
+                {afterMin != null && (
+                  <span className={cn('text-xs', phone && 'text-[14px]', sel ? 'text-surface/70' : 'text-subtle')}>
+                    {formatDuration(timeToMinutes(s) - afterMin)}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </PickerContent>
+    </Picker>
   );
 }

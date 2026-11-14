@@ -2,6 +2,9 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { useRef, type ReactNode } from 'react';
 import { useDragDismiss } from '@/lib/gesture/useDragDismiss';
+import { useKeyboardInset } from '@/hooks/useKeyboardInset';
+import { canAutoFocus } from '@/lib/utils/pointer';
+import { useIsPhone } from './picker';
 import { cn } from '@/lib/utils/cn';
 
 export const Dialog = DialogPrimitive.Root;
@@ -21,6 +24,11 @@ interface DialogContentProps {
   headerActions?: ReactNode;
   /** Small muted title, for forms whose first field is the real headline. */
   quietTitle?: boolean;
+  /**
+   * Phones, forms: the header becomes a bar — «Скасувати», the title, and the main action (`submit`, usually a
+   * submit button tied to the form with the `form` attribute) — and the sheet is tall so fields do not jump around.
+   */
+  phoneBar?: { onCancel: () => void; cancelLabel?: string; submit: ReactNode };
 }
 
 const sizes = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' };
@@ -40,7 +48,12 @@ export function DialogContent({
   size = 'md',
   headerActions,
   quietTitle,
+  phoneBar,
 }: DialogContentProps) {
+  const phone = useIsPhone();
+  const bar = phone ? phoneBar : undefined;
+  // The on-screen keyboard would cover the lower half of a bottom sheet: lift the sheet above it.
+  const keyboard = useKeyboardInset(phone);
   const block = (e: Event) => {
     if (preventDismiss) {
       e.preventDefault();
@@ -59,7 +72,7 @@ export function DialogContent({
     allow: (e) => e.pointerType === 'touch' && !window.matchMedia('(min-width: 640px)').matches && !(e.target as HTMLElement).closest('button'),
     canDismiss: () => !preventDismiss,
     onBlocked: onDismissBlocked,
-    onDismiss: () => closeBtn.current?.click(),
+    onDismiss: () => (closeBtn.current ? closeBtn.current.click() : phoneBar?.onCancel()),
   });
   return (
     <DialogPrimitive.Portal>
@@ -69,8 +82,16 @@ export function DialogContent({
         onInteractOutside={block}
         onEscapeKeyDown={block}
         aria-describedby={description ? undefined : undefined}
+        // Touch screens: do not hand focus to the first button (a ring on «Скасувати»/«×»); the sheet itself takes it.
+        onOpenAutoFocus={(e) => {
+          if (canAutoFocus()) return;
+          e.preventDefault();
+          sheet.current?.focus({ preventScroll: true });
+        }}
+        style={keyboard ? { bottom: keyboard, maxHeight: `calc(100dvh - ${keyboard}px - 12px)` } : undefined}
         className={cn(
           'fixed z-50 flex max-h-[92dvh] w-full flex-col border border-line bg-surface shadow-pop focus:outline-hidden enter-dialog',
+          phoneBar && 'max-sm:h-[94dvh]',
           'inset-x-0 bottom-0 rounded-t-[22px] pb-safe',
           'sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[86vh] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-card sm:pb-0',
           sizes[size],
@@ -79,26 +100,43 @@ export function DialogContent({
       >
         <div className="touch-none" {...drag}>
           <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-line sm:hidden" aria-hidden />
-          <div className={cn('flex items-start gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pt-5', hideTitle && 'sr-only')}>
-            <div className="min-w-0 flex-1">
-              <DialogPrimitive.Title className={cn(quietTitle ? 'text-[13px] font-medium text-muted' : 'text-[17px] font-semibold tracking-tight text-ink')}>
+          {bar ? (
+            <div className="flex items-center gap-2 px-3 pb-2 pt-2">
+              <button
+                type="button"
+                onClick={bar.onCancel}
+                className="flex h-11 min-w-[88px] items-center justify-start rounded-full px-3 text-[16px] text-muted transition-colors hover:text-ink"
+              >
+                {bar.cancelLabel ?? 'Скасувати'}
+              </button>
+              <DialogPrimitive.Title className="min-w-0 flex-1 truncate text-center text-[16px] font-semibold tracking-tight text-ink">
                 {title}
               </DialogPrimitive.Title>
-              {description ? (
-                <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description>
-              ) : (
-                <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Діалог'}</DialogPrimitive.Description>
-              )}
+              <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Діалог'}</DialogPrimitive.Description>
+              <div className="flex min-w-[88px] justify-end">{bar.submit}</div>
             </div>
-            {headerActions}
-            <DialogPrimitive.Close
-              ref={closeBtn}
-              className="-mr-1 rounded-lg p-1.5 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
-              aria-label="Закрити"
-            >
-              <X className="h-4 w-4" />
-            </DialogPrimitive.Close>
-          </div>
+          ) : (
+            <div className={cn('flex items-start gap-3 px-5 pb-2 pt-4 sm:px-6 sm:pt-5', hideTitle && 'sr-only')}>
+              <div className="min-w-0 flex-1">
+                <DialogPrimitive.Title className={cn(quietTitle ? 'text-[13px] font-medium text-muted' : 'text-[17px] font-semibold tracking-tight text-ink')}>
+                  {title}
+                </DialogPrimitive.Title>
+                {description ? (
+                  <DialogPrimitive.Description className="mt-1 text-sm text-muted">{description}</DialogPrimitive.Description>
+                ) : (
+                  <DialogPrimitive.Description className="sr-only">{typeof title === 'string' ? title : 'Діалог'}</DialogPrimitive.Description>
+                )}
+              </div>
+              {headerActions}
+              <DialogPrimitive.Close
+                ref={closeBtn}
+                className="-mr-1 rounded-lg p-1.5 text-subtle transition-colors hover:bg-surface-2 hover:text-ink"
+                aria-label="Закрити"
+              >
+                <X className="h-4 w-4" />
+              </DialogPrimitive.Close>
+            </div>
+          )}
         </div>
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
       </DialogPrimitive.Content>

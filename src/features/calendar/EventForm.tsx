@@ -3,6 +3,8 @@ import { useSmartTitle } from '@/features/capture/useSmartTitle';
 import { SmartTitleHint } from '@/features/capture/SmartTitleHint';
 import { CategoryMark } from '@/components/common/CategoryMark';
 import { AlertTriangle, AlignLeft, FolderKanban, Link2, MapPin, Repeat, Sun } from 'lucide-react';
+import { useIsPhone } from '@/components/ui/picker';
+import { ChipStrip, FormGroup, FormLabel, FormLine, stripChip } from '@/components/ui/form-rows';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/input';
@@ -72,6 +74,7 @@ function Row({ icon, label, children }: { icon: ReactNode; label: string; childr
   );
 }
 
+const FORM_ID = 'event-form';
 const QUICK_DURATIONS = [30, 60, 90, 120];
 const bareInput = 'h-9 border-transparent bg-transparent px-0 shadow-none hover:border-transparent focus:border-transparent focus:ring-0';
 
@@ -80,6 +83,7 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
   const settings = useSettings();
   const actions = useActions();
   const { draft, patch, dirty, saving, submitError, submit } = useFormDialog<Draft>(toDraft(event, defaults), onClose);
+  const phone = useIsPhone();
   const [showErrors, setShowErrors] = useState(false);
   // New events: «Зал завтра на 15:00 до 16:30 #здоровʼя» in the title fills the fields.
   const [smartOff, setSmartOff] = useState(!!event);
@@ -158,10 +162,25 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
 
   return (
     <Dialog open onOpenChange={(open) => !open && void requestClose()}>
-      <DialogContent quietTitle title={event ? 'Редагувати подію' : 'Нова подія'} size="md" preventDismiss={dirty} onDismissBlocked={() => void requestClose()}>
+      <DialogContent
+        quietTitle
+        title={event ? 'Редагувати подію' : 'Нова подія'}
+        size="md"
+        preventDismiss={dirty}
+        onDismissBlocked={() => void requestClose()}
+        phoneBar={{
+          onCancel: () => void requestClose(),
+          submit: (
+            <Button type="submit" form={FORM_ID} variant="dark" size="lg" loading={saving} className="h-10 px-5">
+              {event ? 'Зберегти' : 'Додати'}
+            </Button>
+          ),
+        }}
+      >
         {/* Ctrl/⌘+Enter submits from any field: a form-level shortcut, not an interactive form. */}
         {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
         <form
+          id={FORM_ID}
           onSubmit={onSubmit}
           noValidate
           onKeyDown={(e) => {
@@ -198,22 +217,25 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
             <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
           </div>
 
-          {/* When */}
-          <section aria-label="Час" className="mt-4 rounded-2xl bg-surface-2/70 p-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <DatePicker
-                variant="chip"
-                aria-label={draft.allDay ? 'Початок' : 'Дата'}
-                clearable={false}
-                weekStartsOn={settings.weekStartsOn}
-                value={draft.date}
-                onChange={(date) => date && patch({ date, endDate: draft.endDate && draft.endDate < date ? undefined : draft.endDate })}
-              />
-              {draft.allDay ? (
-                <>
-                  <span className="text-subtle">→</span>
+          {phone ? (
+            <>
+              <FormGroup className="mt-4" label="Час">
+                <FormLine icon={<Sun />} label="Весь день">
+                  <Switch label="Весь день" checked={draft.allDay} onCheckedChange={toggleAllDay} />
+                </FormLine>
+                <DatePicker
+                  variant="row"
+                  label={draft.allDay ? 'Початок' : 'Дата'}
+                  aria-label={draft.allDay ? 'Початок' : 'Дата'}
+                  clearable={false}
+                  weekStartsOn={settings.weekStartsOn}
+                  value={draft.date}
+                  onChange={(date) => date && patch({ date, endDate: draft.endDate && draft.endDate < date ? undefined : draft.endDate })}
+                />
+                {draft.allDay ? (
                   <DatePicker
-                    variant="chip"
+                    variant="row"
+                    label="Кінець"
                     aria-label="Кінець"
                     clearable={false}
                     min={draft.date}
@@ -221,170 +243,360 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
                     value={draft.endDate ?? draft.date}
                     onChange={(endDate) => patch({ endDate })}
                   />
-                </>
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  <TimePicker variant="chip" aria-label="Початок" timeFormat={settings.timeFormat} value={draft.startTime} onChange={setStart} />
-                  <span className="text-subtle">–</span>
-                  <TimePicker
-                    variant="chip"
-                    aria-label="Кінець"
-                    after={draft.startTime}
-                    timeFormat={settings.timeFormat}
-                    value={draft.endTime}
-                    onChange={(endTime) => patch({ endTime })}
-                  />
-                </span>
-              )}
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center gap-1 text-[12.5px]">
-              {draft.allDay ? (
-                <span className="text-muted">{allDaySpan}</span>
-              ) : (
-                <>
-                  {!QUICK_DURATIONS.includes(duration) && <span className="mr-1 tabular-nums text-muted">{duration > 0 ? formatDuration(duration) : '—'}</span>}
-                  {QUICK_DURATIONS.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setDuration(m)}
-                      aria-pressed={duration === m}
-                      className={cn(
-                        'h-7 shrink-0 rounded-full px-2.5 font-medium tabular-nums transition-colors',
-                        duration === m ? 'bg-accent text-surface' : 'text-muted hover:bg-surface hover:text-ink',
-                      )}
-                    >
-                      {formatDuration(m).replace(' год 30 хв', ',5 год')}
-                    </button>
-                  ))}
-                </>
-              )}
-              <label className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-2 text-[12.5px] font-medium text-muted">
-                <Sun className="h-3.5 w-3.5" />
-                Весь день
-                <Switch label="Весь день" checked={draft.allDay} onCheckedChange={toggleAllDay} />
-              </label>
-            </div>
-
-            <div className="mt-2 border-t border-line/70 pt-2">
-              {fromGoogle ? (
-                <p className="flex items-center gap-2 py-1 text-[13px] text-muted">
-                  <Repeat className="h-3.5 w-3.5" /> Повторення налаштовується в Google Calendar
+                ) : (
+                  <>
+                    <TimePicker
+                      variant="row"
+                      label="Початок"
+                      aria-label="Початок"
+                      timeFormat={settings.timeFormat}
+                      value={draft.startTime}
+                      onChange={setStart}
+                    />
+                    <TimePicker
+                      variant="row"
+                      label="Кінець"
+                      aria-label="Кінець"
+                      after={draft.startTime}
+                      timeFormat={settings.timeFormat}
+                      value={draft.endTime}
+                      onChange={(endTime) => patch({ endTime })}
+                    />
+                    <div className="px-4 py-2.5">
+                      <ChipStrip label="Тривалість" className="-mx-4 px-4">
+                        {QUICK_DURATIONS.map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            role="radio"
+                            aria-checked={duration === m}
+                            onClick={() => setDuration(m)}
+                            className={cn(
+                              stripChip,
+                              'h-10 px-3.5 text-[14px] tabular-nums',
+                              duration === m ? 'border-transparent bg-accent text-surface' : 'border-line bg-surface text-ink',
+                            )}
+                          >
+                            {formatDuration(m).replace(' год 30 хв', ',5 год')}
+                          </button>
+                        ))}
+                      </ChipStrip>
+                    </div>
+                  </>
+                )}
+                {fromGoogle ? (
+                  <FormLine icon={<Repeat />}>
+                    <span className="text-[13px] text-muted">Повторення налаштовується в Google Calendar</span>
+                  </FormLine>
+                ) : (
+                  <RepeatChip variant="row" value={draft.recurrence} startDate={draft.date} onChange={(recurrence) => patch({ recurrence })} />
+                )}
+              </FormGroup>
+              {timeError && (
+                <p role="alert" className="mt-2 px-1 text-[13px] text-danger">
+                  {timeError}
                 </p>
-              ) : (
-                <RepeatChip
-                  variant="ghost"
-                  className="-ml-2"
-                  value={draft.recurrence}
-                  startDate={draft.date}
-                  onChange={(recurrence) => patch({ recurrence })}
-                />
               )}
-            </div>
-            {timeError && (
-              <p role="alert" className="mt-2 text-[13px] text-danger">
-                {timeError}
-              </p>
-            )}
-            {conflicts.length > 0 && (
-              <p className="mt-2 flex items-start gap-2 text-[12.5px] text-muted">
-                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-ink" />
-                <span>
-                  Перетинається з{' '}
-                  {conflicts
-                    .slice(0, 3)
-                    .map((c) => `«${c.title}» (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
-                    .join(', ')}
-                </span>
-              </p>
-            )}
-          </section>
+              {conflicts.length > 0 && (
+                <p className="mt-2 flex items-start gap-2 px-1 text-[12.5px] text-muted">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-ink" />
+                  <span>
+                    Перетинається з{' '}
+                    {conflicts
+                      .slice(0, 3)
+                      .map((c) => `«${c.title}» (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
+                      .join(', ')}
+                  </span>
+                </p>
+              )}
 
-          {/* Category & project */}
-          <div className="mt-4 space-y-2.5">
-            {categories.length > 0 && (
-              <div role="radiogroup" aria-label="Категорія" className="flex flex-wrap gap-1.5">
-                {categories.map((c) => {
-                  const on = draft.categoryId === c.id;
-                  const color = colorOf(c.color);
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={on}
-                      onClick={() => patch({ categoryId: on ? undefined : c.id })}
-                      className={cn(
-                        'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
-                        on ? 'text-ink' : 'border-line bg-surface text-muted hover:text-ink',
-                      )}
-                      style={on ? { backgroundColor: tint(color, 0.16), borderColor: tint(color, 0.5) } : undefined}
-                    >
-                      <CategoryMark category={c} />
-                      {c.name}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {(projects.some((p) => p.status !== 'archived') || draft.projectId) && (
-              <Select
-                variant="chip"
-                aria-label="Проєкт"
-                icon={<FolderKanban />}
-                placeholder="Додати до проєкту"
-                value={draft.projectId}
-                onChange={(v) => patch({ projectId: v || undefined })}
-                options={projectOptions(projects, draft.projectId)}
-              />
-            )}
-            <ReminderSelect
-              value={draft.remindMin}
-              onChange={(remindMin) => patch({ remindMin })}
-              fallback={draft.allDay ? 'вимкнено' : reminderLabel(settings.remindEventsMin)}
-            />
-          </div>
-
-          {/* Details */}
-          <div className="mt-4 divide-y divide-line/70 rounded-2xl border border-line/80">
-            <Row icon={<MapPin />} label="Місце">
-              <Input
-                aria-label="Місце"
-                placeholder="Місце…"
-                value={draft.location ?? ''}
-                onChange={(e) => patch({ location: e.target.value })}
-                className={bareInput}
-              />
-            </Row>
-            <Row icon={<Link2 />} label="Посилання">
-              <Input
-                aria-label="Посилання"
-                aria-invalid={visible.url ? true : undefined}
-                type="url"
-                inputMode="url"
-                placeholder="Посилання на зустріч…"
-                value={draft.url ?? ''}
-                onChange={(e) => patch({ url: e.target.value })}
-                className={bareInput}
-              />
+              {/* Where */}
+              <FormLabel>Де</FormLabel>
+              <FormGroup label="Де">
+                <label className="flex min-h-[52px] items-center gap-3 px-4 text-[15px]">
+                  <MapPin className="h-[19px] w-[19px] shrink-0 text-muted" aria-hidden />
+                  <input
+                    aria-label="Місце"
+                    autoComplete="off"
+                    placeholder="Місце"
+                    value={draft.location ?? ''}
+                    onChange={(e) => patch({ location: e.target.value })}
+                    className="min-w-0 flex-1 bg-transparent py-3 text-[16px] text-ink outline-hidden placeholder:text-subtle"
+                  />
+                </label>
+                <label className="flex min-h-[52px] items-center gap-3 px-4 text-[15px]">
+                  <Link2 className="h-[19px] w-[19px] shrink-0 text-muted" aria-hidden />
+                  <input
+                    aria-label="Посилання"
+                    aria-invalid={visible.url ? true : undefined}
+                    autoComplete="off"
+                    type="url"
+                    inputMode="url"
+                    placeholder="Посилання на зустріч"
+                    value={draft.url ?? ''}
+                    onChange={(e) => patch({ url: e.target.value })}
+                    className="min-w-0 flex-1 bg-transparent py-3 text-[16px] text-ink outline-hidden placeholder:text-subtle aria-invalid:text-danger"
+                  />
+                </label>
+              </FormGroup>
               {visible.url && (
-                <p role="alert" className="mb-1.5 text-[13px] text-danger">
+                <p role="alert" className="mt-2 px-1 text-[13px] text-danger">
                   {visible.url}
                 </p>
               )}
-            </Row>
-            <Row icon={<AlignLeft />} label="Опис">
-              <Textarea
-                aria-label="Опис"
-                rows={2}
-                placeholder="Нотатки…"
-                value={draft.description ?? ''}
-                onChange={(e) => patch({ description: e.target.value })}
-                className="min-h-[60px] resize-none rounded-none bg-transparent px-0 py-2 shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
-              />
-            </Row>
-          </div>
+
+              {categories.length > 0 && (
+                <>
+                  <FormLabel>Категорія</FormLabel>
+                  <ChipStrip label="Категорія">
+                    {categories.map((c) => {
+                      const on = draft.categoryId === c.id;
+                      const color = colorOf(c.color);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => patch({ categoryId: on ? undefined : c.id })}
+                          className={cn(stripChip, on ? 'text-ink' : 'border-line bg-surface text-muted')}
+                          style={on ? { backgroundColor: tint(color, 0.16), borderColor: tint(color, 0.5) } : undefined}
+                        >
+                          <CategoryMark category={c} />
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </ChipStrip>
+                </>
+              )}
+
+              <FormGroup className="mt-4" label="Ще">
+                {(projects.some((p) => p.status !== 'archived') || draft.projectId) && (
+                  <Select
+                    variant="row"
+                    label="Проєкт"
+                    aria-label="Проєкт"
+                    icon={<FolderKanban />}
+                    placeholder="Проєкт"
+                    value={draft.projectId ?? ''}
+                    onChange={(v) => patch({ projectId: v || undefined })}
+                    options={projectOptions(projects, draft.projectId)}
+                  />
+                )}
+                <ReminderSelect
+                  variant="row"
+                  value={draft.remindMin}
+                  onChange={(remindMin) => patch({ remindMin })}
+                  fallback={draft.allDay ? 'вимкнено' : reminderLabel(settings.remindEventsMin)}
+                />
+              </FormGroup>
+
+              <div className="mt-4 flex gap-3 rounded-[20px] bg-surface-2/70 px-4 py-3">
+                <AlignLeft className="mt-1 h-[19px] w-[19px] shrink-0 text-muted" aria-hidden />
+                <Textarea
+                  aria-label="Опис"
+                  rows={3}
+                  placeholder="Нотатки до події"
+                  value={draft.description ?? ''}
+                  onChange={(e) => patch({ description: e.target.value })}
+                  className="min-h-[80px] flex-1 resize-none rounded-none bg-transparent p-0 text-[16px] shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* When */}
+              <section aria-label="Час" className="mt-4 rounded-2xl bg-surface-2/70 p-3">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <DatePicker
+                    variant="chip"
+                    aria-label={draft.allDay ? 'Початок' : 'Дата'}
+                    clearable={false}
+                    weekStartsOn={settings.weekStartsOn}
+                    value={draft.date}
+                    onChange={(date) => date && patch({ date, endDate: draft.endDate && draft.endDate < date ? undefined : draft.endDate })}
+                  />
+                  {draft.allDay ? (
+                    <>
+                      <span className="text-subtle">→</span>
+                      <DatePicker
+                        variant="chip"
+                        aria-label="Кінець"
+                        clearable={false}
+                        min={draft.date}
+                        weekStartsOn={settings.weekStartsOn}
+                        value={draft.endDate ?? draft.date}
+                        onChange={(endDate) => patch({ endDate })}
+                      />
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      <TimePicker variant="chip" aria-label="Початок" timeFormat={settings.timeFormat} value={draft.startTime} onChange={setStart} />
+                      <span className="text-subtle">–</span>
+                      <TimePicker
+                        variant="chip"
+                        aria-label="Кінець"
+                        after={draft.startTime}
+                        timeFormat={settings.timeFormat}
+                        value={draft.endTime}
+                        onChange={(endTime) => patch({ endTime })}
+                      />
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1 text-[12.5px]">
+                  {draft.allDay ? (
+                    <span className="text-muted">{allDaySpan}</span>
+                  ) : (
+                    <>
+                      {!QUICK_DURATIONS.includes(duration) && (
+                        <span className="mr-1 tabular-nums text-muted">{duration > 0 ? formatDuration(duration) : '—'}</span>
+                      )}
+                      {QUICK_DURATIONS.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          onClick={() => setDuration(m)}
+                          aria-pressed={duration === m}
+                          className={cn(
+                            'h-7 shrink-0 rounded-full px-2.5 font-medium tabular-nums transition-colors',
+                            duration === m ? 'bg-accent text-surface' : 'text-muted hover:bg-surface hover:text-ink',
+                          )}
+                        >
+                          {formatDuration(m).replace(' год 30 хв', ',5 год')}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  <label className="ml-auto inline-flex shrink-0 cursor-pointer items-center gap-2 text-[12.5px] font-medium text-muted">
+                    <Sun className="h-3.5 w-3.5" />
+                    Весь день
+                    <Switch label="Весь день" checked={draft.allDay} onCheckedChange={toggleAllDay} />
+                  </label>
+                </div>
+
+                <div className="mt-2 border-t border-line/70 pt-2">
+                  {fromGoogle ? (
+                    <p className="flex items-center gap-2 py-1 text-[13px] text-muted">
+                      <Repeat className="h-3.5 w-3.5" /> Повторення налаштовується в Google Calendar
+                    </p>
+                  ) : (
+                    <RepeatChip
+                      variant="ghost"
+                      className="-ml-2"
+                      value={draft.recurrence}
+                      startDate={draft.date}
+                      onChange={(recurrence) => patch({ recurrence })}
+                    />
+                  )}
+                </div>
+                {timeError && (
+                  <p role="alert" className="mt-2 text-[13px] text-danger">
+                    {timeError}
+                  </p>
+                )}
+                {conflicts.length > 0 && (
+                  <p className="mt-2 flex items-start gap-2 text-[12.5px] text-muted">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning-ink" />
+                    <span>
+                      Перетинається з{' '}
+                      {conflicts
+                        .slice(0, 3)
+                        .map((c) => `«${c.title}» (${formatTimeRange(c.startTime, c.endTime, settings.timeFormat)})`)
+                        .join(', ')}
+                    </span>
+                  </p>
+                )}
+              </section>
+
+              {/* Category & project */}
+              <div className="mt-4 space-y-2.5">
+                {categories.length > 0 && (
+                  <div role="radiogroup" aria-label="Категорія" className="flex flex-wrap gap-1.5">
+                    {categories.map((c) => {
+                      const on = draft.categoryId === c.id;
+                      const color = colorOf(c.color);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => patch({ categoryId: on ? undefined : c.id })}
+                          className={cn(
+                            'inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
+                            on ? 'text-ink' : 'border-line bg-surface text-muted hover:text-ink',
+                          )}
+                          style={on ? { backgroundColor: tint(color, 0.16), borderColor: tint(color, 0.5) } : undefined}
+                        >
+                          <CategoryMark category={c} />
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {(projects.some((p) => p.status !== 'archived') || draft.projectId) && (
+                  <Select
+                    variant="chip"
+                    aria-label="Проєкт"
+                    icon={<FolderKanban />}
+                    placeholder="Додати до проєкту"
+                    value={draft.projectId}
+                    onChange={(v) => patch({ projectId: v || undefined })}
+                    options={projectOptions(projects, draft.projectId)}
+                  />
+                )}
+                <ReminderSelect
+                  value={draft.remindMin}
+                  onChange={(remindMin) => patch({ remindMin })}
+                  fallback={draft.allDay ? 'вимкнено' : reminderLabel(settings.remindEventsMin)}
+                />
+              </div>
+
+              {/* Details */}
+              <div className="mt-4 divide-y divide-line/70 rounded-2xl border border-line/80">
+                <Row icon={<MapPin />} label="Місце">
+                  <Input
+                    aria-label="Місце"
+                    placeholder="Місце…"
+                    value={draft.location ?? ''}
+                    onChange={(e) => patch({ location: e.target.value })}
+                    className={bareInput}
+                  />
+                </Row>
+                <Row icon={<Link2 />} label="Посилання">
+                  <Input
+                    aria-label="Посилання"
+                    aria-invalid={visible.url ? true : undefined}
+                    type="url"
+                    inputMode="url"
+                    placeholder="Посилання на зустріч…"
+                    value={draft.url ?? ''}
+                    onChange={(e) => patch({ url: e.target.value })}
+                    className={bareInput}
+                  />
+                  {visible.url && (
+                    <p role="alert" className="mb-1.5 text-[13px] text-danger">
+                      {visible.url}
+                    </p>
+                  )}
+                </Row>
+                <Row icon={<AlignLeft />} label="Опис">
+                  <Textarea
+                    aria-label="Опис"
+                    rows={2}
+                    placeholder="Нотатки…"
+                    value={draft.description ?? ''}
+                    onChange={(e) => patch({ description: e.target.value })}
+                    className="min-h-[60px] resize-none rounded-none bg-transparent px-0 py-2 shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
+                  />
+                </Row>
+              </div>
+            </>
+          )}
 
           {willSync && (
             <p className="mt-3 flex items-center gap-2 text-[12.5px] text-muted">
@@ -399,7 +611,7 @@ export default function EventFormDialog({ event, defaults, onClose }: { event?: 
             </p>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="max-sm:hidden">
             <Button variant="ghost" onClick={() => void requestClose()} disabled={saving}>
               Скасувати
             </Button>

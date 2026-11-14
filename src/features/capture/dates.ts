@@ -38,3 +38,6 @@ export function nextMonthDay(today: DateKey, day: number): DateKey | undefined {
   }
   return undefined;
 }
+
+/** «На вихідних»: today when it is already the weekend, else the coming Saturday. */
+export const weekendKey = (today: DateKey) => ([6, 0].includes(dow(today)) ? today : nextDow(today, 6));

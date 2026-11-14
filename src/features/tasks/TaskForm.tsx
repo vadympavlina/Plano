@@ -1,9 +1,11 @@
 import { useRef, useState, type FormEvent } from 'react';
-import { Flag, FolderKanban, Plus, Tag, Target, X } from 'lucide-react';
+import { ChevronRight, Flag, FolderKanban, Plus, Tag, Target, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Field, Textarea } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
+import { useIsPhone } from '@/components/ui/picker';
+import { ChipStrip, FormGroup, FormLabel, Segmented, stripChip } from '@/components/ui/form-rows';
 import { DatePicker, TimePicker } from '@/components/ui/date-time';
 import { Checkbox } from '@/components/ui/controls';
 import { TagInput } from '@/components/ui/tag-input';
@@ -13,13 +15,19 @@ import { confirm } from '@/components/common/ConfirmDialog';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useActions } from '@/hooks/useActions';
 import { useFormDialog } from '@/hooks/useFormDialog';
-import { minutesToTime, timeToMinutes } from '@/lib/date';
+import { addDaysKey, minutesToTime, timeToMinutes, todayKey } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { Subtask, Task } from '@/types';
 import { ReminderSelect } from '@/features/reminders/ReminderSelect';
 import { useSmartTitle } from '@/features/capture/useSmartTitle';
 import { SmartTitleHint } from '@/features/capture/SmartTitleHint';
 import { canAutoFocus } from '@/lib/utils/pointer';
+import { weekendKey } from '@/features/capture/dates';
+import { tint, colorOf } from '@/lib/utils/colors';
+import { CategoryMark } from '@/components/common/CategoryMark';
+import { PRIORITY_COLOR } from '@/components/common/options';
+
+const FORM_ID = 'task-form';
 
 type Draft = Omit<Task, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -50,6 +58,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
   const settings = useSettings();
   const actions = useActions();
   const { draft, patch, dirty, saving, submitError, submit } = useFormDialog<Draft>(toDraft(task, defaults), onClose);
+  const phone = useIsPhone();
   const [showErrors, setShowErrors] = useState(false);
   const [newSubtask, setNewSubtask] = useState('');
   const [showMore, setShowMore] = useState(!!(task && (task.startDate || task.notes || task.tags.length || task.goalId)));
@@ -118,8 +127,16 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
         size="lg"
         preventDismiss={dirty}
         onDismissBlocked={() => void requestClose()}
+        phoneBar={{
+          onCancel: () => void requestClose(),
+          submit: (
+            <Button type="submit" form={FORM_ID} variant="dark" size="lg" loading={saving} className="h-10 px-5">
+              {task ? 'Зберегти' : 'Додати'}
+            </Button>
+          ),
+        }}
       >
-        <form onSubmit={onSubmit} noValidate>
+        <form id={FORM_ID} onSubmit={onSubmit} noValidate>
           <input
             autoComplete="off"
             autoFocus={canAutoFocus()}
@@ -133,93 +150,261 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
             className="w-full bg-transparent text-[21px] font-semibold tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0"
           />
           <SmartTitleHint summary={smart.summary} found={smart.found} applied={!!undo} onApply={applySmart} onRevert={revertSmart} />
-          <Textarea
-            aria-label="Опис"
-            rows={2}
-            placeholder="Додайте опис…"
-            value={draft.description ?? ''}
-            onChange={(e) => patch({ description: e.target.value })}
-            className="mt-1 min-h-0 resize-none rounded-none bg-transparent px-0 text-[14px] text-muted shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
-          />
-
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <DatePicker
-              variant="chip"
-              aria-label="Термін"
-              aria-invalid={visible.dueDate ? true : undefined}
-              placeholder="Термін"
-              value={draft.dueDate}
-              weekStartsOn={settings.weekStartsOn}
-              onChange={(dueDate) => patch({ dueDate })}
-            />
-            <TimePicker
-              variant="chip"
-              aria-label="Час початку"
-              aria-invalid={visible.time ? true : undefined}
-              placeholder="Час"
-              clearable
-              timeFormat={settings.timeFormat}
-              value={draft.startTime}
-              onChange={(startTime) =>
-                patch(
-                  startTime
-                    ? {
-                        startTime,
-                        endTime:
-                          draft.endTime && draft.startTime
-                            ? minutesToTime(Math.min(timeToMinutes(startTime) + timeToMinutes(draft.endTime) - timeToMinutes(draft.startTime), 23 * 60 + 59))
-                            : draft.endTime,
-                      }
-                    : { startTime: undefined, endTime: undefined },
-                )
-              }
-            />
-            {draft.startTime && (
-              <TimePicker
-                variant="chip"
-                aria-label="Час завершення"
-                placeholder="До"
-                clearable
-                after={draft.startTime}
-                timeFormat={settings.timeFormat}
-                value={draft.endTime}
-                onChange={(endTime) => patch({ endTime })}
+          {phone ? (
+            <>
+              <Textarea
+                aria-label="Опис"
+                rows={1}
+                placeholder="Додайте опис…"
+                value={draft.description ?? ''}
+                onChange={(e) => patch({ description: e.target.value })}
+                className="mt-1 min-h-[44px] resize-none rounded-none bg-transparent px-0 py-2 text-[16px] text-muted shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
               />
-            )}
-            <Select
-              variant="chip"
-              aria-label="Пріоритет"
-              icon={<Flag />}
-              value={draft.priority}
-              onChange={(priority) => patch({ priority })}
-              options={priorityOptions}
-            />
-            <ReminderSelect
-              value={draft.remindMin}
-              onChange={(remindMin) => patch({ remindMin })}
-              fallback={settings.remindTasks && draft.startTime ? 'на початку' : 'вимкнено'}
-            />
-            <Select
-              variant="chip"
-              aria-label="Категорія"
-              icon={<Tag />}
-              placeholder="Категорія"
-              value={draft.categoryId ?? (task ? '' : undefined)}
-              onChange={(v) => patch({ categoryId: v || undefined })}
-              options={categoryOptions(categories)}
-            />
-            <Select
-              variant="chip"
-              aria-label="Проєкт"
-              icon={<FolderKanban />}
-              placeholder="Проєкт"
-              value={draft.projectId ?? (task ? '' : undefined)}
-              onChange={(v) => patch({ projectId: v || undefined })}
-              options={projectOptions(projects, draft.projectId)}
-            />
-            <RepeatChip value={draft.recurrence} startDate={draft.dueDate ?? draft.startDate} onChange={(recurrence) => patch({ recurrence })} />
-            {task && <Select variant="chip" aria-label="Статус" value={draft.status} onChange={(status) => patch({ status })} options={statusOptions} />}
-          </div>
+
+              {/* The question people answer first: when. */}
+              <ChipStrip label="Коли" className="mt-3">
+                {(
+                  [
+                    ['Сьогодні', todayKey()],
+                    ['Завтра', addDaysKey(todayKey(), 1)],
+                    ['На вихідних', weekendKey(todayKey())],
+                    ['Без дати', undefined],
+                  ] as const
+                ).map(([label, day]) => {
+                  const on = label === 'Без дати' ? !draft.dueDate : draft.dueDate === day && !(label === 'На вихідних' && day === todayKey());
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => patch({ dueDate: day })}
+                      className={cn(stripChip, on ? 'border-transparent bg-accent text-surface' : 'border-line bg-surface text-ink')}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </ChipStrip>
+
+              <FormGroup className="mt-4" label="Дата й час">
+                <DatePicker
+                  variant="row"
+                  label="Дата"
+                  aria-label="Термін"
+                  aria-invalid={visible.dueDate ? true : undefined}
+                  placeholder="Без дати"
+                  value={draft.dueDate}
+                  weekStartsOn={settings.weekStartsOn}
+                  onChange={(dueDate) => patch({ dueDate })}
+                />
+                <TimePicker
+                  variant="row"
+                  label="Час"
+                  aria-label="Час початку"
+                  aria-invalid={visible.time ? true : undefined}
+                  placeholder="Час"
+                  clearable
+                  timeFormat={settings.timeFormat}
+                  value={draft.startTime}
+                  onChange={(startTime) =>
+                    patch(
+                      startTime
+                        ? {
+                            startTime,
+                            endTime:
+                              draft.endTime && draft.startTime
+                                ? minutesToTime(
+                                    Math.min(timeToMinutes(startTime) + timeToMinutes(draft.endTime) - timeToMinutes(draft.startTime), 23 * 60 + 59),
+                                  )
+                                : draft.endTime,
+                          }
+                        : { startTime: undefined, endTime: undefined },
+                    )
+                  }
+                />
+                {draft.startTime && (
+                  <TimePicker
+                    variant="row"
+                    label="До"
+                    aria-label="Час завершення"
+                    placeholder="До"
+                    clearable
+                    clearLabel="Без завершення"
+                    after={draft.startTime}
+                    timeFormat={settings.timeFormat}
+                    value={draft.endTime}
+                    onChange={(endTime) => patch({ endTime })}
+                  />
+                )}
+                <RepeatChip
+                  variant="row"
+                  value={draft.recurrence}
+                  startDate={draft.dueDate ?? draft.startDate}
+                  onChange={(recurrence) => patch({ recurrence })}
+                />
+                <ReminderSelect
+                  variant="row"
+                  value={draft.remindMin}
+                  onChange={(remindMin) => patch({ remindMin })}
+                  fallback={settings.remindTasks && draft.startTime ? 'на початку' : 'вимкнено'}
+                />
+              </FormGroup>
+
+              <FormLabel>Важливість</FormLabel>
+              <Segmented
+                label="Пріоритет"
+                value={draft.priority}
+                onChange={(priority) => patch({ priority })}
+                options={[...priorityOptions].map((o) => ({ value: o.value, label: o.label, color: PRIORITY_COLOR[o.value] }))}
+              />
+
+              {categories.length > 0 && (
+                <>
+                  <FormLabel>Категорія</FormLabel>
+                  <ChipStrip label="Категорія">
+                    {categories.map((c) => {
+                      const on = draft.categoryId === c.id;
+                      const color = colorOf(c.color);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={on}
+                          onClick={() => patch({ categoryId: on ? undefined : c.id })}
+                          className={cn(stripChip, on ? 'text-ink' : 'border-line bg-surface text-muted')}
+                          style={on ? { backgroundColor: tint(color, 0.16), borderColor: tint(color, 0.5) } : undefined}
+                        >
+                          <CategoryMark category={c} />
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </ChipStrip>
+                </>
+              )}
+
+              {(projects.some((p) => p.status !== 'archived') || draft.projectId) && (
+                <FormGroup className="mt-4" label="Проєкт">
+                  <Select
+                    variant="row"
+                    label="Проєкт"
+                    aria-label="Проєкт"
+                    icon={<FolderKanban />}
+                    placeholder="Проєкт"
+                    value={draft.projectId ?? ''}
+                    onChange={(v) => patch({ projectId: v || undefined })}
+                    options={projectOptions(projects, draft.projectId)}
+                  />
+                </FormGroup>
+              )}
+              {task && (
+                <FormGroup className="mt-4" label="Статус">
+                  <Select
+                    variant="row"
+                    label="Статус"
+                    aria-label="Статус"
+                    value={draft.status}
+                    onChange={(status) => patch({ status })}
+                    options={statusOptions}
+                  />
+                </FormGroup>
+              )}
+            </>
+          ) : (
+            <>
+              <Textarea
+                aria-label="Опис"
+                rows={2}
+                placeholder="Додайте опис…"
+                value={draft.description ?? ''}
+                onChange={(e) => patch({ description: e.target.value })}
+                className="mt-1 min-h-0 resize-none rounded-none bg-transparent px-0 text-[14px] text-muted shadow-none hover:bg-transparent focus:shadow-none backdrop-filter-none"
+              />
+
+              <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                <DatePicker
+                  variant="chip"
+                  aria-label="Термін"
+                  aria-invalid={visible.dueDate ? true : undefined}
+                  placeholder="Термін"
+                  value={draft.dueDate}
+                  weekStartsOn={settings.weekStartsOn}
+                  onChange={(dueDate) => patch({ dueDate })}
+                />
+                <TimePicker
+                  variant="chip"
+                  aria-label="Час початку"
+                  aria-invalid={visible.time ? true : undefined}
+                  placeholder="Час"
+                  clearable
+                  timeFormat={settings.timeFormat}
+                  value={draft.startTime}
+                  onChange={(startTime) =>
+                    patch(
+                      startTime
+                        ? {
+                            startTime,
+                            endTime:
+                              draft.endTime && draft.startTime
+                                ? minutesToTime(
+                                    Math.min(timeToMinutes(startTime) + timeToMinutes(draft.endTime) - timeToMinutes(draft.startTime), 23 * 60 + 59),
+                                  )
+                                : draft.endTime,
+                          }
+                        : { startTime: undefined, endTime: undefined },
+                    )
+                  }
+                />
+                {draft.startTime && (
+                  <TimePicker
+                    variant="chip"
+                    aria-label="Час завершення"
+                    placeholder="До"
+                    clearable
+                    after={draft.startTime}
+                    timeFormat={settings.timeFormat}
+                    value={draft.endTime}
+                    onChange={(endTime) => patch({ endTime })}
+                  />
+                )}
+                <Select
+                  variant="chip"
+                  aria-label="Пріоритет"
+                  icon={<Flag />}
+                  value={draft.priority}
+                  onChange={(priority) => patch({ priority })}
+                  options={priorityOptions}
+                />
+                <ReminderSelect
+                  value={draft.remindMin}
+                  onChange={(remindMin) => patch({ remindMin })}
+                  fallback={settings.remindTasks && draft.startTime ? 'на початку' : 'вимкнено'}
+                />
+                <Select
+                  variant="chip"
+                  aria-label="Категорія"
+                  icon={<Tag />}
+                  placeholder="Категорія"
+                  value={draft.categoryId ?? (task ? '' : undefined)}
+                  onChange={(v) => patch({ categoryId: v || undefined })}
+                  options={categoryOptions(categories)}
+                />
+                <Select
+                  variant="chip"
+                  aria-label="Проєкт"
+                  icon={<FolderKanban />}
+                  placeholder="Проєкт"
+                  value={draft.projectId ?? (task ? '' : undefined)}
+                  onChange={(v) => patch({ projectId: v || undefined })}
+                  options={projectOptions(projects, draft.projectId)}
+                />
+                <RepeatChip value={draft.recurrence} startDate={draft.dueDate ?? draft.startDate} onChange={(recurrence) => patch({ recurrence })} />
+                {task && <Select variant="chip" aria-label="Статус" value={draft.status} onChange={(status) => patch({ status })} options={statusOptions} />}
+              </div>
+            </>
+          )}
 
           {firstError && (
             <p role="alert" className="mt-3 text-[13px] text-danger">
@@ -228,11 +413,11 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
           )}
 
           <section className="mt-6">
-            <h3 className="mb-2 text-[13px] font-semibold text-ink">Підзадачі</h3>
+            <h3 className={cn('mb-2 text-[13px] font-semibold text-ink', phone && 'px-1 text-muted')}>Підзадачі</h3>
             {draft.subtasks.length > 0 && (
               <ul className="mb-1">
                 {draft.subtasks.map((s, i) => (
-                  <li key={s.id} className="group flex items-center gap-3 rounded-lg py-1.5 pr-1">
+                  <li key={s.id} className={cn('group flex items-center gap-3 rounded-lg py-1.5 pr-1', phone && 'min-h-11')}>
                     <Checkbox
                       checked={s.done}
                       label={`Виконано: ${s.title}`}
@@ -285,33 +470,73 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
           </section>
 
           {!showMore ? (
-            <button
-              type="button"
-              onClick={() => setShowMore(true)}
-              className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink"
-            >
-              Дата початку, ціль, теги, нотатки
-            </button>
+            phone ? (
+              <FormGroup className="mt-5">
+                <button
+                  type="button"
+                  onClick={() => setShowMore(true)}
+                  className="flex min-h-[52px] w-full items-center gap-3 px-4 text-left text-[15px] text-muted transition-colors hover:bg-line/30"
+                >
+                  <Plus className="h-[19px] w-[19px] shrink-0" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate">Дата початку, ціль, теги, нотатки</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-subtle" aria-hidden />
+                </button>
+              </FormGroup>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowMore(true)}
+                className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-muted hover:text-ink"
+              >
+                Дата початку, ціль, теги, нотатки
+              </button>
+            )
           ) : (
-            <div className="mt-6 space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field label="Дата початку" error={visible.startDate} hint="Коли плануєте почати роботу.">
-                  {(p) => <DatePicker {...p} value={draft.startDate} weekStartsOn={settings.weekStartsOn} onChange={(startDate) => patch({ startDate })} />}
-                </Field>
-                {goals.length > 0 && (
-                  <Field label="Ціль">
-                    {(p) => (
-                      <Select
-                        {...p}
-                        icon={<Target />}
-                        value={draft.goalId ?? ''}
-                        onChange={(v) => patch({ goalId: v || undefined })}
-                        options={[{ value: '', label: 'Без цілі' }, ...goals.map((g) => ({ value: g.id, label: g.title }))]}
-                      />
-                    )}
+            <div className={cn('space-y-4', phone ? 'mt-5' : 'mt-6')}>
+              {phone ? (
+                <FormGroup label="Ще">
+                  <DatePicker
+                    variant="row"
+                    label="Дата початку"
+                    aria-label="Дата початку"
+                    aria-invalid={visible.startDate ? true : undefined}
+                    placeholder="Без дати"
+                    value={draft.startDate}
+                    weekStartsOn={settings.weekStartsOn}
+                    onChange={(startDate) => patch({ startDate })}
+                  />
+                  {goals.length > 0 && (
+                    <Select
+                      variant="row"
+                      label="Ціль"
+                      aria-label="Ціль"
+                      icon={<Target />}
+                      value={draft.goalId ?? ''}
+                      onChange={(v) => patch({ goalId: v || undefined })}
+                      options={[{ value: '', label: 'Без цілі' }, ...goals.map((g) => ({ value: g.id, label: g.title }))]}
+                    />
+                  )}
+                </FormGroup>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <Field label="Дата початку" error={visible.startDate} hint="Коли плануєте почати роботу.">
+                    {(p) => <DatePicker {...p} value={draft.startDate} weekStartsOn={settings.weekStartsOn} onChange={(startDate) => patch({ startDate })} />}
                   </Field>
-                )}
-              </div>
+                  {goals.length > 0 && (
+                    <Field label="Ціль">
+                      {(p) => (
+                        <Select
+                          {...p}
+                          icon={<Target />}
+                          value={draft.goalId ?? ''}
+                          onChange={(v) => patch({ goalId: v || undefined })}
+                          options={[{ value: '', label: 'Без цілі' }, ...goals.map((g) => ({ value: g.id, label: g.title }))]}
+                        />
+                      )}
+                    </Field>
+                  )}
+                </div>
+              )}
               <Field label="Теги">{(p) => <TagInput id={p.id} value={draft.tags} suggestions={allTags} onChange={(tags) => patch({ tags })} />}</Field>
               <Field label="Нотатки">
                 {(p) => (
@@ -333,7 +558,7 @@ export default function TaskFormDialog({ task, defaults, onClose }: { task?: Tas
             </p>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="max-sm:hidden">
             <Button variant="ghost" onClick={() => void requestClose()} disabled={saving}>
               Скасувати
             </Button>

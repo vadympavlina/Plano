@@ -13,6 +13,7 @@ export function MiniCalendar({
   markedDates,
   highlightRange,
   min,
+  large,
   className,
 }: {
   selected: DateKey;
@@ -23,6 +24,8 @@ export function MiniCalendar({
   highlightRange?: { start: DateKey; end: DateKey };
   /** Dates before this are disabled. */
   min?: DateKey;
+  /** Phone sheet: bigger cells and arrows. */
+  large?: boolean;
   className?: string;
 }) {
   const [cursor, setCursor] = useState(selected.slice(0, 7));
@@ -39,22 +42,27 @@ export function MiniCalendar({
   return (
     <div className={cn('select-none', className)}>
       <div className="mb-2 flex items-center justify-between">
-        <p className="pl-1 text-sm font-semibold">{formatDateKey(month, 'LLLL yyyy')}</p>
+        <p className={cn('pl-1 text-sm font-semibold', large && 'text-[17px]')}>{formatDateKey(month, 'LLLL yyyy')}</p>
         <div className="flex">
           <button
             type="button"
-            className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink"
+            className={cn('rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink', large && 'flex h-11 w-11 items-center justify-center rounded-full')}
             aria-label="Попередній місяць"
             onClick={() => shift(-1)}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <button type="button" className="rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink" aria-label="Наступний місяць" onClick={() => shift(1)}>
+          <button
+            type="button"
+            className={cn('rounded-md p-1 text-muted hover:bg-surface-2 hover:text-ink', large && 'flex h-11 w-11 items-center justify-center rounded-full')}
+            aria-label="Наступний місяць"
+            onClick={() => shift(1)}
+          >
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
-      <div className="grid grid-cols-7 text-center text-[12px] font-medium text-subtle">
+      <div className={cn('grid grid-cols-7 text-center text-[12px] font-medium text-subtle', large && 'text-[13px]')}>
         {labels.map((l, i) => (
           <span key={i} className="py-1">
             {l}
@@ -79,6 +87,7 @@ export function MiniCalendar({
               onClick={() => onSelect(d)}
               className={cn(
                 'relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-[12.5px] tabular-nums transition-colors disabled:pointer-events-none disabled:opacity-30',
+                large && 'h-11 w-11 text-[16px]',
                 inMonth ? 'text-ink' : 'text-subtle/70',
                 inRange && !isSel && 'bg-surface-2',
                 isSel ? 'bg-accent font-semibold text-surface' : 'hover:bg-surface-2',
