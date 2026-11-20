@@ -25,9 +25,18 @@ for (const view of ['day', '3days', 'week', 'month']) {
       await page.waitForTimeout(150);
       const last = (await page.getByText('23:00', { exact: true }).first().boundingBox())!;
       expect(last.y + last.height).toBeLessThanOrEqual(nav.y);
+      // …and the grid ends close above the bar, not a big gap away.
+      const gridBottom = await grid.evaluate((el) => {
+        let n = el.parentElement;
+        while (n && n.scrollHeight <= n.clientHeight) n = n.parentElement;
+        return n ? n.getBoundingClientRect().bottom : 0;
+      });
+      expect(nav.y - gridBottom).toBeGreaterThanOrEqual(0);
+      expect(nav.y - gridBottom).toBeLessThanOrEqual(16);
     } else {
       const lastRow = (await page.locator('[data-month-index="35"]').boundingBox())!;
       expect(lastRow.y + lastRow.height).toBeLessThanOrEqual(nav.y + 1);
+      expect(nav.y - (lastRow.y + lastRow.height)).toBeLessThanOrEqual(16);
     }
   });
 }
