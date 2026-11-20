@@ -54,7 +54,7 @@ export function renderMarkdown(src: string): string {
     }
   };
 
-  for (const line of lines) {
+  for (const [lineNo, line] of lines.entries()) {
     if (line.trim().startsWith('```')) {
       if (inCode) {
         html.push(`<pre><code>${escapeHtml(code.join('\n'))}</code></pre>`);
@@ -89,7 +89,7 @@ export function renderMarkdown(src: string): string {
       }
       const checked = task[1].toLowerCase() === 'x';
       html.push(
-        `<li class="task-item"><input type="checkbox" disabled aria-label="${escapeHtml(task[2])}"${checked ? ' checked' : ''}/> <span${checked ? ' style="text-decoration:line-through;opacity:.75"' : ''}>${inline(task[2])}</span></li>`,
+        `<li class="task-item"><input type="checkbox" data-line="${lineNo}" aria-label="${escapeHtml(task[2])}"${checked ? ' checked' : ''}/> <span${checked ? ' style="text-decoration:line-through;opacity:.75"' : ''}>${inline(task[2])}</span></li>`,
       );
     } else if (bullet) {
       closePara();
@@ -138,4 +138,26 @@ export function markdownExcerpt(src: string, max = 140): string {
     .replace(/\s+/g, ' ')
     .trim();
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+/** Flips the checkbox on a line of a note («- [ ] a» ↔ «- [x] a»). Other lines are left as they are. */
+export function toggleTask(src: string, lineNo: number): string {
+  const lines = src.split('\n');
+  const line = lines[lineNo];
+  if (line === undefined) return src;
+  lines[lineNo] = line.replace(/^(\s*[-*]\s+)\[( |x|X)\]/, (_m, head: string, mark: string) => `${head}[${mark === ' ' ? 'x' : ' '}]`);
+  return lines.join('\n');
+}
+
+/** What Enter does at the end of a list line: the next item's prefix, or '' when the item is empty (the list ends). */
+export function continueList(line: string): { prefix: string; empty: boolean } | null {
+  const task = /^(\s*)([-*])\s+\[( |x|X)\]\s?(.*)$/.exec(line);
+  if (task) return { prefix: `${task[1]}${task[2]} [ ] `, empty: task[4].trim() === '' };
+  const bullet = /^(\s*)([-*])\s+(.*)$/.exec(line);
+  if (bullet) return { prefix: `${bullet[1]}${bullet[2]} `, empty: bullet[3].trim() === '' };
+  const ordered = /^(\s*)(\d+)([.)])\s+(.*)$/.exec(line);
+  if (ordered) return { prefix: `${ordered[1]}${Number(ordered[2]) + 1}${ordered[3]} `, empty: ordered[4].trim() === '' };
+  const quote = /^(\s*>\s?)(.*)$/.exec(line);
+  if (quote) return { prefix: quote[1], empty: quote[2].trim() === '' };
+  return null;
 }

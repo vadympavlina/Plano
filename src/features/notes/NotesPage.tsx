@@ -11,7 +11,19 @@ import { markdownExcerpt } from '@/lib/utils/markdown';
 import { Progressive } from '@/components/common/Progressive';
 import { LineIcon } from '@/components/common/CategoryMark';
 import { cn } from '@/lib/utils/cn';
+import type { Note } from '@/types';
 import { NoteEditor } from './NoteEditor';
+
+const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+/** The heading a note falls under: today, this week, this month or earlier. */
+function group(iso: string) {
+  const days = Math.round((startOfDay(new Date()) - startOfDay(new Date(iso))) / 86_400_000);
+  if (days <= 0) return 'Сьогодні';
+  if (days === 1) return 'Вчора';
+  if (days < 7) return 'Цього тижня';
+  if (days < 31) return 'Цього місяця';
+  return 'Раніше';
+}
 
 function timeAgo(iso: string) {
   const d = new Date(iso);
@@ -43,9 +55,20 @@ export default function NotesPage() {
   const current = noteId ? notes.find((n) => n.id === noteId) : undefined;
 
   const pinned = list.filter((n) => n.isPinned);
-  const rest = list.filter((n) => !n.isPinned);
+  // The rest, split by when they were touched, with a heading before each group.
+  const rest = useMemo(() => {
+    const out: (Note | { heading: string })[] = [];
+    let last = '';
+    for (const n of list.filter((x) => !x.isPinned)) {
+      const g = group(n.updatedAt);
+      if (g !== last) out.push({ heading: g });
+      last = g;
+      out.push(n);
+    }
+    return out;
+  }, [list]);
 
-  const item = (n: (typeof list)[number]) => {
+  const item = (n: Note) => {
     const project = projectById(n.projectId);
     const dot = n.cover ? colorOf(n.cover) : project ? colorOf(project.color) : undefined;
     const active = n.id === noteId;
@@ -56,21 +79,37 @@ export default function NotesPage() {
         aria-current={active ? 'page' : undefined}
         className={cn(
           'flex items-start gap-2.5 rounded-xl px-3 py-2.5 transition-colors [contain-intrinsic-size:auto_58px] [content-visibility:auto]',
+          // Phones: each note is a small card, with a longer preview and its tags.
+          'max-lg:mb-2 max-lg:gap-3 max-lg:rounded-2xl max-lg:border max-lg:border-line/70 max-lg:bg-surface max-lg:p-3.5 max-lg:[contain-intrinsic-size:auto_104px] max-lg:active:bg-surface-2',
           active ? 'bg-surface-2' : 'hover:bg-surface-2/60',
         )}
       >
         {n.icon ? (
-          <span className="mt-0.5 flex w-4 shrink-0 justify-center" style={{ color: dot }}>
-            <LineIcon icon={n.icon} fallback={FileText} className="h-4 w-4" />
+          <span
+            className="mt-0.5 flex w-4 shrink-0 justify-center max-lg:h-9 max-lg:w-9 max-lg:items-center max-lg:rounded-xl max-lg:bg-surface-2"
+            style={{ color: dot }}
+          >
+            <LineIcon icon={n.icon} fallback={FileText} className="h-4 w-4 max-lg:h-[18px] max-lg:w-[18px]" />
           </span>
         ) : (
-          <span className="mt-[7px] flex w-4 shrink-0 justify-center">
+          <span className="mt-[7px] flex w-4 shrink-0 justify-center max-lg:mt-0 max-lg:h-9 max-lg:w-9 max-lg:items-center max-lg:rounded-xl max-lg:bg-surface-2">
             <span className="h-2 w-2 rounded-full" style={{ backgroundColor: dot ?? 'rgb(var(--line))' }} />
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[13.5px] font-semibold">{n.title || 'Без назви'}</span>
-          <span className="block truncate text-[12px] text-muted">{markdownExcerpt(n.content, 90) || 'Порожня нотатка'}</span>
+          <span className="block truncate text-[13.5px] font-semibold max-lg:text-[15.5px]">{n.title || 'Без назви'}</span>
+          <span className="block truncate text-[12px] text-muted max-lg:line-clamp-2 max-lg:whitespace-normal max-lg:text-[13.5px] max-lg:leading-snug">
+            {markdownExcerpt(n.content, 160) || 'Порожня нотатка'}
+          </span>
+          {n.tags.length > 0 && (
+            <span className="mt-1.5 flex gap-1.5 overflow-hidden lg:hidden">
+              {n.tags.slice(0, 3).map((t) => (
+                <span key={t} className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[11.5px] text-muted">
+                  #{t}
+                </span>
+              ))}
+            </span>
+          )}
         </span>
         <span className="shrink-0 pt-0.5 text-[12px] text-subtle">{timeAgo(n.updatedAt)}</span>
       </Link>
@@ -126,10 +165,17 @@ export default function NotesPage() {
             <>
               {pinned.length > 0 && <p className="px-3 pb-1 pt-2 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Закріплені</p>}
               {pinned.map(item)}
-              {rest.length > 0 && pinned.length > 0 && (
-                <p className="px-3 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Останні</p>
-              )}
-              <Progressive items={rest}>{item}</Progressive>
+              <Progressive items={rest} estimate={104}>
+                {(n) =>
+                  'heading' in n ? (
+                    <p key={n.heading} className="px-3 pb-1 pt-3 text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">
+                      {n.heading}
+                    </p>
+                  ) : (
+                    item(n)
+                  )
+                }
+              </Progressive>
             </>
           )}
         </div>

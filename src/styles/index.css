@@ -167,7 +167,7 @@
     @apply list-none -ml-5 flex items-start gap-2.5;
   }
   & .task-item input {
-    @apply mt-[3px] h-4 w-4 shrink-0 appearance-none rounded-[5px] border-[1.5px] border-subtle/70 bg-surface;
+    @apply mt-[3px] h-[18px] w-[18px] shrink-0 cursor-pointer appearance-none rounded-[6px] border-[1.5px] border-subtle/70 bg-surface max-sm:mt-[2px] max-sm:h-[22px] max-sm:w-[22px];
   }
   & .task-item input:checked {
     @apply border-accent bg-accent;

@@ -77,3 +77,22 @@ test('the sheet lifts itself above the on-screen keyboard', async ({ page }) => 
   const viewport = page.viewportSize()!;
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 290);
 });
+
+test('notes: Enter continues a list, an empty item ends it, and a tick in the text works without editing', async ({ page }) => {
+  await open(page, '/notes');
+  await page.getByRole('link', { name: /Вікенд у Лісабоні/ }).click();
+  // A checklist in the reading view: one tap ticks it, and the note stays in reading mode.
+  await page.getByRole('checkbox', { name: 'Квитки' }).click();
+  await expect(page.getByRole('checkbox', { name: 'Квитки' })).toBeChecked();
+  await expect(page.getByLabel('Текст нотатки')).toHaveCount(0);
+  // Editing: Enter after an item starts the next one; Enter on the empty item ends the list.
+  await page.locator('.prose-note span', { hasText: 'Готель' }).click();
+  const box = page.getByLabel('Текст нотатки');
+  await box.press('Control+End');
+  await box.press('Enter');
+  await box.pressSequentially('Таксі\nМетро');
+  await expect(box).toHaveValue(/- \[ \] Таксі\n- \[ \] Метро$/);
+  await box.press('Enter');
+  await box.press('Enter');
+  await expect(box).toHaveValue(/- \[ \] Метро\n$/);
+});

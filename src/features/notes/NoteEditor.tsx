@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -15,10 +15,12 @@ import {
   Link2,
   List,
   ListChecks,
+  ListOrdered,
   Loader2,
   Pencil,
   Pin,
   PinOff,
+  Quote,
   Smile,
   Target,
   Trash2,
@@ -36,7 +38,7 @@ import { toast } from '@/components/ui/toast';
 import { useActions } from '@/hooks/useActions';
 import { useCollections } from '@/hooks/useCollections';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { renderMarkdown } from '@/lib/utils/markdown';
+import { continueList, renderMarkdown, toggleTask } from '@/lib/utils/markdown';
 import { cn } from '@/lib/utils/cn';
 import type { Note } from '@/types';
 
@@ -147,6 +149,34 @@ export function NoteEditor({ note }: { note: Note }) {
     });
   };
 
+  // The text box grows with the text (the page scrolls, not the box).
+  useLayoutEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [content, preview]);
+
+  // Enter at the end of a list line starts the next item; on an empty item it ends the list.
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+    const el = e.currentTarget;
+    if (el.selectionStart !== el.selectionEnd) return;
+    const pos = el.selectionStart;
+    const lineStart = content.lastIndexOf('\n', pos - 1) + 1;
+    const lineEnd = content.indexOf('\n', pos);
+    if ((lineEnd === -1 ? content.length : lineEnd) !== pos) return; // only at the end of the line
+    const cont = continueList(content.slice(lineStart, pos));
+    if (!cont) return;
+    e.preventDefault();
+    const next = cont.empty ? content.slice(0, lineStart) + content.slice(pos) : content.slice(0, pos) + '\n' + cont.prefix + content.slice(pos);
+    const caret = cont.empty ? lineStart : pos + 1 + cont.prefix.length;
+    // Put the text and the caret in the box right now (React then finds the same value and leaves the caret alone).
+    el.value = next;
+    el.setSelectionRange(caret, caret);
+    change({ content: next });
+  };
+
   const html = useMemo(() => (preview ? renderMarkdown(content) : ''), [preview, content]);
 
   const remove = async () => {
@@ -173,6 +203,8 @@ export function NoteEditor({ note }: { note: Note }) {
     { icon: Heading2, label: 'Заголовок', run: () => linePrefix('## ') },
     { icon: List, label: 'Список', run: () => linePrefix('- ') },
     { icon: ListChecks, label: 'Чекліст', run: () => linePrefix('- [ ] ') },
+    { icon: ListOrdered, label: 'Нумерований список', run: () => linePrefix('1. ') },
+    { icon: Quote, label: 'Цитата', run: () => linePrefix('> ') },
     { icon: Link2, label: 'Посилання', run: () => wrap('[', '](https://)', 'посилання') },
   ];
 
@@ -272,17 +304,17 @@ export function NoteEditor({ note }: { note: Note }) {
           <div className="mx-auto w-full max-w-[760px] px-5 pb-16 sm:px-10">
             {/* Cover + icon */}
             {coverColor ? (
-              <div className="group relative mb-2 mt-2 h-24 rounded-2xl sm:h-28" style={{ background: coverGradient(note.cover!) }}>
+              <div className="group relative mb-2 mt-2 h-20 rounded-2xl sm:h-28" style={{ background: coverGradient(note.cover!) }}>
                 <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
                   <CoverPicker value={note.cover} onChange={(cover) => void actions.notes.update(note.id, { cover }).catch(() => undefined)} />
                 </div>
               </div>
             ) : null}
-            <div className={cn('group/head flex items-end gap-2', coverColor && note.icon ? '-mt-12 ml-3' : 'mt-4')}>
+            <div className={cn('group/head flex items-end gap-2', coverColor && note.icon ? '-mt-9 ml-3 sm:-mt-12' : 'mt-3 sm:mt-4')}>
               {note.icon && (
                 <LineIconPicker label="Іконка нотатки" value={note.icon} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
                   <span
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface shadow-pop ring-1 ring-line/60"
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl sm:h-16 sm:w-16 bg-surface shadow-pop ring-1 ring-line/60"
                     style={{ color: coverColor }}
                   >
                     <LineIcon icon={note.icon} fallback={FileText} className="h-7 w-7" />
@@ -319,13 +351,13 @@ export function NoteEditor({ note }: { note: Note }) {
               placeholder="Без назви"
               aria-label="Назва нотатки"
               maxLength={300}
-              className="mt-3 w-full bg-transparent text-[28px] font-bold leading-tight tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[34px]"
+              className="mt-2 w-full bg-transparent text-[28px] font-bold leading-tight tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[34px]"
             />
 
             {/* Properties */}
-            <div className="mt-4 grid grid-cols-[110px_minmax(0,1fr)] items-center gap-x-3 gap-y-2 text-[13.5px]">
+            <div className="mt-2 grid grid-cols-[22px_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 text-[13.5px] sm:mt-4 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-x-3 sm:gap-y-2">
               <span className="flex items-center gap-2 text-muted">
-                <FolderKanban className="h-4 w-4" /> Проєкт
+                <FolderKanban className="h-4 w-4" /> <span className="max-sm:sr-only">Проєкт</span>
               </span>
               <div>
                 <Select
@@ -338,7 +370,7 @@ export function NoteEditor({ note }: { note: Note }) {
                 />
               </div>
               <span className="flex items-center gap-2 self-start pt-2 text-muted">
-                <Hash className="h-4 w-4" /> Теги
+                <Hash className="h-4 w-4" /> <span className="max-sm:sr-only">Теги</span>
               </span>
               <TagInput
                 className="min-w-0"
@@ -350,14 +382,14 @@ export function NoteEditor({ note }: { note: Note }) {
                 placeholder="Додати тег…"
               />
               <span className="flex items-center gap-2 text-muted">
-                <Clock className="h-4 w-4" /> Змінено
+                <Clock className="h-4 w-4" /> <span className="max-sm:sr-only">Змінено</span>
               </span>
               <span className="text-muted">
                 {updatedAt.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })},{' '}
                 {updatedAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
-            <div className="my-6 h-px bg-line" />
+            <div className="my-3 h-px bg-line sm:my-6" />
 
             {!preview && (
               <div className="sticky top-0 z-10 -mx-2 mb-3 flex flex-wrap items-center gap-0.5 rounded-xl bg-surface/95 px-1 py-1 backdrop-blur-sm">
@@ -370,20 +402,21 @@ export function NoteEditor({ note }: { note: Note }) {
             )}
 
             {preview ? (
+              // The keyboard has the «Редагувати» button above; a role here would nest the checklist's checkboxes in a control.
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
               <div
                 ref={previewRef}
-                role="button"
-                tabIndex={0}
-                title="Натисніть, щоб редагувати"
+                // Tapping the text starts editing; for the keyboard there is the «Редагувати» button above.
                 onClick={(e) => {
-                  if ((e.target as HTMLElement).closest('a')) return;
-                  startEditing();
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    startEditing();
+                  const target = e.target as HTMLElement;
+                  if (target.closest('a')) return;
+                  // A tick in a checklist is a tick, not a reason to start editing.
+                  if (target instanceof HTMLInputElement && target.type === 'checkbox') {
+                    const line = Number(target.dataset.line);
+                    if (Number.isInteger(line)) change({ content: toggleTask(content, line) });
+                    return;
                   }
+                  startEditing();
                 }}
                 className={cn('prose-note min-h-[40vh] cursor-text text-[15.5px] leading-[1.75] text-ink outline-hidden', !content && 'text-muted')}
                 dangerouslySetInnerHTML={{ __html: html || '<p>Поки порожньо. Натисніть, щоб почати писати.</p>' }}
@@ -393,10 +426,11 @@ export function NoteEditor({ note }: { note: Note }) {
                 ref={textRef}
                 value={content}
                 onChange={(e) => change({ content: e.target.value })}
+                onKeyDown={onKeyDown}
                 onBlur={() => save.flush()}
                 placeholder={'Почніть писати…\n\nПрацює Markdown: **жирний**, *курсив*, ## заголовок, - список, - [ ] чекліст'}
                 aria-label="Текст нотатки"
-                className="min-h-[55vh] w-full resize-none bg-transparent text-[15.5px] leading-[1.75] text-ink outline-hidden placeholder:text-subtle"
+                className="min-h-[45vh] w-full resize-none overflow-hidden bg-transparent text-[15.5px] leading-[1.75] text-ink outline-hidden placeholder:text-subtle"
               />
             )}
           </div>
