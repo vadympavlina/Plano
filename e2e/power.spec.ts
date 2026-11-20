@@ -85,82 +85,21 @@ test('without a queue the page asks for one, and the choice sticks', async ({ pa
   await expect(page.getByText('Рівнеобленерго · черга 1.1')).toBeVisible();
 });
 
-const bandHeight = async (page: Page) => Math.round((await page.locator('[data-power-band]').first().boundingBox())!.height);
-
-test('calendar, «виділені години» (the default): a plate on the time scale with the hours inside', async ({ page }) => {
+test('calendar: the start and the end of the outage are marked on the time scale, with one line of words', async ({ page }) => {
   await start(page, '2.1');
   await open(page, '/calendar?view=day');
   await expect(page.locator('[data-power-band]')).toHaveCount(1);
-  expect(await bandHeight(page)).toBeGreaterThan(4 * 68 - 6);
-  // The start and the end are written on the plate, and the note says it in words.
-  const plate = (await page.locator('[data-power-band]').boundingBox())!;
-  for (const t of ['10:00', '14:00']) {
-    const label = page.locator('span.text-surface', { hasText: t });
-    await expect(label).toHaveCount(1);
-    const box = (await label.boundingBox())!;
-    expect(box.y).toBeGreaterThanOrEqual(plate.y);
-    expect(box.y + box.height).toBeLessThanOrEqual(plate.y + plate.height + 1);
-  }
+  const band = page.locator('[data-power-band]');
+  await expect(band.getByText('10:00')).toBeVisible();
+  await expect(band.getByText('14:00')).toBeVisible();
+  // The marks sit on the scale, not over the events: the grid is clear of them.
+  const scale = (await page.locator('[data-power-band]').getByText('10:00').boundingBox())!;
+  const column = (await page.locator('[data-day-index="0"]').boundingBox())!;
+  expect(scale.x + scale.width).toBeLessThanOrEqual(column.x + 2);
   await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
 });
 
-test('calendar, «смужка біля годин»: a thin rail and the same words', async ({ page }) => {
-  await start(page, '2.1', { powerStyle: 'rail' });
-  await open(page, '/calendar?view=day');
-  await expect(page.locator('[data-power-band]')).toHaveCount(1);
-  expect((await page.locator('[data-power-band]').boundingBox())!.width).toBeLessThan(8);
-  await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
-});
-
-test('calendar, the new looks: amber plate, marks on the scale, a bar of the day', async ({ page }) => {
-  await start(page, '2.1', { powerStyle: 'amber' });
-  await open(page, '/calendar?view=day');
-  await expect(page.locator('[data-power-band]')).toHaveCount(1);
-  expect(await bandHeight(page)).toBeGreaterThan(4 * 68 - 6);
-  await page.evaluate(() => {
-    const raw = JSON.parse(localStorage.getItem('plano:preview:data') ?? '{}');
-    raw.users.preview.settings.powerStyle = 'marks';
-    localStorage.setItem('plano:preview:data', JSON.stringify(raw));
-  });
-  await page.reload();
-  await open(page, '/calendar?view=day');
-  await expect(page.locator('[data-power-band]')).toHaveCount(1);
-  await expect(page.locator('[data-power-band]').getByText('10:00')).toBeVisible();
-  await expect(page.locator('[data-power-band]').getByText('14:00')).toBeVisible();
-});
-
-test('calendar, «смужка доби»: the whole day as a bar above the grid, the grid untouched', async ({ page }) => {
-  await start(page, '2.1', { powerStyle: 'minibar' });
-  await open(page, '/calendar?view=day');
-  const bar = page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ });
-  await expect(bar).toBeVisible();
-  await expect(bar.getByRole('img', { name: 'Без світла: 10:00–14:00' })).toBeVisible();
-  await expect(page.locator('[data-power-band]')).toHaveCount(0);
-});
-
-test('calendar, «у рядку весь день»: a dark mark with the hours, nothing in the grid', async ({ page }) => {
-  await start(page, '2.1', { powerStyle: 'chip' });
-  await open(page, '/calendar?view=day');
-  await expect(page.getByRole('link', { name: 'Без світла: 10:00–14:00' })).toBeVisible();
-  await expect(page.locator('[data-power-band]')).toHaveCount(0);
-});
-
-test('calendar, «лінії початку й кінця»: two dashed lines with labels', async ({ page }) => {
-  await start(page, '2.1', { powerStyle: 'lines' });
-  await open(page, '/calendar?view=day');
-  await expect(page.locator('[data-power-band]')).toHaveCount(1);
-  await expect(page.getByText('вимкнуть')).toBeVisible();
-  await expect(page.getByText('увімкнуть')).toBeVisible();
-});
-
-test('calendar, «легке тло»: a faint band behind the blocks', async ({ page }) => {
-  await start(page, '2.1', { powerStyle: 'tint' });
-  await open(page, '/calendar?view=day');
-  await expect(page.locator('.power-tint')).toHaveCount(1);
-  expect(await bandHeight(page)).toBe(4 * 68);
-});
-
-test('the week view carries each style too', async ({ page }) => {
+test('the week view marks the day with a thin rail', async ({ page }) => {
   await start(page, '2.1');
   await open(page, '/calendar?view=week');
   await expect(page.locator('[data-power-band]')).toHaveCount(1);

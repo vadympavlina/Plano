@@ -39,7 +39,7 @@ import { CategoryChip } from '@/components/common/CategoryMark';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 import { usePowerSetup } from '@/features/power/usePower';
 import { dayBands } from '@/features/power/logic';
-import { PowerDayBar, PowerDayNote } from '@/features/power/PowerDayNote';
+import { PowerDayNote } from '@/features/power/PowerDayNote';
 
 const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'День' },
@@ -107,30 +107,16 @@ export default function CalendarPage() {
   const range = rangeFor(view, anchor, settings.weekStartsOn);
   const occurrences = useMemo(() => expandEvents(events, range.start, range.end), [events, range.start, range.end]);
   const days = useMemo(() => (view === 'month' ? [] : eachDateKey(range.start, range.end)), [view, range.start, range.end]);
-  // «Світло»: the hours without power, shaded in the grid.
-  const { on: powerOn, calendar: powerCalendar, style: powerStyle, queue: powerQueue, data: powerData } = usePowerSetup();
+  // «Світло»: the hours without power, marked on the time scale.
+  const { on: powerOn, calendar: powerCalendar, queue: powerQueue, data: powerData } = usePowerSetup();
   // The day view says in words which hours have no power.
   const powerNote = useMemo(
-    () =>
-      view === 'day' &&
-      powerOn &&
-      powerCalendar &&
-      (powerStyle === 'hours' ||
-        powerStyle === 'amber' ||
-        powerStyle === 'marks' ||
-        powerStyle === 'minibar' ||
-        powerStyle === 'rail' ||
-        powerStyle === 'tint') &&
-      powerQueue &&
-      powerData
-        ? dayBands(powerData, powerQueue, anchor)
-        : [],
-    [view, powerOn, powerCalendar, powerStyle, powerQueue, powerData, anchor],
+    () => (view === 'day' && powerOn && powerCalendar && powerQueue && powerData ? dayBands(powerData, powerQueue, anchor) : []),
+    [view, powerOn, powerCalendar, powerQueue, powerData, anchor],
   );
   const outage = useMemo(
-    () =>
-      powerOn && powerCalendar && powerQueue && powerData ? { bands: (day: DateKey) => dayBands(powerData, powerQueue, day), style: powerStyle } : undefined,
-    [powerOn, powerCalendar, powerQueue, powerData, powerStyle],
+    () => (powerOn && powerCalendar && powerQueue && powerData ? { bands: (day: DateKey) => dayBands(powerData, powerQueue, day) } : undefined),
+    [powerOn, powerCalendar, powerQueue, powerData],
   );
   const upcoming = useMemo(() => upcomingOccurrences(events, now, today, 30, 5), [events, now, today]);
 
@@ -293,21 +279,11 @@ export default function CalendarPage() {
         </div>
       </header>
 
-      {powerNote.length > 0 &&
-        (powerStyle === 'minibar' ? (
-          <PowerDayBar
-            spans={powerNote}
-            queue={powerQueue}
-            nowMinutes={anchor === today ? now.getHours() * 60 + now.getMinutes() : undefined}
-            className="mx-1 mb-2"
-          />
-        ) : (
-          <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />
-        ))}
+      {powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
       <div
         className={cn(
           'min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1',
-          powerNote.length === 0 ? 'h-[calc(100dvh-250px)]' : powerStyle === 'minibar' ? 'h-[calc(100dvh-326px)]' : 'h-[calc(100dvh-292px)]',
+          powerNote.length === 0 ? 'h-[calc(100dvh-250px)]' : 'h-[calc(100dvh-292px)]',
         )}
       >
         {view === 'month' ? (

@@ -27,10 +27,7 @@ import {
   type Selection,
 } from './timeGridModel';
 import { Marker } from './TimeGridParts';
-import { spanLabel, type Span } from '@/features/power/logic';
-import { Link } from 'react-router-dom';
-import { Zap } from 'lucide-react';
-import type { PowerStyle } from '@/types';
+import type { Span } from '@/features/power/logic';
 import { GridHeader } from './TimeGridHeader';
 import { useBlockTouchScroll, usePageSwipe, useScrollToUsefulHour } from './useTimeGridScroll';
 
@@ -49,7 +46,7 @@ export function TimeGrid({
   /** Horizontal swipe on touch screens: -1 = previous, 1 = next. */
   onSwipe?: (dir: 1 | -1) => void;
   /** Hours without power on a day («Світло» is on) and how to show them. */
-  outage?: { bands: (day: DateKey) => Span[]; style: PowerStyle };
+  outage?: { bands: (day: DateKey) => Span[] };
 }) {
   const { categoryById, events } = useCollections();
   const { data } = useData();
@@ -452,10 +449,8 @@ export function TimeGrid({
   };
 
   // Gutter (single day): the hours without power, as a plate on the time scale or a thin rail beside it.
-  const gutterStyles = ['hours', 'amber', 'marks', 'rail'];
-  const hourBands = outage && single && gutterStyles.includes(outage.style) ? outage.bands(days[0]) : [];
-  const plate = outage?.style === 'hours' || outage?.style === 'amber';
-  const plateText = outage?.style === 'amber' ? 'text-[#1b1b1d]' : 'text-surface';
+  // Hours without power (single day): marked on the time scale, from where the power goes to where it returns.
+  const hourBands = outage && single ? outage.bands(days[0]) : [];
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const gridCols = { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` };
   const showsToday = days.includes(today);
@@ -498,24 +493,6 @@ export function TimeGrid({
                   selected || dropDay === index ? 'bg-primary/10' : 'hover:bg-surface-2/50',
                 )}
               >
-                {outage?.style === 'chip' && outage.bands(c.day).length > 0 && (
-                  <Link
-                    to="/power"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    aria-label={`Без світла: ${outage.bands(c.day).map(spanLabel).join(', ')}`}
-                    className="flex w-full items-center gap-1.5 rounded-xl bg-ink px-2.5 py-1.5 text-[12px] font-semibold text-surface"
-                  >
-                    <Zap className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    <span className="truncate tabular-nums">
-                      {single
-                        ? `Без світла ${outage.bands(c.day).map(spanLabel).join(', ')}`
-                        : outage
-                            .bands(c.day)
-                            .map((b) => `${Math.floor(b.start / 60)}–${Math.round(b.end / 60)}`)
-                            .join(', ')}
-                    </span>
-                  </Link>
-                )}
                 {c.allDay.map((o) => {
                   const color = eventColor(o.event, categoryById);
                   return (
@@ -573,60 +550,31 @@ export function TimeGrid({
             {hourBands.map((b) => {
               const top = (b.start / 60) * HOUR_PX;
               const height = ((b.end - b.start) / 60) * HOUR_PX;
-              if (outage?.style === 'marks')
-                return (
-                  <span key={b.start} data-power-band>
-                    <span className="absolute right-1 w-0 border-r-2 border-dashed border-ink/40" style={{ top, height }} />
-                    <span
-                      className="absolute right-1 z-[2] -translate-y-1/2 rounded-full bg-ink px-1.5 py-px text-[11px] font-bold tabular-nums text-surface"
-                      style={{ top }}
-                    >
-                      {fmt(b.start)}
-                    </span>
-                    <span
-                      className="absolute right-1 z-[2] -translate-y-1/2 rounded-full bg-success px-1.5 py-px text-[11px] font-bold tabular-nums text-on-fill"
-                      style={{ top: top + height }}
-                    >
-                      {b.end >= 1440 ? '24:00' : fmt(b.end)}
-                    </span>
-                  </span>
-                );
               return (
-                <span
-                  key={b.start}
-                  data-power-band
-                  className={cn(
-                    'absolute',
-                    plate ? 'inset-x-1 rounded-xl' : 'right-0 w-1 rounded-full',
-                    outage?.style === 'amber' ? 'bg-warning' : plate ? 'bg-ink' : 'bg-ink/55',
-                  )}
-                  style={{ top: top + 1, height: height - 2 }}
-                />
+                <span key={b.start} data-power-band>
+                  <span className="absolute right-1 w-0 border-r-2 border-dashed border-ink/40" style={{ top, height }} />
+                  <span
+                    className="absolute right-1 z-[2] -translate-y-1/2 rounded-full bg-ink px-1.5 py-px text-[11px] font-bold tabular-nums text-surface"
+                    style={{ top }}
+                  >
+                    {fmt(b.start)}
+                  </span>
+                  <span
+                    className="absolute right-1 z-[2] -translate-y-1/2 rounded-full bg-success px-1.5 py-px text-[11px] font-bold tabular-nums text-on-fill"
+                    style={{ top: top + height }}
+                  >
+                    {b.end >= 1440 ? '24:00' : fmt(b.end)}
+                  </span>
+                </span>
               );
             })}
-            {plate &&
-              hourBands.flatMap((b) => {
-                const tall = ((b.end - b.start) / 60) * HOUR_PX >= 56;
-                const edge = cn('absolute right-2 text-[11.5px] font-semibold tabular-nums', plateText);
-                return [
-                  <span key={`s${b.start}`} className={edge} style={{ top: (b.start / 60) * HOUR_PX + 6 }}>
-                    {fmt(b.start)}
-                  </span>,
-                  tall ? (
-                    <span key={`e${b.start}`} className={edge} style={{ top: (b.end / 60) * HOUR_PX - 22 }}>
-                      {b.end >= 1440 ? '24:00' : fmt(b.end)}
-                    </span>
-                  ) : null,
-                ];
-              })}
             {HOURS.slice(1).map((h) => (
               <span
                 key={h}
                 className={cn(
                   'absolute right-2 -translate-y-1/2 text-[11.5px] tabular-nums text-subtle',
                   showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible',
-                  plate && hourBands.some((b) => h * 60 > b.start && h * 60 < b.end) && cn('font-medium', plateText),
-                  (plate || outage?.style === 'marks') && hourBands.some((b) => h * 60 === b.start || h * 60 === b.end) && 'invisible',
+                  hourBands.some((b) => h * 60 === b.start || h * 60 === b.end) && 'invisible',
                 )}
                 style={{ top: h * HOUR_PX }}
               >
@@ -674,51 +622,19 @@ export function TimeGrid({
                     {fmt(dropAt.min)} – {fmt(dropAt.min + 60)}
                   </div>
                 )}
-                {/* hours without power */}
-                {outage &&
-                  outage.style !== 'chip' &&
-                  outage.style !== 'minibar' &&
-                  outage.bands(c.day).map((b) => {
-                    const top = (b.start / 60) * HOUR_PX;
-                    const height = ((b.end - b.start) / 60) * HOUR_PX;
-                    if (outage.style === 'rail' || outage.style === 'hours' || outage.style === 'amber' || outage.style === 'marks')
-                      return single ? null : (
-                        <div
-                          key={b.start}
-                          aria-hidden
-                          data-power-band
-                          className="pointer-events-none absolute left-0 z-0 w-[3px] rounded-full bg-ink/55"
-                          style={{ top, height }}
-                        />
-                      );
-                    if (outage.style === 'tint')
-                      return (
-                        <div
-                          key={b.start}
-                          aria-hidden
-                          data-power-band
-                          className="power-tint pointer-events-none absolute inset-x-0 z-0"
-                          style={{ top, height }}
-                        />
-                      );
-                    // lines: a dashed line where the power goes and another where it should return
-                    return (
-                      <div key={b.start} aria-hidden data-power-band className="pointer-events-none absolute inset-x-0 z-[4]" style={{ top, height }}>
-                        <div className="power-line absolute inset-x-0 top-0" />
-                        <div className="power-line absolute inset-x-0 bottom-0" />
-                        {single && (
-                          <>
-                            <span className="absolute left-1.5 top-1 inline-flex items-center gap-1 rounded-full bg-surface px-1.5 py-px text-[10.5px] font-semibold text-ink/70 shadow-soft">
-                              <Zap className="h-2.5 w-2.5" /> вимкнуть
-                            </span>
-                            <span className="absolute bottom-1 left-1.5 inline-flex items-center gap-1 rounded-full bg-surface px-1.5 py-px text-[10.5px] font-semibold text-ink/70 shadow-soft">
-                              <Zap className="h-2.5 w-2.5" /> увімкнуть
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
+                {/* hours without power (several days: a thin rail on the day's edge) */}
+                {!single &&
+                  outage
+                    ?.bands(c.day)
+                    .map((b) => (
+                      <div
+                        key={b.start}
+                        aria-hidden
+                        data-power-band
+                        className="pointer-events-none absolute left-0 z-0 w-[3px] rounded-full bg-ink/55"
+                        style={{ top: (b.start / 60) * HOUR_PX, height: ((b.end - b.start) / 60) * HOUR_PX }}
+                      />
+                    ))}
                 {/* hover hint */}
                 {hover && hover.dayIndex === dayIndex && !sel && !drag && (
                   <div

@@ -178,14 +178,6 @@
   }
 }
 
-/* Hours without power in the calendar. The tint is barely there; rails and lines carry the meaning. */
-.power-tint {
-  background-color: color-mix(in srgb, rgb(var(--ink)) 4.5%, transparent);
-}
-.power-line {
-  border-top: 1.5px dashed color-mix(in srgb, rgb(var(--ink)) 45%, transparent);
-}
-
 @utility task-item {
   .prose-note & {
     @apply list-none -ml-5 flex items-start gap-2.5;

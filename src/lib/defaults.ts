@@ -17,7 +17,6 @@ export const DEFAULT_SETTINGS: Settings = {
   powerQueue: '',
   powerLeadMin: 30,
   powerCalendar: true,
-  powerStyle: 'hours',
 };
 
 const STARTER: [string, string, ColorKey, string][] = [

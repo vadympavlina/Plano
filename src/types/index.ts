@@ -235,12 +235,7 @@ export interface Settings {
   powerLeadMin: number;
   /** Show the outage hours in the calendar. */
   powerCalendar: boolean;
-  /** How they look there: the hours on the time scale highlighted, a rail by the hours, a line in the all-day row, lines at the start and the end, a faint tint. */
-  powerStyle: PowerStyle;
 }
-
-export const POWER_STYLES = ['hours', 'amber', 'marks', 'minibar', 'rail', 'chip', 'lines', 'tint'] as const;
-export type PowerStyle = (typeof POWER_STYLES)[number];
 
 export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number];
