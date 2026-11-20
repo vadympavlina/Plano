@@ -451,6 +451,8 @@ export function TimeGrid({
     setSel(null);
   };
 
+  // Gutter (single day): the hours without power, as a plate on the time scale or a thin rail beside it.
+  const hourBands = outage && single && (outage.style === 'hours' || outage.style === 'rail') ? outage.bands(days[0]) : [];
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const gridCols = { gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` };
   const showsToday = days.includes(today);
@@ -565,24 +567,37 @@ export function TimeGrid({
                 {fmt(nowMinutes)}
               </span>
             )}
-            {outage?.style === 'rail' &&
-              single &&
-              outage
-                .bands(days[0])
-                .map((b) => (
-                  <span
-                    key={b.start}
-                    data-power-band
-                    className="absolute right-0 w-1 rounded-full bg-ink/55"
-                    style={{ top: (b.start / 60) * HOUR_PX + 1, height: ((b.end - b.start) / 60) * HOUR_PX - 2 }}
-                  />
-                ))}
+            {hourBands.map((b) => (
+              <span
+                key={b.start}
+                data-power-band
+                className={cn('absolute rounded-xl bg-ink', outage?.style === 'hours' ? 'inset-x-1' : 'right-0 w-1 rounded-full bg-ink/55')}
+                style={{ top: (b.start / 60) * HOUR_PX + 1, height: ((b.end - b.start) / 60) * HOUR_PX - 2 }}
+              />
+            ))}
+            {outage?.style === 'hours' &&
+              hourBands.flatMap((b) => {
+                const tall = ((b.end - b.start) / 60) * HOUR_PX >= 56;
+                const edge = 'absolute right-2 text-[11.5px] font-semibold tabular-nums text-surface';
+                return [
+                  <span key={`s${b.start}`} className={edge} style={{ top: (b.start / 60) * HOUR_PX + 6 }}>
+                    {fmt(b.start)}
+                  </span>,
+                  tall ? (
+                    <span key={`e${b.start}`} className={edge} style={{ top: (b.end / 60) * HOUR_PX - 22 }}>
+                      {b.end >= 1440 ? '24:00' : fmt(b.end)}
+                    </span>
+                  ) : null,
+                ];
+              })}
             {HOURS.slice(1).map((h) => (
               <span
                 key={h}
                 className={cn(
                   'absolute right-2 -translate-y-1/2 text-[11.5px] tabular-nums text-subtle',
                   showsToday && Math.abs(h * 60 - nowMinutes) < 14 && 'invisible',
+                  outage?.style === 'hours' && hourBands.some((b) => h * 60 > b.start && h * 60 < b.end) && 'font-medium text-surface',
+                  outage?.style === 'hours' && hourBands.some((b) => h * 60 === b.start || h * 60 === b.end) && 'invisible',
                 )}
                 style={{ top: h * HOUR_PX }}
               >
@@ -636,7 +651,7 @@ export function TimeGrid({
                   outage.bands(c.day).map((b) => {
                     const top = (b.start / 60) * HOUR_PX;
                     const height = ((b.end - b.start) / 60) * HOUR_PX;
-                    if (outage.style === 'rail')
+                    if (outage.style === 'rail' || outage.style === 'hours')
                       return single ? null : (
                         <div
                           key={b.start}

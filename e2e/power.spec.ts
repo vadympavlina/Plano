@@ -87,11 +87,28 @@ test('without a queue the page asks for one, and the choice sticks', async ({ pa
 
 const bandHeight = async (page: Page) => Math.round((await page.locator('[data-power-band]').first().boundingBox())!.height);
 
-test('calendar, «смужка біля годин» (the default): a rail on the hour scale and one line of words', async ({ page }) => {
+test('calendar, «виділені години» (the default): a plate on the time scale with the hours inside', async ({ page }) => {
   await start(page, '2.1');
   await open(page, '/calendar?view=day');
   await expect(page.locator('[data-power-band]')).toHaveCount(1);
   expect(await bandHeight(page)).toBeGreaterThan(4 * 68 - 6);
+  // The start and the end are written on the plate, and the note says it in words.
+  const plate = (await page.locator('[data-power-band]').boundingBox())!;
+  for (const t of ['10:00', '14:00']) {
+    const label = page.locator('span.text-surface', { hasText: t });
+    await expect(label).toHaveCount(1);
+    const box = (await label.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(plate.y);
+    expect(box.y + box.height).toBeLessThanOrEqual(plate.y + plate.height + 1);
+  }
+  await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
+});
+
+test('calendar, «смужка біля годин»: a thin rail and the same words', async ({ page }) => {
+  await start(page, '2.1', { powerStyle: 'rail' });
+  await open(page, '/calendar?view=day');
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  expect((await page.locator('[data-power-band]').boundingBox())!.width).toBeLessThan(8);
   await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
 });
 

@@ -112,7 +112,7 @@ export default function CalendarPage() {
   // The day view says in words which hours have no power.
   const powerNote = useMemo(
     () =>
-      view === 'day' && powerOn && powerCalendar && (powerStyle === 'rail' || powerStyle === 'tint') && powerQueue && powerData
+      view === 'day' && powerOn && powerCalendar && (powerStyle === 'hours' || powerStyle === 'rail' || powerStyle === 'tint') && powerQueue && powerData
         ? dayBands(powerData, powerQueue, anchor)
         : [],
     [view, powerOn, powerCalendar, powerStyle, powerQueue, powerData, anchor],

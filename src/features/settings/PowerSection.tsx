@@ -84,9 +84,10 @@ export function PowerSection() {
               <Select
                 aria-label="Як показувати відключення в календарі"
                 className="w-[220px]"
-                value={s.powerStyle ?? 'rail'}
+                value={s.powerStyle ?? 'hours'}
                 onChange={(powerStyle) => set({ powerStyle })}
                 options={[
+                  { value: 'hours', label: 'Виділені години', hint: 'Години без світла темною плашкою на шкалі часу' },
                   { value: 'rail', label: 'Смужка біля годин', hint: 'Тонка смужка на шкалі часу' },
                   { value: 'chip', label: 'У рядку «весь день»', hint: 'Темна позначка з годинами' },
                   { value: 'lines', label: 'Лінії початку й кінця', hint: 'Пунктир, де вимкнуть і увімкнуть' },

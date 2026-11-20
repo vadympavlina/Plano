@@ -208,7 +208,7 @@ export const settingsSchema = z.object({
     .catch(''),
   powerLeadMin: z.number().int().min(0).max(180).catch(30),
   powerCalendar: z.boolean().catch(true),
-  powerStyle: z.enum(POWER_STYLES).catch('rail'),
+  powerStyle: z.enum(POWER_STYLES).catch('hours'),
 });
 
 export const profileSchema = z.object({

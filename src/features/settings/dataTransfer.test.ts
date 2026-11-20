@@ -22,7 +22,7 @@ const data: UserData = {
     powerQueue: '',
     powerLeadMin: 30,
     powerCalendar: true,
-    powerStyle: 'rail',
+    powerStyle: 'hours',
   },
   categories: { work: { id: 'work', name: 'Work', color: 'blue', order: 0, createdAt: T0, updatedAt: T0 } },
   tasks: {

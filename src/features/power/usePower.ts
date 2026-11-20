@@ -82,5 +82,5 @@ export function usePower(enabled = true) {
 export function usePowerSetup() {
   const s = useSettings();
   const power = usePower(s.powerOn);
-  return { on: s.powerOn, queue: s.powerQueue, calendar: s.powerCalendar, style: s.powerStyle ?? 'rail', lead: s.powerLeadMin, ...power };
+  return { on: s.powerOn, queue: s.powerQueue, calendar: s.powerCalendar, style: s.powerStyle ?? 'hours', lead: s.powerLeadMin, ...power };
 }
