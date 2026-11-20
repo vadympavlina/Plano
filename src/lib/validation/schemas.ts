@@ -201,6 +201,13 @@ export const settingsSchema = z.object({
     .regex(/^(\d\d:\d\d)?$/)
     .catch('21:00'),
   accent: z.enum(ACCENT_COLORS).catch('coral'),
+  powerOn: z.boolean().catch(false),
+  powerQueue: z
+    .string()
+    .regex(/^(\d{1,2}\.\d{1,2})?$/)
+    .catch(''),
+  powerLeadMin: z.number().int().min(0).max(180).catch(30),
+  powerCalendar: z.boolean().catch(true),
 });
 
 export const profileSchema = z.object({

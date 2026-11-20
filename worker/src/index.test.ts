@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { b64url, openGrant, sealGrant, verifyFirebaseToken, type Jwk } from './crypto';
 import { handle, type Env } from './index';
@@ -105,5 +106,25 @@ describe('handle', () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'invalid_grant' });
     expect((await handle(req('/token', { grant: 'v1.zz.zz' }), env, verify)).status).toBe(400);
+  });
+
+  it('serves the power-outage schedule as JSON to the app, with no sign-in', async () => {
+    const page = readFileSync(new URL('./fixtures/roe-disconnections.html', import.meta.url), 'utf8');
+    const f = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(page));
+    const res = await handle(new Request('https://w.test/outages', { headers: { Origin: 'https://app.test' } }), env, verify);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Access-Control-Allow-Origin')).toBe('https://app.test');
+    const body = (await res.json()) as { queues: string[]; days: { date: string }[] };
+    expect(body.queues).toHaveLength(12);
+    expect(body.days.map((d) => d.date)).toEqual(['2026-11-20', '2026-11-21']);
+    expect(String(f.mock.calls[0][0])).toBe('https://www.roe.vsei.ua/disconnections/');
+    // Other sites may not read it.
+    expect((await handle(new Request('https://w.test/outages', { headers: { Origin: 'https://evil.test' } }), env, verify)).status).toBe(403);
+  });
+
+  it('says so when the company site cannot be read', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 503 }));
+    const res = await handle(new Request('https://w.test/outages', { headers: { Origin: 'https://app.test' } }), env, verify);
+    expect(res.status).toBe(502);
   });
 });

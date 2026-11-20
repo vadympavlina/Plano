@@ -11,6 +11,7 @@
  */
 import { AuthError, checkSnoozeToken, openGrant, sealGrant, verifyFirebaseToken } from './crypto';
 import { vapidPublicKey } from './push';
+import { loadOutages } from './outages';
 export { Reminders } from './reminders';
 
 export interface Env {
@@ -65,6 +66,16 @@ export async function handle(req: Request, env: Env, verify = verifyFirebaseToke
   const path = new URL(req.url).pathname;
   if (req.method === 'GET' && path === '/push/key') {
     return env.VAPID_JWK ? json(200, { key: vapidPublicKey(JSON.parse(env.VAPID_JWK)) }) : json(503, { error: 'not_configured' });
+  }
+  // The power-outage schedule is public data: no sign-in, a short browser cache.
+  if (req.method === 'GET' && path === '/outages') {
+    try {
+      return new Response(JSON.stringify(await loadOutages()), {
+        headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=120' },
+      });
+    } catch {
+      return json(502, { error: 'unavailable' });
+    }
   }
   if (req.method !== 'POST') return json(405, { error: 'method' });
   if (!env.GOOGLE_CLIENT_SECRET) return json(500, { error: 'not_configured' });

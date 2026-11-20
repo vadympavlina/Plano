@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useData } from '@/app/providers/DataProvider';
-import { syncReminders } from '@/services/push';
+import { syncPower, syncReminders } from '@/services/push';
 import { backupIfDue } from '@/services/backup';
 import { usesTokenServer } from '@/services/integrations/google/server';
 import { buildReminders } from './schedule';
@@ -12,6 +12,8 @@ export function ReminderSync() {
     if (!ready || backendKind !== 'firebase' || !usesTokenServer) return;
     const run = () => {
       void syncReminders(buildReminders(data, new Date())).catch(() => undefined);
+      const st = data.settings;
+      void syncPower(st.powerOn && st.powerQueue && st.powerLeadMin > 0 ? { queue: st.powerQueue, leadMin: st.powerLeadMin } : null).catch(() => undefined);
       backupIfDue(data);
     };
     const t = setTimeout(run, 3000);

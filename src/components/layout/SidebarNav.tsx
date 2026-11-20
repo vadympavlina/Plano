@@ -10,7 +10,8 @@ import { isOpen } from '@/features/tasks/logic';
 import { openInList } from '@/features/tasks/lists';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
-import { NAV_ITEMS } from './nav';
+import { useSettings } from '@/hooks/useCollections';
+import { NAV_ITEMS, POWER_ITEM } from './nav';
 
 const GROUPS_KEY = 'plano:sidebar-groups';
 const readClosed = (): string[] => {
@@ -82,6 +83,7 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
   };
   const { tasks, habits } = useCollections();
   const { data } = useData();
+  const powerOn = useSettings().powerOn;
   const today = useToday();
   // Small counters next to the sections that have something waiting.
   const counts = useMemo<Record<string, number>>(
@@ -98,7 +100,7 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
   return (
     <nav aria-label="Розділи" className="scrollbar-thin flex-1 touch-pan-y overflow-y-auto pb-3">
       <div className="space-y-0.5">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+        {[...NAV_ITEMS, ...(powerOn ? [POWER_ITEM] : [])].map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate} className={({ isActive }) => itemCls(isActive, !!big)}>
             {({ isActive }) => (
               <>

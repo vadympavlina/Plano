@@ -178,6 +178,12 @@
   }
 }
 
+/** Hours without power in the calendar: a soft diagonal hatch behind the blocks. */
+.power-band {
+  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, rgb(var(--ink)) 7%, transparent) 0 7px, transparent 7px 14px);
+  border-block: 1px solid color-mix(in srgb, rgb(var(--ink)) 14%, transparent);
+}
+
 @utility task-item {
   .prose-note & {
     @apply list-none -ml-5 flex items-start gap-2.5;

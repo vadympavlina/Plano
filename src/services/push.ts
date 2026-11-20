@@ -39,3 +39,16 @@ export async function syncReminders(items: Reminder[]) {
   await call('/push/schedule', { items });
   localStorage.setItem(SENT, sig);
 }
+
+const POWER_SENT = 'plano:push-power';
+/**
+ * Tells the server which power queue to watch (it then warns before outages and when a day's hours are published or
+ * change, even when Plano is closed); null stops it. Sent only when it differs from what was sent last.
+ */
+export async function syncPower(config: { queue: string; leadMin: number } | null) {
+  const sig = JSON.stringify(config);
+  const last = localStorage.getItem(POWER_SENT);
+  if (last === sig || (config === null && last === null)) return;
+  await call('/push/power', config ?? { queue: null });
+  localStorage.setItem(POWER_SENT, sig);
+}

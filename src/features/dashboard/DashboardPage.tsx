@@ -20,6 +20,7 @@ import { compareOccurrences, expandEvents, upcomingOccurrences } from '@/feature
 import { eventColor } from '@/features/calendar/items';
 import { currentStreak, habitValue, isBad, isDone, isScheduled, nextHabitValue, slipLimit } from '@/features/habits/logic';
 import { QuickAdd } from './QuickAdd';
+import { PowerStrip } from '@/features/power/PowerStrip';
 
 const STRIP_DAYS = 21;
 
@@ -407,6 +408,8 @@ export default function DashboardPage() {
           </span>
         )}
       </div>
+
+      {isToday && <PowerStrip className="mx-2 mt-2.5" />}
 
       {/* Habits first, right under the numbers: one tap marks one. «Кидаю» tiles have their own look and an undo. */}
       {(goodHabits.length > 0 || badHabits.length > 0) && (

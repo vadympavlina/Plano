@@ -18,6 +18,10 @@ const data: UserData = {
     digestAt: '08:00',
     eveningAt: '21:00',
     accent: 'blue',
+    powerOn: false,
+    powerQueue: '',
+    powerLeadMin: 30,
+    powerCalendar: true,
   },
   categories: { work: { id: 'work', name: 'Work', color: 'blue', order: 0, createdAt: T0, updatedAt: T0 } },
   tasks: {

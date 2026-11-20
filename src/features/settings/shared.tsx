@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { Bell, Database, Palette, Plug, SlidersHorizontal, Tags, UserRound } from 'lucide-react';
+import { Bell, Database, Palette, Plug, SlidersHorizontal, Tags, UserRound, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 export const SECTIONS = [
@@ -8,6 +8,7 @@ export const SECTIONS = [
   { id: 'preferences', label: 'Параметри', icon: SlidersHorizontal },
   { id: 'categories', label: 'Категорії', icon: Tags },
   { id: 'notifications', label: 'Сповіщення', icon: Bell },
+  { id: 'power', label: 'Світло', icon: Zap },
   { id: 'integrations', label: 'Інтеграції', icon: Plug },
   { id: 'data', label: 'Дані', icon: Database },
 ] as const;
@@ -31,9 +32,9 @@ export const norm = (v: string) => v.toLocaleLowerCase('uk-UA');
 export const matches = (q: string, ...parts: (string | undefined)[]) => !q || parts.some((p) => p && norm(p).includes(q));
 
 /** One setting: label (and hint) on the left, control on the right. Hidden when it doesn't match the search. */
-export function Row({ label, hint, keywords, children }: { label: ReactNode; hint?: string; keywords?: string; children?: ReactNode }) {
+export function Row({ label, hint, keywords, children }: { label: ReactNode; hint?: ReactNode; keywords?: string; children?: ReactNode }) {
   const q = useContext(SearchCtx);
-  if (!matches(q, typeof label === 'string' ? label : '', hint, keywords)) return null;
+  if (!matches(q, typeof label === 'string' ? label : '', typeof hint === 'string' ? hint : undefined, keywords)) return null;
   return (
     <div className="flex flex-col gap-2.5 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <div className="min-w-0">

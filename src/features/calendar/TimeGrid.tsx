@@ -27,6 +27,8 @@ import {
   type Selection,
 } from './timeGridModel';
 import { Marker } from './TimeGridParts';
+import type { Span } from '@/features/power/logic';
+import { Zap } from 'lucide-react';
 import { GridHeader } from './TimeGridHeader';
 import { useBlockTouchScroll, usePageSwipe, useScrollToUsefulHour } from './useTimeGridScroll';
 
@@ -36,6 +38,7 @@ export function TimeGrid({
   tasks,
   onSelectDay,
   onSwipe,
+  outage,
 }: {
   days: DateKey[];
   occurrences: EventOccurrence[];
@@ -43,6 +46,8 @@ export function TimeGrid({
   onSelectDay: (d: DateKey) => void;
   /** Horizontal swipe on touch screens: -1 = previous, 1 = next. */
   onSwipe?: (dir: 1 | -1) => void;
+  /** Hours without power on a day («Світло» is on): shaded behind the blocks. */
+  outage?: (day: DateKey) => Span[];
 }) {
   const { categoryById, events } = useCollections();
   const { data } = useData();
@@ -593,6 +598,21 @@ export function TimeGrid({
                     {fmt(dropAt.min)} – {fmt(dropAt.min + 60)}
                   </div>
                 )}
+                {/* hours without power */}
+                {outage?.(c.day).map((b) => (
+                  <div
+                    key={b.start}
+                    aria-hidden
+                    className="power-band pointer-events-none absolute inset-x-0 z-0"
+                    style={{ top: (b.start / 60) * HOUR_PX, height: ((b.end - b.start) / 60) * HOUR_PX }}
+                  >
+                    {single || b.end - b.start >= 90 ? (
+                      <span className="flex items-center gap-1 px-1.5 pt-1 text-[11px] font-semibold text-ink/55">
+                        <Zap className="h-3 w-3" /> {single ? 'без світла' : ''}
+                      </span>
+                    ) : null}
+                  </div>
+                ))}
                 {/* hover hint */}
                 {hover && hover.dayIndex === dayIndex && !sel && !drag && (
                   <div

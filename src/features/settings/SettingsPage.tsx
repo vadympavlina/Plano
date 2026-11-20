@@ -9,6 +9,7 @@ import { PreferencesSection } from './PreferencesSection';
 import { AppearanceSection } from './AppearanceSection';
 import { CategoriesSection } from './CategoriesSection';
 import { NotificationsSection } from './NotificationsSection';
+import { PowerSection } from './PowerSection';
 import { IntegrationsSection } from './IntegrationsSection';
 import { DataSection } from './DataSection';
 
@@ -106,6 +107,7 @@ export default function SettingsPage() {
             <PreferencesSection />
             <CategoriesSection />
             <NotificationsSection />
+            <PowerSection />
             <IntegrationsSection />
             <DataSection />
           </SearchCtx.Provider>

@@ -37,6 +37,8 @@ import { MonthView } from './MonthView';
 import { MiniCalendar } from '@/components/ui/calendar';
 import { CategoryChip } from '@/components/common/CategoryMark';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
+import { usePowerSetup } from '@/features/power/usePower';
+import { dayBands } from '@/features/power/logic';
 
 const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'День' },
@@ -104,6 +106,12 @@ export default function CalendarPage() {
   const range = rangeFor(view, anchor, settings.weekStartsOn);
   const occurrences = useMemo(() => expandEvents(events, range.start, range.end), [events, range.start, range.end]);
   const days = useMemo(() => (view === 'month' ? [] : eachDateKey(range.start, range.end)), [view, range.start, range.end]);
+  // «Світло»: the hours without power, shaded in the grid.
+  const { on: powerOn, calendar: powerCalendar, queue: powerQueue, data: powerData } = usePowerSetup();
+  const outage = useMemo(
+    () => (powerOn && powerCalendar && powerQueue && powerData ? (day: DateKey) => dayBands(powerData, powerQueue, day) : undefined),
+    [powerOn, powerCalendar, powerQueue, powerData],
+  );
   const upcoming = useMemo(() => upcomingOccurrences(events, now, today, 30, 5), [events, now, today]);
 
   const monthMarks = useMemo(() => {
@@ -269,7 +277,7 @@ export default function CalendarPage() {
         {view === 'month' ? (
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
         ) : (
-          <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} />
+          <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} outage={outage} />
         )}
       </div>
 

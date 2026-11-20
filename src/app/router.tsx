@@ -13,6 +13,7 @@ const HabitsPage = lazy(() => import('@/features/habits/HabitsPage'));
 const HabitPage = lazy(() => import('@/features/habits/HabitPage'));
 const GoalsPage = lazy(() => import('@/features/goals/GoalsPage'));
 const NotesPage = lazy(() => import('@/features/notes/NotesPage'));
+const PowerPage = lazy(() => import('@/features/power/PowerPage'));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage'));
 
 const page = (el: React.ReactNode) => <Suspense fallback={<PageSkeleton />}>{el}</Suspense>;
@@ -33,6 +34,7 @@ const routes: RouteObject[] = [
       { path: 'goals', element: page(<GoalsPage />) },
       { path: 'notes', element: page(<NotesPage />) },
       { path: 'notes/:noteId', element: page(<NotesPage />) },
+      { path: 'power', element: page(<PowerPage />) },
       { path: 'settings', element: page(<SettingsPage />) },
       { path: 'settings/:section', element: page(<SettingsPage />) },
       { path: '*', element: <Navigate to="/" replace /> },

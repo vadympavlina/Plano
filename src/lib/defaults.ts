@@ -13,6 +13,10 @@ export const DEFAULT_SETTINGS: Settings = {
   digestAt: '08:00',
   eveningAt: '21:00',
   accent: 'coral',
+  powerOn: false,
+  powerQueue: '',
+  powerLeadMin: 30,
+  powerCalendar: true,
 };
 
 const STARTER: [string, string, ColorKey, string][] = [

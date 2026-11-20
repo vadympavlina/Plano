@@ -227,6 +227,14 @@ export interface Settings {
   eveningAt: string;
   /** Accent colour of buttons, links, today markers. */
   accent: AccentColor;
+  /** «Світло»: the power-outage schedule of Рівнеобленерго (a page, a line on Today, bands in the calendar). */
+  powerOn: boolean;
+  /** The household's queue, «4.1»; '' = not chosen yet. */
+  powerQueue: string;
+  /** Push warning this many minutes before an outage (and when its hours are published or change); 0 = no pushes. */
+  powerLeadMin: number;
+  /** Shade the outage hours in the calendar. */
+  powerCalendar: boolean;
 }
 
 export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;

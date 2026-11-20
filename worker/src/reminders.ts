@@ -6,6 +6,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { sendPush, type PushSubscriptionJSON } from './push';
 import { openGrant, sealGrant, snoozeToken } from './crypto';
+import { describeDay, kyivParts, loadOutages, powerReminders, ukDate, type Outages } from './outages';
 import type { Env } from './index';
 
 export interface Reminder {
@@ -34,6 +35,15 @@ interface ErrorReport {
 }
 const SUBJECT = 'https://plano.edvault.online';
 const SNOOZE_MS = 10 * 60_000;
+/** How often a user's Durable Object looks at the power-outage schedule while «Світло» is on. */
+const POWER_POLL_MS = 20 * 60_000;
+const POWER_RETRY_MS = 10 * 60_000;
+
+/** What the app asked for: the queue to watch and how many minutes ahead to warn. */
+export interface PowerConfig {
+  queue: string;
+  leadMin: number;
+}
 const clean = (i: Reminder): Reminder => ({
   at: i.at,
   title: i.title.slice(0, 120),
@@ -53,6 +63,8 @@ export class Reminders extends DurableObject<Env> {
       data?: string;
       at?: string;
       errors?: ErrorReport[];
+      queue?: string | null;
+      leadMin?: number;
     };
     const uid = req.headers.get('x-uid') ?? '';
     const secret = this.env.GOOGLE_CLIENT_SECRET;
@@ -96,7 +108,7 @@ export class Reminders extends DurableObject<Env> {
     }
     const subs = (await this.ctx.storage.get<PushSubscriptionJSON[]>('subs')) ?? [];
     // Who and where, so pushes sent later by the alarm can carry a «Відкласти» token.
-    if (pathname === '/push/subscribe' || pathname === '/push/schedule') {
+    if (pathname === '/push/subscribe' || pathname === '/push/schedule' || pathname === '/push/power') {
       await this.ctx.storage.put('uid', uid);
       const api = req.headers.get('x-api');
       if (api) await this.ctx.storage.put('api', api);
@@ -124,6 +136,22 @@ export class Reminders extends DurableObject<Env> {
       const snoozed = [...((await this.ctx.storage.get<Reminder[]>('snoozed')) ?? []), clean({ ...body.item, at: Date.now() + SNOOZE_MS })].slice(-20);
       await this.ctx.storage.put('snoozed', snoozed);
       await this.arm();
+    } else if (pathname === '/push/power') {
+      const queue = typeof body.queue === 'string' && /^\d{1,2}\.\d{1,2}$/.test(body.queue) ? body.queue : null;
+      if (queue) {
+        const before = await this.ctx.storage.get<PowerConfig>('power');
+        const leadMin = Math.min(180, Math.max(0, Math.round(Number(body.leadMin ?? 30))));
+        await this.ctx.storage.put('power', { queue, leadMin } satisfies PowerConfig);
+        // Another queue starts from a clean slate: what was known and sent belonged to the old one.
+        if (before?.queue !== queue) {
+          await this.ctx.storage.put('powerKnown', null);
+          await this.ctx.storage.put('powerSent', []);
+        }
+        await this.pollPower(true);
+      } else {
+        for (const k of ['power', 'powerItems', 'powerKnown', 'powerSent', 'powerNext']) await this.ctx.storage.delete([k]);
+      }
+      await this.arm();
     } else if (pathname === '/push/test') {
       await this.deliver([{ at: Date.now(), title: 'Plano', body: 'Сповіщення працюють 👌', tag: 'test' }]);
     } else return Response.json({ error: 'not_found' }, { status: 404 });
@@ -131,22 +159,76 @@ export class Reminders extends DurableObject<Env> {
   }
 
   private async arm() {
-    const all = [...((await this.ctx.storage.get<Reminder[]>('items')) ?? []), ...((await this.ctx.storage.get<Reminder[]>('snoozed')) ?? [])];
-    const next = Math.min(...all.map((i) => i.at));
-    await (all.length ? this.ctx.storage.setAlarm(next) : this.ctx.storage.deleteAlarm());
+    const all = [
+      ...((await this.ctx.storage.get<Reminder[]>('items')) ?? []),
+      ...((await this.ctx.storage.get<Reminder[]>('snoozed')) ?? []),
+      ...((await this.ctx.storage.get<Reminder[]>('powerItems')) ?? []),
+    ];
+    const times = all.map((i) => i.at);
+    // While «Світло» is on the object also wakes up now and then to look at the schedule.
+    if (await this.ctx.storage.get<PowerConfig>('power')) times.push((await this.ctx.storage.get<number>('powerNext')) ?? Date.now() + POWER_POLL_MS);
+    await (times.length ? this.ctx.storage.setAlarm(Math.min(...times)) : this.ctx.storage.deleteAlarm());
   }
 
   async alarm() {
+    await this.pollPower();
     const now = Date.now() + 30_000;
-    for (const key of ['items', 'snoozed']) {
+    for (const key of ['items', 'snoozed', 'powerItems']) {
       const items = (await this.ctx.storage.get<Reminder[]>(key)) ?? [];
-      await this.deliver(items.filter((i) => i.at <= now));
+      const due = items.filter((i) => i.at <= now);
+      await this.deliver(due);
+      // A power warning is remembered by its tag, so the next look at the schedule does not repeat it.
+      if (key === 'powerItems' && due.length) {
+        const sent = (await this.ctx.storage.get<string[]>('powerSent')) ?? [];
+        await this.ctx.storage.put('powerSent', [...sent, ...due.flatMap((i) => (i.tag ? [i.tag] : []))].slice(-100));
+      }
       await this.ctx.storage.put(
         key,
         items.filter((i) => i.at > now),
       );
     }
     await this.arm();
+  }
+
+  /**
+   * Looks at the power-outage schedule (at most every 20 minutes): plans a warning before each coming outage of the
+   * queue and tells about a day's hours that were published or changed since the last look.
+   */
+  private async pollPower(force = false) {
+    const cfg = await this.ctx.storage.get<PowerConfig>('power');
+    if (!cfg) return;
+    const now = Date.now();
+    if (!force && now < ((await this.ctx.storage.get<number>('powerNext')) ?? 0)) return;
+    let data: Outages;
+    try {
+      data = await loadOutages();
+    } catch {
+      await this.ctx.storage.put('powerNext', now + POWER_RETRY_MS);
+      return;
+    }
+    const known = (await this.ctx.storage.get<Record<string, string> | null>('powerKnown')) ?? null;
+    const sent = (await this.ctx.storage.get<string[]>('powerSent')) ?? [];
+    const today = kyivParts(now).date;
+    const seen: Record<string, string> = {};
+    const news: Reminder[] = [];
+    for (const d of data.days) {
+      const hours = d.date < today ? null : describeDay(data, cfg.queue, d.date);
+      if (hours === null) continue;
+      seen[d.date] = hours;
+      // The very first look only learns the schedule; later ones tell what is new or different.
+      if (known && known[d.date] !== hours)
+        news.push({
+          at: now,
+          title: known[d.date] === undefined ? `⚡ Графік на ${ukDate(d.date)}` : `⚡ Графік на ${ukDate(d.date)} змінено`,
+          body: `Черга ${cfg.queue}: ${hours}`,
+          url: '#/power',
+          tag: `pwnews:${d.date}:${hours}`,
+        });
+    }
+    await this.ctx.storage.put('powerKnown', seen);
+    await this.ctx.storage.put('powerItems', cfg.leadMin > 0 ? powerReminders(data, cfg.queue, cfg.leadMin, now, sent) : []);
+    await this.ctx.storage.put('powerNext', now + POWER_POLL_MS);
+    if (news.length) await this.deliver(news);
   }
 
   private async deliver(items: Reminder[]) {

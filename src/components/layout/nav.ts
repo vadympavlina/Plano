@@ -1,4 +1,4 @@
-import { CalendarClock, CalendarDays, Heart, NotebookPen, Settings, SquareCheck, Sun, Target, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CalendarDays, Heart, NotebookPen, Settings, SquareCheck, Sun, Target, Zap, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -16,11 +16,14 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/goals', label: 'Цілі', icon: Target },
 ];
 
+/** Shown when «Світло» is on in the settings. */
+export const POWER_ITEM: NavItem = { to: '/power', label: 'Світло', icon: Zap };
+
 export const SETTINGS_ITEM: NavItem = { to: '/settings', label: 'Налаштування', icon: Settings };
 
 export function titleForPath(pathname: string): string {
   if (pathname === '/') return 'Сьогодні';
   if (pathname.startsWith('/projects')) return 'Проєкти';
-  const item = [...NAV_ITEMS, SETTINGS_ITEM].find((i) => i.to !== '/' && pathname.startsWith(i.to));
+  const item = [...NAV_ITEMS, POWER_ITEM, SETTINGS_ITEM].find((i) => i.to !== '/' && pathname.startsWith(i.to));
   return item?.label ?? 'Plano';
 }
