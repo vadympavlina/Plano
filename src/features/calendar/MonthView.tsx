@@ -1,4 +1,4 @@
-import { useMemo, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
@@ -13,6 +13,7 @@ import { TASK_DRAG, TaskTick, startTaskDrag } from './TaskTick';
 import type { DateKey, Task } from '@/types';
 import { occurrencesOnDay, type EventOccurrence } from './logic';
 import { eventColor } from './items';
+import { usePageSwipe } from './useTimeGridScroll';
 
 const MAX_ITEMS = 3;
 
@@ -21,11 +22,14 @@ export function MonthView({
   occurrences,
   tasks,
   onSelectDay,
+  onSwipe,
 }: {
   anchor: DateKey;
   occurrences: EventOccurrence[];
   tasks: Task[];
   onSelectDay: (d: DateKey) => void;
+  /** Horizontal swipe on touch screens: -1 = previous month, 1 = next. */
+  onSwipe?: (dir: 1 | -1) => void;
 }) {
   const settings = useSettings();
   const { categoryById } = useCollections();
@@ -80,6 +84,11 @@ export function MonthView({
   const lo = range ? Math.min(range.from, range.to) : -1;
   const hi = range ? Math.max(range.from, range.to) : -1;
 
+  const gridRef = useRef<HTMLDivElement>(null);
+  const selecting = useRef(false);
+  selecting.current = range !== null;
+  usePageSwipe(gridRef, selecting, onSwipe);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="grid grid-cols-7 pb-1.5">
@@ -90,6 +99,7 @@ export function MonthView({
         ))}
       </div>
       <div
+        ref={gridRef}
         className="grid min-h-0 flex-1 select-none grid-cols-7 gap-1 sm:gap-1.5"
         onPointerMove={onMove}
         onPointerUp={onUp}

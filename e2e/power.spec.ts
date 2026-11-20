@@ -160,16 +160,11 @@ test('the side menu has «Світло» even before it is turned on', async ({ 
   await expect(page.getByRole('navigation', { name: 'Розділи' }).filter({ visible: true }).getByRole('link', { name: 'Світло' })).toBeVisible();
 });
 
-test('phone calendar header: compact by default, the app bar stays', async ({ page }) => {
+test('phone calendar: one bar with the menu replaces the app bar, days change by a swipe', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a phone layout');
   await start(page, '2.1');
-  await open(page, '/calendar?view=day');
-  await expect(page.getByRole('button', { name: 'Меню акаунта' })).toBeVisible();
-});
-
-test('phone calendar header: the single mode merges the app bar into the calendar bar', async ({ page }) => {
-  await start(page, '2.1', { calendarHeader: 'single' });
   await open(page, '/calendar?view=day');
   await expect(page.getByRole('button', { name: 'Меню акаунта' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Меню', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Назад' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Назад' })).toHaveCount(0);
 });

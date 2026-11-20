@@ -113,21 +113,6 @@ export function PreferencesSection() {
           ]}
         />
       </Row>
-      <Row label="Шапка календаря на телефоні" hint="Менше місця зверху — більше годин на екрані. Спробуйте різні.">
-        <Select
-          aria-label="Шапка календаря на телефоні"
-          className="w-[230px]"
-          value={s.calendarHeader ?? 'compact'}
-          onChange={(calendarHeader) => set({ calendarHeader })}
-          options={[
-            { value: 'classic', label: 'Звичайна', hint: 'Як було' },
-            { value: 'compact', label: 'Компактна', hint: 'Один рядок, години без світла під датою' },
-            { value: 'collapse', label: 'Компактна, згортається', hint: 'Смужка днів ховається, поки гортаєте' },
-            { value: 'single', label: 'Єдина панель', hint: 'Меню й пошук у шапці календаря' },
-            { value: 'single-collapse', label: 'Єдина панель, згортається', hint: 'Найбільше місця для годин' },
-          ]}
-        />
-      </Row>
       <Row label="Часовий пояс" hint="Береться з пристрою, окремо поки не налаштовується.">
         <span className="text-[13px] font-medium text-muted">{deviceTimeZone()}</span>
       </Row>

@@ -43,7 +43,6 @@ import { PowerDayNote } from '@/features/power/PowerDayNote';
 import { spanLabel } from '@/features/power/logic';
 import { useChrome } from '@/components/layout/chrome';
 import { useIsPhone } from '@/components/ui/picker';
-import { headerFlags } from './headerStyle';
 
 const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'День' },
@@ -83,11 +82,8 @@ export default function CalendarPage() {
   const { events, tasks, categoryById } = useCollections();
   const { openEventForm, openEvent, openTask, openQuickAdd } = useUI();
   const { openMenu } = useChrome();
-  // The phone's top: compact (one row), folding away on scroll, or merged with the app bar.
+  // The phone's top: one bar (menu, date, view) that replaces the app bar; the week strip folds away while scrolling.
   const phone = useIsPhone();
-  const flags = headerFlags(settings.calendarHeader);
-  const phoneCompact = phone && flags.compact;
-  const phoneSingle = phone && flags.single;
   const [folded, setFolded] = useState(false);
   useOpenFromQuery(() => openEventForm());
 
@@ -271,9 +267,9 @@ export default function CalendarPage() {
         view === 'month' ? '-mb-10' : '-mb-[calc(110px+max(12px,env(safe-area-inset-bottom)))]',
       )}
     >
-      {phoneCompact ? (
+      {phone ? (
         <header className="flex items-center gap-1.5 px-2 pb-1.5">
-          {phoneSingle && (
+          {
             <button
               type="button"
               onClick={openMenu}
@@ -283,7 +279,7 @@ export default function CalendarPage() {
             >
               <Menu className="h-[18px] w-[18px]" />
             </button>
-          )}
+          }
           <div className="min-w-0 flex-1">
             {datePicker(
               <span className="block">
@@ -312,16 +308,6 @@ export default function CalendarPage() {
               <CalendarCheck className="h-4 w-4" />
             </Button>
           )}
-          {
-            <>
-              <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </>
-          }
         </header>
       ) : (
         <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
@@ -366,7 +352,7 @@ export default function CalendarPage() {
         </header>
       )}
 
-      {!phoneCompact && powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
+      {!phone && powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
       <div
         ref={box}
         // Phones: the grid takes exactly what is left above the tab bar, so the last hour is not under it and the page itself
@@ -380,7 +366,7 @@ export default function CalendarPage() {
         )}
       >
         {view === 'month' ? (
-          <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
+          <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} />
         ) : (
           <>
             <TimeGrid
@@ -390,7 +376,7 @@ export default function CalendarPage() {
               onSelectDay={selectDay}
               onSwipe={step}
               outage={outage}
-              phoneTop={phoneCompact ? { folded: flags.collapse && folded, onFold: flags.collapse ? setFolded : undefined } : undefined}
+              phoneTop={phone ? { folded, onFold: setFolded } : undefined}
             />
             {/* The blocks fade out under the floating tab bar instead of being cut off above it. */}
             <div

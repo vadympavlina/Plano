@@ -16,7 +16,7 @@ async function pickSlot(page: Page, isMobile: boolean, hour = 14) {
     if (n) n.scrollTop = hour * 68 - 160;
   }, hour);
   const box = (await column.boundingBox())!;
-  const y = box.y + hour * 68 + 20;
+  const y = box.y + hour * 68 + 14;
   if (!isMobile) {
     await page.mouse.click(box.x + 40, y);
     return;

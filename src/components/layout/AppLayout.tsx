@@ -12,7 +12,6 @@ import { MobileDrawer } from './MobileDrawer';
 import { PanelSlot } from './RightPanel';
 import { ChromeCtx } from './chrome';
 import { useIsPhone } from '@/components/ui/picker';
-import { headerFlags } from '@/features/calendar/headerStyle';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { UIProvider, useUI } from '@/app/providers/UIProvider';
 import { GoogleSyncProvider } from '@/features/integrations/GoogleSyncProvider';
@@ -47,10 +46,10 @@ function LayoutInner() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const { openSearch, openQuickAdd } = useUI();
-  const { ready, error, backendKind, data: store } = useData();
+  const { ready, error, backendKind } = useData();
   const phone = useIsPhone();
-  // The calendar on a phone can draw its own top bar (with the menu button and search), so the app bar steps aside.
-  const mergedTop = phone && pathname.startsWith('/calendar') && headerFlags(store.settings.calendarHeader).single;
+  // The calendar on a phone can draw its own top bar (with the menu button), so the app bar steps aside.
+  const mergedTop = phone && pathname.startsWith('/calendar');
 
   // The page's side card (see RightPanel): a slot in the layout that pages fill through a portal.
   const [panelEl, setPanelEl] = useState<HTMLElement | null>(null);
