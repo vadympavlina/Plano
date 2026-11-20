@@ -10,8 +10,10 @@ import { isOpen } from '@/features/tasks/logic';
 import { openInList } from '@/features/tasks/lists';
 import { colorOf } from '@/lib/utils/colors';
 import { cn } from '@/lib/utils/cn';
-import { useSettings } from '@/hooks/useCollections';
 import { NAV_ITEMS, POWER_ITEM } from './nav';
+import { usePowerSetup } from '@/features/power/usePower';
+import { statusAt, untilLabel } from '@/features/power/logic';
+import { useNow } from '@/hooks/useNow';
 
 const GROUPS_KEY = 'plano:sidebar-groups';
 const readClosed = (): string[] => {
@@ -83,7 +85,10 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
   };
   const { tasks, habits } = useCollections();
   const { data } = useData();
-  const powerOn = useSettings().powerOn;
+  // «Світло» is always in the menu; once it is set up the row shows the state: a green dot, or when the power returns.
+  const power = usePowerSetup();
+  const nowMs = useNow(60_000).getTime();
+  const powerState = power.on && power.queue && power.data ? statusAt(power.data, power.queue, nowMs) : undefined;
   const today = useToday();
   // Small counters next to the sections that have something waiting.
   const counts = useMemo<Record<string, number>>(
@@ -100,7 +105,7 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
   return (
     <nav aria-label="Розділи" className="scrollbar-thin flex-1 touch-pan-y overflow-y-auto pb-3">
       <div className="space-y-0.5">
-        {[...NAV_ITEMS, ...(powerOn ? [POWER_ITEM] : [])].map(({ to, label, icon: Icon }) => (
+        {[...NAV_ITEMS, POWER_ITEM].map(({ to, label, icon: Icon }) => (
           <NavLink key={to} to={to} end={to === '/'} onClick={onNavigate} className={({ isActive }) => itemCls(isActive, !!big)}>
             {({ isActive }) => (
               <>
@@ -109,6 +114,12 @@ export function SidebarNav({ onNavigate, big }: { onNavigate?: () => void; big?:
                   strokeWidth={isActive ? 2.1 : 1.9}
                 />
                 <span className="min-w-0 flex-1 truncate">{label}</span>
+                {to === '/power' && powerState?.kind === 'off' && (
+                  <span className="rounded-full bg-white px-2 text-[12px] font-semibold tabular-nums text-[#161618]" title="Світла немає">
+                    до {untilLabel(powerState.until, nowMs)}
+                  </span>
+                )}
+                {to === '/power' && powerState?.kind === 'on' && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-success" title="Світло є" />}
                 {!!counts[to] && (
                   <span className={cn('rounded-full px-2 text-[12px] font-semibold tabular-nums', isActive ? 'bg-white/15 text-white' : 'text-sidebar-muted')}>
                     {counts[to]}

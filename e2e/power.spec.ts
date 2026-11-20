@@ -129,3 +129,18 @@ for (const theme of ['light', 'dark'] as const) {
     expect(lines, lines.join('\n')).toEqual([]);
   });
 }
+
+test('the side menu always has «Світло», and shows the state once it is set up', async ({ page, isMobile }) => {
+  await start(page, '2.1');
+  if (isMobile) await page.getByRole('button', { name: 'Меню' }).first().click();
+  const menu = page.getByRole('navigation', { name: 'Розділи' }).filter({ visible: true });
+  await expect(menu.getByRole('link', { name: /Світло/ })).toContainText('до 14:00');
+  await menu.getByRole('link', { name: /Світло/ }).click();
+  await expect(page).toHaveURL(/#\/power/);
+});
+
+test('the side menu has «Світло» even before it is turned on', async ({ page, isMobile }) => {
+  await start(page, '', { powerOn: false });
+  if (isMobile) await page.getByRole('button', { name: 'Меню' }).first().click();
+  await expect(page.getByRole('navigation', { name: 'Розділи' }).filter({ visible: true }).getByRole('link', { name: 'Світло' })).toBeVisible();
+});
