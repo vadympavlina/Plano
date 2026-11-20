@@ -88,6 +88,9 @@ export function PowerSection() {
                 onChange={(powerStyle) => set({ powerStyle })}
                 options={[
                   { value: 'hours', label: 'Виділені години', hint: 'Години без світла темною плашкою на шкалі часу' },
+                  { value: 'amber', label: 'Жовта плашка на шкалі', hint: 'Те саме, але помітніший колір' },
+                  { value: 'marks', label: 'Позначки на шкалі', hint: 'Лише «вимкнуть» і «увімкнуть» біля годин' },
+                  { value: 'minibar', label: 'Смужка доби над сіткою', hint: 'Уся доба одним поглядом, сітку не чіпає' },
                   { value: 'rail', label: 'Смужка біля годин', hint: 'Тонка смужка на шкалі часу' },
                   { value: 'chip', label: 'У рядку «весь день»', hint: 'Темна позначка з годинами' },
                   { value: 'lines', label: 'Лінії початку й кінця', hint: 'Пунктир, де вимкнуть і увімкнуть' },

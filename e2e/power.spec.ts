@@ -112,6 +112,32 @@ test('calendar, «смужка біля годин»: a thin rail and the same w
   await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
 });
 
+test('calendar, the new looks: amber plate, marks on the scale, a bar of the day', async ({ page }) => {
+  await start(page, '2.1', { powerStyle: 'amber' });
+  await open(page, '/calendar?view=day');
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  expect(await bandHeight(page)).toBeGreaterThan(4 * 68 - 6);
+  await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('plano:preview:data') ?? '{}');
+    raw.users.preview.settings.powerStyle = 'marks';
+    localStorage.setItem('plano:preview:data', JSON.stringify(raw));
+  });
+  await page.reload();
+  await open(page, '/calendar?view=day');
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  await expect(page.locator('[data-power-band]').getByText('10:00')).toBeVisible();
+  await expect(page.locator('[data-power-band]').getByText('14:00')).toBeVisible();
+});
+
+test('calendar, «смужка доби»: the whole day as a bar above the grid, the grid untouched', async ({ page }) => {
+  await start(page, '2.1', { powerStyle: 'minibar' });
+  await open(page, '/calendar?view=day');
+  const bar = page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ });
+  await expect(bar).toBeVisible();
+  await expect(bar.getByRole('img', { name: 'Без світла: 10:00–14:00' })).toBeVisible();
+  await expect(page.locator('[data-power-band]')).toHaveCount(0);
+});
+
 test('calendar, «у рядку весь день»: a dark mark with the hours, nothing in the grid', async ({ page }) => {
   await start(page, '2.1', { powerStyle: 'chip' });
   await open(page, '/calendar?view=day');

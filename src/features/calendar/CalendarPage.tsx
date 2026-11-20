@@ -39,7 +39,7 @@ import { CategoryChip } from '@/components/common/CategoryMark';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 import { usePowerSetup } from '@/features/power/usePower';
 import { dayBands } from '@/features/power/logic';
-import { PowerDayNote } from '@/features/power/PowerDayNote';
+import { PowerDayBar, PowerDayNote } from '@/features/power/PowerDayNote';
 
 const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'День' },
@@ -112,7 +112,17 @@ export default function CalendarPage() {
   // The day view says in words which hours have no power.
   const powerNote = useMemo(
     () =>
-      view === 'day' && powerOn && powerCalendar && (powerStyle === 'hours' || powerStyle === 'rail' || powerStyle === 'tint') && powerQueue && powerData
+      view === 'day' &&
+      powerOn &&
+      powerCalendar &&
+      (powerStyle === 'hours' ||
+        powerStyle === 'amber' ||
+        powerStyle === 'marks' ||
+        powerStyle === 'minibar' ||
+        powerStyle === 'rail' ||
+        powerStyle === 'tint') &&
+      powerQueue &&
+      powerData
         ? dayBands(powerData, powerQueue, anchor)
         : [],
     [view, powerOn, powerCalendar, powerStyle, powerQueue, powerData, anchor],
@@ -283,11 +293,21 @@ export default function CalendarPage() {
         </div>
       </header>
 
-      {powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
+      {powerNote.length > 0 &&
+        (powerStyle === 'minibar' ? (
+          <PowerDayBar
+            spans={powerNote}
+            queue={powerQueue}
+            nowMinutes={anchor === today ? now.getHours() * 60 + now.getMinutes() : undefined}
+            className="mx-1 mb-2"
+          />
+        ) : (
+          <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />
+        ))}
       <div
         className={cn(
           'min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1',
-          powerNote.length > 0 ? 'h-[calc(100dvh-292px)]' : 'h-[calc(100dvh-250px)]',
+          powerNote.length === 0 ? 'h-[calc(100dvh-250px)]' : powerStyle === 'minibar' ? 'h-[calc(100dvh-326px)]' : 'h-[calc(100dvh-292px)]',
         )}
       >
         {view === 'month' ? (

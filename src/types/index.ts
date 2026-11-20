@@ -239,7 +239,7 @@ export interface Settings {
   powerStyle: PowerStyle;
 }
 
-export const POWER_STYLES = ['hours', 'rail', 'chip', 'lines', 'tint'] as const;
+export const POWER_STYLES = ['hours', 'amber', 'marks', 'minibar', 'rail', 'chip', 'lines', 'tint'] as const;
 export type PowerStyle = (typeof POWER_STYLES)[number];
 
 export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;
