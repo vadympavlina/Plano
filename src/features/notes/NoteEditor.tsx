@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -36,18 +36,11 @@ import { projectOptions } from '@/components/common/options';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 import { useActions } from '@/hooks/useActions';
-import { useCollections, useSettings } from '@/hooks/useCollections';
+import { useCollections } from '@/hooks/useCollections';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { continueList, renderMarkdown, toggleTask } from '@/lib/utils/markdown';
 import { cn } from '@/lib/utils/cn';
 import type { ColorKey, Note } from '@/types';
-
-/** Dark or light ink for text lying on a colour. */
-function readableOn(key: ColorKey): string {
-  const hex = colorOf(key).replace('#', '');
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.62 ? '#1b1f2a' : '#ffffff';
-}
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error';
 
@@ -248,14 +241,10 @@ export function NoteEditor({ note }: { note: Note }) {
   };
 
   // ---- the head of the note: cover, icon, title and properties, in the look chosen in the settings ----
-  const mode = useSettings().noteHeader;
   const solid = coverColor ?? colorOf('slate');
   // An opaque tint of the colour (mixed with the page, so nothing shows through).
   const soft = (pct: number) => `color-mix(in srgb, ${solid} ${pct}%, rgb(var(--surface)))`;
   const setCover = (cover: ColorKey | undefined) => void actions.notes.update(note.id, { cover }).catch(() => undefined);
-  const onCover = mode === 'hero' && !!coverColor;
-  const boxed = mode === 'card' && !!(note.icon || coverColor);
-  const heroInk = note.cover ? readableOn(note.cover) : undefined;
 
   const tile = (size: string, glyph: string, extra?: string, style?: CSSProperties) =>
     note.icon ? (
@@ -313,7 +302,7 @@ export function NoteEditor({ note }: { note: Note }) {
           </span>
         </LineIconPicker>
       )}
-      {(!coverColor || mode !== 'banner') && (
+      {!coverColor && (
         <CoverPicker value={note.cover} onChange={setCover}>
           <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
             <ImageIcon className="h-3.5 w-3.5" /> Обкладинка
@@ -365,62 +354,21 @@ export function NoteEditor({ note }: { note: Note }) {
     </div>
   );
 
-  let head: ReactNode;
-  if (mode === 'banner') {
-    // A band of colour with the icon on its lower edge, cut out of the page by a ring of the page's own colour.
-    head = (
-      <div className="group/head">
-        {coverColor && (
-          <div className="group relative mb-2 mt-2 h-20 rounded-2xl sm:h-28" style={{ background: `linear-gradient(120deg, ${soft(58)}, ${soft(30)})` }}>
-            {coverButton}
-          </div>
-        )}
-        <div className={cn('relative z-10 flex items-end gap-2', coverColor && note.icon ? '-mt-9 ml-3 sm:-mt-12' : 'mt-3 sm:mt-4')}>
-          {tile('h-14 w-14 sm:h-16 sm:w-16', 'h-7 w-7', 'ring-[5px] ring-surface')}
-          {adders}
+  // A band of colour with the icon on its lower edge, cut out of the page by a ring of the page's own colour.
+  const head = (
+    <div className="group/head">
+      {coverColor && (
+        <div className="group relative mb-2 mt-2 h-20 rounded-2xl sm:h-28" style={{ background: `linear-gradient(120deg, ${soft(58)}, ${soft(30)})` }}>
+          {coverButton}
         </div>
-        {titleInput('mt-2')}
-      </div>
-    );
-  } else if (onCover) {
-    // The colour is the head itself: icon and title sit on it.
-    head = (
-      <div
-        className="group group/head relative mb-1 mt-3 rounded-2xl p-4 pb-5 sm:p-6 sm:pb-7"
-        style={{ background: `linear-gradient(135deg, ${solid}, color-mix(in srgb, ${solid} 78%, black))` }}
-      >
-        {coverButton}
-        <div className="flex items-center gap-3.5 pt-6 sm:pt-4">
-          {tile('h-14 w-14 sm:h-16 sm:w-16', 'h-7 w-7', 'shadow-pop', { background: 'rgb(var(--surface))' })}
-          {titleInput('placeholder:opacity-60', { color: heroInk })}
-        </div>
-      </div>
-    );
-  } else if (boxed) {
-    // The whole head is one tinted card: icon, title and properties.
-    head = (
-      <div className="group/head mt-3 rounded-2xl p-3.5 sm:p-5" style={{ background: soft(9), boxShadow: `inset 0 0 0 1px ${soft(26)}` }}>
-        <div className="flex items-center gap-3">
-          {tile('h-12 w-12 sm:h-14 sm:w-14', 'h-6 w-6', undefined, { background: soft(22) })}
-          {titleInput('text-[24px] sm:text-[30px]')}
-        </div>
-        <div className="mt-2">{meta}</div>
-        <div className="mt-1">{adders}</div>
-      </div>
-    );
-  } else {
-    // «inline» (and the other looks when there is nothing to show): a thin line of colour, the icon beside the title.
-    head = (
-      <div className="group/head mt-3 sm:mt-4">
-        {coverColor && <div className="mb-3 h-1.5 rounded-full" style={{ background: `linear-gradient(90deg, ${solid}, ${soft(35)})` }}></div>}
-        <div className="flex items-center gap-3">
-          {tile('h-12 w-12 sm:h-14 sm:w-14', 'h-6 w-6')}
-          {titleInput()}
-        </div>
+      )}
+      <div className={cn('relative z-10 flex items-end gap-2', coverColor && note.icon ? '-mt-9 ml-3 sm:-mt-12' : 'mt-3 sm:mt-4')}>
+        {tile('h-14 w-14 sm:h-16 sm:w-16', 'h-7 w-7', 'ring-[5px] ring-surface')}
         {adders}
       </div>
-    );
-  }
+      {titleInput('mt-2')}
+    </div>
+  );
 
   return (
     <div className="flex h-full min-h-0">
@@ -485,7 +433,7 @@ export function NoteEditor({ note }: { note: Note }) {
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="mx-auto w-full max-w-[760px] px-5 pb-16 sm:px-10">
             {head}
-            {!boxed && meta}
+            {meta}
             <div className="my-3 h-px bg-line sm:my-6" />
 
             {!preview && (

@@ -113,20 +113,6 @@ export function PreferencesSection() {
           ]}
         />
       </Row>
-      <Row label="Шапка нотатки" hint="Як виглядає верх нотатки з іконкою та обкладинкою. Спробуйте різні.">
-        <Segmented
-          wrap
-          ariaLabel="Шапка нотатки"
-          value={s.noteHeader ?? 'banner'}
-          onChange={(noteHeader) => set({ noteHeader })}
-          options={[
-            { value: 'banner', label: 'Смуга' },
-            { value: 'hero', label: 'Колір' },
-            { value: 'inline', label: 'Лінія' },
-            { value: 'card', label: 'Картка' },
-          ]}
-        />
-      </Row>
       <Row label="Часовий пояс" hint="Береться з пристрою, окремо поки не налаштовується.">
         <span className="text-[13px] font-medium text-muted">{deviceTimeZone()}</span>
       </Row>

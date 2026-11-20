@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { COLOR_KEYS, GOAL_STATUSES, PRIORITIES, PROJECT_STATUSES, TASK_STATUSES, ACCENT_COLORS, NOTE_HEADERS } from '@/types';
+import { COLOR_KEYS, GOAL_STATUSES, PRIORITIES, PROJECT_STATUSES, TASK_STATUSES, ACCENT_COLORS } from '@/types';
 
 // Firebase Realtime Database does not store empty arrays and may return arrays
 // as objects with numeric keys. These helpers normalise that on read.
@@ -208,7 +208,6 @@ export const settingsSchema = z.object({
     .catch(''),
   powerLeadMin: z.number().int().min(0).max(180).catch(30),
   powerCalendar: z.boolean().catch(true),
-  noteHeader: z.enum(NOTE_HEADERS).catch('banner'),
 });
 
 export const profileSchema = z.object({
