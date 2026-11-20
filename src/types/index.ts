@@ -235,7 +235,12 @@ export interface Settings {
   powerLeadMin: number;
   /** Show the outage hours in the calendar. */
   powerCalendar: boolean;
+  /** The calendar's top on a phone: the classic one, a compact one, one that folds away while scrolling, or one bar with the menu. */
+  calendarHeader: CalendarHeader;
 }
+
+export const CALENDAR_HEADERS = ['classic', 'compact', 'collapse', 'single', 'single-collapse'] as const;
+export type CalendarHeader = (typeof CALENDAR_HEADERS)[number];
 
 export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number];

@@ -18,6 +18,7 @@ export function GridHeader({
   gridCols,
   onSelectDay,
   outage,
+  slim,
 }: {
   strip: { d: DateKey; marked: boolean }[] | null;
   days: DateKey[];
@@ -27,6 +28,8 @@ export function GridHeader({
   onSelectDay: (d: DateKey) => void;
   /** Hours without power per day («Світло»): a small mark under each day's date. */
   outage?: (d: DateKey) => Span[];
+  /** Phone, compact top: the strip is as low as it can be (the «has events» dot sits on the number, not under it). */
+  slim?: boolean;
 }) {
   return strip ? (
     <div className="grid grid-cols-7 gap-0.5 border-b border-line/70 px-1 pb-1 sm:px-3 sm:py-1.5">
@@ -40,7 +43,11 @@ export function GridHeader({
             onClick={() => onSelectDay(d)}
             aria-pressed={on}
             aria-label={formatDateKey(d, 'EEEE, d MMMM')}
-            className={cn('flex flex-col items-center gap-0 rounded-xl py-0.5 transition-colors sm:gap-0.5 sm:py-1', !on && 'hover:bg-surface-2')}
+            className={cn(
+              'relative flex flex-col items-center gap-0 rounded-xl py-0.5 transition-colors sm:gap-0.5 sm:py-1',
+              slim && 'pb-1.5',
+              !on && 'hover:bg-surface-2',
+            )}
           >
             <span className={cn('text-[12px] font-medium', isToday ? 'text-primary' : 'text-subtle')}>{formatDateKey(d, 'EEEEEE')}</span>
             <span
@@ -51,7 +58,11 @@ export function GridHeader({
             >
               {Number(d.slice(8))}
             </span>
-            <span className={cn('h-1 w-1 rounded-full', marked && !on ? 'bg-subtle' : 'bg-transparent')} />
+            {slim ? (
+              marked && !on && <span aria-hidden className="absolute bottom-0 h-1 w-1 rounded-full bg-subtle" />
+            ) : (
+              <span className={cn('h-1 w-1 rounded-full', marked && !on ? 'bg-subtle' : 'bg-transparent')} />
+            )}
           </button>
         );
       })}

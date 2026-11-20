@@ -10,6 +10,9 @@ import { AppHeader } from './AppHeader';
 import { MobileNav } from './MobileNav';
 import { MobileDrawer } from './MobileDrawer';
 import { PanelSlot } from './RightPanel';
+import { ChromeCtx } from './chrome';
+import { useIsPhone } from '@/components/ui/picker';
+import { headerFlags } from '@/features/calendar/headerStyle';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { UIProvider, useUI } from '@/app/providers/UIProvider';
 import { GoogleSyncProvider } from '@/features/integrations/GoogleSyncProvider';
@@ -44,7 +47,10 @@ function LayoutInner() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { pathname } = useLocation();
   const { openSearch, openQuickAdd } = useUI();
-  const { ready, error, backendKind } = useData();
+  const { ready, error, backendKind, data: store } = useData();
+  const phone = useIsPhone();
+  // The calendar on a phone can draw its own top bar (with the menu button and search), so the app bar steps aside.
+  const mergedTop = phone && pathname.startsWith('/calendar') && headerFlags(store.settings.calendarHeader).single;
 
   // The page's side card (see RightPanel): a slot in the layout that pages fill through a portal.
   const [panelEl, setPanelEl] = useState<HTMLElement | null>(null);
@@ -98,86 +104,88 @@ function LayoutInner() {
   const pageH = `calc(100dvh - ${72 + (banner ? 36 : 0)}px - 14px - 2.5rem)`;
 
   return (
-    <PanelSlot.Provider value={{ el: panelEl, mount }}>
-      <div className="flex min-h-dvh flex-col pt-safe text-sidebar-fg lg:h-dvh lg:overflow-hidden" style={{ '--page-h': pageH } as React.CSSProperties}>
-        {/* Keyboard: the first Tab stop jumps over the menu to the page (a button, not #anchor: the hash is the route). */}
-        <button
-          type="button"
-          onClick={() => scroller.current?.focus()}
-          className="fixed left-3 top-3 z-80 -translate-y-24 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-pop focus:translate-y-0"
-        >
-          Перейти до вмісту
-        </button>
-        {banner && (
-          <div className="flex h-9 shrink-0 items-center gap-2 bg-sidebar-active px-4 text-xs text-sidebar-fg sm:px-8">
-            <Info className="h-3.5 w-3.5 shrink-0 text-primary-bright" />
-            <span className="truncate">
-              <strong className="font-semibold">Локальний перегляд.</strong>
-              <span className="sm:hidden"> Дані лише в цьому браузері.</span>
-              <span className="hidden sm:inline">
-                {' '}
-                Дані зберігаються лише в цьому браузері й не синхронізуються. Налаштуйте Firebase, щоб користуватися Plano на всіх пристроях.
-              </span>
-            </span>
-          </div>
-        )}
-        <AppHeader onToggleSidebar={() => setCollapsed((c) => !c)} onOpenMenu={() => setMenuOpen(true)} />
-        <div className="flex min-h-0 flex-1">
-          {/* Always mounted: it slides out (translate + fade) while its column closes, so opening and
-              closing is a motion, not a jump. Collapsed, it is inert (no focus, no clicks). */}
-          <div
-            aria-hidden={collapsed || undefined}
-            inert={collapsed}
-            className={cn(
-              'hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none lg:block',
-              collapsed ? 'w-0' : 'w-[250px]',
-            )}
+    <ChromeCtx.Provider value={{ openMenu: () => setMenuOpen(true) }}>
+      <PanelSlot.Provider value={{ el: panelEl, mount }}>
+        <div className="flex min-h-dvh flex-col pt-safe text-sidebar-fg lg:h-dvh lg:overflow-hidden" style={{ '--page-h': pageH } as React.CSSProperties}>
+          {/* Keyboard: the first Tab stop jumps over the menu to the page (a button, not #anchor: the hash is the route). */}
+          <button
+            type="button"
+            onClick={() => scroller.current?.focus()}
+            className="fixed left-3 top-3 z-80 -translate-y-24 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-ink shadow-pop focus:translate-y-0"
           >
+            Перейти до вмісту
+          </button>
+          {banner && (
+            <div className="flex h-9 shrink-0 items-center gap-2 bg-sidebar-active px-4 text-xs text-sidebar-fg sm:px-8">
+              <Info className="h-3.5 w-3.5 shrink-0 text-primary-bright" />
+              <span className="truncate">
+                <strong className="font-semibold">Локальний перегляд.</strong>
+                <span className="sm:hidden"> Дані лише в цьому браузері.</span>
+                <span className="hidden sm:inline">
+                  {' '}
+                  Дані зберігаються лише в цьому браузері й не синхронізуються. Налаштуйте Firebase, щоб користуватися Plano на всіх пристроях.
+                </span>
+              </span>
+            </div>
+          )}
+          <AppHeader onToggleSidebar={() => setCollapsed((c) => !c)} onOpenMenu={() => setMenuOpen(true)} hidePhoneBar={mergedTop} />
+          <div className="flex min-h-0 flex-1">
+            {/* Always mounted: it slides out (translate + fade) while its column closes, so opening and
+              closing is a motion, not a jump. Collapsed, it is inert (no focus, no clicks). */}
             <div
+              aria-hidden={collapsed || undefined}
+              inert={collapsed}
               className={cn(
-                'flex h-full w-[250px] transition-[translate,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-opacity',
-                collapsed && '-translate-x-8 opacity-0',
+                'hidden shrink-0 overflow-hidden transition-[width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none lg:block',
+                collapsed ? 'w-0' : 'w-[250px]',
               )}
             >
-              <AppSidebar />
+              <div
+                className={cn(
+                  'flex h-full w-[250px] transition-[translate,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-opacity',
+                  collapsed && '-translate-x-8 opacity-0',
+                )}
+              >
+                <AppSidebar />
+              </div>
+            </div>
+            <div className="flex min-w-0 flex-1 gap-2.5 px-2 pr-[max(8px,env(safe-area-inset-right))] lg:pb-3.5 lg:pl-2 lg:pr-[max(14px,env(safe-area-inset-right))]">
+              <main
+                ref={scroller}
+                tabIndex={-1}
+                className={cn(
+                  'outline-hidden focus-visible:ring-0',
+                  'min-w-0 flex-1 rounded-t-[26px] bg-surface text-ink lg:overflow-y-auto lg:rounded-[24px]',
+                  'pb-[calc(110px+max(12px,env(safe-area-inset-bottom)))] lg:pb-0',
+                )}
+              >
+                <div className="px-2 pt-4 sm:px-3 lg:px-3 lg:py-5">
+                  {error && !ready ? (
+                    <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
+                  ) : !ready ? (
+                    <PageSkeleton label="Завантажуємо ваші дані…" />
+                  ) : (
+                    <ErrorBoundary resetKey={pathname}>
+                      {/* Soft fade between sections (not between views of one section). */}
+                      <div key={pathname.split('/')[1]} className="motion-safe:animate-page-in">
+                        <Outlet />
+                      </div>
+                    </ErrorBoundary>
+                  )}
+                </div>
+              </main>
+              <aside
+                ref={setPanelEl}
+                aria-label="Бічна панель"
+                className={cn('hidden w-[372px] shrink-0 overflow-y-auto rounded-[24px] bg-surface p-5 text-ink', panels > 0 && 'xl:block')}
+              />
             </div>
           </div>
-          <div className="flex min-w-0 flex-1 gap-2.5 px-2 pr-[max(8px,env(safe-area-inset-right))] lg:pb-3.5 lg:pl-2 lg:pr-[max(14px,env(safe-area-inset-right))]">
-            <main
-              ref={scroller}
-              tabIndex={-1}
-              className={cn(
-                'outline-hidden focus-visible:ring-0',
-                'min-w-0 flex-1 rounded-t-[26px] bg-surface text-ink lg:overflow-y-auto lg:rounded-[24px]',
-                'pb-[calc(110px+max(12px,env(safe-area-inset-bottom)))] lg:pb-0',
-              )}
-            >
-              <div className="px-2 pt-4 sm:px-3 lg:px-3 lg:py-5">
-                {error && !ready ? (
-                  <ErrorState title="Не вдалося завантажити ваші дані" message={error} onRetry={() => window.location.reload()} />
-                ) : !ready ? (
-                  <PageSkeleton label="Завантажуємо ваші дані…" />
-                ) : (
-                  <ErrorBoundary resetKey={pathname}>
-                    {/* Soft fade between sections (not between views of one section). */}
-                    <div key={pathname.split('/')[1]} className="motion-safe:animate-page-in">
-                      <Outlet />
-                    </div>
-                  </ErrorBoundary>
-                )}
-              </div>
-            </main>
-            <aside
-              ref={setPanelEl}
-              aria-label="Бічна панель"
-              className={cn('hidden w-[372px] shrink-0 overflow-y-auto rounded-[24px] bg-surface p-5 text-ink', panels > 0 && 'xl:block')}
-            />
-          </div>
         </div>
-      </div>
-      <MobileNav />
-      <MobileDrawer open={menuOpen} onOpenChange={setMenuOpen} />
-    </PanelSlot.Provider>
+        <MobileNav />
+        <MobileDrawer open={menuOpen} onOpenChange={setMenuOpen} />
+      </PanelSlot.Provider>
+    </ChromeCtx.Provider>
   );
 }
 

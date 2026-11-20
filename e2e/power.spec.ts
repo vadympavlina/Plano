@@ -96,7 +96,7 @@ test('calendar: the start and the end of the outage are marked on the time scale
   const scale = (await page.locator('[data-power-band]').getByText('10:00').boundingBox())!;
   const column = (await page.locator('[data-day-index="0"]').boundingBox())!;
   expect(scale.x + scale.width).toBeLessThanOrEqual(column.x + 2);
-  await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
+  await expect(page.getByText(/Без світла 10:00–14:00/).first()).toBeVisible();
 });
 
 test('the 3-day and week views: a dashed line with two dots in the column and the hours under the date', async ({ page }) => {
@@ -158,4 +158,18 @@ test('the side menu has «Світло» even before it is turned on', async ({ 
   await start(page, '', { powerOn: false });
   if (isMobile) await page.getByRole('button', { name: 'Меню' }).first().click();
   await expect(page.getByRole('navigation', { name: 'Розділи' }).filter({ visible: true }).getByRole('link', { name: 'Світло' })).toBeVisible();
+});
+
+test('phone calendar header: compact by default, the app bar stays', async ({ page }) => {
+  await start(page, '2.1');
+  await open(page, '/calendar?view=day');
+  await expect(page.getByRole('button', { name: 'Меню акаунта' })).toBeVisible();
+});
+
+test('phone calendar header: the single mode merges the app bar into the calendar bar', async ({ page }) => {
+  await start(page, '2.1', { calendarHeader: 'single' });
+  await open(page, '/calendar?view=day');
+  await expect(page.getByRole('button', { name: 'Меню акаунта' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Меню', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Пошук', exact: true })).toBeVisible();
 });

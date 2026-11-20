@@ -37,7 +37,16 @@ function SearchPill({ className }: { className?: string }) {
 }
 
 /** The dark top bar. Desktop: window-style buttons, search in the middle, "Створити" on the right. Phone: menu, search, account. */
-export function AppHeader({ onToggleSidebar, onOpenMenu }: { onToggleSidebar: () => void; onOpenMenu: () => void }) {
+export function AppHeader({
+  onToggleSidebar,
+  onOpenMenu,
+  hidePhoneBar,
+}: {
+  onToggleSidebar: () => void;
+  onOpenMenu: () => void;
+  /** A page that draws its own top bar on a phone (the calendar). */
+  hidePhoneBar?: boolean;
+}) {
   const navigate = useNavigate();
   const { openQuickAdd } = useUI();
   const profile = useProfile();
@@ -76,7 +85,7 @@ export function AppHeader({ onToggleSidebar, onOpenMenu }: { onToggleSidebar: ()
       </div>
 
       {/* Phone & tablet */}
-      <div className="flex h-[60px] items-center gap-2.5 px-3.5 lg:hidden">
+      <div className={cn('h-[60px] items-center gap-2.5 px-3.5 lg:hidden', hidePhoneBar ? 'hidden' : 'flex')}>
         <button type="button" className={round} onClick={onOpenMenu} aria-label="Меню" aria-haspopup="dialog">
           <Menu className="h-[18px] w-[18px]" />
         </button>

@@ -38,6 +38,7 @@ export function TimeGrid({
   onSelectDay,
   onSwipe,
   outage,
+  phoneTop,
 }: {
   days: DateKey[];
   occurrences: EventOccurrence[];
@@ -47,6 +48,11 @@ export function TimeGrid({
   onSwipe?: (dir: 1 | -1) => void;
   /** Hours without power on a day («Світло» is on) and how to show them. */
   outage?: { bands: (day: DateKey) => Span[] };
+  /**
+   * Phone, compact top: a slimmer strip of days, no empty all-day row. With `onFold` the strip and the all-day row fold away
+   * while the grid is scrolled down and come back when it is scrolled up.
+   */
+  phoneTop?: { folded: boolean; onFold?: (folded: boolean) => void };
 }) {
   const { categoryById, events } = useCollections();
   const { data } = useData();
@@ -121,6 +127,33 @@ export function TimeGrid({
 
   // While a touch selection or drag is in progress, stop the page from scrolling.
   useBlockTouchScroll(scrollRef, blockScroll);
+
+  // Compact phone top: fold the strip away while the grid is scrolled down, bring it back when it is scrolled up.
+  const folded = !!phoneTop?.folded;
+  const onFold = phoneTop?.onFold;
+  const lastTop = useRef(0);
+  const settleUntil = useRef(0);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !onFold) return;
+    const onScroll = () => {
+      const y = el.scrollTop;
+      const dy = y - lastTop.current;
+      lastTop.current = y;
+      // Folding resizes the grid and can nudge its scroll: ignore that, only a finger counts.
+      if (Date.now() < settleUntil.current) return;
+      const fold = (to: boolean) => {
+        settleUntil.current = Date.now() + 450;
+        onFold(to);
+      };
+      if (y < 24) {
+        if (folded) fold(false);
+      } else if (dy > 8 && !folded) fold(true);
+      else if (dy < -8 && folded) fold(false);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [onFold, folded]);
 
   const minuteAt = (clientY: number) => {
     const rect = columnsRef.current!.getBoundingClientRect();
@@ -459,79 +492,100 @@ export function TimeGrid({
 
   return (
     <div className="flex h-full min-h-0 select-none flex-col">
-      <GridHeader strip={strip} days={days} today={today} dayProgress={dayProgress} gridCols={gridCols} onSelectDay={onSelectDay} outage={outage?.bands} />
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+        style={{ gridTemplateRows: folded ? '0fr' : '1fr' }}
+        inert={folded}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <GridHeader
+            strip={strip}
+            days={days}
+            today={today}
+            dayProgress={dayProgress}
+            gridCols={gridCols}
+            onSelectDay={onSelectDay}
+            outage={outage?.bands}
+            slim={!!phoneTop}
+          />
 
-      {/* All-day row: always present so all-day events can be drawn here */}
-      <div className="flex border-b border-line/70">
-        <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[12px] leading-[1.1] text-subtle sm:w-14">
-          <span>
-            весь
-            <br />
-            день
-          </span>
-        </div>
-        <div
-          ref={allDayRef}
-          className="grid flex-1"
-          style={gridCols}
-          onPointerMove={onAllDayPointerMove}
-          onPointerUp={onAllDayPointerUp}
-          onPointerCancel={() => setDaySel(null)}
-        >
-          {columns.map((c, index) => {
-            const selected = daySelRange && index >= daySelRange.a && index <= daySelRange.b;
-            return (
-              <div
-                key={c.day}
-                onPointerDown={(e) => onAllDayPointerDown(e, index)}
-                onDragOver={(e) => onDayDragOver(e, index)}
-                onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDropDay(null)}
-                onDrop={(e) => onDayDrop(e, index)}
-                title="Натисніть або протягніть, щоб додати подію на весь день"
-                className={cn(
-                  'scrollbar-thin max-h-[116px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line/60 p-1 transition-colors max-sm:max-h-[92px]',
-                  selected || dropDay === index ? 'bg-primary/10' : 'hover:bg-surface-2/50',
-                )}
-              >
-                {c.allDay.map((o) => {
-                  const color = eventColor(o.event, categoryById);
-                  return (
-                    <button
-                      key={o.key}
-                      type="button"
-                      onClick={() => openEvent(o.event.id, o.date)}
-                      className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold max-sm:py-1.5"
-                      title={o.event.title}
-                    >
-                      <Marker category={categoryById(o.event.categoryId)} color={color} />
-                      <span className="truncate">{o.event.title}</span>
-                    </button>
-                  );
-                })}
-                {c.untimedTasks.map((t) => (
-                  <div
-                    key={t.id}
-                    draggable={t.status !== 'completed'}
-                    onDragStart={(e) => startTaskDrag(e, t.id)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-[12px] font-semibold text-ink max-sm:py-1.5',
-                      t.status === 'completed' && 'text-subtle line-through',
-                    )}
-                  >
-                    <TaskTick task={t} color={taskColor(t)} size={14} />
-                    <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left" title={`Задача: ${t.title}`}>
-                      {t.title}
-                    </button>
-                  </div>
-                ))}
-                {selected && c.allDay.length === 0 && c.untimedTasks.length === 0 && (
-                  <span className="pointer-events-none block truncate px-1.5 py-1 text-[12px] font-medium text-primary">
-                    {daySelRange!.b > daySelRange!.a ? `${daySelRange!.b - daySelRange!.a + 1} дн.` : 'Весь день'}
+          {!(phoneTop && columns.every((c) => !c.allDay.length && !c.untimedTasks.length)) && (
+            <>
+              {/* All-day row: always present (except on a compact phone top when empty) so all-day events can be drawn here */}
+              <div className="flex border-b border-line/70">
+                <div className="flex w-12 shrink-0 items-center justify-end pr-1.5 text-right text-[12px] leading-[1.1] text-subtle sm:w-14">
+                  <span>
+                    весь
+                    <br />
+                    день
                   </span>
-                )}
+                </div>
+                <div
+                  ref={allDayRef}
+                  className="grid flex-1"
+                  style={gridCols}
+                  onPointerMove={onAllDayPointerMove}
+                  onPointerUp={onAllDayPointerUp}
+                  onPointerCancel={() => setDaySel(null)}
+                >
+                  {columns.map((c, index) => {
+                    const selected = daySelRange && index >= daySelRange.a && index <= daySelRange.b;
+                    return (
+                      <div
+                        key={c.day}
+                        onPointerDown={(e) => onAllDayPointerDown(e, index)}
+                        onDragOver={(e) => onDayDragOver(e, index)}
+                        onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDropDay(null)}
+                        onDrop={(e) => onDayDrop(e, index)}
+                        title="Натисніть або протягніть, щоб додати подію на весь день"
+                        className={cn(
+                          'scrollbar-thin max-h-[116px] min-h-[34px] min-w-0 cursor-cell space-y-1 overflow-y-auto border-l border-line/60 p-1 transition-colors max-sm:max-h-[92px]',
+                          selected || dropDay === index ? 'bg-primary/10' : 'hover:bg-surface-2/50',
+                        )}
+                      >
+                        {c.allDay.map((o) => {
+                          const color = eventColor(o.event, categoryById);
+                          return (
+                            <button
+                              key={o.key}
+                              type="button"
+                              onClick={() => openEvent(o.event.id, o.date)}
+                              className="flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-left text-[12px] font-semibold max-sm:py-1.5"
+                              title={o.event.title}
+                            >
+                              <Marker category={categoryById(o.event.categoryId)} color={color} />
+                              <span className="truncate">{o.event.title}</span>
+                            </button>
+                          );
+                        })}
+                        {c.untimedTasks.map((t) => (
+                          <div
+                            key={t.id}
+                            draggable={t.status !== 'completed'}
+                            onDragStart={(e) => startTaskDrag(e, t.id)}
+                            className={cn(
+                              'flex w-full items-center gap-2 rounded-xl bg-surface-2 px-2.5 py-1.5 text-[12px] font-semibold text-ink max-sm:py-1.5',
+                              t.status === 'completed' && 'text-subtle line-through',
+                            )}
+                          >
+                            <TaskTick task={t} color={taskColor(t)} size={14} />
+                            <button type="button" onClick={() => openTask(t.id)} className="min-w-0 flex-1 truncate text-left" title={`Задача: ${t.title}`}>
+                              {t.title}
+                            </button>
+                          </div>
+                        ))}
+                        {selected && c.allDay.length === 0 && c.untimedTasks.length === 0 && (
+                          <span className="pointer-events-none block truncate px-1.5 py-1 text-[12px] font-medium text-primary">
+                            {daySelRange!.b > daySelRange!.a ? `${daySelRange!.b - daySelRange!.a + 1} дн.` : 'Весь день'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            );
-          })}
+            </>
+          )}
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, Menu, Plus, Search, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { RightPanel } from '@/components/layout/RightPanel';
@@ -40,6 +40,10 @@ import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 import { usePowerSetup } from '@/features/power/usePower';
 import { dayBands } from '@/features/power/logic';
 import { PowerDayNote } from '@/features/power/PowerDayNote';
+import { spanLabel } from '@/features/power/logic';
+import { useChrome } from '@/components/layout/chrome';
+import { useIsPhone } from '@/components/ui/picker';
+import { headerFlags } from './headerStyle';
 
 const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'День' },
@@ -77,7 +81,14 @@ export default function CalendarPage() {
   const today = todayKey(now);
   const [params, setParams] = useSearchParams();
   const { events, tasks, categoryById } = useCollections();
-  const { openEventForm, openEvent, openTask, openQuickAdd } = useUI();
+  const { openEventForm, openEvent, openTask, openQuickAdd, openSearch } = useUI();
+  const { openMenu } = useChrome();
+  // The phone's top: compact (one row), folding away on scroll, or merged with the app bar.
+  const phone = useIsPhone();
+  const flags = headerFlags(settings.calendarHeader);
+  const phoneCompact = phone && flags.compact;
+  const phoneSingle = phone && flags.single;
+  const [folded, setFolded] = useState(false);
   useOpenFromQuery(() => openEventForm());
 
   const paramView = params.get('view');
@@ -90,6 +101,7 @@ export default function CalendarPage() {
   const paramDate = params.get('date');
   const anchor = paramDate && isDateKey(paramDate) ? paramDate : today;
 
+  useLayoutEffect(() => setFolded(false), [view, anchor]);
   const navigate = (next: { date?: DateKey; view?: CalendarView }) => {
     const p = new URLSearchParams(params);
     if (next.date) p.set('date', next.date);
@@ -259,18 +271,44 @@ export default function CalendarPage() {
         view === 'month' ? '-mb-10' : '-mb-[calc(110px+max(12px,env(safe-area-inset-bottom)))]',
       )}
     >
-      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
-        <div className="min-w-38 max-w-full flex-1">
-          {datePicker(
-            <span className="block">
-              <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">
-                {title.main}
-              </span>
-              <span className="mt-0.5 block text-[12.5px] font-medium text-muted sm:mt-1 sm:text-[13px]">{title.sub}</span>
-            </span>,
+      {phoneCompact ? (
+        <header className="flex items-center gap-1.5 px-2 pb-1.5">
+          {phoneSingle && (
+            <button
+              type="button"
+              onClick={openMenu}
+              aria-label="Меню"
+              aria-haspopup="dialog"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink transition-colors active:bg-line"
+            >
+              <Menu className="h-[18px] w-[18px]" />
+            </button>
           )}
-        </div>
-        <div className="flex shrink-0 items-center gap-1.5 pt-0.5 sm:gap-2 sm:pt-1">
+          <div className="min-w-0 flex-1">
+            {datePicker(
+              <span className="block">
+                <span className="block truncate text-[21px] font-extrabold leading-[1.15] tracking-tight first-letter:uppercase">{title.main}</span>
+                {powerNote.length > 0 ? (
+                  <span className="block truncate text-[12px] font-medium text-muted">
+                    <Zap className="mr-1 inline h-3 w-3 -translate-y-px text-ink" aria-hidden />
+                    Без світла {powerNote.map(spanLabel).join(', ')}
+                  </span>
+                ) : title.sub !== formatDateKey(today, 'yyyy') ? (
+                  <span className="block text-[12px] font-medium text-muted">{title.sub}</span>
+                ) : null}
+              </span>,
+            )}
+          </div>
+          {phoneSingle && (
+            <button
+              type="button"
+              onClick={openSearch}
+              aria-label="Пошук"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink transition-colors active:bg-line"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          )}
           <GoogleSyncButton />
           <Select<CalendarView>
             variant="chip"
@@ -279,28 +317,66 @@ export default function CalendarPage() {
             onChange={(v) => navigate({ view: v })}
             options={VIEWS.map((v) => ({ value: v.value, label: v.label }))}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate({ date: today })}
-            disabled={anchor === today}
-            className={cn(anchor === today && 'hidden sm:inline-flex')}
-          >
-            Сьогодні
-          </Button>
-          <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button variant="dark" size="sm" onClick={addEvent} className="hidden sm:inline-flex">
-            <Plus className="h-4 w-4" /> Подія
-          </Button>
-        </div>
-      </header>
+          {anchor !== today && (
+            <Button variant="outline" size="icon-sm" aria-label="Сьогодні" onClick={() => navigate({ date: today })}>
+              <CalendarCheck className="h-4 w-4" />
+            </Button>
+          )}
+          {!phoneSingle && (
+            <>
+              <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </>
+          )}
+        </header>
+      ) : (
+        <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
+          <div className="min-w-38 max-w-full flex-1">
+            {datePicker(
+              <span className="block">
+                <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">
+                  {title.main}
+                </span>
+                <span className="mt-0.5 block text-[12.5px] font-medium text-muted sm:mt-1 sm:text-[13px]">{title.sub}</span>
+              </span>,
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5 pt-0.5 sm:gap-2 sm:pt-1">
+            <GoogleSyncButton />
+            <Select<CalendarView>
+              variant="chip"
+              aria-label="Вигляд календаря"
+              value={view}
+              onChange={(v) => navigate({ view: v })}
+              options={VIEWS.map((v) => ({ value: v.value, label: v.label }))}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate({ date: today })}
+              disabled={anchor === today}
+              className={cn(anchor === today && 'hidden sm:inline-flex')}
+            >
+              Сьогодні
+            </Button>
+            <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon-sm" aria-label="Вперед" onClick={() => step(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="dark" size="sm" onClick={addEvent} className="hidden sm:inline-flex">
+              <Plus className="h-4 w-4" /> Подія
+            </Button>
+          </div>
+        </header>
+      )}
 
-      {powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
+      {!phoneCompact && powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
       <div
         ref={box}
         // Phones: the grid takes exactly what is left above the tab bar, so the last hour is not under it and the page itself
@@ -317,7 +393,15 @@ export default function CalendarPage() {
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
         ) : (
           <>
-            <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} outage={outage} />
+            <TimeGrid
+              days={days}
+              occurrences={occurrences}
+              tasks={tasks}
+              onSelectDay={selectDay}
+              onSwipe={step}
+              outage={outage}
+              phoneTop={phoneCompact ? { folded: flags.collapse && folded, onFold: flags.collapse ? setFolded : undefined } : undefined}
+            />
             {/* The blocks fade out under the floating tab bar instead of being cut off above it. */}
             <div
               aria-hidden
