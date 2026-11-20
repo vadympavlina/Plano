@@ -85,21 +85,49 @@ test('without a queue the page asks for one, and the choice sticks', async ({ pa
   await expect(page.getByText('Рівнеобленерго · черга 1.1')).toBeVisible();
 });
 
-test('the calendar shades the hours without power', async ({ page }) => {
+const bandHeight = async (page: Page) => Math.round((await page.locator('[data-power-band]').first().boundingBox())!.height);
+
+test('calendar, «смужка біля годин» (the default): a rail on the hour scale and one line of words', async ({ page }) => {
   await start(page, '2.1');
   await open(page, '/calendar?view=day');
-  const band = page.locator('.power-band');
-  await expect(band).toHaveCount(1);
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  expect(await bandHeight(page)).toBeGreaterThan(4 * 68 - 6);
   await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
-  const box = (await band.boundingBox())!;
-  expect(Math.round(box.height)).toBe(4 * 68);
+});
+
+test('calendar, «у рядку весь день»: a dark mark with the hours, nothing in the grid', async ({ page }) => {
+  await start(page, '2.1', { powerStyle: 'chip' });
+  await open(page, '/calendar?view=day');
+  await expect(page.getByRole('link', { name: 'Без світла: 10:00–14:00' })).toBeVisible();
+  await expect(page.locator('[data-power-band]')).toHaveCount(0);
+});
+
+test('calendar, «лінії початку й кінця»: two dashed lines with labels', async ({ page }) => {
+  await start(page, '2.1', { powerStyle: 'lines' });
+  await open(page, '/calendar?view=day');
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  await expect(page.getByText('вимкнуть')).toBeVisible();
+  await expect(page.getByText('увімкнуть')).toBeVisible();
+});
+
+test('calendar, «легке тло»: a faint band behind the blocks', async ({ page }) => {
+  await start(page, '2.1', { powerStyle: 'tint' });
+  await open(page, '/calendar?view=day');
+  await expect(page.locator('.power-tint')).toHaveCount(1);
+  expect(await bandHeight(page)).toBe(4 * 68);
+});
+
+test('the week view carries each style too', async ({ page }) => {
+  await start(page, '2.1');
+  await open(page, '/calendar?view=week');
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
 });
 
 test('when it is off in the settings nothing about it shows', async ({ page }) => {
   await start(page, '2.1', { powerOn: false });
   await expect(page.getByRole('link', { name: 'Графік відключень світла' })).toHaveCount(0);
   await open(page, '/calendar?view=day');
-  await expect(page.locator('.power-band')).toHaveCount(0);
+  await expect(page.locator('[data-power-band]')).toHaveCount(0);
   await open(page, '/power');
   await expect(page.getByText('Графік відключень вимкнено')).toBeVisible();
   await page.getByRole('button', { name: 'Увімкнути' }).click();

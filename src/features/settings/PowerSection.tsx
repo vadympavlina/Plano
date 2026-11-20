@@ -76,9 +76,25 @@ export function PowerSection() {
               options={LEADS.map(([value, label]) => ({ value: String(value), label }))}
             />
           </Row>
-          <Row label="Смуги в календарі" hint="Години без світла затіняються в сітці дня й тижня.">
+          <Row label="Відключення в календарі" hint="Показувати години без світла в календарі.">
             <Switch label="Показувати відключення в календарі" checked={s.powerCalendar} onCheckedChange={(powerCalendar) => set({ powerCalendar })} />
           </Row>
+          {s.powerCalendar && (
+            <Row label="Як показувати" hint="Спробуйте різні — календар змінюється одразу.">
+              <Select
+                aria-label="Як показувати відключення в календарі"
+                className="w-[220px]"
+                value={s.powerStyle ?? 'rail'}
+                onChange={(powerStyle) => set({ powerStyle })}
+                options={[
+                  { value: 'rail', label: 'Смужка біля годин', hint: 'Тонка смужка на шкалі часу' },
+                  { value: 'chip', label: 'У рядку «весь день»', hint: 'Темна позначка з годинами' },
+                  { value: 'lines', label: 'Лінії початку й кінця', hint: 'Пунктир, де вимкнуть і увімкнуть' },
+                  { value: 'tint', label: 'Легке тло', hint: 'Ледь помітне затінення' },
+                ]}
+              />
+            </Row>
+          )}
         </>
       )}
     </Group>

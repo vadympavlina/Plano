@@ -108,15 +108,19 @@ export default function CalendarPage() {
   const occurrences = useMemo(() => expandEvents(events, range.start, range.end), [events, range.start, range.end]);
   const days = useMemo(() => (view === 'month' ? [] : eachDateKey(range.start, range.end)), [view, range.start, range.end]);
   // «Світло»: the hours without power, shaded in the grid.
-  const { on: powerOn, calendar: powerCalendar, queue: powerQueue, data: powerData } = usePowerSetup();
+  const { on: powerOn, calendar: powerCalendar, style: powerStyle, queue: powerQueue, data: powerData } = usePowerSetup();
   // The day view says in words which hours have no power.
   const powerNote = useMemo(
-    () => (view === 'day' && powerOn && powerCalendar && powerQueue && powerData ? dayBands(powerData, powerQueue, anchor) : []),
-    [view, powerOn, powerCalendar, powerQueue, powerData, anchor],
+    () =>
+      view === 'day' && powerOn && powerCalendar && (powerStyle === 'rail' || powerStyle === 'tint') && powerQueue && powerData
+        ? dayBands(powerData, powerQueue, anchor)
+        : [],
+    [view, powerOn, powerCalendar, powerStyle, powerQueue, powerData, anchor],
   );
   const outage = useMemo(
-    () => (powerOn && powerCalendar && powerQueue && powerData ? (day: DateKey) => dayBands(powerData, powerQueue, day) : undefined),
-    [powerOn, powerCalendar, powerQueue, powerData],
+    () =>
+      powerOn && powerCalendar && powerQueue && powerData ? { bands: (day: DateKey) => dayBands(powerData, powerQueue, day), style: powerStyle } : undefined,
+    [powerOn, powerCalendar, powerQueue, powerData, powerStyle],
   );
   const upcoming = useMemo(() => upcomingOccurrences(events, now, today, 30, 5), [events, now, today]);
 

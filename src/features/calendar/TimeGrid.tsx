@@ -27,7 +27,10 @@ import {
   type Selection,
 } from './timeGridModel';
 import { Marker } from './TimeGridParts';
-import type { Span } from '@/features/power/logic';
+import { spanLabel, type Span } from '@/features/power/logic';
+import { Link } from 'react-router-dom';
+import { Zap } from 'lucide-react';
+import type { PowerStyle } from '@/types';
 import { GridHeader } from './TimeGridHeader';
 import { useBlockTouchScroll, usePageSwipe, useScrollToUsefulHour } from './useTimeGridScroll';
 
@@ -45,8 +48,8 @@ export function TimeGrid({
   onSelectDay: (d: DateKey) => void;
   /** Horizontal swipe on touch screens: -1 = previous, 1 = next. */
   onSwipe?: (dir: 1 | -1) => void;
-  /** Hours without power on a day («Світло» is on): shaded behind the blocks. */
-  outage?: (day: DateKey) => Span[];
+  /** Hours without power on a day («Світло» is on) and how to show them. */
+  outage?: { bands: (day: DateKey) => Span[]; style: PowerStyle };
 }) {
   const { categoryById, events } = useCollections();
   const { data } = useData();
@@ -490,6 +493,24 @@ export function TimeGrid({
                   selected || dropDay === index ? 'bg-primary/10' : 'hover:bg-surface-2/50',
                 )}
               >
+                {outage?.style === 'chip' && outage.bands(c.day).length > 0 && (
+                  <Link
+                    to="/power"
+                    onPointerDown={(e) => e.stopPropagation()}
+                    aria-label={`Без світла: ${outage.bands(c.day).map(spanLabel).join(', ')}`}
+                    className="flex w-full items-center gap-1.5 rounded-xl bg-ink px-2.5 py-1.5 text-[12px] font-semibold text-surface"
+                  >
+                    <Zap className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                    <span className="truncate tabular-nums">
+                      {single
+                        ? `Без світла ${outage.bands(c.day).map(spanLabel).join(', ')}`
+                        : outage
+                            .bands(c.day)
+                            .map((b) => `${Math.floor(b.start / 60)}–${Math.round(b.end / 60)}`)
+                            .join(', ')}
+                    </span>
+                  </Link>
+                )}
                 {c.allDay.map((o) => {
                   const color = eventColor(o.event, categoryById);
                   return (
@@ -544,6 +565,18 @@ export function TimeGrid({
                 {fmt(nowMinutes)}
               </span>
             )}
+            {outage?.style === 'rail' &&
+              single &&
+              outage
+                .bands(days[0])
+                .map((b) => (
+                  <span
+                    key={b.start}
+                    data-power-band
+                    className="absolute right-0 w-1 rounded-full bg-ink/55"
+                    style={{ top: (b.start / 60) * HOUR_PX + 1, height: ((b.end - b.start) / 60) * HOUR_PX - 2 }}
+                  />
+                ))}
             {HOURS.slice(1).map((h) => (
               <span
                 key={h}
@@ -598,14 +631,49 @@ export function TimeGrid({
                   </div>
                 )}
                 {/* hours without power */}
-                {outage?.(c.day).map((b) => (
-                  <div
-                    key={b.start}
-                    aria-hidden
-                    className="power-band pointer-events-none absolute inset-x-0 z-0"
-                    style={{ top: (b.start / 60) * HOUR_PX, height: ((b.end - b.start) / 60) * HOUR_PX }}
-                  />
-                ))}
+                {outage &&
+                  outage.style !== 'chip' &&
+                  outage.bands(c.day).map((b) => {
+                    const top = (b.start / 60) * HOUR_PX;
+                    const height = ((b.end - b.start) / 60) * HOUR_PX;
+                    if (outage.style === 'rail')
+                      return single ? null : (
+                        <div
+                          key={b.start}
+                          aria-hidden
+                          data-power-band
+                          className="pointer-events-none absolute left-0 z-0 w-[3px] rounded-full bg-ink/55"
+                          style={{ top, height }}
+                        />
+                      );
+                    if (outage.style === 'tint')
+                      return (
+                        <div
+                          key={b.start}
+                          aria-hidden
+                          data-power-band
+                          className="power-tint pointer-events-none absolute inset-x-0 z-0"
+                          style={{ top, height }}
+                        />
+                      );
+                    // lines: a dashed line where the power goes and another where it should return
+                    return (
+                      <div key={b.start} aria-hidden data-power-band className="pointer-events-none absolute inset-x-0 z-[4]" style={{ top, height }}>
+                        <div className="power-line absolute inset-x-0 top-0" />
+                        <div className="power-line absolute inset-x-0 bottom-0" />
+                        {single && (
+                          <>
+                            <span className="absolute left-1.5 top-1 inline-flex items-center gap-1 rounded-full bg-surface px-1.5 py-px text-[10.5px] font-semibold text-ink/70 shadow-soft">
+                              <Zap className="h-2.5 w-2.5" /> вимкнуть
+                            </span>
+                            <span className="absolute bottom-1 left-1.5 inline-flex items-center gap-1 rounded-full bg-surface px-1.5 py-px text-[10.5px] font-semibold text-ink/70 shadow-soft">
+                              <Zap className="h-2.5 w-2.5" /> увімкнуть
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
                 {/* hover hint */}
                 {hover && hover.dayIndex === dayIndex && !sel && !drag && (
                   <div

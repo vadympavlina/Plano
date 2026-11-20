@@ -233,9 +233,14 @@ export interface Settings {
   powerQueue: string;
   /** Push warning this many minutes before an outage (and when its hours are published or change); 0 = no pushes. */
   powerLeadMin: number;
-  /** Shade the outage hours in the calendar. */
+  /** Show the outage hours in the calendar. */
   powerCalendar: boolean;
+  /** How they look there: a rail by the hours, a line in the all-day row, lines at the start and the end, a faint tint. */
+  powerStyle: PowerStyle;
 }
+
+export const POWER_STYLES = ['rail', 'chip', 'lines', 'tint'] as const;
+export type PowerStyle = (typeof POWER_STYLES)[number];
 
 export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;
 export type AccentColor = (typeof ACCENT_COLORS)[number];

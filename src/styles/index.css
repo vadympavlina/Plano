@@ -178,10 +178,12 @@
   }
 }
 
-/** Hours without power in the calendar: a faint tint behind the blocks and a thin rail on the edge, so events stay readable. */
-.power-band {
-  background-color: color-mix(in srgb, rgb(var(--ink)) 5%, transparent);
-  box-shadow: inset 3px 0 0 color-mix(in srgb, rgb(var(--ink)) 40%, transparent);
+/* Hours without power in the calendar. The tint is barely there; rails and lines carry the meaning. */
+.power-tint {
+  background-color: color-mix(in srgb, rgb(var(--ink)) 4.5%, transparent);
+}
+.power-line {
+  border-top: 1.5px dashed color-mix(in srgb, rgb(var(--ink)) 45%, transparent);
 }
 
 @utility task-item {
