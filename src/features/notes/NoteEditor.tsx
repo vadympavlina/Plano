@@ -255,6 +255,22 @@ export function NoteEditor({ note }: { note: Note }) {
       </LineIconPicker>
     ) : null;
 
+  // The title box is as tall as its text: measured again when the web font arrives and when the box changes width.
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    };
+    fit();
+    void document.fonts?.ready.then(fit);
+    const ro = new ResizeObserver(fit);
+    ro.observe(el.parentElement ?? el);
+    return () => ro.disconnect();
+  }, [title]);
+
   const titleInput = (className?: string, style?: CSSProperties) => (
     <textarea
       rows={1}
@@ -269,11 +285,7 @@ export function NoteEditor({ note }: { note: Note }) {
           textRef.current?.focus();
         }
       }}
-      ref={(el) => {
-        if (!el) return;
-        el.style.height = 'auto';
-        el.style.height = `${el.scrollHeight}px`;
-      }}
+      ref={titleRef}
       placeholder="Без назви"
       aria-label="Назва нотатки"
       maxLength={300}
