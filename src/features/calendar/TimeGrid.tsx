@@ -4,6 +4,7 @@ import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
 import { useActions } from '@/hooks/useActions';
 import { useData } from '@/app/providers/DataProvider';
+import { readSlotKind } from '@/features/capture/slotKind';
 import { TASK_DRAG, TaskTick, startTaskDrag } from './TaskTick';
 import { useNow } from '@/hooks/useNow';
 import { addDaysKey, eachDateKey, formatDateKey, formatDuration, formatTime, minutesToTime, todayKey, weekRange } from '@/lib/date';
@@ -196,7 +197,7 @@ export function TimeGrid({
   const openSlot = (dayIndex: number, range: { start: number; end: number }) => {
     setDraftSlot(null);
     // The quick box with the slot filled in: only the title is left to type.
-    openQuickAdd({ kind: 'event', date: days[dayIndex], time: minutesToTime(range.start), endTime: minutesToTime(Math.min(range.end, DAY_END - 1)) });
+    openQuickAdd({ kind: readSlotKind(), date: days[dayIndex], time: minutesToTime(range.start), endTime: minutesToTime(Math.min(range.end, DAY_END - 1)) });
   };
 
   const finishSelection = (s: Selection) => {
@@ -230,7 +231,7 @@ export function TimeGrid({
     const a = Math.min(daySel.from, daySel.to);
     const b = Math.max(daySel.from, daySel.to);
     setDaySel(null);
-    openQuickAdd({ kind: 'event', date: days[a], endDate: b > a ? days[b] : undefined, allDay: true });
+    openQuickAdd({ kind: readSlotKind(), date: days[a], endDate: b > a ? days[b] : undefined, allDay: true });
   };
 
   // ---- moving and resizing events ------------------------------------------
@@ -732,7 +733,7 @@ export function TimeGrid({
                     className="absolute inset-x-1 z-10 flex flex-col items-start rounded-lg bg-primary px-2 py-1 text-left text-primary-fg shadow-pop animate-scale-in"
                     style={{ top: (draftSlot.start / 60) * HOUR_PX, height: ((draftSlot.end - draftSlot.start) / 60) * HOUR_PX }}
                   >
-                    <span className="text-[12px] font-semibold">+ Нова подія</span>
+                    <span className="text-[12px] font-semibold">+ Додати</span>
                     <span className="text-[12px] tabular-nums opacity-85">
                       {fmt(draftSlot.start)} – {fmt(draftSlot.end)}
                     </span>

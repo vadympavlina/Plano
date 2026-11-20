@@ -1,4 +1,4 @@
-import { useRef, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, type FormEvent, type ReactNode } from 'react';
 import {
   AlignLeft,
   ArrowLeftRight,
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Segmented } from '@/components/ui/form-rows';
 import { DatePicker } from '@/components/ui/date-time';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown';
 import { CategoryIcon } from '@/components/common/CategoryMark';
@@ -36,6 +37,7 @@ import { cn } from '@/lib/utils/cn';
 import { plural } from '@/lib/date';
 import { SmartField, type SmartFieldHandle } from './SmartField';
 import { useCapture, type CaptureChip, type CaptureKind, type CapturePreset } from './useCapture';
+import { rememberSlotKind } from './slotKind';
 
 const KIND_ICON = { task: CheckSquare, event: CalendarPlus, note: NotebookPen };
 const CHIP_ICON: Partial<Record<CaptureChip['type'], typeof Clock>> = {
@@ -90,8 +92,26 @@ const chip =
  * #categories from the text, chips for what it understood, voice input.
  * `sheet` is the bigger version opened by «+» / N.
  */
-export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boolean; onDone?: () => void; className?: string; preset?: CapturePreset }) {
+export function CaptureBox({
+  sheet,
+  onDone,
+  className,
+  preset,
+  onKindChange,
+}: {
+  sheet?: boolean;
+  onDone?: () => void;
+  className?: string;
+  preset?: CapturePreset;
+  /** The sheet follows the kind (its title says «Нова подія» or «Нова задача»). */
+  onKindChange?: (kind: CaptureKind) => void;
+}) {
   const c = useCapture(preset);
+  /** Opened from the calendar (a slot, a day): one tap picks between an event and a task. */
+  const slot = !!sheet && !!(preset?.date || preset?.time || preset?.allDay);
+  const onKind = useRef(onKindChange);
+  onKind.current = onKindChange;
+  useEffect(() => onKind.current?.(c.kind), [c.kind]);
   const { openTaskForm, openEventForm } = useUI();
   const hasPreset = !!(preset?.date || preset?.time);
   /** «Детальніше»: the full form with what was typed and picked so far. */
@@ -119,7 +139,8 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
       openTaskForm({
         defaults: {
           title,
-          dueDate: date,
+          startDate: date && p.endDate && p.endDate > date ? date : undefined,
+          dueDate: date && p.endDate && p.endDate > date ? p.endDate : date,
           startTime: p.time,
           endTime: end,
           recurrence: p.recurrence,
@@ -184,7 +205,7 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
     </div>
   ) : (
     <div className={rowCls}>
-      {!empty && (
+      {!empty && !slot && (
         <DropdownMenu>
           <DropdownMenuTrigger className={cn(chip, 'bg-surface-2 text-ink hover:bg-line/60')} aria-label="Тип">
             <ArrowLeftRight className="h-3.5 w-3.5 text-muted" />
@@ -310,7 +331,9 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
         hasPreset
           ? c.kind === 'event'
             ? 'Назва події'
-            : 'Що додати?'
+            : slot
+              ? 'Назва задачі'
+              : 'Що додати?'
           : sheet
             ? 'Що додати?'
             : wide
@@ -323,6 +346,21 @@ export function CaptureBox({ sheet, onDone, className, preset }: { sheet?: boole
   if (sheet)
     return (
       <form onSubmit={submit} className={cn('space-y-3', className)}>
+        {slot && (
+          <Segmented
+            label="Що створити"
+            value={c.kind === 'task' || c.kind === 'event' ? c.kind : undefined}
+            onChange={(k) => {
+              c.setKind(k);
+              rememberSlotKind(k);
+              requestAnimationFrame(() => field.current?.focus());
+            }}
+            options={[
+              { value: 'event', label: 'Подія', icon: <CalendarPlus /> },
+              { value: 'task', label: 'Задача', icon: <CheckSquare /> },
+            ]}
+          />
+        )}
         {fieldEl}
         {empty && !hasPreset ? suggestions : row}
         <div className="flex items-center gap-2 pt-1">

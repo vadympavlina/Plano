@@ -2,6 +2,7 @@ import { useMemo, useState, type DragEvent, type PointerEvent as ReactPointerEve
 import { CategoryIcon, categoryIcon } from '@/components/common/CategoryMark';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
+import { readSlotKind } from '@/features/capture/slotKind';
 import { useActions } from '@/hooks/useActions';
 import { useData } from '@/app/providers/DataProvider';
 import { useToday } from '@/hooks/useNow';
@@ -73,8 +74,8 @@ export function MonthView({
     const a = Math.min(range.from, range.to);
     const b = Math.max(range.from, range.to);
     setRange(null);
-    if (a === b) openQuickAdd({ kind: 'event', date: days[a] });
-    else openQuickAdd({ kind: 'event', date: days[a], endDate: days[b], allDay: true });
+    if (a === b) openQuickAdd({ kind: readSlotKind(), date: days[a] });
+    else openQuickAdd({ kind: readSlotKind(), date: days[a], endDate: days[b], allDay: true });
   };
   const lo = range ? Math.min(range.from, range.to) : -1;
   const hi = range ? Math.max(range.from, range.to) : -1;

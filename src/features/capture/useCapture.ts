@@ -182,7 +182,9 @@ export function useCapture(preset?: CapturePreset) {
           status: 'todo',
           priority: p.priority ?? 'medium',
           tags,
-          dueDate: date ?? (p.time || p.recurrence ? today : undefined),
+          // Dragged over several days in the calendar: it starts on the first and is due on the last.
+          startDate: date && p.endDate && p.endDate > date ? date : undefined,
+          dueDate: p.endDate && date && p.endDate > date ? p.endDate : (date ?? (p.time || p.recurrence ? today : undefined)),
           startTime: p.time,
           endTime: end,
           recurrence: p.recurrence,

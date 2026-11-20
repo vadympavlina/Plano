@@ -51,7 +51,7 @@ export function Segmented<T extends string>({
 }: {
   value: T | undefined;
   onChange: (v: T) => void;
-  options: { value: T; label: string; color?: string }[];
+  options: { value: T; label: string; color?: string; icon?: ReactNode }[];
   label: string;
 }) {
   return (
@@ -66,11 +66,12 @@ export function Segmented<T extends string>({
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={cn(
-              'flex h-10 min-w-0 items-center justify-center rounded-full px-1 text-[13px] font-medium transition-colors',
+              'flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-full px-1 text-[13px] font-medium transition-colors [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0',
               on ? 'text-ink shadow-soft' : 'text-muted hover:text-ink',
             )}
             style={on ? { backgroundColor: o.color ? tint(o.color, 0.2) : 'rgb(var(--surface))' } : undefined}
           >
+            {o.icon}
             <span className="truncate">{o.label}</span>
           </button>
         );
