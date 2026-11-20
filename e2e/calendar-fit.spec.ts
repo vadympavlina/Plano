@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { open, startSeeded } from './fixtures';
 
-// Phones: the calendar takes exactly the screen above the tab bar. The page itself does not scroll (the top bar stays),
-// and scrolling the grid to its end leaves the last hour visible above the bar, not under it.
+// Phones: the page itself does not scroll (the top bar stays); the time grids run under the floating tab bar and
+// scrolling to their end leaves the last hour above it; the month stops just above it.
 for (const view of ['day', '3days', 'week', 'month']) {
   test(`phone: the ${view} view fits above the tab bar`, async ({ page, isMobile }) => {
     test.skip(!isMobile, 'phones');
@@ -25,14 +25,7 @@ for (const view of ['day', '3days', 'week', 'month']) {
       await page.waitForTimeout(150);
       const last = (await page.getByText('23:00', { exact: true }).first().boundingBox())!;
       expect(last.y + last.height).toBeLessThanOrEqual(nav.y);
-      // …and the grid ends close above the bar, not a big gap away.
-      const gridBottom = await grid.evaluate((el) => {
-        let n = el.parentElement;
-        while (n && n.scrollHeight <= n.clientHeight) n = n.parentElement;
-        return n ? n.getBoundingClientRect().bottom : 0;
-      });
-      expect(nav.y - gridBottom).toBeGreaterThanOrEqual(0);
-      expect(nav.y - gridBottom).toBeLessThanOrEqual(16);
+      // The grid runs under the floating bar, so its own bottom is not the limit: the end of the day is.
     } else {
       const lastRow = (await page.locator('[data-month-index="35"]').boundingBox())!;
       expect(lastRow.y + lastRow.height).toBeLessThanOrEqual(nav.y + 1);

@@ -251,7 +251,14 @@ export default function CalendarPage() {
   );
 
   return (
-    <div className="-mb-10 flex w-full flex-col lg:mb-0 lg:h-(--page-h)">
+    <div
+      className={cn(
+        'flex w-full flex-col lg:mb-0 lg:h-(--page-h)',
+        // Phones: the day, 3-day and week grids run under the floating tab bar (a soft fade, and the end of the day can be
+        // scrolled above it); the month, whose rows fill the box, stops just above it.
+        view === 'month' ? '-mb-10' : '-mb-[calc(110px+max(12px,env(safe-area-inset-bottom)))]',
+      )}
+    >
       <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
         <div className="min-w-38 max-w-full flex-1">
           {datePicker(
@@ -299,12 +306,24 @@ export default function CalendarPage() {
         // Phones: the grid takes exactly what is left above the tab bar, so the last hour is not under it and the page itself
         // does not scroll away from the top bar.
         style={{ '--cal-top': `${gridTop}px` } as React.CSSProperties}
-        className="h-[calc(100dvh-var(--cal-top)-70px-max(12px,env(safe-area-inset-bottom))-2px)] min-h-[300px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1"
+        className={cn(
+          'relative min-h-[300px] min-w-0 flex-none overflow-hidden lg:h-auto lg:min-h-0 lg:flex-1 lg:rounded-2xl',
+          view === 'month'
+            ? 'h-[calc(100dvh-var(--cal-top)-70px-max(12px,env(safe-area-inset-bottom))-2px)] rounded-2xl'
+            : 'h-[calc(100dvh-var(--cal-top))] rounded-t-2xl',
+        )}
       >
         {view === 'month' ? (
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
         ) : (
-          <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} outage={outage} />
+          <>
+            <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} outage={outage} />
+            {/* The blocks fade out under the floating tab bar instead of being cut off above it. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-[calc(64px+max(12px,env(safe-area-inset-bottom)))] bg-linear-to-t from-surface via-surface/85 to-transparent lg:hidden"
+            />
+          </>
         )}
       </div>
 
