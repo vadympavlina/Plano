@@ -1,4 +1,4 @@
-import { useMemo, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
@@ -107,6 +107,20 @@ export default function CalendarPage() {
   const range = rangeFor(view, anchor, settings.weekStartsOn);
   const occurrences = useMemo(() => expandEvents(events, range.start, range.end), [events, range.start, range.end]);
   const days = useMemo(() => (view === 'month' ? [] : eachDateKey(range.start, range.end)), [view, range.start, range.end]);
+  // Phones: where the grid starts on the screen, to size it to what is left above the tab bar.
+  const box = useRef<HTMLDivElement>(null);
+  const [gridTop, setGridTop] = useState(250);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = box.current;
+      if (!el) return;
+      const top = Math.round(el.getBoundingClientRect().top + window.scrollY);
+      setGridTop((t) => (t === top ? t : top));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  });
   // «Світло»: the hours without power, marked on the time scale.
   const { on: powerOn, calendar: powerCalendar, queue: powerQueue, data: powerData } = usePowerSetup();
   // The day view says in words which hours have no power.
@@ -281,10 +295,11 @@ export default function CalendarPage() {
 
       {powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
       <div
-        className={cn(
-          'min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1',
-          powerNote.length === 0 ? 'h-[calc(100dvh-250px)]' : 'h-[calc(100dvh-292px)]',
-        )}
+        ref={box}
+        // Phones: the grid takes exactly what is left above the tab bar, so the last hour is not under it and the page itself
+        // does not scroll away from the top bar.
+        style={{ '--cal-top': `${gridTop}px` } as React.CSSProperties}
+        className="h-[calc(100dvh-var(--cal-top)-110px-max(12px,env(safe-area-inset-bottom))-2px)] min-h-[300px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1"
       >
         {view === 'month' ? (
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />

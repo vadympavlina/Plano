@@ -459,7 +459,7 @@ export function TimeGrid({
 
   return (
     <div className="flex h-full min-h-0 select-none flex-col">
-      <GridHeader strip={strip} days={days} today={today} dayProgress={dayProgress} gridCols={gridCols} onSelectDay={onSelectDay} />
+      <GridHeader strip={strip} days={days} today={today} dayProgress={dayProgress} gridCols={gridCols} onSelectDay={onSelectDay} outage={outage?.bands} />
 
       {/* All-day row: always present so all-day events can be drawn here */}
       <div className="flex border-b border-line/70">
@@ -622,19 +622,19 @@ export function TimeGrid({
                     {fmt(dropAt.min)} – {fmt(dropAt.min + 60)}
                   </div>
                 )}
-                {/* hours without power (several days: a thin rail on the day's edge) */}
+                {/* hours without power (several days): a dashed line on the day's edge, a dark dot where the power goes, a green one where it returns */}
                 {!single &&
-                  outage
-                    ?.bands(c.day)
-                    .map((b) => (
-                      <div
-                        key={b.start}
-                        aria-hidden
-                        data-power-band
-                        className="pointer-events-none absolute left-0 z-0 w-[3px] rounded-full bg-ink/55"
-                        style={{ top: (b.start / 60) * HOUR_PX, height: ((b.end - b.start) / 60) * HOUR_PX }}
-                      />
-                    ))}
+                  outage?.bands(c.day).map((b) => {
+                    const top = (b.start / 60) * HOUR_PX;
+                    const height = ((b.end - b.start) / 60) * HOUR_PX;
+                    return (
+                      <div key={b.start} aria-hidden data-power-band className="pointer-events-none absolute left-0 z-[3] w-0" style={{ top, height }}>
+                        <span className="absolute inset-y-0 left-0 w-0 border-l-2 border-dashed border-ink/40" />
+                        <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-ink ring-2 ring-surface" />
+                        <span className="absolute -bottom-1 -left-1 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-surface" />
+                      </div>
+                    );
+                  })}
                 {/* hover hint */}
                 {hover && hover.dayIndex === dayIndex && !sel && !drag && (
                   <div

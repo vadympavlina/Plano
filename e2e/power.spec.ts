@@ -99,10 +99,15 @@ test('calendar: the start and the end of the outage are marked on the time scale
   await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
 });
 
-test('the week view marks the day with a thin rail', async ({ page }) => {
+test('the 3-day and week views: a dashed line with two dots in the column and the hours under the date', async ({ page }) => {
   await start(page, '2.1');
+  await open(page, '/calendar?view=3days');
+  await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Відкрити .*\. Без світла 10:00–14:00/ })).toBeVisible();
+  await expect(page.getByText('10–14')).toBeVisible();
   await open(page, '/calendar?view=week');
   await expect(page.locator('[data-power-band]')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: /Відкрити .*\. Без світла 10:00–14:00/ })).toBeVisible();
 });
 
 test('when it is off in the settings nothing about it shows', async ({ page }) => {

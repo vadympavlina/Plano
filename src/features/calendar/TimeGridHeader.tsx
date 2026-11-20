@@ -3,6 +3,8 @@ import { formatDateKey } from '@/lib/date';
 import { cn } from '@/lib/utils/cn';
 import type { DateKey } from '@/types';
 import { DayRing } from './TimeGridParts';
+import { compactSpan, spanLabel, type Span } from '@/features/power/logic';
+import { Zap } from 'lucide-react';
 
 /**
  * The top of the time grid: in the day view a week strip, otherwise one header per visible day
@@ -15,6 +17,7 @@ export function GridHeader({
   dayProgress,
   gridCols,
   onSelectDay,
+  outage,
 }: {
   strip: { d: DateKey; marked: boolean }[] | null;
   days: DateKey[];
@@ -22,6 +25,8 @@ export function GridHeader({
   dayProgress: Map<DateKey, { done: number; total: number }>;
   gridCols: CSSProperties;
   onSelectDay: (d: DateKey) => void;
+  /** Hours without power per day («Світло»): a small mark under each day's date. */
+  outage?: (d: DateKey) => Span[];
 }) {
   return strip ? (
     <div className="grid grid-cols-7 gap-0.5 border-b border-line/70 px-1 pb-1 sm:px-3 sm:py-1.5">
@@ -64,10 +69,10 @@ export function GridHeader({
               type="button"
               onClick={() => onSelectDay(d)}
               className={cn(
-                'flex items-center justify-between gap-1.5 px-2.5 py-3 text-left transition-colors hover:bg-surface-2/60 lg:px-3',
-                days.length > 3 && 'justify-center px-1 py-2.5',
+                'flex flex-wrap items-center justify-between gap-x-1.5 gap-y-1 px-2.5 py-3 text-left transition-colors hover:bg-surface-2/60 lg:px-3',
+                days.length > 3 && 'flex-col justify-center gap-0 px-1 py-2.5',
               )}
-              aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}`}
+              aria-label={`Відкрити ${formatDateKey(d, 'EEEE, d MMMM')}${outage?.(d).length ? `. Без світла ${outage(d).map(spanLabel).join(', ')}` : ''}`}
             >
               <span
                 className={cn(
@@ -92,10 +97,27 @@ export function GridHeader({
                   <DayRing done={p?.done ?? 0} total={p?.total ?? 0} />
                 </span>
               )}
+              {outage && <PowerMark spans={outage(d)} compact={days.length > 3} />}
             </button>
           );
         })}
       </div>
     </div>
+  );
+}
+
+/** «⚡ 9–13»: when the power is off that day, under the date; just the bolt where the column is narrow (a week). */
+function PowerMark({ spans, compact }: { spans: Span[]; compact: boolean }) {
+  if (!spans.length) return null;
+  return (
+    <span className={cn('basis-full', compact && 'flex justify-center')}>
+      <span
+        aria-hidden
+        className="inline-flex max-w-full items-center gap-0.5 rounded-full bg-ink px-1.5 py-px text-[10.5px] font-bold leading-4 tabular-nums text-surface"
+      >
+        <Zap className="h-2.5 w-2.5 shrink-0" />
+        {!compact && <span className="truncate">{spans.map(compactSpan).join(', ')}</span>}
+      </span>
+    </span>
   );
 }

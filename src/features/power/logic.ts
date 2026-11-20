@@ -73,3 +73,9 @@ export function lengthLabel(ms: number): string {
 
 export const totalMinutes = (spans: Span[]) => spans.reduce((n, s) => n + (s.end - s.start), 0);
 export const spanLabel = (s: Span) => `${hhmm(s.start)}–${s.end >= 1440 ? '24:00' : hhmm(s.end)}`;
+
+/** «9–13», «21–24», «9:30–11»: hours as short as they can be, for a narrow day header. */
+export const compactSpan = (s: Span) => {
+  const h = (m: number) => (m % 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}` : String(m / 60));
+  return `${h(s.start)}–${h(s.end)}`;
+};

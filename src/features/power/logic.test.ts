@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { kyivEpoch, type Outages } from '@/lib/power/shared';
-import { clock, dayBands, lengthLabel, spanLabel, spansOf, statusAt, totalMinutes, untilLabel } from './logic';
+import { clock, compactSpan, dayBands, lengthLabel, spanLabel, spansOf, statusAt, totalMinutes, untilLabel } from './logic';
 
 const data: Outages = {
   source: 'x',
@@ -75,6 +75,11 @@ describe('the status right now', () => {
 });
 
 describe('words', () => {
+  it('writes hours as short as possible for a narrow header', () => {
+    expect(compactSpan({ start: 540, end: 780 })).toBe('9–13');
+    expect(compactSpan({ start: 1260, end: 1440 })).toBe('21–24');
+    expect(compactSpan({ start: 570, end: 660 })).toBe('9:30–11');
+  });
   it('writes clocks, lengths and ends', () => {
     expect(clock(at('2026-11-20', 9, 5))).toBe('09:05');
     expect(clock(at('2026-11-21', 0), true)).toBe('24:00');
