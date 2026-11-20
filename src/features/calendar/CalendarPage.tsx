@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { addMonths } from 'date-fns';
-import { CalendarCheck, ChevronLeft, ChevronRight, Menu, Plus, Search, Zap } from 'lucide-react';
+import { CalendarCheck, ChevronLeft, ChevronRight, Menu, Plus, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { RightPanel } from '@/components/layout/RightPanel';
@@ -81,7 +81,7 @@ export default function CalendarPage() {
   const today = todayKey(now);
   const [params, setParams] = useSearchParams();
   const { events, tasks, categoryById } = useCollections();
-  const { openEventForm, openEvent, openTask, openQuickAdd, openSearch } = useUI();
+  const { openEventForm, openEvent, openTask, openQuickAdd } = useUI();
   const { openMenu } = useChrome();
   // The phone's top: compact (one row), folding away on scroll, or merged with the app bar.
   const phone = useIsPhone();
@@ -299,16 +299,6 @@ export default function CalendarPage() {
               </span>,
             )}
           </div>
-          {phoneSingle && (
-            <button
-              type="button"
-              onClick={openSearch}
-              aria-label="Пошук"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-2 text-ink transition-colors active:bg-line"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-          )}
           <GoogleSyncButton />
           <Select<CalendarView>
             variant="chip"
@@ -322,7 +312,7 @@ export default function CalendarPage() {
               <CalendarCheck className="h-4 w-4" />
             </Button>
           )}
-          {!phoneSingle && (
+          {
             <>
               <Button variant="outline" size="icon-sm" aria-label="Назад" onClick={() => step(-1)}>
                 <ChevronLeft className="h-4 w-4" />
@@ -331,7 +321,7 @@ export default function CalendarPage() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </>
-          )}
+          }
         </header>
       ) : (
         <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">

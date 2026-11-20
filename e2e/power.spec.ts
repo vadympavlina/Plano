@@ -171,5 +171,5 @@ test('phone calendar header: the single mode merges the app bar into the calenda
   await open(page, '/calendar?view=day');
   await expect(page.getByRole('button', { name: 'Меню акаунта' })).toBeHidden();
   await expect(page.getByRole('button', { name: 'Меню', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Пошук', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Назад' })).toBeVisible();
 });

@@ -133,13 +133,19 @@ export function TimeGrid({
   const onFold = phoneTop?.onFold;
   const lastTop = useRef(0);
   const settleUntil = useRef(0);
+  const handRef = useRef({ touching: false, until: 0 });
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || !onFold) return;
+    // Only a hand moves the strip: the grid scrolling itself to the current hour on opening must not fold it.
+    const hand = () => void (handRef.current.until = Date.now() + 1500);
+    const down = () => void ((handRef.current.touching = true), hand());
+    const up = () => void ((handRef.current.touching = false), hand());
     const onScroll = () => {
       const y = el.scrollTop;
       const dy = y - lastTop.current;
       lastTop.current = y;
+      if (!handRef.current.touching && Date.now() > handRef.current.until) return;
       // Folding resizes the grid and can nudge its scroll: ignore that, only a finger counts.
       if (Date.now() < settleUntil.current) return;
       const fold = (to: boolean) => {
@@ -152,7 +158,17 @@ export function TimeGrid({
       else if (dy < -8 && folded) fold(false);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
+    el.addEventListener('touchstart', down, { passive: true });
+    el.addEventListener('touchend', up, { passive: true });
+    el.addEventListener('touchcancel', up, { passive: true });
+    el.addEventListener('wheel', hand, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      el.removeEventListener('touchstart', down);
+      el.removeEventListener('touchend', up);
+      el.removeEventListener('touchcancel', up);
+      el.removeEventListener('wheel', hand);
+    };
   }, [onFold, folded]);
 
   const minuteAt = (clientY: number) => {
