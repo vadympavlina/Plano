@@ -168,3 +168,27 @@ test('phone calendar: one bar with the menu replaces the app bar, days change by
   await expect(page.getByRole('button', { name: 'Меню', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Назад' })).toHaveCount(0);
 });
+
+test('phone calendar: the page follows the finger and slides to the next day', async ({ page, isMobile }) => {
+  test.skip(!isMobile, 'a phone layout');
+  await start(page, '2.1');
+  await open(page, '/calendar?view=day&date=2026-11-10');
+  const col = page.locator('[data-day-index="0"]');
+  const box = (await col.boundingBox())!;
+  const cdp = await page.context().newCDPSession(page);
+  const y = 420;
+  const pt = (x: number) => [{ x, y, id: 1 }];
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: pt(300) });
+  for (const x of [280, 250, 200, 150]) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: pt(x) });
+    await page.waitForTimeout(16);
+  }
+  // Mid-swipe the page has moved with the finger, and the day has not changed yet.
+  const mid = (await col.boundingBox())!;
+  expect(box.x - mid.x).toBeGreaterThanOrEqual(100);
+  await expect(page).toHaveURL(/date=2026-11-10/);
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+  await expect(page).toHaveURL(/date=2026-11-11/);
+  // …and it settles back in place.
+  await expect.poll(async () => Math.abs((await col.boundingBox())!.x - box.x)).toBeLessThan(2);
+});

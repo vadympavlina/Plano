@@ -15,6 +15,8 @@ async function pickSlot(page: Page, isMobile: boolean, hour = 14) {
     while (n && n.scrollHeight <= n.clientHeight) n = n.parentElement;
     if (n) n.scrollTop = hour * 68 - 160;
   }, hour);
+  // A scroll can fold the week strip away: let the grid settle before measuring.
+  await page.waitForTimeout(700);
   const box = (await column.boundingBox())!;
   const y = box.y + hour * 68 + 14;
   if (!isMobile) {

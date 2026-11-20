@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent, useLayoutEffect } from 'react';
 import { MapPin, Repeat } from 'lucide-react';
 import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useUI } from '@/app/providers/UIProvider';
@@ -52,7 +52,7 @@ export function TimeGrid({
    * Phone, compact top: a slimmer strip of days, no empty all-day row. With `onFold` the strip and the all-day row fold away
    * while the grid is scrolled down and come back when it is scrolled up.
    */
-  phoneTop?: { folded: boolean; onFold?: (folded: boolean) => void };
+  phoneTop?: boolean;
 }) {
   const { categoryById, events } = useCollections();
   const { data } = useData();
@@ -111,7 +111,8 @@ export function TimeGrid({
   const earliest = Math.min(...columns.flatMap((c) => c.positioned.map((p) => p.item.start)), DAY_END);
   useScrollToUsefulHour({ scrollRef, days, today, now, earliest, hourPx: HOUR_PX, onSettle: () => setDraftSlot(null) });
 
-  usePageSwipe(scrollRef, blockScroll, onSwipe);
+  const pageRef = useRef<HTMLDivElement>(null);
+  usePageSwipe(pageRef, blockScroll, onSwipe, days[0]);
 
   // Day view: a week strip replaces the single big day header.
   const strip = useMemo(() => {
@@ -129,14 +130,24 @@ export function TimeGrid({
   useBlockTouchScroll(scrollRef, blockScroll);
 
   // Compact phone top: fold the strip away while the grid is scrolled down, bring it back when it is scrolled up.
-  const folded = !!phoneTop?.folded;
-  const onFold = phoneTop?.onFold;
+  // The fold is applied straight to the element (no React render in the middle of a scroll), so it stays smooth.
+  const foldRef = useRef<HTMLDivElement>(null);
+  const folded = useRef(false);
   const lastTop = useRef(0);
   const settleUntil = useRef(0);
   const handRef = useRef({ touching: false, until: 0 });
+  const setFold = (to: boolean) => {
+    const f = foldRef.current;
+    if (!f || folded.current === to) return;
+    folded.current = to;
+    f.dataset.folded = String(to);
+    f.inert = to;
+  };
+  // A new page starts with the strip in view.
+  useLayoutEffect(() => setFold(false), [days[0], days.length]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el || !onFold) return;
+    if (!el || !phoneTop) return;
     // Only a hand moves the strip: the grid scrolling itself to the current hour on opening must not fold it.
     const hand = () => void (handRef.current.until = Date.now() + 1500);
     const down = () => void ((handRef.current.touching = true), hand());
@@ -150,12 +161,12 @@ export function TimeGrid({
       if (Date.now() < settleUntil.current) return;
       const fold = (to: boolean) => {
         settleUntil.current = Date.now() + 450;
-        onFold(to);
+        setFold(to);
       };
       if (y < 24) {
-        if (folded) fold(false);
-      } else if (dy > 8 && !folded) fold(true);
-      else if (dy < -8 && folded) fold(false);
+        if (folded.current) fold(false);
+      } else if (dy > 8 && !folded.current) fold(true);
+      else if (dy < -8 && folded.current) fold(false);
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     el.addEventListener('touchstart', down, { passive: true });
@@ -169,7 +180,7 @@ export function TimeGrid({
       el.removeEventListener('touchcancel', up);
       el.removeEventListener('wheel', hand);
     };
-  }, [onFold, folded]);
+  }, [phoneTop]);
 
   const minuteAt = (clientY: number) => {
     const rect = columnsRef.current!.getBoundingClientRect();
@@ -507,13 +518,13 @@ export function TimeGrid({
   const daySelRange = daySel ? { a: Math.min(daySel.from, daySel.to), b: Math.max(daySel.from, daySel.to) } : null;
 
   return (
-    <div className="flex h-full min-h-0 select-none flex-col">
+    <div ref={pageRef} className="flex h-full min-h-0 select-none flex-col touch-pan-y">
       <div
-        className="grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
-        style={{ gridTemplateRows: folded ? '0fr' : '1fr' }}
-        inert={folded}
+        ref={foldRef}
+        data-folded="false"
+        className="group/fold grid grid-rows-[1fr] transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] data-[folded=true]:grid-rows-[0fr] motion-reduce:transition-none"
       >
-        <div className="min-h-0 overflow-hidden">
+        <div className="min-h-0 overflow-hidden transition-opacity duration-200 ease-out group-data-[folded=true]/fold:opacity-0 motion-reduce:transition-none">
           <GridHeader
             strip={strip}
             days={days}

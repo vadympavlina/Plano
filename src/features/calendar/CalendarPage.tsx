@@ -84,7 +84,6 @@ export default function CalendarPage() {
   const { openMenu } = useChrome();
   // The phone's top: one bar (menu, date, view) that replaces the app bar; the week strip folds away while scrolling.
   const phone = useIsPhone();
-  const [folded, setFolded] = useState(false);
   useOpenFromQuery(() => openEventForm());
 
   const paramView = params.get('view');
@@ -97,7 +96,6 @@ export default function CalendarPage() {
   const paramDate = params.get('date');
   const anchor = paramDate && isDateKey(paramDate) ? paramDate : today;
 
-  useLayoutEffect(() => setFolded(false), [view, anchor]);
   const navigate = (next: { date?: DateKey; view?: CalendarView }) => {
     const p = new URLSearchParams(params);
     if (next.date) p.set('date', next.date);
@@ -369,15 +367,7 @@ export default function CalendarPage() {
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} />
         ) : (
           <>
-            <TimeGrid
-              days={days}
-              occurrences={occurrences}
-              tasks={tasks}
-              onSelectDay={selectDay}
-              onSwipe={step}
-              outage={outage}
-              phoneTop={phone ? { folded, onFold: setFolded } : undefined}
-            />
+            <TimeGrid days={days} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} onSwipe={step} outage={outage} phoneTop={phone} />
             {/* The blocks fade out under the floating tab bar instead of being cut off above it. */}
             <div
               aria-hidden

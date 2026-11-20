@@ -84,13 +84,13 @@ export function MonthView({
   const lo = range ? Math.min(range.from, range.to) : -1;
   const hi = range ? Math.max(range.from, range.to) : -1;
 
-  const gridRef = useRef<HTMLDivElement>(null);
+  const pageRef = useRef<HTMLDivElement>(null);
   const selecting = useRef(false);
   selecting.current = range !== null;
-  usePageSwipe(gridRef, selecting, onSwipe);
+  usePageSwipe(pageRef, selecting, onSwipe, month);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div ref={pageRef} className="flex h-full min-h-0 flex-col touch-pan-y">
       <div className="grid grid-cols-7 pb-1.5">
         {labels.map((l) => (
           <div key={l} className="py-1.5 text-center text-[12px] font-semibold text-muted">
@@ -99,7 +99,6 @@ export function MonthView({
         ))}
       </div>
       <div
-        ref={gridRef}
         className="grid min-h-0 flex-1 select-none grid-cols-7 gap-1 sm:gap-1.5"
         onPointerMove={onMove}
         onPointerUp={onUp}
