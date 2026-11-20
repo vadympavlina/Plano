@@ -39,6 +39,7 @@ import { CategoryChip } from '@/components/common/CategoryMark';
 import { useOpenFromQuery } from '@/hooks/useOpenFromQuery';
 import { usePowerSetup } from '@/features/power/usePower';
 import { dayBands } from '@/features/power/logic';
+import { PowerDayNote } from '@/features/power/PowerDayNote';
 
 const VIEWS: { value: CalendarView; label: string }[] = [
   { value: 'day', label: 'День' },
@@ -108,6 +109,11 @@ export default function CalendarPage() {
   const days = useMemo(() => (view === 'month' ? [] : eachDateKey(range.start, range.end)), [view, range.start, range.end]);
   // «Світло»: the hours without power, shaded in the grid.
   const { on: powerOn, calendar: powerCalendar, queue: powerQueue, data: powerData } = usePowerSetup();
+  // The day view says in words which hours have no power.
+  const powerNote = useMemo(
+    () => (view === 'day' && powerOn && powerCalendar && powerQueue && powerData ? dayBands(powerData, powerQueue, anchor) : []),
+    [view, powerOn, powerCalendar, powerQueue, powerData, anchor],
+  );
   const outage = useMemo(
     () => (powerOn && powerCalendar && powerQueue && powerData ? (day: DateKey) => dayBands(powerData, powerQueue, day) : undefined),
     [powerOn, powerCalendar, powerQueue, powerData],
@@ -273,7 +279,13 @@ export default function CalendarPage() {
         </div>
       </header>
 
-      <div className="h-[calc(100dvh-250px)] min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1">
+      {powerNote.length > 0 && <PowerDayNote spans={powerNote} queue={powerQueue} className="mx-1 mb-2" />}
+      <div
+        className={cn(
+          'min-h-[440px] min-w-0 flex-none overflow-hidden rounded-2xl lg:h-auto lg:min-h-0 lg:flex-1',
+          powerNote.length > 0 ? 'h-[calc(100dvh-292px)]' : 'h-[calc(100dvh-250px)]',
+        )}
+      >
         {view === 'month' ? (
           <MonthView anchor={anchor} occurrences={occurrences} tasks={tasks} onSelectDay={selectDay} />
         ) : (

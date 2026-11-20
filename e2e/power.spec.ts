@@ -90,7 +90,7 @@ test('the calendar shades the hours without power', async ({ page }) => {
   await open(page, '/calendar?view=day');
   const band = page.locator('.power-band');
   await expect(band).toHaveCount(1);
-  await expect(band).toContainText('без світла');
+  await expect(page.getByRole('link', { name: /Без світла 10:00–14:00 · черга 2\.1/ })).toBeVisible();
   const box = (await band.boundingBox())!;
   expect(Math.round(box.height)).toBe(4 * 68);
 });

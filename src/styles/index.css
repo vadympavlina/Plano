@@ -178,10 +178,10 @@
   }
 }
 
-/** Hours without power in the calendar: a soft diagonal hatch behind the blocks. */
+/** Hours without power in the calendar: a faint tint behind the blocks and a thin rail on the edge, so events stay readable. */
 .power-band {
-  background-image: repeating-linear-gradient(135deg, color-mix(in srgb, rgb(var(--ink)) 7%, transparent) 0 7px, transparent 7px 14px);
-  border-block: 1px solid color-mix(in srgb, rgb(var(--ink)) 14%, transparent);
+  background-color: color-mix(in srgb, rgb(var(--ink)) 5%, transparent);
+  box-shadow: inset 3px 0 0 color-mix(in srgb, rgb(var(--ink)) 40%, transparent);
 }
 
 @utility task-item {
