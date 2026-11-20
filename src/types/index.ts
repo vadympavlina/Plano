@@ -204,6 +204,8 @@ export interface Note extends Timestamps {
 }
 
 export type ThemePreference = 'light' | 'dark' | 'system';
+export const NOTE_HEADERS = ['banner', 'hero', 'inline', 'card'] as const;
+export type NoteHeader = (typeof NOTE_HEADERS)[number];
 export type CalendarView = 'day' | '3days' | 'week' | 'month';
 
 export interface Settings {
@@ -235,6 +237,8 @@ export interface Settings {
   powerLeadMin: number;
   /** Show the outage hours in the calendar. */
   powerCalendar: boolean;
+  /** How the top of a note looks: a banner with the icon on its edge, the colour as the head, a thin line, or a tinted card. */
+  noteHeader: NoteHeader;
 }
 
 export const ACCENT_COLORS = ['coral', 'blue', 'violet', 'green', 'orange', 'pink'] as const;

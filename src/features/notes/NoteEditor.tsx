@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -25,7 +25,7 @@ import {
   Target,
   Trash2,
 } from 'lucide-react';
-import { CoverPicker, coverGradient } from '@/components/common/Pickers';
+import { CoverPicker } from '@/components/common/Pickers';
 import { LineIcon, LineIconPicker } from '@/components/common/CategoryMark';
 import { useUI } from '@/app/providers/UIProvider';
 import { colorOf } from '@/lib/utils/colors';
@@ -36,11 +36,18 @@ import { projectOptions } from '@/components/common/options';
 import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 import { useActions } from '@/hooks/useActions';
-import { useCollections } from '@/hooks/useCollections';
+import { useCollections, useSettings } from '@/hooks/useCollections';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { continueList, renderMarkdown, toggleTask } from '@/lib/utils/markdown';
 import { cn } from '@/lib/utils/cn';
-import type { Note } from '@/types';
+import type { ColorKey, Note } from '@/types';
+
+/** Dark or light ink for text lying on a colour. */
+function readableOn(key: ColorKey): string {
+  const hex = colorOf(key).replace('#', '');
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.62 ? '#1b1f2a' : '#ffffff';
+}
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error';
 
@@ -240,6 +247,181 @@ export function NoteEditor({ note }: { note: Note }) {
     requestAnimationFrame(() => textRef.current?.focus());
   };
 
+  // ---- the head of the note: cover, icon, title and properties, in the look chosen in the settings ----
+  const mode = useSettings().noteHeader;
+  const solid = coverColor ?? colorOf('slate');
+  // An opaque tint of the colour (mixed with the page, so nothing shows through).
+  const soft = (pct: number) => `color-mix(in srgb, ${solid} ${pct}%, rgb(var(--surface)))`;
+  const setCover = (cover: ColorKey | undefined) => void actions.notes.update(note.id, { cover }).catch(() => undefined);
+  const onCover = mode === 'hero' && !!coverColor;
+  const boxed = mode === 'card' && !!(note.icon || coverColor);
+  const heroInk = note.cover ? readableOn(note.cover) : undefined;
+
+  const tile = (size: string, glyph: string, extra?: string, style?: CSSProperties) =>
+    note.icon ? (
+      <LineIconPicker label="Іконка нотатки" value={note.icon} color={solid} onChange={setIcon}>
+        <span className={cn('flex shrink-0 items-center justify-center rounded-2xl', size, extra)} style={{ color: solid, background: soft(16), ...style }}>
+          <LineIcon icon={note.icon} fallback={FileText} className={glyph} />
+        </span>
+      </LineIconPicker>
+    ) : null;
+
+  const titleInput = (className?: string, style?: CSSProperties) => (
+    <textarea
+      rows={1}
+      autoComplete="off"
+      value={title}
+      onChange={(e) => change({ title: e.target.value.replace(/\n/g, ' ') })}
+      onKeyDown={(e) => {
+        // A title is one line of text that wraps; Enter moves on to the text.
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+          e.preventDefault();
+          if (preview) return;
+          textRef.current?.focus();
+        }
+      }}
+      ref={(el) => {
+        if (!el) return;
+        el.style.height = 'auto';
+        el.style.height = `${el.scrollHeight}px`;
+      }}
+      placeholder="Без назви"
+      aria-label="Назва нотатки"
+      maxLength={300}
+      style={style}
+      className={cn(
+        'block w-full min-w-0 resize-none overflow-hidden bg-transparent text-[28px] font-bold leading-tight tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[34px]',
+        className,
+      )}
+    />
+  );
+
+  // «Іконка» / «Обкладинка»: what is missing can be added.
+  const adders = (
+    <div
+      className={cn(
+        'flex gap-1 text-[12.5px] text-subtle transition-opacity [@media(hover:none)]:opacity-100',
+        !note.icon && !coverColor
+          ? 'opacity-100 sm:opacity-0 sm:group-hover/head:opacity-100'
+          : 'opacity-0 group-hover/head:opacity-100 focus-within:opacity-100',
+      )}
+    >
+      {!note.icon && (
+        <LineIconPicker label="Іконка нотатки" value={undefined} color={solid} onChange={setIcon}>
+          <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
+            <Smile className="h-3.5 w-3.5" /> Іконка
+          </span>
+        </LineIconPicker>
+      )}
+      {(!coverColor || mode !== 'banner') && (
+        <CoverPicker value={note.cover} onChange={setCover}>
+          <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
+            <ImageIcon className="h-3.5 w-3.5" /> Обкладинка
+          </span>
+        </CoverPicker>
+      )}
+    </div>
+  );
+  const coverButton = (
+    <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+      <CoverPicker value={note.cover} onChange={setCover} />
+    </div>
+  );
+
+  const meta = (
+    <div className="mt-2 grid grid-cols-[22px_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 text-[13.5px] sm:mt-4 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-x-3 sm:gap-y-2">
+      <span className="flex items-center gap-2 text-muted">
+        <FolderKanban className="h-4 w-4" /> <span className="max-sm:sr-only">Проєкт</span>
+      </span>
+      <div>
+        <Select
+          variant="ghost"
+          className="-ml-2"
+          aria-label="Проєкт"
+          value={note.projectId ?? ''}
+          onChange={(v) => void actions.notes.update(note.id, { projectId: v || undefined }).catch(() => undefined)}
+          options={projectOptions(projects, note.projectId)}
+        />
+      </div>
+      <span className="flex items-center gap-2 self-start pt-2 text-muted">
+        <Hash className="h-4 w-4" /> <span className="max-sm:sr-only">Теги</span>
+      </span>
+      <TagInput
+        className="min-w-0"
+        value={tagsText
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)}
+        onChange={(tags) => change({ tags: tags.join(', ') })}
+        placeholder="Додати тег…"
+      />
+      <span className="flex items-center gap-2 text-muted">
+        <Clock className="h-4 w-4" /> <span className="max-sm:sr-only">Змінено</span>
+      </span>
+      <span className="text-muted">
+        {updatedAt.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })},{' '}
+        {updatedAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
+      </span>
+    </div>
+  );
+
+  let head: ReactNode;
+  if (mode === 'banner') {
+    // A band of colour with the icon on its lower edge, cut out of the page by a ring of the page's own colour.
+    head = (
+      <div className="group/head">
+        {coverColor && (
+          <div className="group relative mb-2 mt-2 h-20 rounded-2xl sm:h-28" style={{ background: `linear-gradient(120deg, ${soft(58)}, ${soft(30)})` }}>
+            {coverButton}
+          </div>
+        )}
+        <div className={cn('relative z-10 flex items-end gap-2', coverColor && note.icon ? '-mt-9 ml-3 sm:-mt-12' : 'mt-3 sm:mt-4')}>
+          {tile('h-14 w-14 sm:h-16 sm:w-16', 'h-7 w-7', 'ring-[5px] ring-surface')}
+          {adders}
+        </div>
+        {titleInput('mt-2')}
+      </div>
+    );
+  } else if (onCover) {
+    // The colour is the head itself: icon and title sit on it.
+    head = (
+      <div
+        className="group group/head relative mb-1 mt-3 rounded-2xl p-4 pb-5 sm:p-6 sm:pb-7"
+        style={{ background: `linear-gradient(135deg, ${solid}, color-mix(in srgb, ${solid} 78%, black))` }}
+      >
+        {coverButton}
+        <div className="flex items-center gap-3.5 pt-6 sm:pt-4">
+          {tile('h-14 w-14 sm:h-16 sm:w-16', 'h-7 w-7', 'shadow-pop', { background: 'rgb(var(--surface))' })}
+          {titleInput('placeholder:opacity-60', { color: heroInk })}
+        </div>
+      </div>
+    );
+  } else if (boxed) {
+    // The whole head is one tinted card: icon, title and properties.
+    head = (
+      <div className="group/head mt-3 rounded-2xl p-3.5 sm:p-5" style={{ background: soft(9), boxShadow: `inset 0 0 0 1px ${soft(26)}` }}>
+        <div className="flex items-center gap-3">
+          {tile('h-12 w-12 sm:h-14 sm:w-14', 'h-6 w-6', undefined, { background: soft(22) })}
+          {titleInput('text-[24px] sm:text-[30px]')}
+        </div>
+        <div className="mt-2">{meta}</div>
+        <div className="mt-1">{adders}</div>
+      </div>
+    );
+  } else {
+    // «inline» (and the other looks when there is nothing to show): a thin line of colour, the icon beside the title.
+    head = (
+      <div className="group/head mt-3 sm:mt-4">
+        {coverColor && <div className="mb-3 h-1.5 rounded-full" style={{ background: `linear-gradient(90deg, ${solid}, ${soft(35)})` }}></div>}
+        <div className="flex items-center gap-3">
+          {tile('h-12 w-12 sm:h-14 sm:w-14', 'h-6 w-6')}
+          {titleInput()}
+        </div>
+        {adders}
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0">
       <div className="flex min-w-0 flex-1 flex-col">
@@ -302,93 +484,8 @@ export function NoteEditor({ note }: { note: Note }) {
 
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <div className="mx-auto w-full max-w-[760px] px-5 pb-16 sm:px-10">
-            {/* Cover + icon */}
-            {coverColor ? (
-              <div className="group relative mb-2 mt-2 h-20 rounded-2xl sm:h-28" style={{ background: coverGradient(note.cover!) }}>
-                <div className="absolute right-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-                  <CoverPicker value={note.cover} onChange={(cover) => void actions.notes.update(note.id, { cover }).catch(() => undefined)} />
-                </div>
-              </div>
-            ) : null}
-            <div className={cn('group/head flex items-end gap-2', coverColor && note.icon ? '-mt-9 ml-3 sm:-mt-12' : 'mt-3 sm:mt-4')}>
-              {note.icon && (
-                <LineIconPicker label="Іконка нотатки" value={note.icon} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
-                  <span
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl sm:h-16 sm:w-16 bg-surface shadow-pop ring-1 ring-line/60"
-                    style={{ color: coverColor }}
-                  >
-                    <LineIcon icon={note.icon} fallback={FileText} className="h-7 w-7" />
-                  </span>
-                </LineIconPicker>
-              )}
-              <div
-                className={cn(
-                  'flex gap-1 pb-1 text-[12.5px] text-subtle opacity-0 transition-opacity group-hover/head:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100',
-                  !note.icon && !coverColor && 'opacity-100 sm:opacity-0',
-                )}
-              >
-                {!note.icon && (
-                  <LineIconPicker label="Іконка нотатки" value={undefined} color={coverColor ?? colorOf('slate')} onChange={setIcon}>
-                    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
-                      <Smile className="h-3.5 w-3.5" /> Іконка
-                    </span>
-                  </LineIconPicker>
-                )}
-                {!coverColor && (
-                  <CoverPicker value={undefined} onChange={(cover) => void actions.notes.update(note.id, { cover }).catch(() => undefined)}>
-                    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 hover:bg-surface-2 hover:text-ink">
-                      <ImageIcon className="h-3.5 w-3.5" /> Обкладинка
-                    </span>
-                  </CoverPicker>
-                )}
-              </div>
-            </div>
-
-            <input
-              autoComplete="off"
-              value={title}
-              onChange={(e) => change({ title: e.target.value })}
-              placeholder="Без назви"
-              aria-label="Назва нотатки"
-              maxLength={300}
-              className="mt-2 w-full bg-transparent text-[28px] font-bold leading-tight tracking-tight text-ink outline-hidden placeholder:text-subtle focus-visible:ring-0 focus-visible:ring-offset-0 sm:text-[34px]"
-            />
-
-            {/* Properties */}
-            <div className="mt-2 grid grid-cols-[22px_minmax(0,1fr)] items-center gap-x-2 gap-y-0.5 text-[13.5px] sm:mt-4 sm:grid-cols-[110px_minmax(0,1fr)] sm:gap-x-3 sm:gap-y-2">
-              <span className="flex items-center gap-2 text-muted">
-                <FolderKanban className="h-4 w-4" /> <span className="max-sm:sr-only">Проєкт</span>
-              </span>
-              <div>
-                <Select
-                  variant="ghost"
-                  className="-ml-2"
-                  aria-label="Проєкт"
-                  value={note.projectId ?? ''}
-                  onChange={(v) => void actions.notes.update(note.id, { projectId: v || undefined }).catch(() => undefined)}
-                  options={projectOptions(projects, note.projectId)}
-                />
-              </div>
-              <span className="flex items-center gap-2 self-start pt-2 text-muted">
-                <Hash className="h-4 w-4" /> <span className="max-sm:sr-only">Теги</span>
-              </span>
-              <TagInput
-                className="min-w-0"
-                value={tagsText
-                  .split(',')
-                  .map((t) => t.trim())
-                  .filter(Boolean)}
-                onChange={(tags) => change({ tags: tags.join(', ') })}
-                placeholder="Додати тег…"
-              />
-              <span className="flex items-center gap-2 text-muted">
-                <Clock className="h-4 w-4" /> <span className="max-sm:sr-only">Змінено</span>
-              </span>
-              <span className="text-muted">
-                {updatedAt.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long' })},{' '}
-                {updatedAt.toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
+            {head}
+            {!boxed && meta}
             <div className="my-3 h-px bg-line sm:my-6" />
 
             {!preview && (
