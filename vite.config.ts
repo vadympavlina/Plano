@@ -86,7 +86,8 @@ export default defineConfig(({ mode }) => {
           // iOS fetches launch screens itself when the app is added to the Home Screen.
           globIgnores: ['splash/**', 'screenshots/**'],
           navigateFallback: 'index.html',
-          navigateFallbackDenylist: [/^\/__/],
+          // The privacy policy and the terms are plain pages next to the app: the app shell must not stand in for them.
+          navigateFallbackDenylist: [/^\/__/, /\/(privacy|terms)\.html$/],
           cleanupOutdatedCaches: true,
           // Push + notification click handlers (public/push-sw.js).
           importScripts: ['push-sw.js'],

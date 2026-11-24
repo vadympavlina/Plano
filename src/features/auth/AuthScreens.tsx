@@ -108,6 +108,15 @@ export function LoginScreen() {
         <KeyRound className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         Приватний простір. Відкрити його може лише дозволений акаунт — публічної реєстрації немає.
       </p>
+      <p className="mt-3 text-center text-xs text-subtle">
+        <a className="underline underline-offset-2 hover:text-ink" href={`${import.meta.env.BASE_URL}privacy.html`} target="_blank" rel="noopener noreferrer">
+          Політика конфіденційності
+        </a>
+        {' · '}
+        <a className="underline underline-offset-2 hover:text-ink" href={`${import.meta.env.BASE_URL}terms.html`} target="_blank" rel="noopener noreferrer">
+          Умови використання
+        </a>
+      </p>
     </Shell>
   );
 }

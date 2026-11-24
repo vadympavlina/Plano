@@ -201,6 +201,15 @@ Workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
 4. Додайте домен у Firebase (**Authorized domains**) і `https://plano.edvault.online`
    в **Authorized JavaScript origins** OAuth-клієнта Google.
 
+## Політика конфіденційності й умови
+
+Дві звичайні сторінки поруч із застосунком (не частина SPA, тож їх бачать і без входу — цього вимагає Google для OAuth):
+`public/privacy.html` → `https://plano.edvault.online/privacy.html` і `public/terms.html` → `…/terms.html`.
+Вони двомовні (українська/англійська), контакт — `support@edvault.online`. Посилання на них є на екрані входу й у
+«Налаштування → Дані». Для Google OAuth consent screen вкажіть саме ці адреси (Privacy policy / Terms of service).
+Якщо змінюється те, які дані збирає застосунок (нова інтеграція, нові дані на сервері), оновіть обидві сторінки й дату в них;
+service worker не підміняє їх оболонкою застосунку (`navigateFallbackDenylist` у `vite.config.ts`).
+
 ## Встановлення PWA
 
 - **Налаштування → Параметри → «Застосунок на пристрої»**: кнопка **Встановити** (Chrome, Edge, Android)

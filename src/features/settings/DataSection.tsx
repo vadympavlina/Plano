@@ -220,6 +220,26 @@ export function DataSection() {
           <Trash2 className="h-4 w-4" /> Видалити
         </Button>
       </Row>
+      <Row label="Правові документи" hint="Політика конфіденційності й умови використання." keywords="політика конфіденційності умови privacy terms">
+        <div className="flex gap-3 text-[13px]">
+          <a
+            className="font-medium underline underline-offset-2 hover:text-ink"
+            href={`${import.meta.env.BASE_URL}privacy.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Конфіденційність
+          </a>
+          <a
+            className="font-medium underline underline-offset-2 hover:text-ink"
+            href={`${import.meta.env.BASE_URL}terms.html`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Умови
+          </a>
+        </div>
+      </Row>
     </Group>
   );
 }
