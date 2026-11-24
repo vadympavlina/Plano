@@ -194,6 +194,59 @@
   }
 }
 
+/* The live editor of a note (ProseMirror): checklists, the hint on an empty line, nested lists. */
+@utility note-editor {
+  & > * + * {
+    margin-top: 0;
+  }
+  & p.is-empty::before,
+  & .is-editor-empty:first-child::before {
+    @apply pointer-events-none float-left h-0 text-subtle;
+    content: attr(data-placeholder);
+  }
+  & ul[data-type='taskList'] {
+    @apply list-none pl-0;
+  }
+  & ul[data-type='taskList'] ul[data-type='taskList'] {
+    @apply pl-6;
+  }
+  & ul[data-type='taskList'] li {
+    @apply flex items-start gap-2.5;
+  }
+  & ul[data-type='taskList'] li > label {
+    @apply mt-[3px] flex shrink-0 select-none items-center max-sm:mt-[1px];
+  }
+  & ul[data-type='taskList'] li > div {
+    @apply min-w-0 flex-1;
+  }
+  & ul[data-type='taskList'] li > div > p {
+    @apply my-0;
+  }
+  & ul[data-type='taskList'] input[type='checkbox'] {
+    @apply h-[18px] w-[18px] shrink-0 cursor-pointer appearance-none rounded-[6px] border-[1.5px] border-subtle/70 bg-surface max-sm:h-[22px] max-sm:w-[22px];
+  }
+  & ul[data-type='taskList'] input[type='checkbox']:checked {
+    @apply border-accent bg-accent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+    background-size: 11px;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+  & ul[data-type='taskList'] li[data-checked='true'] > div {
+    @apply text-muted line-through;
+  }
+  & li > p {
+    @apply my-0;
+  }
+  & li > ul,
+  & li > ol {
+    @apply my-0.5;
+  }
+  & .ProseMirror-selectednode {
+    @apply rounded-sm outline-2 outline-offset-2 outline-accent/40;
+  }
+}
+
 @utility enter-fade {
   opacity: 1;
   transition: opacity 200ms ease-out;
@@ -435,7 +488,8 @@
   }
   /* Text fields show focus through their own border, not an extra ring. */
   input:focus-visible,
-  textarea:focus-visible {
+  textarea:focus-visible,
+  [contenteditable='true']:focus-visible {
     @apply ring-0 ring-offset-0;
   }
 

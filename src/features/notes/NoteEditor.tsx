@@ -1,30 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  ArrowLeft,
-  FolderKanban,
-  Bold,
-  Check,
-  Clock,
-  Eye,
-  FileText,
-  Hash,
-  Heading2,
-  ImageIcon,
-  Italic,
-  Link2,
-  List,
-  ListChecks,
-  ListOrdered,
-  Loader2,
-  Pencil,
-  Pin,
-  PinOff,
-  Quote,
-  Smile,
-  Target,
-  Trash2,
-} from 'lucide-react';
+import { ArrowLeft, FolderKanban, Check, Clock, FileText, Hash, ImageIcon, Loader2, Code2, Pencil, Pin, PinOff, Smile, Target, Trash2 } from 'lucide-react';
 import { CoverPicker } from '@/components/common/Pickers';
 import { LineIcon, LineIconPicker } from '@/components/common/CategoryMark';
 import { useUI } from '@/app/providers/UIProvider';
@@ -38,8 +14,10 @@ import { toast } from '@/components/ui/toast';
 import { useActions } from '@/hooks/useActions';
 import { useCollections } from '@/hooks/useCollections';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
-import { continueList, renderMarkdown, toggleTask } from '@/lib/utils/markdown';
+import { continueList } from '@/lib/utils/markdown';
+import { BlockEditor } from './editor/BlockEditor';
 import { cn } from '@/lib/utils/cn';
+import type { Editor } from '@tiptap/core';
 import type { ColorKey, Note } from '@/types';
 
 type SaveState = 'saved' | 'pending' | 'saving' | 'error';
@@ -57,11 +35,11 @@ export function NoteEditor({ note }: { note: Note }) {
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
   const [tagsText, setTagsText] = useState(note.tags.join(', '));
-  // Notes with content open in reading mode; clicking the text switches to editing.
-  const [preview, setPreview] = useState(() => note.content.trim().length > 0);
+  // The text is edited as live blocks; «Markdown» shows (and edits) the raw text instead.
+  const [source, setSource] = useState(false);
   const [state, setState] = useState<SaveState>('saved');
   const textRef = useRef<HTMLTextAreaElement>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<Editor | null>(null);
   const saved = useRef({ title: note.title, content: note.content, tags: note.tags.join(', ') });
 
   const save = useDebouncedCallback((next: { title: string; content: string; tags: string }) => {
@@ -123,39 +101,13 @@ export function NoteEditor({ note }: { note: Note }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note.title, note.content, note.tags]);
 
-  const wrap = (before: string, after = before, placeholder = 'текст') => {
-    const el = textRef.current;
-    if (!el) return;
-    const { selectionStart: s, selectionEnd: e } = el;
-    const selected = content.slice(s, e) || placeholder;
-    const next = content.slice(0, s) + before + selected + after + content.slice(e);
-    change({ content: next });
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(s + before.length, s + before.length + selected.length);
-    });
-  };
-
-  const linePrefix = (prefix: string) => {
-    const el = textRef.current;
-    if (!el) return;
-    const s = el.selectionStart;
-    const lineStart = content.lastIndexOf('\n', s - 1) + 1;
-    const next = content.slice(0, lineStart) + prefix + content.slice(lineStart);
-    change({ content: next });
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(s + prefix.length, s + prefix.length);
-    });
-  };
-
   // The text box grows with the text (the page scrolls, not the box).
   useLayoutEffect(() => {
     const el = textRef.current;
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
-  }, [content, preview]);
+  }, [content, source]);
 
   // Enter at the end of a list line starts the next item; on an empty item it ends the list.
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -177,8 +129,6 @@ export function NoteEditor({ note }: { note: Note }) {
     change({ content: next });
   };
 
-  const html = useMemo(() => (preview ? renderMarkdown(content) : ''), [preview, content]);
-
   const remove = async () => {
     const ok = await confirm({
       title: 'Видалити нотатку?',
@@ -196,17 +146,6 @@ export function NoteEditor({ note }: { note: Note }) {
       /* toast from sync layer */
     }
   };
-
-  const tools = [
-    { icon: Bold, label: 'Жирний', run: () => wrap('**') },
-    { icon: Italic, label: 'Курсив', run: () => wrap('*') },
-    { icon: Heading2, label: 'Заголовок', run: () => linePrefix('## ') },
-    { icon: List, label: 'Список', run: () => linePrefix('- ') },
-    { icon: ListChecks, label: 'Чекліст', run: () => linePrefix('- [ ] ') },
-    { icon: ListOrdered, label: 'Нумерований список', run: () => linePrefix('1. ') },
-    { icon: Quote, label: 'Цитата', run: () => linePrefix('> ') },
-    { icon: Link2, label: 'Посилання', run: () => wrap('[', '](https://)', 'посилання') },
-  ];
 
   const headings = useMemo(
     () =>
@@ -226,18 +165,13 @@ export function NoteEditor({ note }: { note: Note }) {
 
   const jumpTo = (index: number) => {
     const go = () => {
-      const el = previewRef.current?.querySelectorAll('h1, h2, h3')[index];
-      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const dom = editorRef.current?.view.dom;
+      dom?.querySelectorAll('h1, h2, h3')[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
-    if (!preview) {
-      setPreview(true);
+    if (source) {
+      setSource(false);
       requestAnimationFrame(() => requestAnimationFrame(go));
     } else go();
-  };
-
-  const startEditing = () => {
-    setPreview(false);
-    requestAnimationFrame(() => textRef.current?.focus());
   };
 
   // ---- the head of the note: cover, icon, title and properties, in the look chosen in the settings ----
@@ -281,8 +215,8 @@ export function NoteEditor({ note }: { note: Note }) {
         // A title is one line of text that wraps; Enter moves on to the text.
         if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
           e.preventDefault();
-          if (preview) return;
-          textRef.current?.focus();
+          if (source) textRef.current?.focus();
+          else editorRef.current?.commands.focus('start');
         }
       }}
       ref={titleRef}
@@ -419,13 +353,14 @@ export function NoteEditor({ note }: { note: Note }) {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => (preview ? startEditing() : setPreview(true))}
-              aria-pressed={!preview}
-              aria-label={preview ? 'Редагувати' : 'Перегляд'}
+              onClick={() => setSource((v) => !v)}
+              aria-pressed={source}
+              aria-label={source ? 'Редактор' : 'Markdown'}
+              title={source ? 'Повернутися до редактора' : 'Показати Markdown'}
               className="max-sm:w-8 max-sm:px-0"
             >
-              {preview ? <Pencil className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              <span className="hidden sm:inline">{preview ? 'Редагувати' : 'Перегляд'}</span>
+              {source ? <Pencil className="h-3.5 w-3.5" /> : <Code2 className="h-3.5 w-3.5" />}
+              <span className="hidden sm:inline">{source ? 'Редактор' : 'Markdown'}</span>
             </Button>
             <Button
               variant="ghost"
@@ -448,37 +383,7 @@ export function NoteEditor({ note }: { note: Note }) {
             {meta}
             <div className="my-3 h-px bg-line sm:my-6" />
 
-            {!preview && (
-              <div className="sticky top-0 z-10 -mx-2 mb-3 flex flex-wrap items-center gap-0.5 rounded-xl bg-surface/95 px-1 py-1 backdrop-blur-sm">
-                {tools.map(({ icon: Icon, label, run }) => (
-                  <Button key={label} variant="ghost" size="icon-sm" aria-label={label} title={label} onClick={run}>
-                    <Icon className="h-4 w-4" />
-                  </Button>
-                ))}
-              </div>
-            )}
-
-            {preview ? (
-              // The keyboard has the «Редагувати» button above; a role here would nest the checklist's checkboxes in a control.
-              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-              <div
-                ref={previewRef}
-                // Tapping the text starts editing; for the keyboard there is the «Редагувати» button above.
-                onClick={(e) => {
-                  const target = e.target as HTMLElement;
-                  if (target.closest('a')) return;
-                  // A tick in a checklist is a tick, not a reason to start editing.
-                  if (target instanceof HTMLInputElement && target.type === 'checkbox') {
-                    const line = Number(target.dataset.line);
-                    if (Number.isInteger(line)) change({ content: toggleTask(content, line) });
-                    return;
-                  }
-                  startEditing();
-                }}
-                className={cn('prose-note min-h-[40vh] cursor-text text-[15.5px] leading-[1.75] text-ink outline-hidden', !content && 'text-muted')}
-                dangerouslySetInnerHTML={{ __html: html || '<p>Поки порожньо. Натисніть, щоб почати писати.</p>' }}
-              />
-            ) : (
+            {source ? (
               <textarea
                 ref={textRef}
                 value={content}
@@ -486,9 +391,11 @@ export function NoteEditor({ note }: { note: Note }) {
                 onKeyDown={onKeyDown}
                 onBlur={() => save.flush()}
                 placeholder={'Почніть писати…\n\nПрацює Markdown: **жирний**, *курсив*, ## заголовок, - список, - [ ] чекліст'}
-                aria-label="Текст нотатки"
-                className="min-h-[45vh] w-full resize-none overflow-hidden bg-transparent text-[15.5px] leading-[1.75] text-ink outline-hidden placeholder:text-subtle"
+                aria-label="Текст нотатки (Markdown)"
+                className="min-h-[45vh] w-full resize-none overflow-hidden bg-transparent font-mono text-[14px] leading-[1.7] text-ink outline-hidden placeholder:text-subtle"
               />
+            ) : (
+              <BlockEditor value={content} onChange={(markdown) => change({ content: markdown })} editorRef={editorRef} onBlur={() => save.flush()} />
             )}
           </div>
         </div>

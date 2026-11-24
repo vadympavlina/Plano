@@ -78,21 +78,54 @@ test('the sheet lifts itself above the on-screen keyboard', async ({ page }) => 
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 290);
 });
 
-test('notes: Enter continues a list, an empty item ends it, and a tick in the text works without editing', async ({ page }) => {
+const noteText = (page: Page) =>
+  page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem('plano:preview:data') ?? '{}');
+    return (Object.values(raw.users.preview.notes).find((n) => (n as { id: string }).id === 'n1') as { content: string }).content;
+  });
+
+test('notes: the text is edited as live blocks — a tick, «- [ ] », Enter in a list, «/» and the Markdown view', async ({ page }) => {
   await open(page, '/notes');
   await page.getByRole('link', { name: /Вікенд у Лісабоні/ }).click();
-  // A checklist in the reading view: one tap ticks it, and the note stays in reading mode.
-  await page.getByRole('checkbox', { name: 'Квитки' }).click();
-  await expect(page.getByRole('checkbox', { name: 'Квитки' })).toBeChecked();
-  await expect(page.getByLabel('Текст нотатки')).toHaveCount(0);
-  // Editing: Enter after an item starts the next one; Enter on the empty item ends the list.
-  await page.locator('.prose-note span', { hasText: 'Готель' }).click();
-  const box = page.getByLabel('Текст нотатки');
-  await box.press('Control+End');
-  await box.press('Enter');
-  await box.pressSequentially('Таксі\nМетро');
-  await expect(box).toHaveValue(/- \[ \] Таксі\n- \[ \] Метро$/);
-  await box.press('Enter');
-  await box.press('Enter');
-  await expect(box).toHaveValue(/- \[ \] Метро\n$/);
+  const editor = page.getByLabel('Текст нотатки', { exact: true });
+  await expect(editor).toBeVisible();
+
+  // A tick is a tick, and it is saved as Markdown.
+  await editor.locator('li', { hasText: 'Квитки' }).locator('input[type=checkbox]').click();
+  await expect.poll(() => noteText(page)).toContain('- [x] Квитки');
+
+  // «- [ ] » makes a checklist item; Enter makes the next one; Enter on an empty one ends the list.
+  await editor.locator('li', { hasText: 'Готель' }).click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('- [ ] Таксі');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Метро');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Кінець **списку**');
+  await expect.poll(() => noteText(page)).toMatch(/- \[ \] Таксі\n- \[ \] Метро\n\nКінець \*\*списку\*\*/);
+
+  // «/» opens the blocks; typing narrows them; Enter adds the block.
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('/заголовок 2');
+  await expect(page.getByRole('listbox', { name: 'Блоки' })).toBeVisible();
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Розділ');
+  await expect.poll(() => noteText(page)).toContain('## Розділ');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('/');
+  await page.getByRole('option', { name: /Цитата/ }).click();
+  await page.keyboard.type('Мудра думка');
+  await expect.poll(() => noteText(page)).toContain('> Мудра думка');
+
+  // It survives a reload, and the Markdown view shows the very same text.
+  await page.waitForTimeout(900);
+  await page.reload();
+  await expect(page.getByLabel('Текст нотатки', { exact: true }).locator('li', { hasText: 'Метро' })).toBeVisible();
+  await page.getByRole('button', { name: 'Markdown' }).click();
+  await expect(page.getByLabel('Текст нотатки (Markdown)')).toHaveValue(/## Розділ/);
+  await page.getByRole('button', { name: 'Редактор' }).click();
+  await expect(page.getByLabel('Текст нотатки', { exact: true }).getByRole('heading', { name: 'Розділ' })).toBeVisible();
 });

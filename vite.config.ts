@@ -96,12 +96,21 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     build: {
+      // The note editor (a chunk of its own) is the one big piece; it is only fetched with the notes page.
+      chunkSizeWarningLimit: 600,
       rollupOptions: {
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return;
             if (id.includes('/firebase/') || id.includes('/@firebase/')) return 'firebase';
             if (/\/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
+            // The note editor is only needed on the notes page: it loads with it, not with the app.
+            if (
+              /\/node_modules\/(@tiptap|prosemirror-[a-z-]+|orderedmap|rope-sequence|w3c-keyname|marked|linkifyjs|markdown-it|entities|mdurl|uc\.micro|linkify-it|punycode\.js|crelt|@remirror)\//.test(
+                id,
+              )
+            )
+              return 'editor';
             // Everything else from node_modules changes only with dependency updates:
             // a separate chunk stays cached across app releases.
             return 'vendor';
