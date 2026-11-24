@@ -265,6 +265,9 @@
             },
             "isPinned": {
               ".validate": "newData.isBoolean()"
+            },
+            "deletedAt": {
+              ".validate": "newData.isString()"
             }
           }
         },

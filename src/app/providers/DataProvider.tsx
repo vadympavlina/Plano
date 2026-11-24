@@ -195,7 +195,9 @@ function useSharedCollections(data: UserData) {
   const eventList = useMemo(() => Object.values(events), [events]);
   const habitList = useMemo(() => Object.values(habits), [habits]);
   const goalList = useMemo(() => Object.values(goals), [goals]);
-  const noteList = useMemo(() => Object.values(notes), [notes]);
+  const noteList = useMemo(() => Object.values(notes).filter((n) => !n.deletedAt), [notes]);
+  // Notes in the trash: out of every list and search, until they are restored (or removed for good).
+  const trashedNotes = useMemo(() => Object.values(notes).filter((n) => n.deletedAt), [notes]);
   const projectList = useMemo(() => Object.values(projects).sort((a, b) => a.name.localeCompare(b.name)), [projects]);
   const categoryList = useMemo(() => Object.values(categories).sort((a, b) => a.order - b.order || a.name.localeCompare(b.name)), [categories]);
   const categoryById = useCallback((id?: string): Category | undefined => (id ? categories[id] : undefined), [categories]);
@@ -208,11 +210,12 @@ function useSharedCollections(data: UserData) {
       habits: habitList,
       goals: goalList,
       notes: noteList,
+      trashedNotes,
       categories: categoryList,
       categoryById,
       projectById,
     }),
-    [taskList, eventList, projectList, habitList, goalList, noteList, categoryList, categoryById, projectById],
+    [taskList, eventList, projectList, habitList, goalList, noteList, trashedNotes, categoryList, categoryById, projectById],
   );
 }
 export type Collections = ReturnType<typeof useSharedCollections>;

@@ -175,6 +175,7 @@ export const noteSchema = z.object({
   isPinned: z.boolean().default(false),
   icon: z.string().max(16).optional().catch(undefined),
   cover: z.enum(COLOR_KEYS).optional().catch(undefined),
+  deletedAt: optionalString,
   ...timestamps,
 });
 

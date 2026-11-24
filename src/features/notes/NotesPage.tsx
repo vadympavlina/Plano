@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { FileText, NotebookPen, Plus, Search } from 'lucide-react';
+import { FileText, NotebookPen, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { colorOf } from '@/lib/utils/colors';
 import { EmptyState } from '@/components/common/States';
 import { useCollections } from '@/hooks/useCollections';
+import { useActions } from '@/hooks/useActions';
+import { confirm } from '@/components/common/ConfirmDialog';
+import { toast } from '@/components/ui/toast';
 import { useCreateNote } from '@/components/layout/CreateMenu';
 import { markdownExcerpt } from '@/lib/utils/markdown';
 import { Progressive } from '@/components/common/Progressive';
@@ -25,6 +28,8 @@ function group(iso: string) {
   return 'Раніше';
 }
 
+const TRASH_DAYS = 30;
+
 function timeAgo(iso: string) {
   const d = new Date(iso);
   const diff = (Date.now() - d.getTime()) / 1000;
@@ -36,10 +41,24 @@ function timeAgo(iso: string) {
 
 export default function NotesPage() {
   const { noteId } = useParams();
-  const { notes, projectById } = useCollections();
+  const { notes, trashedNotes, projectById } = useCollections();
+  const actions = useActions();
   const createNote = useCreateNote();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
+  const [trash, setTrash] = useState(false);
+
+  // The trash keeps a note for 30 days; after that it goes for good.
+  useEffect(() => {
+    const limit = Date.now() - TRASH_DAYS * 86_400_000;
+    for (const n of trashedNotes) if (n.deletedAt && new Date(n.deletedAt).getTime() < limit) void actions.notes.remove(n.id).catch(() => undefined);
+    // Only when the page opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // The trash view goes away with its last note.
+  useEffect(() => {
+    if (trash && trashedNotes.length === 0) setTrash(false);
+  }, [trash, trashedNotes.length]);
 
   const allTags = useMemo(() => [...new Set(notes.flatMap((n) => n.tags))].sort(), [notes]);
   const list = useMemo(() => {
@@ -116,6 +135,59 @@ export default function NotesPage() {
     );
   };
 
+  const trashList = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return trashedNotes
+      .filter((n) => !q || n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q))
+      .sort((a, b) => ((a.deletedAt ?? '') < (b.deletedAt ?? '') ? 1 : -1));
+  }, [trashedNotes, query]);
+
+  const restore = (id: string) => void actions.notes.update(id, { deletedAt: undefined }).catch(() => undefined);
+  const wipe = async (n: Note) => {
+    const ok = await confirm({
+      title: 'Видалити назавжди?',
+      description: `«${n.title || 'Без назви'}» не можна буде повернути.`,
+      confirmLabel: 'Видалити',
+      danger: true,
+    });
+    if (ok) void actions.notes.remove(n.id).catch(() => undefined);
+  };
+  const emptyTrash = async () => {
+    const ok = await confirm({
+      title: 'Очистити кошик?',
+      description: `Нотаток: ${trashedNotes.length}. Їх не можна буде повернути.`,
+      confirmLabel: 'Очистити',
+      danger: true,
+    });
+    if (!ok) return;
+    for (const n of trashedNotes) void actions.notes.remove(n.id).catch(() => undefined);
+    toast.success('Кошик очищено');
+  };
+  const daysLeft = (iso?: string) => Math.max(0, TRASH_DAYS - Math.floor((Date.now() - new Date(iso ?? Date.now()).getTime()) / 86_400_000));
+
+  const trashRow = (n: Note) => (
+    <div key={n.id} className="flex items-center gap-2 rounded-xl px-3 py-2.5 max-lg:mb-2 max-lg:rounded-2xl max-lg:border max-lg:border-line/70 max-lg:p-3.5">
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13.5px] font-semibold max-lg:text-[15.5px]">{n.title || 'Без назви'}</span>
+        <span className="block truncate text-[12px] text-muted">
+          Видалено {timeAgo(n.deletedAt ?? n.updatedAt)} · ще {daysLeft(n.deletedAt)} дн.
+        </span>
+      </span>
+      <Button size="icon-sm" variant="ghost" aria-label={`Відновити «${n.title || 'Без назви'}»`} title="Відновити" onClick={() => restore(n.id)}>
+        <RotateCcw className="h-4 w-4" />
+      </Button>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Видалити «${n.title || 'Без назви'}» назавжди`}
+        title="Видалити назавжди"
+        onClick={() => void wipe(n)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+
   return (
     <div className="flex w-full gap-5 px-2 pb-6 lg:h-(--page-h) lg:pb-0">
       <nav aria-label="Нотатки" className={cn('flex w-full flex-col lg:w-[300px] lg:shrink-0', noteId && 'hidden lg:flex')}>
@@ -135,26 +207,52 @@ export default function NotesPage() {
           onChange={(e) => setQuery(e.target.value)}
           onValueChange={setQuery}
         />
-        {allTags.length > 0 && (
+        {(allTags.length > 0 || trashedNotes.length > 0) && (
           <div className="no-scrollbar mb-1 flex gap-1.5 overflow-x-auto pb-1">
             {['', ...allTags].map((t) => (
               <button
                 key={t || 'all'}
                 type="button"
-                onClick={() => setTag(t)}
-                aria-pressed={tag === t}
+                onClick={() => {
+                  setTag(t);
+                  setTrash(false);
+                }}
+                aria-pressed={!trash && tag === t}
                 className={cn(
                   'shrink-0 rounded-full px-3.5 py-2.5 text-xs font-medium sm:py-1.5',
-                  tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink',
+                  !trash && tag === t ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink',
                 )}
               >
                 {t ? `#${t}` : 'Усі'}
               </button>
             ))}
+            {trashedNotes.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setTrash((v) => !v)}
+                aria-pressed={trash}
+                className={cn(
+                  'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2.5 text-xs font-medium sm:py-1.5',
+                  trash ? 'bg-accent text-surface' : 'bg-surface-2 text-muted hover:text-ink',
+                )}
+              >
+                <Trash2 className="h-3 w-3" /> Кошик · {trashedNotes.length}
+              </button>
+            )}
           </div>
         )}
         <div className="scrollbar-thin -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-4">
-          {list.length === 0 ? (
+          {trash ? (
+            <>
+              <div className="flex items-center justify-between px-3 pb-1 pt-2">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-subtle">Кошик</p>
+                <button type="button" onClick={() => void emptyTrash()} className="text-[12px] font-medium text-danger hover:underline">
+                  Очистити
+                </button>
+              </div>
+              {trashList.length === 0 ? <p className="px-3 py-6 text-center text-[13px] text-muted">Нічого не знайдено</p> : trashList.map(trashRow)}
+            </>
+          ) : list.length === 0 ? (
             <EmptyState
               compact
               icon={<NotebookPen />}

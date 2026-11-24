@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
-import { Bold, Code, IndentDecrease, IndentIncrease, Italic, Link2, Plus, Quote, Redo2, Strikethrough, Undo2 } from 'lucide-react';
+import { Bold, Check, Code, IndentDecrease, IndentIncrease, Italic, Link2, Link2Off, Plus, Quote, Redo2, Strikethrough, Undo2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsPhone } from '@/components/ui/picker';
 import { cn } from '@/lib/utils/cn';
 import { noteExtensions } from './extensions';
 import { SlashCommand, type SlashState } from './slash';
@@ -24,6 +25,9 @@ interface Props {
  */
 export function BlockEditor({ value, onChange, editorRef, onBlur, className }: Props) {
   const [slash, setSlash] = useState<SlashState | null>(null);
+  const [focused, setFocused] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const phone = useIsPhone();
   const lastEmitted = useRef(value);
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
@@ -64,6 +68,18 @@ export function BlockEditor({ value, onChange, editorRef, onBlur, className }: P
     };
   }, [editor, editorRef]);
 
+  useEffect(() => {
+    if (!editor) return;
+    const on = () => setFocused(true);
+    const off = () => setFocused(false);
+    editor.on('focus', on);
+    editor.on('blur', off);
+    return () => {
+      editor.off('focus', on);
+      editor.off('blur', off);
+    };
+  }, [editor]);
+
   // A change that came from elsewhere (another device, the Markdown view) replaces the text; our own typing does not.
   useEffect(() => {
     if (!editor || value === lastEmitted.current) return;
@@ -71,17 +87,55 @@ export function BlockEditor({ value, onChange, editorRef, onBlur, className }: P
     if (editor.getMarkdown() !== value) editor.commands.setContent(value, { contentType: 'markdown', emitUpdate: false });
   }, [editor, value]);
 
+  // On a phone the tools ride just above the keyboard while the text is being typed.
+  const typing = phone && (focused || linkOpen);
+  const inset = useKeyboardInset(typing);
   if (!editor) return null;
+  // Only with a real keyboard up: with none (a hardware keyboard) the bar stays at the top of the text.
+  const pinned = typing && inset > 100;
   return (
     <div className={className} onBlur={onBlur}>
-      <Toolbar editor={editor} />
+      {pinned && <div className="h-11" aria-hidden />}
+      <Toolbar editor={editor} pinned={pinned} inset={inset} linkOpen={linkOpen} setLinkOpen={setLinkOpen} />
       <EditorContent editor={editor} />
       {slash && <SlashMenu state={slash} />}
     </div>
   );
 }
 
-function Toolbar({ editor }: { editor: Editor }) {
+/** How far the on-screen keyboard reaches up from the bottom of the window (0 when there is none). */
+function useKeyboardInset(active: boolean) {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const vv = window.visualViewport;
+    const update = () => setInset(vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0);
+    update();
+    vv?.addEventListener('resize', update);
+    vv?.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    return () => {
+      vv?.removeEventListener('resize', update);
+      vv?.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [active]);
+  return active ? inset : 0;
+}
+
+function Toolbar({
+  editor,
+  pinned,
+  inset,
+  linkOpen,
+  setLinkOpen,
+}: {
+  editor: Editor;
+  pinned: boolean;
+  inset: number;
+  linkOpen: boolean;
+  setLinkOpen: (open: boolean) => void;
+}) {
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -96,14 +150,6 @@ function Toolbar({ editor }: { editor: Editor }) {
       redo: e.can().redo(),
     }),
   });
-  const setLink = () => {
-    const previous = (editor.getAttributes('link').href as string | undefined) ?? '';
-    const url = window.prompt('Адреса посилання', previous || 'https://');
-    if (url === null) return;
-    const chain = editor.chain().focus().extendMarkRange('link');
-    if (url.trim() === '' || url.trim() === 'https://') chain.unsetLink().run();
-    else chain.setLink({ href: /^(https?:|mailto:)/i.test(url.trim()) ? url.trim() : `https://${url.trim()}` }).run();
-  };
   // A tap on a tool must not take the cursor (and on a phone the keyboard) away from the text.
   const keep = (e: React.PointerEvent | React.MouseEvent) => e.preventDefault();
   const tool = (label: string, icon: React.ReactNode, run: () => void, active = false, disabled = false) => (
@@ -126,34 +172,100 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
   return (
     <div
-      role="toolbar"
-      aria-label="Форматування"
-      className="no-scrollbar sticky top-0 z-10 -mx-2 mb-3 flex items-center gap-0.5 overflow-x-auto rounded-xl bg-surface/95 px-1 py-1 backdrop-blur-sm"
-    >
-      {tool('Додати блок', <Plus className="h-4 w-4" />, () => editor.chain().focus().insertContent('/').run())}
-      <span className="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden />
-      {tool('Жирний', <Bold className="h-4 w-4" />, () => editor.chain().focus().toggleBold().run(), s.bold)}
-      {tool('Курсив', <Italic className="h-4 w-4" />, () => editor.chain().focus().toggleItalic().run(), s.italic)}
-      {tool('Закреслений', <Strikethrough className="h-4 w-4" />, () => editor.chain().focus().toggleStrike().run(), s.strike)}
-      {tool('Код у рядку', <Code className="h-4 w-4" />, () => editor.chain().focus().toggleCode().run(), s.code)}
-      {tool('Посилання', <Link2 className="h-4 w-4" />, setLink, s.link)}
-      {tool('Цитата', <Quote className="h-4 w-4" />, () => editor.chain().focus().toggleBlockquote().run(), s.quote)}
-      {s.inList && (
-        <>
-          <span className="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden />
-          {tool('Вкласти глибше', <IndentIncrease className="h-4 w-4" />, () => {
-            const c = editor.chain().focus();
-            (editor.isActive('taskItem') ? c.sinkListItem('taskItem') : c.sinkListItem('listItem')).run();
-          })}
-          {tool('Винести вище', <IndentDecrease className="h-4 w-4" />, () => {
-            const c = editor.chain().focus();
-            (editor.isActive('taskItem') ? c.liftListItem('taskItem') : c.liftListItem('listItem')).run();
-          })}
-        </>
+      className={cn(
+        pinned
+          ? 'fixed inset-x-0 z-[58] border-t border-line bg-surface px-2 pb-[max(4px,env(safe-area-inset-bottom))] pt-1 shadow-pop'
+          : 'sticky top-0 z-10 -mx-2 mb-3 rounded-xl bg-surface/95 px-1 py-1 backdrop-blur-sm',
       )}
-      <span className="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden />
-      {tool('Скасувати', <Undo2 className="h-4 w-4" />, () => editor.chain().focus().undo().run(), false, !s.undo)}
-      {tool('Повторити', <Redo2 className="h-4 w-4" />, () => editor.chain().focus().redo().run(), false, !s.redo)}
+      style={pinned ? { bottom: inset } : undefined}
+    >
+      {linkOpen && <LinkBar editor={editor} onClose={() => setLinkOpen(false)} />}
+      <div role="toolbar" aria-label="Форматування" className="no-scrollbar flex items-center gap-0.5 overflow-x-auto">
+        {tool('Додати блок', <Plus className="h-4 w-4" />, () => editor.chain().focus().insertContent('/').run())}
+        <span className="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden />
+        {tool('Жирний', <Bold className="h-4 w-4" />, () => editor.chain().focus().toggleBold().run(), s.bold)}
+        {tool('Курсив', <Italic className="h-4 w-4" />, () => editor.chain().focus().toggleItalic().run(), s.italic)}
+        {tool('Закреслений', <Strikethrough className="h-4 w-4" />, () => editor.chain().focus().toggleStrike().run(), s.strike)}
+        {tool('Код у рядку', <Code className="h-4 w-4" />, () => editor.chain().focus().toggleCode().run(), s.code)}
+        {tool('Посилання', <Link2 className="h-4 w-4" />, () => setLinkOpen(!linkOpen), s.link || linkOpen)}
+        {tool('Цитата', <Quote className="h-4 w-4" />, () => editor.chain().focus().toggleBlockquote().run(), s.quote)}
+        {s.inList && (
+          <>
+            <span className="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden />
+            {tool('Вкласти глибше', <IndentIncrease className="h-4 w-4" />, () => {
+              const c = editor.chain().focus();
+              (editor.isActive('taskItem') ? c.sinkListItem('taskItem') : c.sinkListItem('listItem')).run();
+            })}
+            {tool('Винести вище', <IndentDecrease className="h-4 w-4" />, () => {
+              const c = editor.chain().focus();
+              (editor.isActive('taskItem') ? c.liftListItem('taskItem') : c.liftListItem('listItem')).run();
+            })}
+          </>
+        )}
+        <span className="mx-1 h-5 w-px shrink-0 bg-line" aria-hidden />
+        {tool('Скасувати', <Undo2 className="h-4 w-4" />, () => editor.chain().focus().undo().run(), false, !s.undo)}
+        {tool('Повторити', <Redo2 className="h-4 w-4" />, () => editor.chain().focus().redo().run(), false, !s.redo)}
+      </div>
+    </div>
+  );
+}
+
+/** The address of a link: typed here, applied to the selected text (or inserted as a link when nothing is selected). */
+function LinkBar({ editor, onClose }: { editor: Editor; onClose: () => void }) {
+  const had = editor.isActive('link');
+  const [url, setUrl] = useState((editor.getAttributes('link').href as string | undefined) ?? '');
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => input.current?.focus(), []);
+
+  const apply = () => {
+    const raw = url.trim();
+    if (!raw) return remove();
+    const href = /^(https?:|mailto:)/i.test(raw) ? raw : `https://${raw}`;
+    const chain = editor.chain().focus();
+    if (editor.state.selection.empty && !editor.isActive('link'))
+      chain.insertContent({ type: 'text', text: raw, marks: [{ type: 'link', attrs: { href } }] }).run();
+    else chain.extendMarkRange('link').setLink({ href }).run();
+    onClose();
+  };
+  const remove = () => {
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    onClose();
+  };
+  return (
+    <div className="mb-1 flex items-center gap-1 px-1">
+      <input
+        ref={input}
+        type="url"
+        inputMode="url"
+        autoCapitalize="none"
+        autoCorrect="off"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            apply();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            onClose();
+            editor.commands.focus();
+          }
+        }}
+        placeholder="Адреса: https://…"
+        aria-label="Адреса посилання"
+        className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-3 text-[14px] text-ink outline-hidden placeholder:text-subtle"
+      />
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Застосувати посилання" title="Застосувати" onClick={apply}>
+        <Check className="h-4 w-4" />
+      </Button>
+      {had && (
+        <Button type="button" variant="ghost" size="icon-sm" aria-label="Прибрати посилання" title="Прибрати посилання" onClick={remove}>
+          <Link2Off className="h-4 w-4" />
+        </Button>
+      )}
+      <Button type="button" variant="ghost" size="icon-sm" aria-label="Закрити" title="Закрити" onClick={onClose}>
+        <X className="h-4 w-4" />
+      </Button>
     </div>
   );
 }

@@ -129,3 +129,67 @@ test('notes: the text is edited as live blocks — a tick, «- [ ] », Enter in 
   await page.getByRole('button', { name: 'Редактор' }).click();
   await expect(page.getByLabel('Текст нотатки', { exact: true }).getByRole('heading', { name: 'Розділ' })).toBeVisible();
 });
+
+test('notes: a new note is ready to type in, and the tools ride above the keyboard', async ({ page }) => {
+  await open(page, '/notes');
+  // A keyboard comes up: the visual viewport gets 300px shorter.
+  await page.evaluate(() => {
+    const vv = window.visualViewport!;
+    Object.defineProperty(vv, 'height', { value: window.innerHeight - 300, configurable: true });
+    vv.dispatchEvent(new Event('resize'));
+  });
+  await page.getByRole('button', { name: 'Нова нотатка' }).click();
+  const title = page.getByLabel('Назва нотатки');
+  await expect(title).toBeFocused();
+  await page.keyboard.type('Ідея');
+  // Enter in the title moves on to the text.
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Перший рядок');
+  await expect(page.getByLabel('Текст нотатки', { exact: true })).toBeFocused();
+  // While the text is being typed (a phone), the toolbar is pinned to the bottom of the screen, not up in the page.
+  const bar = page.getByRole('toolbar', { name: 'Форматування' }).locator('..');
+  await expect(bar).toHaveCSS('position', 'fixed');
+  await expect(bar).toHaveCSS('bottom', '300px');
+});
+
+test('notes: a link is typed into a small bar, not a browser dialog', async ({ page }) => {
+  await open(page, '/notes');
+  await page.getByRole('link', { name: /Вікенд у Лісабоні/ }).click();
+  const editor = page.getByLabel('Текст нотатки', { exact: true });
+  await editor.locator('li', { hasText: 'Готель' }).click();
+  await page.keyboard.press('Control+End');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: 'Посилання' }).click();
+  await page.getByLabel('Адреса посилання').fill('example.com');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => noteText(page)).toContain('[example.com](https://example.com)');
+  await expect(editor.getByRole('link', { name: 'example.com' })).toBeVisible();
+});
+
+test('notes: deleting moves a note to the trash, with undo, restore and removal for good', async ({ page }) => {
+  await open(page, '/notes');
+  await page.getByRole('link', { name: /Вікенд у Лісабоні/ }).click();
+  await page.getByRole('button', { name: 'Видалити нотатку' }).click();
+  // Gone from the list; one tap on the toast brings it back.
+  await expect(page.getByRole('link', { name: /Вікенд у Лісабоні/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Скасувати' }).click();
+  await expect(page.getByRole('link', { name: /Вікенд у Лісабоні/ })).toBeVisible();
+
+  // Deleted again: it is in the trash, from where it is restored.
+  await page.getByRole('link', { name: /Вікенд у Лісабоні/ }).click();
+  await page.getByRole('button', { name: 'Видалити нотатку' }).click();
+  await expect(page.getByRole('button', { name: /Кошик/ })).toBeVisible();
+  await page.getByRole('button', { name: /Кошик/ }).click();
+  await page.getByRole('button', { name: /^Відновити/ }).click();
+  await expect(page.getByRole('link', { name: /Вікенд у Лісабоні/ })).toBeVisible();
+
+  // And removed for good, after a confirmation.
+  await page.getByRole('link', { name: /Вікенд у Лісабоні/ }).click();
+  await page.getByRole('button', { name: 'Видалити нотатку' }).click();
+  await page.getByRole('button', { name: /Кошик/ }).click();
+  await page.getByRole('button', { name: /назавжди$/ }).click();
+  await page.getByRole('button', { name: 'Видалити', exact: true }).click();
+  await expect(page.getByRole('button', { name: /Кошик/ })).toHaveCount(0);
+  await expect(page.getByText('Нотаток поки немає')).toBeVisible();
+});

@@ -201,6 +201,8 @@ export interface Note extends Timestamps {
   icon?: string;
   /** Colour of the cover band; no cover when empty. */
   cover?: ColorKey;
+  /** When it was moved to the trash; a note in the trash is out of every list until it is restored. */
+  deletedAt?: ISODateTime;
 }
 
 export type ThemePreference = 'light' | 'dark' | 'system';

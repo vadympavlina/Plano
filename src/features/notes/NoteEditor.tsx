@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { TagInput } from '@/components/ui/tag-input';
 import { projectOptions } from '@/components/common/options';
-import { confirm } from '@/components/common/ConfirmDialog';
 import { toast } from '@/components/ui/toast';
 import { useActions } from '@/hooks/useActions';
 import { useCollections } from '@/hooks/useCollections';
@@ -129,19 +128,17 @@ export function NoteEditor({ note }: { note: Note }) {
     change({ content: next });
   };
 
+  // Deleting moves the note to the trash (30 days), with a way back right away.
   const remove = async () => {
-    const ok = await confirm({
-      title: 'Видалити нотатку?',
-      description: `«${title || 'Без назви'}» буде видалено назавжди.`,
-      confirmLabel: 'Видалити',
-      danger: true,
-    });
-    if (!ok) return;
-    save.cancel();
+    save.flush();
     try {
-      await actions.notes.remove(note.id);
-      toast.success('Нотатку видалено');
+      await actions.notes.update(note.id, { deletedAt: new Date().toISOString() });
       void navigate('/notes');
+      toast.info('Нотатку видалено', {
+        description: 'Вона лишається в кошику 30 днів.',
+        duration: 8000,
+        action: { label: 'Скасувати', onClick: () => void actions.notes.update(note.id, { deletedAt: undefined }).catch(() => undefined) },
+      });
     } catch {
       /* toast from sync layer */
     }
@@ -204,6 +201,14 @@ export function NoteEditor({ note }: { note: Note }) {
     ro.observe(el.parentElement ?? el);
     return () => ro.disconnect();
   }, [title]);
+
+  // A note that was just created is ready to type in: the cursor is in the title (Enter goes on to the text).
+  useEffect(() => {
+    const fresh = !note.title && !note.content.trim() && Date.now() - new Date(note.createdAt).getTime() < 15_000;
+    if (fresh) titleRef.current?.focus({ preventScroll: true });
+    // Only when the note opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const titleInput = (className?: string, style?: CSSProperties) => (
     <textarea
