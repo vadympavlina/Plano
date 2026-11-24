@@ -53,7 +53,12 @@
 ## Налаштування Google Cloud
 
 1. Увімкнути **Google Calendar API** у проєкті, де створено OAuth Client ID.
-2. **OAuth consent screen**: External, статус Testing, у Test users — ваша Google-пошта.
+2. **OAuth consent screen**: External. У статусі **Testing** Google анулює refresh token кожні **7 днів** —
+   календар «відвалюється» й потрібно підключати його знову. Для особистого використання переведіть застосунок у
+   **In production** (**Publish app**) без верифікації: токени тоді не спливають, а при першому вході Google покаже
+   «неперевірений застосунок» (Додатково → Перейти до Plano). Вкажіть домашню сторінку `https://plano.edvault.online`,
+   Privacy policy `…/privacy.html`, Terms `…/terms.html`, Authorized domain `edvault.online`. Після зміни статусу
+   підключіть календар у Plano ще раз (старий токен із режиму Testing не відновлюється).
 3. **OAuth Client ID** типу Web application, Authorized JavaScript origins:
    `https://<user>.github.io`, `http://localhost:5173`.
 4. Client ID — у `VITE_GOOGLE_CLIENT_ID` (`.env.production`). Client secret не потрібен.
