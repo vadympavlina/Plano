@@ -778,7 +778,7 @@ export function TimeGrid({
                         ...(single && item.kind === 'event' ? { borderLeftColor: item.color, backgroundColor: solidTint(item.color, 0.13) } : {}),
                       }}
                     >
-                      <div className={cn('flex gap-2.5', short ? 'items-center' : 'items-start')}>
+                      <div className={cn('flex', single ? 'gap-2.5' : 'gap-1.5', short ? 'items-center' : 'items-start')}>
                         <span className={cn(!short && 'pt-0.5')}>
                           {item.kind === 'task' ? (
                             <TaskTick task={item.task} color={item.color} size={short ? 13 : 16} />
@@ -789,19 +789,24 @@ export function TimeGrid({
                         <div className="min-w-0 flex-1">
                           <p
                             className={cn(
-                              'flex items-center gap-1 truncate font-semibold leading-tight',
+                              'font-semibold leading-tight',
+                              // A narrow column: the title may take two lines before it is cut.
+                              single || short ? 'flex items-center gap-1 truncate' : 'line-clamp-2 break-words',
                               single ? 'text-[14.5px]' : 'text-[12.5px]',
                               done && 'text-subtle line-through',
                             )}
                           >
-                            <span className="truncate">{item.title}</span>
-                            {item.kind === 'event' && item.occurrence.event.recurrence && <Repeat className="h-3 w-3 shrink-0 opacity-50" />}
+                            <span className={cn(single || short ? 'truncate' : '')}>{item.title}</span>
+                            {item.kind === 'event' && item.occurrence.event.recurrence && (
+                              <Repeat className={cn('h-3 w-3 shrink-0 opacity-50', !(single || short) && 'ml-1 inline align-[-2px]')} />
+                            )}
                             {short && <span className="ml-auto shrink-0 pl-1 text-[12px] font-medium tabular-nums text-muted">{fmt(start)}</span>}
                           </p>
                           {!short && (
                             <p className={cn('mt-0.5 truncate tabular-nums text-muted', single ? 'text-[12.5px]' : 'text-[11.5px]')}>
-                              {fmt(start)} – {fmt(end)}
-                              {end - start >= 30 && ` · ${formatDuration(end - start)}`}
+                              {/* A week column is narrow: the start is enough there. */}
+                              {cols > 3 && !single ? fmt(start) : `${fmt(start)} – ${fmt(end)}`}
+                              {!(cols > 3 && !single) && end - start >= 30 && ` · ${formatDuration(end - start)}`}
                               {item.kind === 'task' &&
                                 item.task.subtasks.length > 0 &&
                                 ` · ${item.task.subtasks.filter((x) => x.done).length} з ${item.task.subtasks.length}`}

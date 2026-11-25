@@ -207,7 +207,7 @@ export default function TasksPage() {
         <Segmented<TaskListId>
           ariaLabel="Список задач"
           size="sm"
-          wrap
+          scroll
           value={projectId || categoryId ? (scopeList === 'done' ? 'done' : 'all') : list}
           onChange={setList}
           options={LISTS.map((l) => ({ value: l.id, label: l.label, count: l.id === 'done' || l.id === 'all' ? undefined : counts[l.id] || undefined }))}

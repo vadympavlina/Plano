@@ -94,6 +94,7 @@ export function Segmented<T extends string>({
   ariaLabel,
   stretch,
   wrap,
+  scroll,
 }: {
   value: T;
   onChange: (v: T) => void;
@@ -105,6 +106,8 @@ export function Segmented<T extends string>({
   stretch?: boolean;
   /** Many options on a narrow screen: let them wrap onto a second line instead of running off. */
   wrap?: boolean;
+  /** Many options on a narrow screen: one line that scrolls sideways. */
+  scroll?: boolean;
 }) {
   return (
     <div
@@ -114,6 +117,7 @@ export function Segmented<T extends string>({
         'inline-flex max-w-full items-center gap-0.5 rounded-full bg-surface-2 p-1',
         stretch && 'flex w-full',
         wrap && 'flex-wrap rounded-3xl',
+        scroll && 'no-scrollbar overflow-x-auto',
         className,
       )}
     >
@@ -130,6 +134,7 @@ export function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold transition-colors',
+              scroll && 'shrink-0',
               stretch && 'flex-1',
               size === 'sm' ? 'h-8 px-3 text-[12.5px] sm:h-7 sm:text-xs' : 'h-9 px-3.5 text-[13px] sm:h-8',
               on ? 'bg-accent text-surface' : 'text-muted hover:text-ink',

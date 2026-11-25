@@ -309,10 +309,10 @@ export default function CalendarPage() {
         </header>
       ) : (
         <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2 px-2 pb-2 sm:pb-4">
-          <div className="min-w-38 max-w-full flex-1">
+          <div className="min-w-38 max-w-full flex-1 lg:min-w-[24rem]">
             {datePicker(
               <span className="block">
-                <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[38px] sm:leading-[1.05]">
+                <span className="block truncate text-[23px] font-extrabold leading-[1.1] tracking-tight first-letter:uppercase sm:text-[34px] sm:leading-[1.05] xl:text-[38px]">
                   {title.main}
                 </span>
                 <span className="mt-0.5 block text-[12.5px] font-medium text-muted sm:mt-1 sm:text-[13px]">{title.sub}</span>

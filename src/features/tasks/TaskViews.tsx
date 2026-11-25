@@ -35,7 +35,7 @@ export function TaskCheck({ task }: { task: Task }) {
         void actions.tasks.setDone(task, !done).catch(() => undefined);
       }}
       className={cn(
-        'relative flex h-[22px] w-[22px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 transition-colors before:absolute before:-inset-2 before:content-[""]',
+        'relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full border-2 transition-colors before:absolute before:-inset-2 before:content-[""]',
         done ? 'border-transparent bg-accent text-surface' : 'border-subtle/70 hover:border-ink',
       )}
       style={
