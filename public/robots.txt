@@ -1,0 +1,6 @@
+# Plano is a private app; the two public pages are meant to be found.
+User-agent: *
+Allow: /privacy.html
+Allow: /terms.html
+Allow: /$
+Disallow: /
