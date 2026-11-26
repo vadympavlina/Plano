@@ -6,9 +6,9 @@ import { z } from 'zod';
 import { parseQuick, sameName } from '../../../src/features/capture/parse';
 import { completionPatch, nextRecurringInstance } from '../../../src/features/tasks/logic';
 import { expandEvents } from '../../../src/features/calendar/logic';
-import { addDaysKey, minutesToTime, timeToMinutes } from '../../../src/lib/date';
+import { addDaysKey, diffDaysKey, minutesToTime, timeToMinutes } from '../../../src/lib/date';
 import { categorySchema, eventSchema, habitSchema, noteSchema, projectSchema, taskSchema } from '../../../src/lib/validation/schemas';
-import type { CalendarEvent, Category, Habit, Note, Project, Task } from '../../../src/types';
+import type { CalendarEvent, Category, Habit, Note, Project, RecurrenceRule, Task } from '../../../src/types';
 import type { Db } from './rtdb';
 
 export interface Ctx {
@@ -147,63 +147,172 @@ const googleOn = async (db: Db) => {
 };
 const clean = <T extends object>(o: T): T => JSON.parse(JSON.stringify(o)) as T;
 
-// ---- quick add -------------------------------------------------------------------------------------------------
+// ---- adding ----------------------------------------------------------------------------------------------------
 
 const endOf = (start: string, minutes: number) => minutesToTime(Math.min(timeToMinutes(start) + minutes, 23 * 60 + 59));
 
+/** What one new item is, whichever way it was described (a line of words or explicit fields). */
+interface Spec {
+  kind: 'task' | 'event' | 'note';
+  title: string;
+  date?: string;
+  endDate?: string;
+  time?: string;
+  endTime?: string;
+  allDay?: boolean;
+  priority?: Task['priority'];
+  project?: Project;
+  category?: Category;
+  tags: string[];
+  description?: string;
+  subtasks?: string[];
+  recurrence?: RecurrenceRule;
+  remindMin?: number;
+}
+
+const PRIORITY_TEXT = 'low = не терміново, medium = звичайна (за замовчуванням), high = важливо, urgent = терміново';
+const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
+
+/** A project or category by name: the exact one, or the only one that contains the words; else the person is told what exists. */
+function byName<T extends { name: string }>(list: T[], name: string | undefined, what: string): T | undefined {
+  if (!name) return undefined;
+  const exact = list.find((x) => sameName(x.name, name));
+  if (exact) return exact;
+  const part = list.filter((x) => x.name.toLowerCase().includes(name.toLowerCase()));
+  if (part.length === 1) return part[0];
+  throw new ToolError(
+    `No ${what} «${name}». ${what === 'project' ? 'Projects' : 'Categories'}: ${list.map((x) => `«${x.name}»`).join(', ') || 'none yet'}. Use one of them, or leave it out.`,
+  );
+}
+
+function repeatArg(v: unknown): RecurrenceRule | undefined {
+  if (v === undefined || v === null) return undefined;
+  if (typeof v !== 'object') throw new ToolError('«repeat» must be an object like {"freq":"weekly","weekdays":[1,3]}');
+  const r = v as { freq?: unknown; interval?: unknown; weekdays?: unknown; until?: unknown };
+  if (!['daily', 'weekly', 'monthly', 'yearly'].includes(String(r.freq))) throw new ToolError('«repeat.freq» is daily, weekly, monthly or yearly');
+  const interval = typeof r.interval === 'number' ? Math.max(1, Math.min(365, Math.floor(r.interval))) : 1;
+  const weekdays = Array.isArray(r.weekdays) ? [...new Set(r.weekdays.filter((d): d is number => Number.isInteger(d) && d >= 0 && d <= 6))].sort() : undefined;
+  const until = dateArg(r.until, 'repeat.until');
+  return { freq: r.freq as RecurrenceRule['freq'], interval, ...(weekdays?.length ? { byWeekday: weekdays } : {}), ...(until ? { until } : {}) };
+}
+
+/** Explicit fields, as an assistant fills them in from what the person said. */
+function specFromItem(raw: unknown, lookups: { categories: Category[]; projects: Project[] }): Spec {
+  if (!raw || typeof raw !== 'object') throw new ToolError('Every item must be an object');
+  const a = raw as Record<string, unknown>;
+  const kind = str(a.kind, 'kind') ?? 'task';
+  if (!['task', 'event', 'note'].includes(kind)) throw new ToolError('«kind» is task, event or note');
+  const title = str(a.title, 'title', true)!.slice(0, 300);
+  const priority = str(a.priority, 'priority');
+  if (priority && !PRIORITIES.includes(priority)) throw new ToolError(`«priority» is one of: ${PRIORITY_TEXT}`);
+  const time = timeArg(a.time, 'time');
+  const duration = typeof a.duration_min === 'number' ? Math.max(5, Math.min(1440, Math.floor(a.duration_min))) : undefined;
+  const endTime = timeArg(a.end_time, 'end_time') ?? (time && duration ? endOf(time, duration) : undefined);
+  if (time && endTime && endTime <= time) throw new ToolError('«end_time» must be after «time»');
+  const tags = Array.isArray(a.tags)
+    ? a.tags
+        .filter((t): t is string => typeof t === 'string')
+        .map((t) => t.replace(/^#/, '').trim())
+        .filter(Boolean)
+        .slice(0, 10)
+    : [];
+  const subtasks = Array.isArray(a.subtasks) ? a.subtasks.filter((t): t is string => typeof t === 'string' && !!t.trim()).slice(0, 50) : undefined;
+  return {
+    kind: kind as Spec['kind'],
+    title,
+    date: dateArg(a.date, 'date'),
+    endDate: dateArg(a.end_date, 'end_date'),
+    time,
+    endTime,
+    allDay: typeof a.all_day === 'boolean' ? a.all_day : undefined,
+    priority: priority as Task['priority'] | undefined,
+    project: byName(lookups.projects, str(a.project, 'project'), 'project'),
+    category: byName(lookups.categories, str(a.category, 'category'), 'category'),
+    tags,
+    description: str(a.description, 'description'),
+    subtasks,
+    recurrence: repeatArg(a.repeat),
+    remindMin: typeof a.remind_min === 'number' ? Math.max(0, Math.min(20160, Math.floor(a.remind_min))) : undefined,
+  };
+}
+
+/** A line of words, read like the app's quick-add box does. */
+function specFromLine(line: string, today: string, now: Date, forced: string | undefined, l: { categories: Category[]; projects: Project[] }): Spec {
+  const p = parseQuick(line, today, now);
+  const category = p.tags.map((t) => l.categories.find((c) => sameName(c.name, t))).find(Boolean);
+  const project = l.projects.find((x) => sameName(x.name, p.project ?? '') || p.tags.some((t) => sameName(x.name, t)));
+  const used = new Set(p.tags.filter((t) => (category && sameName(category.name, t)) || (project && sameName(project.name, t))));
+  return {
+    kind: (forced as Spec['kind'] | undefined) ?? p.kind ?? 'task',
+    title: (p.title || line).slice(0, 300),
+    date: p.date,
+    endDate: p.endDate,
+    time: p.time,
+    endTime: p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined),
+    priority: p.priority,
+    project,
+    category,
+    tags: p.tags.filter((t) => !used.has(t)),
+    description: p.description,
+    subtasks: p.subtasks,
+    recurrence: p.recurrence,
+    remindMin: p.remindMin,
+  };
+}
+
 async function add(args: Record<string, unknown>, ctx: Ctx): Promise<ToolResult> {
-  const text = str(args.text, 'text', true)!;
+  const text = str(args.text, 'text');
   const forced = str(args.kind, 'kind');
   if (forced && !['task', 'event', 'note'].includes(forced)) throw new ToolError('«kind» is task, event or note');
+  if (args.items !== undefined && !Array.isArray(args.items)) throw new ToolError('«items» must be a list');
   const today = zonedToday(ctx.tz, ctx.now());
   const [categories, projects, google] = await Promise.all([loadCategories(ctx.db), loadProjects(ctx.db), googleOn(ctx.db)]);
+  const lookups = { categories, projects };
+  const specs: Spec[] = [
+    ...((args.items as unknown[] | undefined) ?? []).slice(0, 30).map((i) => specFromItem(i, lookups)),
+    ...(text
+      ? text
+          .split(/\n+/)
+          .map((l) => l.trim())
+          .filter(Boolean)
+          .slice(0, 30)
+          .map((l) => specFromLine(l, today, ctx.now(), forced, lookups))
+      : []),
+  ];
+  if (!specs.length) throw new ToolError('Nothing to add: give «items» (preferred) or «text»');
+
   const stamp = ctx.now().toISOString();
   const writes: Record<string, unknown> = {};
   const created: ToolResult[] = [];
-  const lines = text
-    .split(/\n+/)
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .slice(0, 30);
-
-  for (const line of lines) {
-    const p = parseQuick(line, today, ctx.now());
-    const kind = (forced as 'task' | 'event' | 'note' | undefined) ?? p.kind ?? 'task';
-    const category = p.tags.map((t) => categories.find((c) => sameName(c.name, t))).find(Boolean);
-    const project = projects.find((x) => sameName(x.name, p.project ?? '') || p.tags.some((t) => sameName(x.name, t)));
-    const usedTags = new Set(p.tags.filter((t) => (category && sameName(category.name, t)) || (project && sameName(project.name, t))));
-    const tags = p.tags.filter((t) => !usedTags.has(t));
-    const title = (p.title || line).slice(0, 300);
-    const links = { categoryId: category?.id, projectId: project?.id };
+  for (const sp of specs) {
     const id = ctx.db.newId();
-    const end = p.endTime ?? (p.time && p.duration ? endOf(p.time, p.duration) : undefined);
-    const date = p.date;
-
-    if (kind === 'note') {
+    const links = { categoryId: sp.category?.id, projectId: sp.project?.id };
+    if (sp.kind === 'note') {
       const note = noteSchema.parse({
         id,
-        title,
-        content: p.description ?? '',
-        tags: [],
+        title: sp.title,
+        content: sp.description ?? '',
+        tags: sp.tags,
         isPinned: false,
-        projectId: project?.id,
+        projectId: sp.project?.id,
         createdAt: stamp,
         updatedAt: stamp,
       });
       writes[`notes/${id}`] = clean(note);
-      created.push({ kind: 'note', id, title });
-    } else if (kind === 'event') {
+      created.push({ kind: 'note', id, title: sp.title, project: sp.project?.name ?? null });
+    } else if (sp.kind === 'event') {
+      const allDay = sp.allDay ?? !sp.time;
       const ev = eventSchema.parse({
         id,
-        title,
-        date: date ?? today,
-        endDate: p.endDate,
-        allDay: !p.time,
-        startTime: p.time,
-        endTime: p.time ? (end ?? endOf(p.time, 60)) : undefined,
-        recurrence: p.recurrence,
-        remindMin: p.remindMin,
-        description: p.description,
+        title: sp.title,
+        date: sp.date ?? today,
+        endDate: sp.endDate && sp.endDate > (sp.date ?? today) ? sp.endDate : undefined,
+        allDay,
+        startTime: allDay ? undefined : sp.time,
+        endTime: allDay || !sp.time ? undefined : (sp.endTime ?? endOf(sp.time, 60)),
+        recurrence: sp.recurrence,
+        remindMin: sp.remindMin,
+        description: sp.description,
         ...links,
         exdates: [],
         source: 'plano',
@@ -214,34 +323,50 @@ async function add(args: Record<string, unknown>, ctx: Ctx): Promise<ToolResult>
         updatedAt: stamp,
       });
       writes[`events/${id}`] = clean(ev);
-      created.push({ kind: 'event', id, title, date: ev.date, time: ev.startTime ?? null, endTime: ev.endTime ?? null });
+      created.push({ kind: 'event', ...eventView(ev as CalendarEvent, ev.date, lookups) });
     } else {
-      const multi = !!(date && p.endDate && p.endDate > date);
+      const multi = !!(sp.date && sp.endDate && sp.endDate > sp.date);
       const task = taskSchema.parse({
         id,
-        title,
+        title: sp.title,
         status: 'todo',
-        priority: p.priority ?? 'medium',
-        tags,
-        startDate: multi ? date : undefined,
-        dueDate: multi ? p.endDate : (date ?? (p.time || p.recurrence ? today : undefined)),
-        startTime: p.time,
-        endTime: end,
-        recurrence: p.recurrence,
-        remindMin: p.remindMin,
-        description: p.description,
-        subtasks: (p.subtasks ?? []).map((s, order) => ({ id: `st_${Date.now().toString(36)}${order}`, title: s, done: false, order })),
+        priority: sp.priority ?? 'medium',
+        tags: sp.tags,
+        startDate: multi ? sp.date : undefined,
+        dueDate: multi ? sp.endDate : (sp.date ?? (sp.time || sp.recurrence ? today : undefined)),
+        startTime: sp.time,
+        endTime: sp.endTime,
+        recurrence: sp.recurrence,
+        remindMin: sp.remindMin,
+        description: sp.description,
+        subtasks: (sp.subtasks ?? []).map((t, order) => ({ id: `st_${Date.now().toString(36)}${order}`, title: t, done: false, order })),
         ...links,
         createdAt: stamp,
         updatedAt: stamp,
       });
       writes[`tasks/${id}`] = clean(task);
-      created.push({ kind: 'task', ...taskView(task as Task, { categories, projects }) });
+      created.push({ kind: 'task', ...taskView(task as Task, lookups) });
     }
   }
-  if (!created.length) throw new ToolError('Nothing to add: the text is empty');
   await ctx.db.update(writes);
   return { added: created, today };
+}
+
+// ---- what exists ---------------------------------------------------------------------------------------------------------
+
+async function plannerInfo(_args: Record<string, unknown>, ctx: Ctx): Promise<ToolResult> {
+  const [categories, projects] = await Promise.all([loadCategories(ctx.db), loadProjects(ctx.db)]);
+  const now = ctx.now();
+  const today = zonedToday(ctx.tz, now);
+  return {
+    today,
+    weekday: weekday(today),
+    timeNow: new Intl.DateTimeFormat('en-GB', { timeZone: ctx.tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(now),
+    timeZone: ctx.tz,
+    priorities: PRIORITY_TEXT,
+    categories: categories.sort((a, b) => a.order - b.order).map((c) => c.name),
+    projects: projects.map((p) => ({ name: p.name, status: p.status })),
+  };
 }
 
 // ---- reading tools -----------------------------------------------------------------------------------------------
@@ -372,15 +497,62 @@ async function updateTask(args: Record<string, unknown>, ctx: Ctx): Promise<Tool
   }
   const priority = str(args.priority, 'priority');
   if (priority) {
-    if (!['low', 'medium', 'high', 'urgent'].includes(priority)) throw new ToolError('«priority» is low, medium, high or urgent');
+    if (!PRIORITIES.includes(priority)) throw new ToolError(`«priority» is one of: ${PRIORITY_TEXT}`);
     set('priority', priority);
   }
+  if ('project' in args) set('projectId', args.project === null ? undefined : byName(await loadProjects(ctx.db), str(args.project, 'project'), 'project')?.id);
+  if ('category' in args)
+    set('categoryId', args.category === null ? undefined : byName(await loadCategories(ctx.db), str(args.category, 'category'), 'category')?.id);
   if ('description' in args) set('description', args.description === null ? undefined : str(args.description, 'description'));
   if (!Object.keys(patch).length) throw new ToolError('Nothing to change');
   patch[`tasks/${task.id}/updatedAt`] = ctx.now().toISOString();
   await ctx.db.update(patch);
   const fresh = (await loadTasks(ctx.db)).find((t) => t.id === task.id) ?? task;
-  return { updated: taskView(fresh) };
+  return { updated: taskView(fresh, { categories: await loadCategories(ctx.db), projects: await loadProjects(ctx.db) }) };
+}
+
+async function updateEvent(args: Record<string, unknown>, ctx: Ctx): Promise<ToolResult> {
+  const events = await loadEvents(ctx.db);
+  const event = pickOne(events, str(args.id, 'id'), str(args.title, 'title'), 'event');
+  const patch: Record<string, unknown> = {};
+  const set = (key: string, v: unknown) => (patch[`events/${event.id}/${key}`] = v === undefined ? null : v);
+
+  const newTitle = str(args.new_title, 'new_title');
+  if (newTitle) set('title', newTitle.slice(0, 300));
+  const date = dateArg(args.date, 'date');
+  if (date) {
+    set('date', date);
+    // A several-day event keeps its length.
+    if (event.allDay && event.endDate) set('endDate', addDaysKey(date, diffDaysKey(event.endDate, event.date)));
+  }
+  if ('time' in args) {
+    const t = args.time === null ? null : timeArg(args.time, 'time');
+    if (t === null || t === undefined) {
+      set('allDay', true);
+      set('startTime', undefined);
+      set('endTime', undefined);
+    } else {
+      const duration = typeof args.duration_min === 'number' ? Math.max(5, Math.min(1440, Math.floor(args.duration_min))) : undefined;
+      const keep = event.startTime && event.endTime ? timeToMinutes(event.endTime) - timeToMinutes(event.startTime) : 60;
+      const end = timeArg(args.end_time, 'end_time') ?? endOf(t, duration ?? Math.max(5, keep));
+      set('allDay', false);
+      set('startTime', t);
+      set('endTime', end);
+    }
+  }
+  if ('location' in args) set('location', args.location === null ? undefined : str(args.location, 'location'));
+  if ('description' in args) set('description', args.description === null ? undefined : str(args.description, 'description'));
+  if ('project' in args) set('projectId', args.project === null ? undefined : byName(await loadProjects(ctx.db), str(args.project, 'project'), 'project')?.id);
+  if ('category' in args)
+    set('categoryId', args.category === null ? undefined : byName(await loadCategories(ctx.db), str(args.category, 'category'), 'category')?.id);
+  if (!Object.keys(patch).length) throw new ToolError('Nothing to change');
+  // The same as in the app: an event that lives in Google Calendar is sent there again.
+  const google = await googleOn(ctx.db);
+  if (google && (event.external || (event.source === 'plano' && google.targetCalendarId))) set('syncPending', true);
+  patch[`events/${event.id}/updatedAt`] = ctx.now().toISOString();
+  await ctx.db.update(patch);
+  const fresh = (await loadEvents(ctx.db)).find((e) => e.id === event.id) ?? event;
+  return { updated: eventView(fresh, fresh.date, { categories: await loadCategories(ctx.db), projects: await loadProjects(ctx.db) }) };
 }
 
 async function deleteTask(args: Record<string, unknown>, ctx: Ctx): Promise<ToolResult> {
@@ -519,21 +691,64 @@ const idOrTitle = {
 
 export const TOOLS: Tool[] = [
   {
+    name: 'planner_info',
+    title: 'Planner info',
+    description:
+      "The date and time now, the owner's categories and projects (the exact names to use) and what the priorities mean. Call it once before adding or changing things, so that the project, category, date and priority you pass are right.",
+    inputSchema: obj({}),
+    annotations: readOnly,
+    run: plannerInfo,
+  },
+  {
     name: 'add',
     title: 'Add to Plano',
     description:
-      "Adds a task, an event or a note from a line of natural language (Ukrainian works best; Russian and English words are understood). The words are read like in the app's quick-add box: «Купити молоко завтра», «Зустріч з Олею в п'ятницю о 15 на годину #робота», «щодня о 8 зарядка», «нотатка: ідея …». Several lines add several items. Returns what was created, with ids.",
-    inputSchema: obj(
-      {
-        text: { type: 'string', description: 'What to add; one item per line.' },
-        kind: {
-          type: 'string',
-          enum: ['task', 'event', 'note'],
-          description: 'Force the kind (otherwise it is guessed: a time range or «зустріч» means an event).',
-        },
+      "Adds tasks, events or notes. PREFER «items» with explicit fields: work out the title, date, time, project, category and priority from what the person said (use planner_info for today's date and the real project and category names). A task has an optional date; an event has a day and usually a time; a note has a title and text. «text» is the alternative for a plain line in the person's own words (Ukrainian: «Купити молоко завтра», «Зустріч з Олею в п'ятницю о 15 на годину #робота», «щодня о 8 зарядка !!»). Returns what was created, with ids.",
+    inputSchema: obj({
+      items: {
+        type: 'array',
+        maxItems: 30,
+        description: 'The things to add.',
+        items: obj(
+          {
+            kind: {
+              type: 'string',
+              enum: ['task', 'event', 'note'],
+              description: 'task (default), event (a meeting or anything at a time on the calendar) or note.',
+            },
+            title: { type: 'string', description: "Short and in the person's language, without the date and time words." },
+            date: { type: 'string', description: 'YYYY-MM-DD. A task may have none. An event defaults to today.' },
+            end_date: { type: 'string', description: 'YYYY-MM-DD: last day of a several-day event or task.' },
+            time: { type: 'string', description: 'HH:MM start (24 hours). Without it an event lasts all day.' },
+            end_time: { type: 'string', description: 'HH:MM end.' },
+            duration_min: { type: 'integer', minimum: 5, description: 'Length in minutes, instead of end_time. An event without either lasts an hour.' },
+            all_day: { type: 'boolean' },
+            priority: { type: 'string', enum: PRIORITIES, description: PRIORITY_TEXT },
+            project: { type: 'string', description: 'The name of an existing project (see planner_info).' },
+            category: { type: 'string', description: 'The name of an existing category (see planner_info).' },
+            tags: { type: 'array', items: { type: 'string' } },
+            description: { type: 'string', description: 'More detail; for a note, its text (Markdown).' },
+            subtasks: { type: 'array', items: { type: 'string' }, description: 'Steps of a task.' },
+            repeat: {
+              type: 'object',
+              description:
+                'Repeats: {"freq":"daily"|"weekly"|"monthly"|"yearly","interval":1,"weekdays":[1,3,5] (0 = Sunday, weekly only),"until":"YYYY-MM-DD"}.',
+              properties: {
+                freq: { type: 'string', enum: ['daily', 'weekly', 'monthly', 'yearly'] },
+                interval: { type: 'integer', minimum: 1 },
+                weekdays: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 6 } },
+                until: { type: 'string' },
+              },
+              required: ['freq'],
+            },
+            remind_min: { type: 'integer', minimum: 0, description: 'Remind this many minutes before (0 = at the time).' },
+          },
+          ['title'],
+        ),
       },
-      ['text'],
-    ),
+      text: { type: 'string', description: "Alternatively: a line of words (one item per line) read like the app's quick-add box." },
+      kind: { type: 'string', enum: ['task', 'event', 'note'], description: 'With «text»: force the kind.' },
+    }),
     annotations: writes,
     run: add,
   },
@@ -588,17 +803,40 @@ export const TOOLS: Tool[] = [
   {
     name: 'update_task',
     title: 'Change a task',
-    description: 'Changes a task: rename it, move it to another day (date = null removes the date), set or clear the time, priority or description.',
+    description:
+      'Changes a task: rename it, move it to another day (date = null removes the date), set or clear the time, change the priority, project, category or description.',
     inputSchema: obj({
       ...idOrTitle,
       new_title: { type: 'string' },
       date: { type: ['string', 'null'], description: 'YYYY-MM-DD, or null for no date' },
       time: { type: ['string', 'null'], description: 'HH:MM, or null for no time' },
-      priority: { type: 'string', enum: ['low', 'medium', 'high', 'urgent'] },
+      priority: { type: 'string', enum: PRIORITIES, description: PRIORITY_TEXT },
+      project: { type: ['string', 'null'], description: 'An existing project, or null to take it out of its project.' },
+      category: { type: ['string', 'null'], description: 'An existing category, or null.' },
       description: { type: ['string', 'null'] },
     }),
     annotations: { ...writes, idempotentHint: true },
     run: updateTask,
+  },
+  {
+    name: 'update_event',
+    title: 'Change an event',
+    description:
+      'Changes a calendar event: rename, move to another day (a several-day event keeps its length), change the time (time = null makes it all-day), place, project, category, description.',
+    inputSchema: obj({
+      ...idOrTitle,
+      new_title: { type: 'string' },
+      date: { type: 'string', description: 'YYYY-MM-DD' },
+      time: { type: ['string', 'null'], description: 'HH:MM start, or null for all day' },
+      end_time: { type: 'string' },
+      duration_min: { type: 'integer', minimum: 5 },
+      location: { type: ['string', 'null'] },
+      project: { type: ['string', 'null'] },
+      category: { type: ['string', 'null'] },
+      description: { type: ['string', 'null'] },
+    }),
+    annotations: { ...writes, idempotentHint: true },
+    run: updateEvent,
   },
   {
     name: 'delete_task',

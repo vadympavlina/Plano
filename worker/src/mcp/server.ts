@@ -5,7 +5,8 @@ const VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 
 const INSTRUCTIONS = `Plano is the owner's personal planner: tasks, a calendar, notes and habits.
 - Dates are YYYY-MM-DD, times HH:MM, in the owner's time zone. Call «today» first when the current date matters.
-- To add something, use «add» with the person's own words (it understands «завтра о 15», «щодня», #category); do not rewrite their wording into dates yourself.
+- Call «planner_info» first: it gives today's date, the real project and category names and what the priorities mean.
+- To add something, use «add» with «items»: fill in the title, date, time, project, category and priority yourself from what the person said (a task is a thing to do, an event is a meeting or anything at a set time). Pick a priority only when the words say so («терміново» = urgent, «важливо» = high, «не терміново» = low); otherwise leave it out. Use a project or category only if one that exists fits.
 - Change or finish things by the exact id returned by list_tasks, today or add. Ask before deleting anything.
 - Notes are Markdown.`;
 

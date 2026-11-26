@@ -282,6 +282,70 @@ describe('the tools', () => {
     expect((db.tree.events as Rec)[e.id].syncPending).toBe(true);
   });
 
+  it('planner_info tells which projects, categories and priorities exist', async () => {
+    const r = (await call(fakeDb(seed()), 'planner_info')).structuredContent!;
+    expect(r).toMatchObject({
+      today: '2026-11-24',
+      weekday: 'вівторок',
+      timeNow: '10:00',
+      categories: ['Робота'],
+      projects: [{ name: 'EdFlow', status: 'active' }],
+    });
+    expect(r.priorities).toContain('urgent');
+  });
+
+  it('add with explicit fields: the event, the task, the project, the category and the priority are as given', async () => {
+    const db = fakeDb(seed());
+    const r = (
+      await call(db, 'add', {
+        items: [
+          { kind: 'event', title: 'Зустріч з Олею', date: '2026-11-27', time: '15:00', duration_min: 90, category: 'Робота', project: 'EdFlow' },
+          { title: 'Здати звіт', date: '2026-11-26', priority: 'urgent', project: 'edflow', subtasks: ['цифри', 'висновки'], remind_min: 60 },
+          { title: 'Зарядка', repeat: { freq: 'weekly', weekdays: [1, 3, 5] }, time: '08:00' },
+          { kind: 'event', title: 'Відпустка', date: '2026-12-01', end_date: '2026-12-07' },
+        ],
+      })
+    ).structuredContent!.added;
+    expect(r[0]).toMatchObject({ kind: 'event', date: '2026-11-27', time: '15:00', endTime: '16:30', category: 'Робота', project: 'EdFlow' });
+    expect(r[1]).toMatchObject({ kind: 'task', priority: 'urgent', date: '2026-11-26', project: 'EdFlow', subtasks: '0/2' });
+    expect((db.tree.tasks as Rec)[r[1].id]).toMatchObject({ projectId: 'p1', priority: 'urgent', remindMin: 60 });
+    expect((db.tree.tasks as Rec)[r[2].id]).toMatchObject({
+      dueDate: '2026-11-24',
+      startTime: '08:00',
+      recurrence: { freq: 'weekly', interval: 1, byWeekday: [1, 3, 5] },
+    });
+    expect((db.tree.events as Rec)[r[3].id]).toMatchObject({ allDay: true, date: '2026-12-01', endDate: '2026-12-07' });
+  });
+
+  it('add with explicit fields: a project that does not exist is not guessed, and the person hears what does', async () => {
+    const db = fakeDb(seed());
+    const r = await call(db, 'add', { items: [{ title: 'Щось', project: 'Невідомий' }] });
+    expect(r.isError).toBe(true);
+    expect(r.content[0].text).toContain('EdFlow');
+    expect(db.tree.tasks).toEqual(seed().tasks);
+    expect((await call(db, 'add', { items: [{ title: 'Щось', priority: 'critical' }] })).isError).toBe(true);
+    expect((await call(db, 'add', { items: [{ title: 'Щось', date: 'завтра' }] })).isError).toBe(true);
+    expect((await call(db, 'add', { items: [{ title: 'Щось', time: '15:00', end_time: '14:00' }] })).isError).toBe(true);
+  });
+
+  it('update_task: project, category and priority', async () => {
+    const db = fakeDb(seed());
+    const r = (await call(db, 'update_task', { id: 't2', project: 'EdFlow', category: 'Робота', priority: 'high' })).structuredContent!.updated;
+    expect(r).toMatchObject({ project: 'EdFlow', category: 'Робота', priority: 'high' });
+    expect((await call(db, 'update_task', { id: 't2', project: null })).structuredContent!.updated.project).toBeNull();
+  });
+
+  it('update_event: moves, changes the time, goes all-day, and is sent to Google again', async () => {
+    const db = fakeDb({ ...seed(), integrations: { google_calendar: { status: 'connected', targetCalendarId: 'cal' } } });
+    const r = (await call(db, 'update_event', { id: 'e1', date: '2026-11-26', time: '14:00', duration_min: 45, location: 'Офіс', project: 'EdFlow' }))
+      .structuredContent!.updated;
+    expect(r).toMatchObject({ date: '2026-11-26', time: '14:00', endTime: '14:45', location: 'Офіс', project: 'EdFlow' });
+    expect((db.tree.events as Rec).e1.syncPending).toBe(true);
+    const day = (await call(db, 'update_event', { title: 'Нарада', time: null })).structuredContent!.updated;
+    expect(day).toMatchObject({ allDay: true, time: null });
+    expect((await call(db, 'update_event', { id: 'e1' })).isError).toBe(true);
+  });
+
   it('today: overdue, today, events and habits', async () => {
     const r = (await call(fakeDb(seed()), 'today')).structuredContent!;
     expect(r.date).toBe('2026-11-24');
