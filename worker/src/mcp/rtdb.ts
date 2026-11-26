@@ -55,6 +55,23 @@ export function firebaseDb(opts: { databaseUrl: string; account: string; uid: st
     return sa as ServiceAccount;
   };
   const base = opts.databaseUrl.replace(/\/+$/, '');
+  /** For a refusal (401/403): which account asked and where the database is, so the cause (another project, a missing role) can be seen. */
+  const hint = () => {
+    let email = 'unknown';
+    try {
+      email = account().client_email;
+    } catch {
+      /* reported elsewhere */
+    }
+    const project = (() => {
+      try {
+        return new URL(base).hostname.split('.')[0].replace(/-default-rtdb$/, '');
+      } catch {
+        return '?';
+      }
+    })();
+    return ` The service account is ${email}; the database belongs to the project ${project}: the account must be created in that project (or be given the role «Firebase Realtime Database Admin» there).`;
+  };
   let token: { value: string; exp: number } | undefined;
 
   async function accessToken(): Promise<string> {
@@ -113,7 +130,7 @@ export function firebaseDb(opts: { databaseUrl: string; account: string; uid: st
     newId: () => pushId(),
     async get<T>(path: string) {
       const res = await fetcher(url(path, await accessToken()));
-      if (!res.ok) throw new DbError(`Database read failed (${res.status})${await reason(res)}`);
+      if (!res.ok) throw new DbError(`Database read failed (${res.status})${await reason(res)}${res.status === 401 || res.status === 403 ? hint() : ''}`);
       return (await res.json()) as T | null;
     },
     async update(values) {
@@ -122,7 +139,7 @@ export function firebaseDb(opts: { databaseUrl: string; account: string; uid: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values),
       });
-      if (!res.ok) throw new DbError(`Database write failed (${res.status})${await reason(res)}`);
+      if (!res.ok) throw new DbError(`Database write failed (${res.status})${await reason(res)}${res.status === 401 || res.status === 403 ? hint() : ''}`);
     },
   };
 }

@@ -53,7 +53,7 @@ describe('the database client', () => {
     const fetcher = (async (input: RequestInfo | URL) =>
       String(input).includes('oauth2') ? Response.json({ access_token: 't', expires_in: 3600 }) : new Response('no', { status: 401 })) as typeof fetch;
     const db = firebaseDb({ databaseUrl: 'https://demo.firebaseio.com', account: json, uid: 'u' }, fetcher);
-    await expect(db.get('tasks')).rejects.toThrow(/401/);
+    await expect(db.get('tasks')).rejects.toThrow(/401[\s\S]*plano-mcp@demo\.iam\.gserviceaccount\.com[\s\S]*project demo/);
     await expect(db.update({ a: 1 })).rejects.toThrow(/401/);
   });
 
