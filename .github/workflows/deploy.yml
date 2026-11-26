@@ -46,11 +46,17 @@ jobs:
         if: steps.check.outputs.ready == 'true'
         with:
           node-version: 22
+      # The Worker shares some of the app's modules (quick-add parser, schemas), which need the app's packages.
+      - name: Install the app's packages
+        if: steps.check.outputs.ready == 'true'
+        run: npm ci --omit=dev --ignore-scripts
       - name: Deploy worker
         id: deploy
         if: steps.check.outputs.ready == 'true'
         working-directory: worker
         run: |
+          # A failed build must fail this step (a pipe alone would hide it).
+          set -o pipefail
           npx -y wrangler@4 deploy | tee deploy.log
           echo "url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -1)" >> "$GITHUB_OUTPUT"
           printf '%s' "$GOOGLE_CLIENT_SECRET" | npx -y wrangler@4 secret put GOOGLE_CLIENT_SECRET
