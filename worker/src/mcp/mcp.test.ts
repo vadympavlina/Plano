@@ -458,6 +458,20 @@ describe('the tools', () => {
     expect((await call(db, 'list_habits')).structuredContent!.habits[0]).toMatchObject({ today: 0, scheduledToday: true });
   });
 
+  it('tells what the database said when it cannot be reached (and nothing else)', async () => {
+    const { DbError } = await import('./rtdb');
+    const broken: Db = {
+      newId: () => 'x',
+      get: async () => {
+        throw new DbError('Database read failed (403): Permission denied');
+      },
+      update: async () => undefined,
+    };
+    const r = await call(broken, 'today');
+    expect(r.isError).toBe(true);
+    expect(r.content[0].text).toContain('Permission denied');
+  });
+
   it('does not leak what went wrong inside', async () => {
     const broken: Db = {
       newId: () => 'x',

@@ -1,4 +1,5 @@
 /** The MCP protocol itself (JSON-RPC 2.0 over «Streamable HTTP», answers as plain JSON): initialize, ping, tools/list, tools/call. */
+import { DbError } from './rtdb';
 import { TOOLS, ToolError, type Ctx } from './tools';
 
 const VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
@@ -30,6 +31,8 @@ async function callTool(params: Record<string, unknown> | undefined, ctx: Ctx) {
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 1) }], structuredContent: result };
   } catch (e) {
     if (e instanceof ToolError) return { isError: true, content: [{ type: 'text', text: e.message }] };
+    // What Google or the database said (a status and a short reason): it helps to set things right, and holds nothing private.
+    if (e instanceof DbError) return { isError: true, content: [{ type: 'text', text: `Plano could not reach its data. ${e.message}` }] };
     // Not shown to the assistant: it may hold details of the database.
     console.error('MCP tool failed', tool.name, e);
     return { isError: true, content: [{ type: 'text', text: 'Plano could not do that right now. Try again in a moment.' }] };

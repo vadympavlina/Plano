@@ -57,6 +57,31 @@ describe('the database client', () => {
     await expect(db.update({ a: 1 })).rejects.toThrow(/401/);
   });
 
+  it('reads a key whose line breaks arrived as backslash-n', async () => {
+    const { json } = await account();
+    const sa = JSON.parse(json) as { private_key: string };
+    const mangled = JSON.stringify({ ...JSON.parse(json), private_key: sa.private_key.replace(/\n/g, '\\n') });
+    const fetcher = (async (input: RequestInfo | URL) =>
+      String(input).includes('oauth2') ? Response.json({ access_token: 't', expires_in: 3600 }) : Response.json({ ok: 1 })) as typeof fetch;
+    const db = firebaseDb({ databaseUrl: 'https://demo.firebaseio.com', account: mangled, uid: 'u' }, fetcher);
+    expect(await db.get('x')).toEqual({ ok: 1 });
+  });
+
+  it('says what is wrong with a secret that is not a key', async () => {
+    const f = (async () => new Response('{}')) as typeof fetch;
+    await expect(firebaseDb({ databaseUrl: 'https://d.firebaseio.com', account: 'not json', uid: 'u' }, f).get('x')).rejects.toThrow(/not valid JSON/);
+    await expect(firebaseDb({ databaseUrl: 'https://d.firebaseio.com', account: '{"a":1}', uid: 'u' }, f).get('x')).rejects.toThrow(/client_email/);
+    await expect(
+      firebaseDb({ databaseUrl: 'https://d.firebaseio.com', account: '{"client_email":"a@b","private_key":"@@@"}', uid: 'u' }, f).get('x'),
+    ).rejects.toThrow(/could not be read/);
+  });
+
+  it('includes what Google said when it refuses', async () => {
+    const { json } = await account();
+    const f = (async () => new Response('{"error":"invalid_grant","error_description":"Invalid JWT Signature."}', { status: 400 })) as typeof fetch;
+    await expect(firebaseDb({ databaseUrl: 'https://d.firebaseio.com', account: json, uid: 'u' }, f).get('x')).rejects.toThrow(/invalid_grant/);
+  });
+
   it('does not accept a refused service account', async () => {
     const { json } = await account();
     const db = firebaseDb(
