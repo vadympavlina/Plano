@@ -1,6 +1,6 @@
 /**
  * Plano as an MCP server: an AI assistant (ChatGPT, Claude…) signs in once as the owner and then reads and changes the
- * planner through tools. Routes: /mcp (the protocol), /authorize /token /register and the /.well-known documents
+ * planner through tools. Routes: /mcp (the protocol), /oauth/authorize, /oauth/token, /oauth/register and the /.well-known documents
  * (the sign-in). Off until the secrets are set (see docs/mcp.md).
  */
 import { authorize, authorized, cors, metadata, register, token } from './oauth';
@@ -15,11 +15,12 @@ export interface McpEnv {
   MCP_TIMEZONE?: string;
 }
 
+// «/token», «/revoke» and «/exchange» belong to the Google token server: the sign-in lives under /oauth/.
 const PATHS = new Set([
   '/mcp',
-  '/authorize',
-  '/token',
-  '/register',
+  '/oauth/authorize',
+  '/oauth/token',
+  '/oauth/register',
   '/.well-known/oauth-authorization-server',
   '/.well-known/oauth-protected-resource',
   '/.well-known/oauth-protected-resource/mcp',
@@ -40,7 +41,14 @@ export async function handleMcp(req: Request, env: McpEnv, deps: McpDeps = {}): 
   if (!PATHS.has(url.pathname)) return null;
   const { MCP_OWNER_SECRET: secret, MCP_OWNER_UID: uid, FIREBASE_DATABASE_URL: databaseUrl, FIREBASE_SERVICE_ACCOUNT: account } = env;
   // Off until everything it needs is set; a secret that is too short would make the passphrase guessable.
-  if (!secret || secret.length < 16 || !uid || !databaseUrl || !account) return null;
+  // It says what is missing (names only, never values), so a wrong setup is easy to find.
+  const missing = [
+    !account && 'FIREBASE_SERVICE_ACCOUNT',
+    !uid && 'MCP_OWNER_UID',
+    !secret ? 'MCP_OWNER_SECRET' : secret.length < 16 && 'MCP_OWNER_SECRET (shorter than 16 characters)',
+    !databaseUrl && 'FIREBASE_DATABASE_URL',
+  ].filter(Boolean);
+  if (missing.length || !secret || !uid || !databaseUrl || !account) return jsonResponse(503, { error: 'mcp_not_configured', missing });
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { ...cors, 'Access-Control-Max-Age': '86400' } });
   const origin = url.origin;
   const oauth = { MCP_OWNER_SECRET: secret };
@@ -51,11 +59,11 @@ export async function handleMcp(req: Request, env: McpEnv, deps: McpDeps = {}): 
       return jsonResponse(200, metadata(origin).resource);
     case '/.well-known/oauth-authorization-server':
       return jsonResponse(200, metadata(origin).server);
-    case '/register':
+    case '/oauth/register':
       return req.method === 'POST' ? register(req, oauth) : jsonResponse(405, { error: 'method_not_allowed' }, { Allow: 'POST' });
-    case '/authorize':
+    case '/oauth/authorize':
       return req.method === 'GET' || req.method === 'POST' ? authorize(req, oauth) : jsonResponse(405, { error: 'method_not_allowed' }, { Allow: 'GET, POST' });
-    case '/token':
+    case '/oauth/token':
       return req.method === 'POST' ? token(req, oauth) : jsonResponse(405, { error: 'method_not_allowed' }, { Allow: 'POST' });
   }
 

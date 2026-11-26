@@ -108,10 +108,21 @@ describe('signed tokens', () => {
 });
 
 describe('the sign-in', () => {
-  it('stays off without its secrets, and ignores other paths', async () => {
-    expect(await handleMcp(new Request('https://plano.test/mcp', { method: 'POST' }), {})).toBeNull();
-    expect(await handleMcp(new Request('https://plano.test/mcp', { method: 'POST' }), { ...env, MCP_OWNER_SECRET: 'short' })).toBeNull();
+  it('stays off without its secrets, says what is missing, and ignores other paths', async () => {
+    const off = (await handleMcp(new Request('https://plano.test/mcp', { method: 'POST' }), {}))!;
+    expect(off.status).toBe(503);
+    expect(await off.json()).toEqual({
+      error: 'mcp_not_configured',
+      missing: ['FIREBASE_SERVICE_ACCOUNT', 'MCP_OWNER_UID', 'MCP_OWNER_SECRET', 'FIREBASE_DATABASE_URL'],
+    });
+    const short = (await handleMcp(new Request('https://plano.test/.well-known/oauth-authorization-server'), { ...env, MCP_OWNER_SECRET: 'short' }))!;
+    expect(((await short.json()) as { missing: string[] }).missing).toEqual(['MCP_OWNER_SECRET (shorter than 16 characters)']);
+    // Whatever is said never holds a value.
+    expect(JSON.stringify(await (await handleMcp(new Request('https://plano.test/mcp'), { ...env, MCP_OWNER_SECRET: 'abc' }))!.json())).not.toContain('abc"');
     expect(await handleMcp(new Request('https://plano.test/push/key'), env)).toBeNull();
+    // The Google token server keeps its own /token and /revoke, whatever is set here.
+    for (const path of ['/token', '/revoke', '/exchange'])
+      expect(await handleMcp(new Request(`https://plano.test${path}`, { method: 'POST' }), env)).toBeNull();
   });
 
   it('refuses /mcp without a token and says where to sign in', async () => {
@@ -121,7 +132,7 @@ describe('the sign-in', () => {
     const meta = (await (await handleMcp(new Request('https://plano.test/.well-known/oauth-authorization-server'), env))!.json()) as Record<string, unknown>;
     expect(meta).toMatchObject({
       issuer: 'https://plano.test',
-      authorization_endpoint: 'https://plano.test/authorize',
+      authorization_endpoint: 'https://plano.test/oauth/authorize',
       code_challenge_methods_supported: ['S256'],
     });
   });
@@ -129,7 +140,7 @@ describe('the sign-in', () => {
   it('goes the whole way: register, ask for the passphrase, exchange the code, call the server, refresh', async () => {
     const redirect = 'https://chatgpt.example/callback';
     const reg = (await (await handleMcp(
-      new Request('https://plano.test/register', { method: 'POST', body: JSON.stringify({ redirect_uris: [redirect], client_name: 'ChatGPT' }) }),
+      new Request('https://plano.test/oauth/register', { method: 'POST', body: JSON.stringify({ redirect_uris: [redirect], client_name: 'ChatGPT' }) }),
       env,
     ))!.json()) as { client_id: string };
     const verifier = 'v'.repeat(64);
@@ -144,14 +155,14 @@ describe('the sign-in', () => {
     });
 
     const form = (passphrase: string) =>
-      new Request('https://plano.test/authorize', { method: 'POST', body: new URLSearchParams({ ...Object.fromEntries(q), passphrase }) });
-    const consent = await handleMcp(new Request(`https://plano.test/authorize?${q}`), env);
+      new Request('https://plano.test/oauth/authorize', { method: 'POST', body: new URLSearchParams({ ...Object.fromEntries(q), passphrase }) });
+    const consent = await handleMcp(new Request(`https://plano.test/oauth/authorize?${q}`), env);
     expect(consent!.status).toBe(200);
     expect(await consent!.text()).toContain('ChatGPT');
 
     // Another address than the registered one: no code is ever sent there.
     const evil = await handleMcp(
-      new Request(`https://plano.test/authorize?${new URLSearchParams({ ...Object.fromEntries(q), redirect_uri: 'https://evil.example/cb' })}`),
+      new Request(`https://plano.test/oauth/authorize?${new URLSearchParams({ ...Object.fromEntries(q), redirect_uri: 'https://evil.example/cb' })}`),
       env,
     );
     expect(evil!.status).toBe(400);
@@ -164,7 +175,10 @@ describe('the sign-in', () => {
 
     const exchange = (extra: Record<string, string>) =>
       handleMcp(
-        new Request('https://plano.test/token', { method: 'POST', body: new URLSearchParams({ client_id: reg.client_id, redirect_uri: redirect, ...extra }) }),
+        new Request('https://plano.test/oauth/token', {
+          method: 'POST',
+          body: new URLSearchParams({ client_id: reg.client_id, redirect_uri: redirect, ...extra }),
+        }),
         env,
       );
     expect((await exchange({ grant_type: 'authorization_code', code: to.searchParams.get('code')!, code_verifier: 'w'.repeat(64) }))!.status).toBe(400);
