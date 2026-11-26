@@ -1,0 +1,86 @@
+/**
+ * Plano's data in Firebase Realtime Database, read and written with a service account (the server acts for one owner:
+ * everything is under `users/<uid>/`). Writes go through one multi-path PATCH, so a change that touches several records
+ * (a recurring task and its next copy) lands whole or not at all.
+ */
+const enc = new TextEncoder();
+const b64 = (s: string) => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const bytes64url = (u: ArrayBuffer) => b64(String.fromCharCode(...new Uint8Array(u)));
+
+export interface ServiceAccount {
+  client_email: string;
+  private_key: string;
+  token_uri?: string;
+}
+
+export interface Db {
+  /** A node under the owner (`tasks`, `habitLogs/<id>`…), null when it is empty. */
+  get<T = unknown>(path: string): Promise<T | null>;
+  /** Several writes at once: paths relative to the owner; null deletes. */
+  update(values: Record<string, unknown>): Promise<void>;
+  newId(): string;
+}
+
+const ALPHABET = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+/** A Firebase-style push id: sortable by time, unique enough without asking the server. */
+export function pushId(now = Date.now(), random = crypto.getRandomValues(new Uint8Array(12))): string {
+  let t = now;
+  let head = '';
+  for (let i = 0; i < 8; i++) {
+    head = ALPHABET[t % 64] + head;
+    t = Math.floor(t / 64);
+  }
+  return head + Array.from(random, (b) => ALPHABET[b % 64]).join('');
+}
+
+export function firebaseDb(opts: { databaseUrl: string; account: string; uid: string }, fetcher: typeof fetch = fetch): Db {
+  const sa = JSON.parse(opts.account) as ServiceAccount;
+  const base = opts.databaseUrl.replace(/\/+$/, '');
+  let token: { value: string; exp: number } | undefined;
+
+  async function accessToken(): Promise<string> {
+    const now = Math.floor(Date.now() / 1000);
+    if (token && token.exp - 120 > now) return token.value;
+    const header = b64(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+    const claims = b64(
+      JSON.stringify({
+        iss: sa.client_email,
+        scope: 'https://www.googleapis.com/auth/firebase.database https://www.googleapis.com/auth/userinfo.email',
+        aud: sa.token_uri ?? 'https://oauth2.googleapis.com/token',
+        iat: now,
+        exp: now + 3600,
+      }),
+    );
+    const der = Uint8Array.from(atob(sa.private_key.replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '')), (c) => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+    const sig = bytes64url(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, enc.encode(`${header}.${claims}`)));
+    const res = await fetcher(sa.token_uri ?? 'https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${header}.${claims}.${sig}` }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { access_token?: string; expires_in?: number };
+    if (!res.ok || !body.access_token) throw new Error('The Firebase service account was refused');
+    token = { value: body.access_token, exp: now + (body.expires_in ?? 3600) };
+    return token.value;
+  }
+
+  const url = (path: string, access: string) => `${base}/users/${opts.uid}${path ? `/${path}` : ''}.json?access_token=${encodeURIComponent(access)}`;
+
+  return {
+    newId: () => pushId(),
+    async get<T>(path: string) {
+      const res = await fetcher(url(path, await accessToken()));
+      if (!res.ok) throw new Error(`Database read failed (${res.status})`);
+      return (await res.json()) as T | null;
+    },
+    async update(values) {
+      const res = await fetcher(url('', await accessToken()), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+      if (!res.ok) throw new Error(`Database write failed (${res.status})`);
+    },
+  };
+}

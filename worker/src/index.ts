@@ -12,9 +12,10 @@
 import { AuthError, checkSnoozeToken, openGrant, sealGrant, verifyFirebaseToken } from './crypto';
 import { vapidPublicKey } from './push';
 import { loadOutages } from './outages';
+import { handleMcp, type McpEnv } from './mcp';
 export { Reminders } from './reminders';
 
-export interface Env {
+export interface Env extends McpEnv {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   FIREBASE_PROJECT_ID: string;
@@ -46,6 +47,9 @@ function revoke(token: string) {
 }
 
 export async function handle(req: Request, env: Env, verify = verifyFirebaseToken): Promise<Response> {
+  // The MCP server (and its sign-in) answers to AI assistants, not to the web app: no browser origin applies.
+  const mcp = await handleMcp(req, env);
+  if (mcp) return mcp;
   const origin = req.headers.get('Origin') ?? '';
   const allowed = env.ALLOWED_ORIGINS.split(',')
     .map((s) => s.trim())

@@ -5,10 +5,18 @@ main = "src/index.ts"
 compatibility_date = "2025-09-01"
 workers_dev = true
 
+# The app's own pure modules (the quick-add parser, completion rules, schemas) are shared with the MCP server.
+[alias]
+"@/types" = "../src/types/index.ts"
+"@/lib/date" = "../src/lib/date/index.ts"
+"@/lib/date/recurrence" = "../src/lib/date/recurrence.ts"
+
 [vars]
 # Public values (the same ones the web app ships with).
 GOOGLE_CLIENT_ID = "859267264757-1ej08g30ubf0pna7oq30hrou3k59812l.apps.googleusercontent.com"
 FIREBASE_PROJECT_ID = "plano-ea1b1"
+# The MCP server reads and writes the owner's data here (the same public address the web app uses).
+FIREBASE_DATABASE_URL = "https://plano-ea1b1-default-rtdb.europe-west1.firebasedatabase.app"
 ALLOWED_ORIGINS = "https://plano.edvault.online,http://localhost:5173,http://localhost:4173"
 
 # Reminders: one Durable Object per user (free plan: SQLite-backed).
